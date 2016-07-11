@@ -1,7 +1,10 @@
 #!/usr/bin/python3.4
-#Simon Torres 2016-06-28
-#pipeline for GOODMAN spectra reduction.
 
+"""
+Simon Torres 2016-06-28
+pipeline for GOODMAN spectra reduction.
+
+"""
 
 
 import sys
@@ -23,7 +26,7 @@ warnings.filterwarnings('ignore')
 #import pyximport; pyximport.install()
 
 
-#"global" variables
+"""global  variables"""
 patt_over_trim  = 'to_'
 patt_bias_corr  = 'bc_'
 patt_flat_corr  = 'fc_'

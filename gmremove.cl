@@ -1,6 +1,6 @@
-#script to delete keywords known to contain non-ascii characters
+#IRAF script to delete keywords known to contain non-ascii characters
 #simon torres
-#2016-ß6-29
+#2016-06-29
 #SOAR Observatory
 
 
