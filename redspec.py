@@ -1,17 +1,16 @@
 #!/usr/bin/python3.4
-#Simon Torres 2016-06-28
-#pipeline for GOODMAN spectra reduction.
+"""
+Simon Torres 2016-06-28
+pipeline for GOODMAN spectra reduction.
+"""
 
 
 
 import sys
 import os
 import glob
-#import pyfits as fits
 import numpy as np
-#import scipy.stats as stats
 import re
-#import subprocess
 import time
 import astropy.stats as asst
 from astropy.io import fits
@@ -20,30 +19,55 @@ from scipy import interpolate
 from scipy.optimize import curve_fit
 import warnings
 warnings.filterwarnings('ignore')
-#cython stuff
-#import pyximport; pyximport.install()
 
 
 class night:
+    """
+    The night class stores the data relative to single observing night
+    therefore this software works on a per-night basis
+    """
 
     def __init__(self,date):
         self.all     = []
         self.date    = date
         self.sci     = []
         self.lamp    = []
-    
-    #methods to store data
+
     def add_sci(self,insci):
+        """Adds science object to list"""
         self.sci.append(insci)
         self.all.append(insci)
     
     def add_lamp(self,inlamp):
+        """Adds lamp objects to list"""
         self.lamp.append(inlamp)
         self.all.append(inlamp)
 
     
     
 class sci_obj:
+    """class that defines a science object atributes
+
+    Sci objects, for science, are the main targets which have lamps for
+     calibration. Their atritutes are: the name, the file name, the
+     observation time, right ascension and declination. The same information
+     can be obtained for the lamps but they are treated as lists
+     The list are created in a way that allows the use of elements' index
+     as the correlator between atributes of the lamp.
+
+     Attributes:
+         name (str): science object name
+         file_name (str): file name
+         obs_time (str): observing time in the format yyyy-mm-ddThh:mm:ss.ss for instance 2016-03-20T23:54:15.96
+         ra (float): right ascension in degrees
+         dec (float): declination in degrees
+         lamp_count (int): lamps count
+         lamp_file (list): every element is a string with the file name of the lamp
+         lamp_type (list): every element is a string with the OBJECT value of the lamp i.e Cu, HgAr, etc
+         lamp_ra (list): every element is a float with lamp's right ascension in degrees
+         lamp_dec (list): every element is a float with lamp's declination in degrees
+
+    """
     
     def __init__(self,name,file_name,obs_time,ra,dec):
         self.name       = name
@@ -58,15 +82,27 @@ class sci_obj:
         self.lamp_dec   = []
     
     def add_lamp(self,new_lamp,new_type,ra,dec):
-        print("Coord-dif: ",self.ra-ra,self.dec-dec)
+        """Adds a lamp to the science object
+
+        Args:
+            new_lamp (str): new lamp file name
+            new_type (str): new lamp type
+            ra (float): right ascension in degrees
+            dec (float): declination in degrees
+
+        """
         self.lamp_file.append(new_lamp)
         self.lamp_type.append(new_type)
         self.lamp_ra.append(ra)   
         self.lamp_dec.append(dec)
         self.lamp_count = int(len(self.lamp_file))
-        
-        
+
     def print_all(self):
+        """Prints all the relevant atributes of the object
+
+        Note:
+            this method is mainly used for development purposes
+        """
         print("Name: ",self.name)
         print("File: ",self.file_name) 
         print("Obs-T: ",self.obs_time)
@@ -81,6 +117,19 @@ class sci_obj:
     
 
 def get_file_list():
+    """Gets flatfielded science and lamp targets
+
+    Args:
+        No arguments required.
+
+    Returns:
+        Night class object which contains separated lists
+        for science and lamp targets.
+
+    In case an IOError exception is raised prints an
+    error message and exit the program.
+    """
+
     lista = sorted(glob.glob("fc_0*.fits")) #will need work
     try:
         header0 = fits.getheader(lista[0])
@@ -96,15 +145,21 @@ def get_file_list():
         return this_night
     except IOError as err:
         if str(err) == "Empty or corrupt FITS file":
-            print("Raised an IOError as ",err)
-            os.system("rem.csh")
-            sys.exit("Please run this script again")
+            sys.exit("Raised an IOError as ",err)
         else:
             print(err)
             sys.exit("Please correct the errors and try again")
         
 #GET DATA
 def get_data_header(file_name):
+    """Get data and header of a fits image
+
+    Args:
+        file_name (str): Full or relative path to the file to open
+
+    Returns:
+        data and header
+    """
   try:
     hdu0	= fits.open(file_name)
     scidata	= hdu0[0].data
