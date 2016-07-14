@@ -6,7 +6,7 @@ please check the [SOAR website](http://www.ctio.noao.edu/soar/content/goodman-hi
 
 ## What is contained in this package?
 
-This repository contains tools for spectroscopy, but after the data is reduced, i.e. bias and flat corrected, for that part please use [David Sanmartim's](link) github repository.
+This repository contains tools for spectroscopy, but after the data is reduced, i.e. bias and flat corrected, for that part please use [David Sanmartim's](https://github.com/dsanmartim/goodman_ccdreduction) github repository.
 #### redspec.py  
  Spectra extraction and wavelength calibration
 
