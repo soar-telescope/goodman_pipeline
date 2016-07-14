@@ -1,6 +1,9 @@
 #!/usr/bin/python3.4
-"""pipeline for GOODMAN spectra reduction.
+"""Pipeline for GOODMAN spectra Extraction.
 
+This program finds reduced images, i.e. trimmed, bias subtracted, flatfielded, etc. that match the <pattern>
+in the source folder, then classify them in two groups: Science or Lamps. For science images, finds the spectrum
+or spectra and traces it doing some fit.
 Simon Torres 2016-06-28
 
 """
@@ -27,61 +30,146 @@ __version__ = "0.1"
 __email__ = "storres@ctio.noao.edu"
 __status__ = "Development"
 
-parser = argparse.ArgumentParser(description='Extracts goodman spectra and does wavelength calibration.')
-parser.add_argument('-p', '--data-path',
-                    action='store',
-                    nargs=1,
-                    default='./',
-                    type=str,
-                    metavar='<Source Path>',
-                    dest='source',
-                    help='Path for location of raw data. Default <./>')
 
-parser.add_argument('-d', '--proc-path',
-                    action='store',
-                    nargs=1,
-                    default='./',
-                    type=str,
-                    metavar='<Destination Path>',
-                    dest='destiny',
-                    help='Path for destination of processed data. Default <./>')
 
-parser.add_argument('-s', '--search-pattern',
-                    action='store',
-                    nargs=1,
-                    default='fc_',
-                    type=str,
-                    metavar='<Search Pattern>',
-                    dest='pattern',
-                    help="Pattern for matching the goodman's reduced data.")
 
-parser.add_argument('-m', '--obs-mode',
-                    action='store',
-                    nargs=1,
-                    default=0,
-                    type=int,
-                    metavar='<Observing Mode>',
-                    dest='mode',
-                    choices=[0, 1, 2, 3],
-                    help="Defines the mode of matching lamps to science targets. \
-                        <0> (Default): reads lamps taken at the begining or end of the night. \
-                        <1>: one or more lamps before OR after science exposure. \
-                        <2>: one or more lamps before AND after sience exposure. \
-                        <3>: ASCII file describing which science target uses which lamp.")
-parser.add_argument('-l', '--lamp-file',
-                    action='store',
-                    nargs=1,
-                    default='lamps.txt',
-                    type=str,
-                    metavar='<Lamp File>',
-                    dest='lamp_file',
-                    help="ASCII file describing which science target uses which lamp. default <lamp.txt>")
+class MainApp:
+    """Defines and intialize all important variables for processing the data
 
-args = parser.parse_args()
+    Args:
+        It doesn't take any arguments
+
+    """
+
+    def __init__(self):
+        self.args = self.get_args()
+        #self.night = night()
+
+    def get_args(self):
+        """Handles the argparse library and returns the arguments
+
+        Returns:
+            An object that contains all the variables parsed through the argument system
+            The possible arguments to be returned are:
+
+            -p or --data-path: has to be the source directory, where the data (images) is.
+                    the location is **self.source**
+                    default value is ./
+            -d or --proc-path: is the destination where all new files/data will be placed.
+                    the location is self.destiny
+                    default value is ./
+            -s or --search-pattern: the pattern that matches the reduced data that will be processed.
+                    the location is self.pattern
+                    default value is fc_
+            -m or --obs-mode: is one of the predefined observing modes and the options are:
+                    0: One or more lamps taken during the beginning or end of the night, i.e. single
+                    calibration to all data in that night
+                    1: One or more lamps right before OR right after every science exposure.
+                    2: One or more lamps right before AND right after every science exposure.
+                    3: An ASCII file will be read. This file contains a matching of sience target files
+                    to respective calibration lamp file that will be used for calibration.
+                    the location is self.mode
+                    default value is 0
+            -l or --lamp-file: Name of the ASCII file that contains the relation between science files and lamp
+                    files. An example is depicted below. Note that the lamps can be repeated.
+                        #example of how the file should look
+                        science_target_01.fits lamp_001.fits
+                        science_target_02.fits lamp_001.fits
+                        science_target_03.fits lamp_002.fits
+                    the location is self.lamp_file
+                    default value is lamps.txt
+
+        Raises:
+            In the case when -m or --obs-mode is set to 3 will requiere the name of file parsed with the -l or
+            --lamp-file parameter an IOError is raised
+
+
+
+        """
+        leave = False
+        parser = argparse.ArgumentParser(description='Extracts goodman spectra and does wavelength calibration.')
+        parser.add_argument('-p', '--data-path',
+                            action='store',
+                            default='./',
+                            type=str,
+                            metavar='<Source Path>',
+                            dest='source',
+                            help='Path for location of raw data. Default <./>')
+
+        parser.add_argument('-d', '--proc-path',
+                            action='store',
+                            default='./',
+                            type=str,
+                            metavar='<Destination Path>',
+                            dest='destiny',
+                            help='Path for destination of processed data. Default <./>')
+
+        parser.add_argument('-s', '--search-pattern',
+                            action='store',
+                            default='fc_',
+                            type=str,
+                            metavar='<Search Pattern>',
+                            dest='pattern',
+                            help="Pattern for matching the goodman's reduced data.")
+
+        parser.add_argument('-m', '--obs-mode',
+                            action='store',
+                            default=0,
+                            type=int,
+                            metavar='<Observing Mode>',
+                            dest='mode',
+                            choices=[0, 1, 2, 3],
+                            help="Defines the mode of matching lamps to science targets. \
+                                <0> (Default): reads lamps taken at the begining or end of the night. \
+                                <1>: one or more lamps before OR after science exposure. \
+                                <2>: one or more lamps before AND after sience exposure. \
+                                <3>: ASCII file describing which science target uses which lamp.")
+        parser.add_argument('-l', '--lamp-file',
+                            action='store',
+                            default='lamps.txt',
+                            type=str,
+                            metavar='<Lamp File>',
+                            dest='lamp_file',
+                            help="Name of an ASCII file describing which science target\
+                                uses which lamp. default <lamp.txt>")
+        parser.add_argument('-t', '--telescope',
+                            action='store_true',
+                            default=False,
+                            dest='telescope',
+                            help="Enables the <Telescope> mode i.e. it run sequentially,\
+                                designed to use while observing at the telescope. Catches\
+                                 new files arriving to the <source> folder.")
+
+        args = parser.parse_args()
+        if not os.path.isdir(args.source):
+            leave = True
+            print("\n")
+            print("Source Directory doesn't exist.")
+        if not os.path.isdir(args.destiny):
+            leave = True
+            print("\n")
+            print("Destination folder doesn't exist.")
+        if args.mode == 3:
+            print(args.source + args.lamp_file)
+            if not os.path.isfile(args.source + args.lamp_file):
+                if args.lamp_file == 'lamps.txt':
+                    leave = True
+                    print("\n")
+                    print("Default <lamp file> doesn't exist.")
+                    print("Please define a <lamp file> using the flags -l or --lamp-file")
+                    print("or make sure you entered the right observing mode.")
+        if leave:
+            print("\n")
+            parser.print_help()
+            parser.exit("Leaving the Program.")
+
+        return args
+
 
 
 class night:
     """Stores all data relevant to the night being processed
+
     Note:
         The night class stores the data relative to single observing night
         therefore this software works on a per-night basis
@@ -191,16 +279,16 @@ def get_file_list():
         for science and lamp targets.
 
     """
-    source = args.source[0]
-    destiny = args.destiny[0]
-    pattern = args.pattern[0]
+    source = App.args.source
+    destiny = App.args.destiny
+    pattern = App.args.pattern
     if source[-1] != '/':
         source += '/'
     if destiny[-1] != '/':
         destiny += '/'
-    pattern = args.pattern[0]
-    mode = args.mode
-    lamps = args.lamp_file[0]
+    pattern = App.args.pattern
+    mode = App.args.mode
+    lamps = App.args.lamp_file
     lista = sorted(glob.glob(source + pattern + "*.fits"))
     try:
         header0 = fits.getheader(lista[0])
@@ -216,10 +304,11 @@ def get_file_list():
         return this_night
     except IOError as err:
         if str(err) == "Empty or corrupt FITS file":
-            sys.exit("Raised an IOError as ", err)
+            print(0)
+            #sys.exit("Raised an IOError as ", err)
         else:
             print(err)
-            sys.exit("Please correct the errors and try again")
+            #sys.exit("Please correct the errors and try again")
 
 
 def get_data_header(file_name):
@@ -345,7 +434,8 @@ def organize_extraction(night):
                 get_spectrum(sci)
                 print("\n\n")
         else:
-            sys.exit("Mismatch of lamps")
+            print("a")
+            #sys.exit("Mismatch of lamps")
     return True
 
 
@@ -471,23 +561,33 @@ def fit_func(x, y, func="polynomial"):
 
 # miscelaneous functions
 def print_spacers(message):
-    try:
-        rows, columns = os.popen('stty size', 'r').read().split()
-    except ValueError:
-        columns = 80
+    """Miscelaneous function to print uniform spacers
+
+    Prints a spacer of 80 columns with  and 3 rows height. The first and last rows contains the symbol "="
+    repeated 80 times. The middle row contains the message centered and the extremes has one single "=" symbol.
+    The only functionality of this is aesthetic.
+
+    Args:
+        message (str): a message to be printed
+
+    Returns:
+        a True boolean
+
+    """
+
+    columns = 80
     if len(message) % 2 == 1 and int(columns) % 2 != 1:
         message = message + " "
     bar_length = int(columns)
     bar = "=" * bar_length
     blanks = bar_length - 2
-    blank_bar = "=" + " " * blanks + "="
     space_length = int((blanks - len(message)) / 2)
     message_bar = "=" + " " * space_length + message + " " * space_length + "="
     print(bar)
 
     print(message_bar)
-    # print(blank_bar)
     print(bar)
+    return True
 
 
 def print_progress(current, total):
@@ -500,6 +600,8 @@ def print_progress(current, total):
 
 
 if __name__ == '__main__':
+    App = MainApp()
+
     this_night = get_file_list()
     # organize observations
     organize_extraction(this_night)
