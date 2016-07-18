@@ -26,6 +26,7 @@ import logging as log
 import warnings
 
 warnings.filterwarnings('ignore')
+log.basicConfig(level=log.DEBUG)
 
 __author__ = 'Simon Torres'
 __date__ = '2016-06-28'
@@ -47,8 +48,10 @@ class MainApp:
         self.ic = pd.DataFrame
         self.args = self.get_args()
         self.night = self.set_night
-
-        self.process()
+        if self.night.telescope:
+            log.info("Is telescope")
+        else:
+            self.process_full_night()
 
     @staticmethod
     def get_args():
@@ -191,7 +194,7 @@ class MainApp:
         if self.args.telescope:
             new_night.is_telescope()
             log.info("Telescope Mode is not implemented yet...")
-            sys.exit("Bye!")
+            return new_night
         else:
             new_night.add_sci(image_collection.files_filtered(obstype='OBJECT'))
             new_night.add_lamp(image_collection.files_filtered(obstype='COMP'))
@@ -199,7 +202,7 @@ class MainApp:
         # print(self.args.telescope)
         # return True
 
-    def process(self):
+    def process_full_night(self):
         self.print_spacers("Processing night %s" % self.night.date)
         # print(self.ic)
         for target in self.night.sci:
@@ -392,14 +395,14 @@ class ScienceObject:
         Note:
             this method is mainly used for development purposes
         """
-        log.info("Name: ", self.name)
-        log.info("File: ", self.file_name)
-        log.info("Obs-T: ", self.obs_time)
+        log.info("Name: %s"%self.name)
+        log.info("File: %s"%self.file_name)
+        log.info("Obs-T: %s"%self.obs_time)
         if self.lamp_count > 0:
-            log.info("Lamp N: ", self.lamp_count)
+            log.info("Lamp N: %s"%self.lamp_count)
             for i in range(self.lamp_count):
-                log.info("Lamp %s: " % (i + 1), self.lamp_file[i])
-                log.info("Type %s: " % (i + 1), self.lamp_type[i])
+                log.info("Lamp %s: %s" % ((i + 1), self.lamp_file[i]))
+                log.info("Type %s: %s" % ((i + 1), self.lamp_type[i]))
 
 
 def get_data_header(file_name):
