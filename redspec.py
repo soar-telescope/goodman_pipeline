@@ -51,7 +51,7 @@ class MainApp:
         if self.night.telescope:
             log.info("Is telescope")
         else:
-            self.process_full_night()
+            self.organize_full_night()
 
     @staticmethod
     def get_args():
@@ -131,9 +131,9 @@ class MainApp:
                             choices=[0, 1, 2, 3],
                             help="Defines the mode of matching lamps to science targets. \
                                 <0> (Default): reads lamps taken at the begining or end of the night. \
-                                <1>: one or more lamps before OR after science exposure. \
-                                <2>: one or more lamps before AND after sience exposure. \
-                                <3>: ASCII file describing which science target uses which lamp.")
+                                <1>: one or more lamps around science exposure. \
+                                <2>: ASCII file describing which science target uses which lamp. \
+                                <3>: No lamps. Uses the sky lines")
 
         parser.add_argument('-l', '--lamp-file',
                             action='store',
@@ -156,9 +156,15 @@ class MainApp:
         if not os.path.isdir(args.source):
             leave = True
             log.error("Source Directory doesn't exist.")
+        else:
+            if args.source[-1] != '/':
+                args.source += '/'
         if not os.path.isdir(args.destiny):
             leave = True
             log.error("Destination folder doesn't exist.")
+        else:
+            if args.destiny[-1] != '/':
+                args.destiny += '/'
         if args.mode == 3:
             print(args.source + args.lamp_file)
             if not os.path.isfile(args.source + args.lamp_file):
@@ -204,26 +210,81 @@ class MainApp:
         # print(self.args.telescope)
         # return True
 
-    def process_full_night(self):
+    def organize_full_night(self):
         self.print_spacers("Processing night %s" % self.night.date)
-        # print(self.ic)
-        for target in self.night.sci:
-            index = self.ic[self.ic['file'] == target].index.tolist()[0]
-            name = self.ic.object.iloc[index]
-            obs_time = self.ic['date-obs'][index]
-            ra, dec = self.ra_dec_to_deg(self.ic.ra.iloc[index], self.ic.dec.iloc[index])
-            science_object = ScienceObject(name, target, obs_time, ra, dec)
-            if self.night.obsmode == 0:
-                log.debug("observation mode 0")
-            if self.night.obsmode == 1:
-                log.debug("observation mode 1")
-            if self.night.obsmode == 2:
-                log.debug("observation mode 2")
-            if self.night.obsmode == 3:
-                log.debug("observation mode 3")
+        if self.night.obsmode == 0:
+            log.info("Observation mode 0")
+            log.debug("One lamp for all targets.")
+            """
+            Need to define a better method for selecting the night
+            Now is just picking the first in the list
+            """
+            lamp = self.night.lamp[0]
+            log.debug("Lamp File: " + lamp)
+            lamp_index = self.ic[self.ic['file'] == lamp].index.tolist()[0]
+            lamp_name = self.ic.object.iloc[lamp_index]
+            # lamp_obs_time = self.ic['date-obs'][lamp_index]
+            lamp_ra, lamp_dec = self.ra_dec_to_deg(self.ic.ra.iloc[lamp_index], self.ic.ra.iloc[lamp_index])
+            for target in self.night.sci:
+                index = self.ic[self.ic['file'] == target].index.tolist()[0]
+                name = self.ic.object.iloc[index]
+                obs_time = self.ic['date-obs'][index]
+                ra, dec = self.ra_dec_to_deg(self.ic.ra.iloc[index], self.ic.dec.iloc[index])
+                science_object = ScienceObject(name, target, obs_time, ra, dec)
+                science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+                self.night.add_sci_object(science_object)
+                return
+        if self.night.obsmode == 1:
+            log.info("Observation mode 1")
+            log.debug("One or more lamps around the target")
+            for target in self.night.sci:
+                """Get basic data of the target"""
+                index = self.ic[self.ic['file'] == target].index.tolist()[0]
+                name = self.ic.object.iloc[index]
+                obs_time = self.ic['date-obs'][index]
+                exptime = self.ic.exptime.iloc[index]
+                ra, dec = self.ra_dec_to_deg(self.ic.ra.iloc[index], self.ic.dec.iloc[index])
+                """Reformat some data of the target for comparison"""
+                target_time = convert_time(obs_time)
+                """Define ScienceObject object"""
+                science_object = ScienceObject(name, target, obs_time, ra, dec)
+                """Loop trough lamps to find a match for target"""
+                for lamp in self.night.lamp:
+                    lamp_index = self.ic[self.ic['file'] == lamp].index.tolist()[0]
+                    lamp_name = self.ic.object.iloc[lamp_index]
+                    lamp_time = convert_time(self.ic['date-obs'][lamp_index])
+                    lamp_exptime = self.ic.exptime.iloc[lamp_index]
+                    lamp_ra, lamp_dec = self.ra_dec_to_deg(self.ic.ra.iloc[lamp_index], self.ic.dec.iloc[lamp_index])
+                    """Since we are not doing astrometry here we assume the sky is flat"""
+                    sky_distance = np.sqrt((lamp_ra - ra)**2 + (lamp_dec - dec)**2)
+                    if sky_distance <= 1e-3:
+                        log.debug("Lamps by distance")
+                        time_dif = abs(target_time - lamp_time) - abs(exptime + lamp_exptime)
+                        if time_dif <= 300:
+                            science_object.add_lamp(lamp,lamp_name,lamp_ra,lamp_dec)
+                            # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
+                        else:
+                            log.warning("Lamp within sky distance but too large time difference. Ignored.")
 
-            science_object.print_all()
-            self.print_spacers(name)
+        if self.night.obsmode == 2:
+            log.info("Observation mode 2")
+            log.debug("A text file defines the relation of lamps and science targets")
+            log.debug(self.night.lamps_file)
+            lamps_file_full = self.night.source + self.night.lamps_file
+            log.debug(lamps_file_full)
+
+            ff = open(lamps_file_full)
+            ff = ff.readlines()
+            for i in range(len(ff)):
+                ff[i] = ff[i].split()
+                print(ff[i])
+
+        if self.night.obsmode == 3:
+            log.info("Observation mode 3")
+            log.debug("No Lamps. Use sky lines")
+
+        # science_object.print_all()
+        # self.print_spacers(name)
         print(self.night.sci)
         print(self.night.lamp)
 
@@ -320,7 +381,7 @@ class Night:
         self.destiny = destiny
         self.pattern = pattern
         self.obsmode = mode
-        self.lamps = lamps
+        self.lamps_file = lamps
         self.sci_targets = []
         self.telescope = False
 
@@ -334,6 +395,10 @@ class Night:
         """Adds lamp objects to list"""
         self.lamp.extend(inlamp)
         self.all.extend(inlamp)
+
+    def add_sci_object(self, sci_obj):
+        self.sci_targets.append(sci_obj)
+        log.info("Added science object %s" % sci_obj.name)
 
     def is_telescope(self):
         self.telescope = True
@@ -397,11 +462,11 @@ class ScienceObject:
         Note:
             this method is mainly used for development purposes
         """
-        log.info("Name: %s"%self.name)
-        log.info("File: %s"%self.file_name)
-        log.info("Obs-T: %s"%self.obs_time)
+        log.info("Name: %s" % self.name)
+        log.info("File: %s" % self.file_name)
+        log.info("Obs-T: %s" % self.obs_time)
         if self.lamp_count > 0:
-            log.info("Lamp N: %s"%self.lamp_count)
+            log.info("Lamp N: %s" % self.lamp_count)
             for i in range(self.lamp_count):
                 log.info("Lamp %s: %s" % ((i + 1), self.lamp_file[i]))
                 log.info("Type %s: %s" % ((i + 1), self.lamp_type[i]))
