@@ -134,6 +134,7 @@ class MainApp:
                                 <1>: one or more lamps before OR after science exposure. \
                                 <2>: one or more lamps before AND after sience exposure. \
                                 <3>: ASCII file describing which science target uses which lamp.")
+
         parser.add_argument('-l', '--lamp-file',
                             action='store',
                             default='lamps.txt',
@@ -142,6 +143,7 @@ class MainApp:
                             dest='lamp_file',
                             help="Name of an ASCII file describing which science target\
                                 uses which lamp. default <lamp.txt>")
+
         parser.add_argument('-t', '--telescope',
                             action='store_true',
                             default=False,
