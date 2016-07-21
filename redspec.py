@@ -1,7 +1,7 @@
 #!/usr/bin/python2.7
 """Pipeline for GOODMAN spectra Extraction.
 
-This program finds reduced images, i.e. trimmed, bias subtracted, flatfielded, etc. that match the <pattern>
+This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded, etc. that match the <pattern>
 in the source folder, then classify them in two groups: Science or Lamps. For science images, finds the spectrum
 or spectra and traces it doing some fit.
 Simon Torres 2016-06-28
@@ -14,6 +14,7 @@ import sys
 import os
 import numpy as np
 import time
+import textwrap
 import astropy.stats as asst
 from astropy.io import fits
 import ccdproc as ccd
@@ -24,6 +25,7 @@ from scipy.optimize import curve_fit
 import argparse
 import logging as log
 import warnings
+from process import Process
 
 warnings.filterwarnings('ignore')
 log.basicConfig(level=log.DEBUG)
@@ -38,6 +40,7 @@ __status__ = "Development"
 class MainApp:
     """Defines and intialize all important variables for processing the data
 
+
     Args:
         It doesn't take any arguments
 
@@ -47,11 +50,17 @@ class MainApp:
     def __init__(self):
         self.ic = pd.DataFrame
         self.args = self.get_args()
-        self.night = self.set_night
+        self.night = self.set_night()
         if self.night.telescope:
             log.info("Is telescope")
         else:
             self.organize_full_night()
+            print(len(self.night.sci_targets))
+            for i in range(len(self.night.sci_targets)):
+                science_object = self.night.sci_targets[i]
+                print(science_object)
+                print(self.night.sci_targets)
+                p = Process(self.night.source, science_object)
 
     @staticmethod
     def get_args():
@@ -96,7 +105,15 @@ class MainApp:
 
         """
         leave = False
-        parser = argparse.ArgumentParser(description='Extracts goodman spectra and does wavelength calibration.')
+        parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                         description=textwrap.dedent(
+                                             '''Extracts goodman spectra and does wavelength calibration.\n\n\
+Supported Observing modes are:
+    <0>: (Default) reads lamps taken at the begining or end of the night.\n\
+    <1>: one or more lamps around science exposure.\n\
+    <2>: ASCII file describing which science target uses which lamp.\n\
+    <3>: No lamps. Uses the sky lines
+    '''))
 
         parser.add_argument('-p', '--data-path',
                             action='store',
@@ -129,11 +146,7 @@ class MainApp:
                             metavar='<Observing Mode>',
                             dest='mode',
                             choices=[0, 1, 2, 3],
-                            help="Defines the mode of matching lamps to science targets. \
-                                <0> (Default): reads lamps taken at the begining or end of the night. \
-                                <1>: one or more lamps around science exposure. \
-                                <2>: ASCII file describing which science target uses which lamp. \
-                                <3>: No lamps. Uses the sky lines")
+                            help='Defines the mode of matching lamps to science targets.')
 
         parser.add_argument('-l', '--lamp-file',
                             action='store',
@@ -179,7 +192,7 @@ class MainApp:
 
         return args
 
-    @property
+
     def set_night(self):
         """Defines and initalize the 'night' class
 
@@ -233,7 +246,7 @@ class MainApp:
                 science_object = ScienceObject(name, target, obs_time, ra, dec)
                 science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
                 self.night.add_sci_object(science_object)
-                return
+            return
         if self.night.obsmode == 1:
             log.info("Observation mode 1")
             log.debug("One or more lamps around the target")
@@ -245,26 +258,29 @@ class MainApp:
                 exptime = self.ic.exptime.iloc[index]
                 ra, dec = self.ra_dec_to_deg(self.ic.ra.iloc[index], self.ic.dec.iloc[index])
                 """Reformat some data of the target for comparison"""
-                target_time = convert_time(obs_time)
+                target_time = self.convert_time(obs_time)
                 """Define ScienceObject object"""
                 science_object = ScienceObject(name, target, obs_time, ra, dec)
                 """Loop trough lamps to find a match for target"""
                 for lamp in self.night.lamp:
                     lamp_index = self.ic[self.ic['file'] == lamp].index.tolist()[0]
                     lamp_name = self.ic.object.iloc[lamp_index]
-                    lamp_time = convert_time(self.ic['date-obs'][lamp_index])
+                    lamp_time = self.convert_time(self.ic['date-obs'][lamp_index])
                     lamp_exptime = self.ic.exptime.iloc[lamp_index]
                     lamp_ra, lamp_dec = self.ra_dec_to_deg(self.ic.ra.iloc[lamp_index], self.ic.dec.iloc[lamp_index])
+                    print(lamp, lamp_name, lamp_ra, lamp_dec)
                     """Since we are not doing astrometry here we assume the sky is flat"""
-                    sky_distance = np.sqrt((lamp_ra - ra)**2 + (lamp_dec - dec)**2)
+                    sky_distance = np.sqrt((lamp_ra - ra) ** 2 + (lamp_dec - dec) ** 2)
                     if sky_distance <= 1e-3:
                         log.debug("Lamps by distance")
                         time_dif = abs(target_time - lamp_time) - abs(exptime + lamp_exptime)
                         if time_dif <= 300:
-                            science_object.add_lamp(lamp,lamp_name,lamp_ra,lamp_dec)
+                            science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
                             # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
                         else:
                             log.warning("Lamp within sky distance but too large time difference. Ignored.")
+                self.night.add_sci_object(science_object)
+            return
 
         if self.night.obsmode == 2:
             log.info("Observation mode 2")
@@ -389,7 +405,7 @@ class Night:
         """Adds science object to list"""
         self.sci.extend(insci)
         self.all.extend(insci)
-        self.sci_targets = [[]] * len(self.sci)
+        # self.sci_targets = [[]] * len(self.sci)
 
     def add_lamp(self, inlamp):
         """Adds lamp objects to list"""
@@ -470,259 +486,6 @@ class ScienceObject:
             for i in range(self.lamp_count):
                 log.info("Lamp %s: %s" % ((i + 1), self.lamp_file[i]))
                 log.info("Type %s: %s" % ((i + 1), self.lamp_type[i]))
-
-
-def get_data_header(file_name):
-    """Get data and header of a fits image
-
-    This function simplifies the process of getting the data an header.
-
-    Args:
-        file_name (str): Full or relative path to the file to open
-
-    Returns:
-        data and header
-
-    """
-    try:
-        hdu0 = fits.open(file_name)
-        scidata = hdu0[0].data
-        header = hdu0[0].header
-        scidata = scidata.byteswap().newbyteorder().astype('float64')
-        return scidata, header
-    except IOError as err:
-        log.error("I/O error (get_data_header): %s" % err)
-    except TypeError as err:
-        log.error("TypeError (get_data_header): %s : %s" % (file_name, err))
-
-
-def convert_time(in_time):
-    """Converts time to seconds since epoch
-
-    Args:
-        in_time (str): time obtained from header's keyword DATE-OBS
-
-    Returns:
-        time in seconds since epoch
-
-    """
-    return time.mktime(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
-
-
-def ra_dec_to_deg(ra, dec):
-    """Converts right ascension and declination to degrees
-
-    Args:
-        ra (str): right ascension
-        dec (str): declination
-
-    Returns:
-        right ascension and declination in degrees
-
-    """
-    ra = ra.split(":")
-    dec = dec.split(":")
-    # RIGHT ASCENTION conversion
-    ra_deg = (float(ra[0]) + (float(ra[1]) + (float(ra[2]) / 60.)) / 60.) * (360. / 24.)
-    # DECLINATION conversion
-    sign = float(dec[0]) / abs(float(dec[0]))
-    dec_deg = sign * (abs(float(dec[0])) + (float(dec[1]) + (float(dec[2]) / 60.)) / 60.)
-    return ra_deg, dec_deg
-
-
-def organize_extraction(night):
-    """
-
-    Args:
-        night:
-
-    Returns:
-
-    """
-    sci_list = night.sci
-    lamp_list = night.lamp
-    # loops through science objects
-    for i in range(len(sci_list)):
-        """
-        Captures science object metadata
-        RA and DEC are stored in degrees for comparison
-        TIME is stored in seconds since epoch
-        """
-        header = fits.getheader(sci_list[i])
-        name = header["OBJECT"]
-        exptime = header["EXPTIME"]
-        file_name = sci_list[i]
-        raw_time = header["DATE-OBS"]
-        obs_time = convert_time(raw_time)
-        ra, dec = ra_dec_to_deg(header["RA"], header["DEC"])
-
-        # print(sci_list[i],obs_time)
-        # create sci_obj object
-        sci = ScienceObject(name, file_name, raw_time, ra, dec)
-        # loops through lamps
-        time_diff = []
-        lamp_file = []
-        lamp_type = []
-        lamp_ra = []
-        lamp_dec = []
-        # lamp_dist   = []
-        for e in range(len(lamp_list)):
-            lamp = lamp_list[e]
-            lamp_header = fits.getheader(lamp)
-            lamp_time = lamp_header["DATE-OBS"]
-            lamp_obj = lamp_header["OBJECT"]
-            lamp_ra_val, lamp_dec_val = ra_dec_to_deg(lamp_header["RA"], lamp_header["DEC"])
-            lamp_dist = np.sqrt((ra - lamp_ra_val) ** 2 + (dec - lamp_dec_val) ** 2)
-            time_diff.append(abs(obs_time - convert_time(lamp_time)))
-            lamp_file.append(lamp)
-            lamp_type.append(lamp_obj)
-            lamp_ra.append(lamp_ra_val)
-            lamp_dec.append(lamp_dec_val)
-            if lamp_dist < 1e-3:
-                if time_diff[e] < exptime + 900:
-                    # print(time_diff[e],exptime+300)
-                    # print("Add lamp: ",lamp)
-                    sci.add_lamp(lamp, lamp_obj, lamp_ra_val, lamp_dec_val)
-                else:
-                    # print(time_diff[e],exptime,exptime+300,lamp,lamp_dist)
-                    log.warning("Lamp-to-object difference is out of range ")
-        if len(sci.lamp_file) == len(sci.lamp_type):
-            # print("\n\n")
-            if len(sci.lamp_file) < 1:
-                log.warning("Warning! Object %s has no calibration lamps" % sci.name)
-            else:
-                sci.print_all()
-                get_spectrum(sci)
-                print("\n\n")
-        else:
-            print("a")
-            # sys.exit("Mismatch of lamps")
-    return True
-
-
-def get_spectrum(sci_object):
-    print_spacers(sci_object.name)
-    data, header = get_data_header(sci_object.file_name)
-    x, y = data.shape
-    sample_point = np.linspace(0, y, 100, dtype=int)
-    sample_point = sample_point[1:-1]
-    y_max = []
-    x_max = []
-    for i in sample_point:
-        """   Need to identify secondary objects   """
-        y_max.append(np.argmax(data[:, i]))
-        x_max.append(i)
-        # print(np.argmax(data[:,i]))
-    # sigmaclip to remove outliers
-    y_max = asst.sigma_clip(y_max, sig=3, cenfunc=np.median)
-    """fit gaussian to slit profile """
-    gauss_check = np.linspace(0, len(x_max), 10, dtype=int)
-    gauss_x = []
-    gauss_y = []
-    for e in range(len(x_max)):
-        if e in gauss_check:
-            gauss_x.append(x_max[e])
-            gauss_y.append(y_max[e])
-            # print(x_max[e],y_max[e])
-    gauss_sigma = []
-    for g in range(len(gauss_x)):
-        gy = data[:, gauss_x[g]]
-        gx = range(len(gy))
-        mean = gauss_y[g]
-        offset = mean
-        sigma = 4
-        popt, pcov = curve_fit(gauss, gx, gy, p0=[1., mean, sigma, offset])
-        gauss_sigma.append(popt[2])
-    gauss_sigma_length = len(gauss_sigma)
-    gauss_sigma = asst.sigma_clip(gauss_sigma, sig=2, cenfunc=np.median)
-    sigma = np.mean(gauss_sigma)
-    for g in range(len(gauss_x)):
-        ngy = data[int(y_max[g] - 4 * sigma) - 1:int(y_max[g] + 4 * sigma), gauss_x[g]]
-        ngx = range(len(ngy))
-        # interpolate
-        igx = np.linspace(ngx[0], ngx[-1], len(ngx) * 100)
-        tck = interpolate.splrep(ngx, ngy, s=0)
-        igy = interpolate.splev(igx, tck, der=0)
-
-        mean = gauss_y[g]
-        offset = mean
-        popt, pcov = curve_fit(gauss, igx, igy, p0=[1., mean, sigma, offset])
-        print(popt)
-        plt.title("Column: %s" % (gauss_x[g]))
-        plt.xlabel("spatial Direction")
-        plt.ylabel("Intensity")
-        plt.plot(gx, gy)
-        plt.plot(gx, gauss(gx, *popt), label="Gaussian Fit")
-        plt.legend()
-        plt.savefig(this_night.destiny + "img/gauss_fit_" + sci_object.name + "L" + str(gauss_x[g]) + "-2.png", dpi=300,
-                    bbox_inches='tight')
-        # plt.show()
-        plt.clf()
-
-    # figure parameters
-    plt.title(sci_object.name)
-    plt.xlabel("Dispersion Direction")
-    plt.ylabel("Spatial Direction")
-    plt.imshow(data, cmap='gray', clim=(5, 150))
-    plt.plot(x_max, y_max, lw=0.5, color='r')
-    plt.savefig(this_night.destiny + "img/" + sci_object.name + '-trace.png', dpi=300, bbox_inches='tight')
-    # plt.show()
-    plt.clf()
-    # end of figure
-    print(np.std(y_max))
-    print(y_max)
-    print("median ", np.median(data))
-    return True
-
-
-def fit_func(x, y, func="polynomial"):
-    if func == "polynomial":
-        a, b, c, d, x0 = 1, 1, 1, 1, 1
-        popt, pcov = curve_fit(poly3, x, y, p0=[a, b, c, d, x0])
-        return popt
-    elif func == "gauss":
-        print("gauss")
-    return True
-
-
-# miscelaneous functions
-def print_spacers(message):
-    """Miscelaneous function to print uniform spacers
-
-    Prints a spacer of 80 columns with  and 3 rows height. The first and last rows contains the symbol "="
-    repeated 80 times. The middle row contains the message centered and the extremes has one single "=" symbol.
-    The only functionality of this is aesthetic.
-
-    Args:
-        message (str): a message to be printed
-
-    Returns:
-        a True boolean
-
-    """
-
-    columns = 80
-    if len(message) % 2 == 1 and int(columns) % 2 != 1:
-        message += " "
-    bar_length = int(columns)
-    bar = "=" * bar_length
-    blanks = bar_length - 2
-    space_length = int((blanks - len(message)) / 2)
-    message_bar = "=" + " " * space_length + message + " " * space_length + "="
-    print(bar)
-
-    print(message_bar)
-    print(bar)
-    return True
-
-
-def print_progress(current, total):
-    if current == total:
-        sys.stdout.write("Progress {:.2%}\n".format(1.0 * current / total))
-    else:
-        sys.stdout.write("Progress {:.2%}\r".format(1.0 * current / total))
-    sys.stdout.flush()
-    return
 
 
 if __name__ == '__main__':
