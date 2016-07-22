@@ -87,20 +87,80 @@ class Process:
         return identified_targets
 
     def trace(self, targets):
-        print(len(targets))
+        """
+        Notes:
+            Is not worth doing gaussian fits to the subsamples
+        Args:
+            targets:
+
+        Returns:
+
+        """
+
+        """True enables gaussian fits and false disables it. Gaussian fit was left for experimental purposes"""
+        do_gaussian_fit = True
+        "half of number of sigmas to be sub_sampled"
+        half_n_sigma = 3
+        """space allowance in pixels for extreme of images"""
+        ends_pix_spacing = 50
+        """Number of samples to be done in the dispersion direction"""
+        n_samples = 50
+        """sample width must be smaller or equal than ends_pix_spacing"""
+        sample_width = 50
+
         for target in targets:
-            sample_data = self.data[target.mean - 2 * target.stddev:target.mean + 2 * target.stddev, :]
+            x_min = target.mean - half_n_sigma * target.stddev
+            x_max = target.mean + half_n_sigma * target.stddev
+            sample_data = self.data[x_min:x_max, :]
+            sx,sy = sample_data.shape
+            max_positions = []
+            max_index = []
+            for y in np.linspace(0,sy-ends_pix_spacing,n_samples,dtype=int):
+                sub_sample = sample_data[:, y:y+sample_data]
+
+                sub_median = np.median(sub_sample,axis=1)
+                sub_x_axis = range(len(sub_median))
+
+                sub_argmax = np.argmax(sub_median)
+                sub_max = np.max(sub_median)
+
+                if do_gaussian_fit:
+                    """Will leave this here just in case someone wants to experiment"""
+                    gauss_init = models.Gaussian1D(amplitude=sub_max, mean=sub_argmax, stddev=1.)
+                    fit_gaussian = fitting.LevMarLSQFitter()
+                    gauss = fit_gaussian(gauss_init, sub_x_axis, sub_median)
+                    #print(sub_argmax, gauss.mean.value)
+                    max_positions.append(gauss.mean.value + x_min)
+                    max_index.append(y + int(sample_width/2.))
+                else:
+                    max_positions.append(sub_argmax + x_min)
+                    max_index.append(y + int(sample_width/2.))
+            """chebyshev fitting for defining the trace"""
+
+
+
+
+                #plt.plot(sub_median)
+                #print(y)
+            #plt.savefig("spectra-profile-" + self.science_object.name + '_' + str(int(target.mean)) + '.png',dpi=300)
+            #plt.show()
+            #plt.clf()
+            #print(sx,sy)
+
+
             """The code below does not belong here. It must go to an extraction function"""
             median_spectra = np.median(sample_data, axis=0)
             file_name = self.path + 'spectra_' + self.science_object.name + '_' + str(int(target.mean)) + '.png'
-            # plt.imshow(sample_data, cmap='gray', clim=(5, 150))
+            plt.imshow(self.data, cmap='gray', clim=(5, 150))
+            #plt.axhspan(x_min,x_max)
+            plt.plot(max_index,max_positions)
             # plt.show()
             # plt.clf()
-            plt.plot(median_spectra)
+            # plt.plot(median_spectra)
             plt.xlabel("Pixel")
             plt.ylabel("Intensity")
-            plt.savefig(file_name, dpi=300)
-            # plt.show()
+            # plt.savefig(file_name, dpi=300)
+            plt.show()
             plt.clf()
             print(target.mean)
         return True
