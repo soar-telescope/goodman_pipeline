@@ -15,13 +15,8 @@ import os
 import numpy as np
 import time
 import textwrap
-import astropy.stats as asst
-from astropy.io import fits
 import ccdproc as ccd
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy import interpolate
-from scipy.optimize import curve_fit
 import argparse
 import logging as log
 import warnings

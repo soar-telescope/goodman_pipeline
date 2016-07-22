@@ -16,6 +16,7 @@ class Process:
         self.header = fits.getheader(self.path + self.science_object.file_name)
         self.targets = self.identify_spectra()
         self.traces = self.trace(self.targets)
+        self.extraction(self.traces)
 
     def identify_spectra(self):
         """Finds the location of the spectrum or spectra in case there are more
@@ -30,7 +31,8 @@ class Process:
 
         """
         x, y = self.data.shape
-        sample_data = self.data[:, y / 2. - 100:y / 2. + 100]
+        print(x,y)
+        sample_data = self.data[:, int(y / 2.) - 100:int(y / 2.) + 100]
         median_data = np.median(sample_data, axis=1)
         x_axis = np.linspace(0, len(median_data), x)
         std = np.std(median_data)
@@ -108,15 +110,22 @@ class Process:
         """sample width must be smaller or equal than ends_pix_spacing"""
         sample_width = 50
 
+        traces = []
+
         for target in targets:
-            x_min = target.mean - half_n_sigma * target.stddev
-            x_max = target.mean + half_n_sigma * target.stddev
+            x_min = int(target.mean - half_n_sigma * target.stddev)
+            x_max = int(target.mean + half_n_sigma * target.stddev)
+            width = x_max - x_min
+            # print("width ",width)
+
             sample_data = self.data[x_min:x_max, :]
             sx,sy = sample_data.shape
+
             max_positions = []
             max_index = []
             for y in np.linspace(0,sy-ends_pix_spacing,n_samples,dtype=int):
-                sub_sample = sample_data[:, y:y+sample_data]
+                print(y)
+                sub_sample = sample_data[:, y:y+n_samples]
 
                 sub_median = np.median(sub_sample,axis=1)
                 sub_x_axis = range(len(sub_median))
@@ -136,6 +145,14 @@ class Process:
                     max_positions.append(sub_argmax + x_min)
                     max_index.append(y + int(sample_width/2.))
             """chebyshev fitting for defining the trace"""
+            cheb_x_axis = range(sy)
+            chebyshev_init = models.Chebyshev1D(2,domain=[0, sy])
+            fit_cheb = fitting.LinearLSQFitter()
+            cheb = fit_cheb(chebyshev_init,max_index,max_positions)
+            # current_trace
+            traces.append([cheb,width])
+            print(cheb)
+            #plt.plot(cheb_x_axis,cheb(cheb_x_axis),color='r')
 
 
 
@@ -151,19 +168,42 @@ class Process:
             """The code below does not belong here. It must go to an extraction function"""
             median_spectra = np.median(sample_data, axis=0)
             file_name = self.path + 'spectra_' + self.science_object.name + '_' + str(int(target.mean)) + '.png'
-            plt.imshow(self.data, cmap='gray', clim=(5, 150))
+            #plt.imshow(self.data, cmap='gray', clim=(5, 150))
             #plt.axhspan(x_min,x_max)
-            plt.plot(max_index,max_positions)
+            #plt.plot(max_index,max_positions)
             # plt.show()
             # plt.clf()
             # plt.plot(median_spectra)
-            plt.xlabel("Pixel")
-            plt.ylabel("Intensity")
+            #plt.xlabel("Pixel")
+            #plt.ylabel("Intensity")
             # plt.savefig(file_name, dpi=300)
-            plt.show()
-            plt.clf()
-            print(target.mean)
-        return True
+            #plt.show()
+            #plt.clf()
+            #print(target.mean)
+        return traces
+
+    def extraction(self,traces):
+        x, y = self.data.shape
+        spectra = []
+        for trace in traces:
+            fitted_cheb, width = trace
+            if width%2 == 1:
+                half_width = int((width-1)/2)
+            else:
+                half_width = int(width/2)
+            extracted_spectrum = []
+            for i in range(y):
+                cheb_eval = int(round(fitted_cheb(i)))
+                x_min = cheb_eval - half_width
+                x_max = cheb_eval + half_width
+
+                section = self.data[x_min:x_max,i]
+                extracted_spectrum.append(section)
+            # plt.imshow(extracted_spectrum,cmap='gray', clim=(5, 150))
+            # plt.show()
+            # print(fitted_cheb(0),fitted_cheb(1))
+            spectra.append(extracted_spectrum)
+        return spectra
 
 
 class IdentifiedTarget:
