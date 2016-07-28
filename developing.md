@@ -55,157 +55,159 @@ this:
 
 ### Install Sphinx
 
-1. Install sphinx
-```shell
-$ pip install sphinx
-```
+1. Install sphinx.
+
+   ```shell
+   $ pip install sphinx
+   ```
 
 2. Install Napoleon Plugin. Allows to use Google style with Sphinx.
-```shell
-$ pip install sphinxcontrib.napoleon
-```
+
+   ```shell
+   $ pip install sphinxcontrib.napoleon
+   ```
 
 3. Go to your source folder and run `sphinx-quickstart` and adapt the
 following answers to your needs.
 
-```shell
-$ sphinx-quickstart 
-Welcome to the Sphinx 1.4.5 quickstart utility.
-
-Please enter values for the following settings (just press Enter to
-accept a default value, if one is given in brackets).
-
-Enter the root path for documentation.
-> Root path for the documentation [.]: docs
-
-You have two options for placing the build directory for Sphinx output.
-Either, you use a directory "_build" within the root path, or you separate
-"source" and "build" directories within the root path.
-> Separate source and build directories (y/n) [n]: y
-
-Inside the root directory, two more directories will be created; "_templates"
-for custom HTML templates and "_static" for custom stylesheets and other static
-files. You can enter another prefix (such as ".") to replace the underscore.
-> Name prefix for templates and static dir [_]: 
-
-The project name will occur in several places in the built documentation.
-> Project name: MyProject
-> Author name(s): The Author
-
-Sphinx has the notion of a "version" and a "release" for the
-software. Each version can have multiple releases. For example, for
-Python the version is something like 2.5 or 3.0, while the release is
-something like 2.5.1 or 3.0a1.  If you don't need this dual structure,
-just set both to the same value.
-> Project version: 1.0
-> Project release [1.0]: 
-
-If the documents are to be written in a language other than English,
-you can select a language here by its language code. Sphinx will then
-translate text that it generates into that language.
-
-For a list of supported codes, see
-http://sphinx-doc.org/config.html#confval-language.
-> Project language [en]: 
-
-The file name suffix for source files. Commonly, this is either ".txt"
-or ".rst".  Only files with this suffix are considered documents.
-> Source file suffix [.rst]: 
-
-One document is special in that it is considered the top node of the
-"contents tree", that is, it is the root of the hierarchical structure
-of the documents. Normally, this is "index", but if your "index"
-document is a custom template, you can also set this to another filename.
-> Name of your master document (without suffix) [index]: 
-
-Sphinx can also add configuration for epub output:
-> Do you want to use the epub builder (y/n) [n]: 
-
-Please indicate if you want to use one of the following Sphinx extensions:
-> autodoc: automatically insert docstrings from modules (y/n) [n]: 
-> doctest: automatically test code snippets in doctest blocks (y/n) [n]: 
-) [n]: sphinx: link between Sphinx documentation of different projects (y/n)
-: todo: write "todo" entries that can be shown or hidden on build (y/n) [n]:
-> coverage: checks for documentation coverage (y/n) [n]: 
-> imgmath: include math, rendered as PNG or SVG images (y/n) [n]: 
-> mathjax: include math, rendered in the browser by MathJax (y/n) [n]: 
-n]: config: conditional inclusion of content based on config values (y/n) [n
-y/n) [n]: : include links to the source code of documented Python objects (y
-s (y/n) [n]: : create .nojekyll file to publish the document on GitHub pages
-
-A Makefile and a Windows command file can be generated for you so that you
-only have to run e.g. "make html" instead of invoking sphinx-build
-directly.
-> Create Makefile? (y/n) [y]: 
-> Create Windows command file? (y/n) [y]: 
-
-Creating file docs/source/conf.py.
-Creating file docs/source/index.rst.
-Creating file docs/Makefile.
-Creating file docs/make.bat.
-
-Finished: An initial directory structure has been created.
-
-You should now populate your master file docs/source/index.rst and create other documentation
-source files. Use the Makefile to build the docs, like so:
-   make builder
-where "builder" is one of the supported builders, e.g. html, latex or linkcheck.
-```
+   ```shell
+   $ sphinx-quickstart 
+   Welcome to the Sphinx 1.4.5 quickstart utility.
+   
+   Please enter values for the following settings (just press Enter to
+   accept a default value, if one is given in brackets).
+   
+   Enter the root path for documentation.
+   > Root path for the documentation [.]: docs
+   
+   You have two options for placing the build directory for Sphinx output.
+   Either, you use a directory "_build" within the root path, or you separate
+   "source" and "build" directories within the root path.
+   > Separate source and build directories (y/n) [n]: y
+   
+   Inside the root directory, two more directories will be created; "_templates"
+   for custom HTML templates and "_static" for custom stylesheets and other static
+   files. You can enter another prefix (such as ".") to replace the underscore.
+   > Name prefix for templates and static dir [_]: 
+   
+   The project name will occur in several places in the built documentation.
+   > Project name: MyProject
+   > Author name(s): The Author
+   
+   Sphinx has the notion of a "version" and a "release" for the
+   software. Each version can have multiple releases. For example, for
+   Python the version is something like 2.5 or 3.0, while the release is
+   something like 2.5.1 or 3.0a1.  If you don't need this dual structure,
+   just set both to the same value.
+   > Project version: 1.0
+   > Project release [1.0]: 
+   
+   If the documents are to be written in a language other than English,
+   you can select a language here by its language code. Sphinx will then
+   translate text that it generates into that language.
+   
+   For a list of supported codes, see
+   http://sphinx-doc.org/config.html#confval-language.
+   > Project language [en]: 
+   
+   The file name suffix for source files. Commonly, this is either ".txt"
+   or ".rst".  Only files with this suffix are considered documents.
+   > Source file suffix [.rst]: 
+   
+   One document is special in that it is considered the top node of the
+   "contents tree", that is, it is the root of the hierarchical structure
+   of the documents. Normally, this is "index", but if your "index"
+   document is a custom template, you can also set this to another filename.
+   > Name of your master document (without suffix) [index]: 
+   
+   Sphinx can also add configuration for epub output:
+   > Do you want to use the epub builder (y/n) [n]: 
+   
+   Please indicate if you want to use one of the following Sphinx extensions:
+   > autodoc: automatically insert docstrings from modules (y/n) [n]: 
+   > doctest: automatically test code snippets in doctest blocks (y/n) [n]: 
+   ) [n]: sphinx: link between Sphinx documentation of different projects (y/n)
+   : todo: write "todo" entries that can be shown or hidden on build (y/n) [n]:
+   > coverage: checks for documentation coverage (y/n) [n]: 
+   > imgmath: include math, rendered as PNG or SVG images (y/n) [n]: 
+   > mathjax: include math, rendered in the browser by MathJax (y/n) [n]: 
+   n]: config: conditional inclusion of content based on config values (y/n) [n
+   y/n) [n]: : include links to the source code of documented Python objects (y
+   s (y/n) [n]: : create .nojekyll file to publish the document on GitHub pages
+   
+   A Makefile and a Windows command file can be generated for you so that you
+   only have to run e.g. "make html" instead of invoking sphinx-build
+   directly.
+   > Create Makefile? (y/n) [y]: 
+   > Create Windows command file? (y/n) [y]: 
+   
+   Creating file docs/source/conf.py.
+   Creating file docs/source/index.rst.
+   Creating file docs/Makefile.
+   Creating file docs/make.bat.
+   
+   Finished: An initial directory structure has been created.
+   
+   You should now populate your master file docs/source/index.rst and create other documentation
+   source files. Use the Makefile to build the docs, like so:
+      make builder
+   where "builder" is one of the supported builders, e.g. html, latex or linkcheck.
+   ```
 
 4. A file `conf.py` has been created in the folder docs. In there
-you need to change some settings:
-  4.1 Add sphinxcontrib.napoleon
-  4.2 Insert $PATH variable into the system
+   you need to change some settings:
+      4.1 Add sphinxcontrib.napoleon
+      4.2 Insert $PATH variable into the system
 
-```python
-# conf.py
-
-# Add autodoc and napoleon to the extensions list
-extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.napoleon']
-
-# Add source directory to PATH (where the modules are)
-import sys
-sys.path.append('/path/to/source')
-
-# Napoleon settings
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = False
-napoleon_include_special_with_doc = False
-napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
-napoleon_use_admonition_for_references = False
-napoleon_use_ivar = False
-napoleon_use_param = True
-napoleon_use_rtype = True
-napoleon_use_keyword = True
-```
+   ```python
+   # conf.py
+   
+   # Add autodoc and napoleon to the extensions list
+   extensions = ['sphinx.ext.autodoc', 'sphinxcontrib.napoleon']
+   
+   # Add source directory to PATH (where the modules are)
+   import sys
+   sys.path.append('/path/to/source')
+   
+   # Napoleon settings
+   napoleon_google_docstring = True
+   napoleon_numpy_docstring = True
+   napoleon_include_init_with_doc = False
+   napoleon_include_private_with_doc = False
+   napoleon_include_special_with_doc = False
+   napoleon_use_admonition_for_examples = False
+   napoleon_use_admonition_for_notes = False
+   napoleon_use_admonition_for_references = False
+   napoleon_use_ivar = False
+   napoleon_use_param = True
+   napoleon_use_rtype = True
+   napoleon_use_keyword = True
+   ```
 
 5. Use `sphinx-apidoc` to build your documentation.
-```shell
-$ sphinx-apidoc -f -o docs/source projectdir
-```
+   ```shell
+   $ sphinx-apidoc -f -o docs/source projectdir
+   ```
 
 6. Make your documentation. There are more options for the output.
-```shell
-$ make html
-```
+   ```shell
+   $ make html
+   ```
 
 ### Configure PyCharm to do it.
 
 7. In PyCharm go to `Run > Edit Configurations...` and then click
-the green **+** symbol in the upper left corner 
-_(Pycharm Community Edition 2016.2)_ and choose
-`Python Docs > Sphinx Task`
-
+   the green **+** symbol in the upper left corner 
+   _(Pycharm Community Edition 2016.2)_ and choose
+   `Python Docs > Sphinx Task`
+   
 8. A new dialog will open and it should look like this:
-
-![docs-configuration](./docs/img/configurations.png)
-
-Apply or click OK. In the upper right corner of pycharm you should find
-the option for `build-documentation` if you used the same name for this
-particular configuration.
+   
+   ![docs-configuration](./docs/img/configurations.png)
+   
+   Apply or click OK. In the upper right corner of pycharm you should find
+   the option for `build-documentation` if you used the same name for this
+   particular configuration.
 
 ### Final Thoughts
 
