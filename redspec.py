@@ -6,8 +6,6 @@ in the source folder, then classify them in two groups: Science or Lamps. For sc
 or spectra and traces it doing some fit.
 Simon Torres 2016-06-28
 
-
-
 """
 
 import sys
@@ -35,13 +33,10 @@ __status__ = "Development"
 class MainApp:
     """Defines and intialize all important variables for processing the data
 
-
     Args:
         It doesn't take any arguments
 
-
     """
-
     def __init__(self):
         self.ic = pd.DataFrame
         self.args = self.get_args()
@@ -95,8 +90,6 @@ class MainApp:
         Raises:
             In the case when -m or --obs-mode is set to 3 will requiere the name of file parsed with the -l or
             --lamp-file parameter an IOError is raised
-
-
 
         """
         leave = False
@@ -187,13 +180,12 @@ Supported Observing modes are:
 
         return args
 
-
     def set_night(self):
-        """Defines and initalize the 'night' class
-
-
+        """Defines and initialize the 'night' class
 
         Returns:
+            new_night (class): A class that stores critical data of the night that will be processed and can be
+            parsed to other methods.
 
         """
         keys = ['date', 'date-obs', 'obstype', 'object', 'exptime', 'ra', 'dec']
@@ -219,6 +211,14 @@ Supported Observing modes are:
         # return True
 
     def organize_full_night(self):
+        """Organize the data according to the Observing Mode
+
+        There are four observing modes defined
+
+        Returns:
+            Nothing. But modifies the output of
+
+        """
         self.print_spacers("Processing night %s" % self.night.date)
         if self.night.obsmode == 0:
             log.info("Observation mode 0")
@@ -419,23 +419,23 @@ class ScienceObject:
     """class that defines a science object attributes
 
     Sci objects, for science, are the main targets which have lamps for
-     calibration. Their atritutes are: the name, the file name, the
-     observation time, right ascension and declination. The same information
-     can be obtained for the lamps but they are treated as lists
-     The list are created in a way that allows the use of elements' index
-     as the correlator between atributes of the lamp.
+    calibration. Their atritutes are: the name, the file name, the
+    observation time, right ascension and declination. The same information
+    can be obtained for the lamps but they are treated as lists
+    The list are created in a way that allows the use of elements' index
+    as the correlator between atributes of the lamp.
 
-     Attributes:
-         name (str): science object name
-         file_name (str): file name
-         obs_time (str): observing time in the format yyyy-mm-ddThh:mm:ss.ss for instance 2016-03-20T23:54:15.96
-         ra (float): right ascension in degrees
-         dec (float): declination in degrees
-         lamp_count (int): lamps count
-         lamp_file (list): every element is a string with the file name of the lamp
-         lamp_type (list): every element is a string with the OBJECT value of the lamp i.e Cu, HgAr, etc
-         lamp_ra (list): every element is a float with lamp's right ascension in degrees
-         lamp_dec (list): every element is a float with lamp's declination in degrees
+    Attributes:
+        name (str): science object name
+        file_name (str): file name
+        obs_time (str): observing time in the format yyyy-mm-ddThh:mm:ss.ss for instance 2016-03-20T23:54:15.96
+        ra (float): right ascension in degrees
+        dec (float): declination in degrees
+        lamp_count (int): lamps count
+        lamp_file (list): every element is a string with the file name of the lamp
+        lamp_type (list): every element is a string with the OBJECT value of the lamp i.e Cu, HgAr, etc
+        lamp_ra (list): every element is a float with lamp's right ascension in degrees
+        lamp_dec (list): every element is a float with lamp's declination in degrees
 
     """
 
@@ -468,10 +468,11 @@ class ScienceObject:
         self.lamp_count = int(len(self.lamp_file))
 
     def print_all(self):
-        """Prints all the relevant atributes of the object
+        """Prints all the relevant attributes of the object
 
         Note:
             this method is mainly used for development purposes
+
         """
         log.info("Name: %s" % self.name)
         log.info("File: %s" % self.file_name)

@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>process module &mdash; Goodman Spectrum Extraction Tool 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Goodman Spectrum Extraction Tool 0.1 documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-process">
+<span id="process-module"></span><h1>process module<a class="headerlink" href="#module-process" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="process.IdentifiedTarget">
+<em class="property">class </em><code class="descclassname">process.</code><code class="descname">IdentifiedTarget</code><span class="sig-paren">(</span><em>amplitude</em>, <em>mean</em>, <em>stddev</em><span class="sig-paren">)</span><a class="headerlink" href="#process.IdentifiedTarget" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="process.Process">
+<em class="property">class </em><code class="descclassname">process.</code><code class="descname">Process</code><span class="sig-paren">(</span><em>source_path</em>, <em>sci_obj</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process" title="Permalink to this definition">¶</a></dt>
+<dd><p>hrllo</p>
+<p>hello</p>
+<dl class="method">
+<dt id="process.Process.extract">
+<code class="descname">extract</code><span class="sig-paren">(</span><em>traces</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.extract" title="Permalink to this definition">¶</a></dt>
+<dd><p>extra</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traces</strong> &#8211; </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">true</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="process.Process.identify_spectra">
+<code class="descname">identify_spectra</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.identify_spectra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the location of the spectrum or spectra in case there are more</p>
+<p>Performs an analysis along the spatial direction to determine the presence of important peaks which will be
+identified as science targets (or objects). A sample of the image of 200 pixels is taken more or less in the
+middle of the spectrum and then flattened along the dispersion direction, thus having enough signal to identify
+and differentiate a target or the targets from background signal. The method to find the spectrum or spectra
+is by defining a threshold which will be the Median + Standard Deviation from this unidimentional profile
+(spatial direction). For every group of points that are above the threshold a python list will be created and
+then its maximum value&#8217;s position is found. Then for every position it tries to fit a gaussian profile in the
+whole subsample (not just the list with the points above the threshold). [THIS PART IS NOT IMPLEMENTED] If the
+gaussian fit yields something rare the candidate is discarded.</p>
+<p>I doesn&#8217;t take arguments because it will read the &lt;object&gt; <strong>self.science_object</strong> that contains all the
+necessary data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A list of IdentifiedTargets class objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="process.Process.trace">
+<code class="descname">trace</code><span class="sig-paren">(</span><em>targets</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the trace of a spectrum given an initial location</p>
+<p>From the input data it finds the location of the spectrum in the image and an approximate width of six sigmas,
+with that information it takes a sample of the data just covering those limits to speed up the process.
+It takes about fifty sub-samples along the dispersion direction with a width of fifty pixels each.
+All the parameters can be changed with the variables half_n_sigma, ends_pix_spacing, n_samples and
+sample_width variables. The sub-samples are flattened along the dispersion direction using numpy.median and
+the location of the maximum value is recorded. Alternatively is possible to do a gaussian fit but my tests
+suggest is not much what you earn with this now is disabled by default. Enable it by changing do_gaussian_fit to
+True. Once there is a list of maximum locations a Chebyshev 1D of second order is fitted to define the trace.
+The Chebyshev function is defined for all the range of pixels in the dispersion direction of the image.</p>
+<p class="rubric">Notes</p>
+<p>Is not worth doing gaussian fits to the sub samples</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>targets</strong> (<em>list</em>) &#8211; Each element is a class that stores the parameters of the gaussian fitted to the data in</li>
+<li><strong>steps. This data tells the location in the image of the target or targets.</strong> (<em>previous</em>) &#8211; </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>traces</strong> &#8211; Every element is a list with two elements. The first is the fitted Chebyshev class and the
+second and last is the width to be extracted.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="process.Process.wavelength_calibration">
+<code class="descname">wavelength_calibration</code><span class="sig-paren">(</span><em>extracted</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.wavelength_calibration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/process.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Simon Torres R..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/process.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

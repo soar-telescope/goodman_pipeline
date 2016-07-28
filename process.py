@@ -1,11 +1,13 @@
 from astropy.io import fits
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
 from astropy.modeling import models, fitting
 
 
 class Process:
-    """
+    """hrllo
+
+    hello
 
     """
 
@@ -23,7 +25,7 @@ class Process:
         self.targets = self.identify_spectra()
         self.traces = self.trace(self.targets)
         self.extracted_data = self.extract(self.traces)
-        self.wavelength_calibration(self.extracted_data)
+        # self.wavelength_calibration(self.extracted_data)
 
     def identify_spectra(self):
         """Finds the location of the spectrum or spectra in case there are more
@@ -38,13 +40,14 @@ class Process:
         whole subsample (not just the list with the points above the threshold). [THIS PART IS NOT IMPLEMENTED] If the
         gaussian fit yields something rare the candidate is discarded.
 
-        I doesn't take arguments because it will read the <object> self.science_object that contains all the
+        I doesn't take arguments because it will read the <object> **self.science_object** that contains all the
         necessary data.
 
         Returns:
             A list of IdentifiedTargets class objects
 
         """
+
         x, y = self.data.shape
         # print(x,y)
         sample_data = np.median(self.data[:, int(y / 2.) - 100:int(y / 2.) + 100], axis=1)
@@ -83,13 +86,28 @@ class Process:
         return identified_targets
 
     def trace(self, targets):
-        """
+        """Finds the trace of a spectrum given an initial location
+
+        From the input data it finds the location of the spectrum in the image and an approximate width of six sigmas,
+        with that information it takes a sample of the data just covering those limits to speed up the process.
+        It takes about fifty sub-samples along the dispersion direction with a width of fifty pixels each.
+        All the parameters can be changed with the variables half_n_sigma, ends_pix_spacing, n_samples and
+        sample_width variables. The sub-samples are flattened along the dispersion direction using numpy.median and
+        the location of the maximum value is recorded. Alternatively is possible to do a gaussian fit but my tests
+        suggest is not much what you earn with this now is disabled by default. Enable it by changing do_gaussian_fit to
+        True. Once there is a list of maximum locations a Chebyshev 1D of second order is fitted to define the trace.
+        The Chebyshev function is defined for all the range of pixels in the dispersion direction of the image.
+
         Notes:
-            Is not worth doing gaussian fits to the subsamples
+            Is not worth doing gaussian fits to the sub samples
+
         Args:
-            targets:
+            targets (list): Each element is a class that stores the parameters of the gaussian fitted to the data in
+            previous steps. This data tells the location in the image of the target or targets.
 
         Returns:
+            traces (list): Every element is a list with two elements. The first is the fitted Chebyshev class and the
+            second and last is the width to be extracted.
 
         """
 
@@ -110,7 +128,6 @@ class Process:
             x_min = int(target.mean - half_n_sigma * target.stddev)
             x_max = int(target.mean + half_n_sigma * target.stddev)
             width = x_max - x_min
-            # print("width ",width)
 
             sample_data = self.data[x_min:x_max, :]
             sx, sy = sample_data.shape
@@ -118,7 +135,7 @@ class Process:
             max_positions = []
             max_index = []
             for y in np.linspace(0, sy - ends_pix_spacing, n_samples, dtype=int):
-                # print(y)
+
                 sub_sample = sample_data[:, y:y + n_samples]
 
                 sub_median = np.median(sub_sample, axis=1)
@@ -132,14 +149,12 @@ class Process:
                     gauss_init = models.Gaussian1D(amplitude=sub_max, mean=sub_argmax, stddev=1.)
                     fit_gaussian = fitting.LevMarLSQFitter()
                     gauss = fit_gaussian(gauss_init, sub_x_axis, sub_median)
-                    # print(sub_argmax, gauss.mean.value)
                     max_positions.append(gauss.mean.value + x_min)
                     max_index.append(y + int(sample_width / 2.))
                 else:
                     max_positions.append(sub_argmax + x_min)
                     max_index.append(y + int(sample_width / 2.))
             """chebyshev fitting for defining the trace"""
-            # cheb_x_axis = range(sy)
             chebyshev_init = models.Chebyshev1D(2, domain=[0, sy])
             fit_cheb = fitting.LinearLSQFitter()
             cheb = fit_cheb(chebyshev_init, max_index, max_positions)
@@ -149,6 +164,15 @@ class Process:
         return traces
 
     def extract(self, traces):
+        """extra
+
+        Args:
+            traces:
+
+        Returns:
+            true
+
+        """
         spectra = []
         for trace in traces:
             """Defines some variables as well as the width that will be extracted"""
