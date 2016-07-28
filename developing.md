@@ -60,12 +60,12 @@ this:
 $ pip install sphinx
 ```
 
-2. Install Napoleon. Allows to use Google style with Sphinx.
+2. Install Napoleon Plugin. Allows to use Google style with Sphinx.
 ```shell
 $ pip install sphinxcontrib.napoleon
 ```
 
-3. Go to your source folder and run ```sphinx-quickstart``` and adapt the
+3. Go to your source folder and run `sphinx-quickstart` and adapt the
 following answers to your needs.
 
 ```shell
@@ -134,7 +134,7 @@ y/n) [n]: : include links to the source code of documented Python objects (y
 s (y/n) [n]: : create .nojekyll file to publish the document on GitHub pages
 
 A Makefile and a Windows command file can be generated for you so that you
-only have to run e.g. `make html' instead of invoking sphinx-build
+only have to run e.g. "make html" instead of invoking sphinx-build
 directly.
 > Create Makefile? (y/n) [y]: 
 > Create Windows command file? (y/n) [y]: 
@@ -152,7 +152,7 @@ source files. Use the Makefile to build the docs, like so:
 where "builder" is one of the supported builders, e.g. html, latex or linkcheck.
 ```
 
-4. A file ```conf.py``` has been created in the folder docs. In there
+4. A file `conf.py` has been created in the folder docs. In there
 you need to change some settings:
   4.1 Add sphinxcontrib.napoleon
   4.2 Insert $PATH variable into the system
@@ -182,7 +182,7 @@ napoleon_use_rtype = True
 napoleon_use_keyword = True
 ```
 
-5. Use ```sphinx-apidoc``` to build your documentation.
+5. Use `sphinx-apidoc` to build your documentation.
 ```shell
 $ sphinx-apidoc -f -o docs/source projectdir
 ```
@@ -194,10 +194,10 @@ $ make html
 
 ### Configure PyCharm to do it.
 
-7. In PyCharm go to ```Run > Edit Configurations...``` and then click
+7. In PyCharm go to `Run > Edit Configurations...` and then click
 the green **+** symbol in the upper left corner 
 _(Pycharm Community Edition 2016.2)_ and choose
-```Python Docs > Sphinx Task```
+`Python Docs > Sphinx Task`
 
 8. A new dialog will open and it should look like this:
 
