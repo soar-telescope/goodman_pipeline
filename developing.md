@@ -68,7 +68,7 @@ this:
    ```
 
 3. Go to your source folder and run `sphinx-quickstart` and adapt the
-following answers to your needs.
+following answers to your needs. (some parts are omitted)
 
    ```shell
    $ sphinx-quickstart 
@@ -102,8 +102,8 @@ following answers to your needs.
 
 4. A file `conf.py` has been created in the folder docs. In there
    you need to change some settings:
-      4.1 Add sphinxcontrib.napoleon
-      4.2 Insert $PATH variable into the system
+      1. Add sphinxcontrib.napoleon
+      2. Insert $PATH variable into the system
 
    ```python
    # conf.py
