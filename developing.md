@@ -68,7 +68,7 @@ this:
    ```
 
 3. Go to your source folder and run `sphinx-quickstart` and adapt the
-following answers to your needs. (some parts are omitted)
+following answers to your needs. (some parts were omitted)
 
    ```shell
    $ sphinx-quickstart 

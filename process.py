@@ -1,7 +1,8 @@
 from astropy.io import fits
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 from astropy.modeling import models, fitting
+import logging as log
 
 
 class Process:
@@ -99,7 +100,8 @@ class Process:
         The Chebyshev function is defined for all the range of pixels in the dispersion direction of the image.
 
         Notes:
-            Is not worth doing gaussian fits to the sub samples
+            Is not worth doing gaussian fits to the sub samples since it will not improve the result. The only case this
+            might be useful is the case when someone does an interpolation along the spatial direction.
 
         Args:
             targets (list): Each element is a class that stores the parameters of the gaussian fitted to the data in
@@ -160,54 +162,24 @@ class Process:
             cheb = fit_cheb(chebyshev_init, max_index, max_positions)
             # current_trace
             traces.append([cheb, width])
-
         return traces
 
     def extract(self, traces):
-        """extra
-
-        Args:
-            traces:
-
-        Returns:
-            true
-
-        """
-        spectra = []
-        for trace in traces:
-            """Defines some variables as well as the width that will be extracted"""
-            fitted_cheb, width = trace
-            if width % 2 == 1:
-                half_width = int((width - 1) / 2)
+        if len(traces) > 0:
+            '''Initial checks'''
+            if self.science_object.lamp_count > 0:
+                all_lamps = []
+                for l in range(self.science_object.lamp_count):
+                    lamp = np.array([])
+                    all_lamps.append(lamp)
             else:
-                half_width = int(width / 2)
-            """Spectrum extraction part"""
-            print("data type", type(self.data))
-            x, y = self.data.shape
-            extracted_spectrum = []
-            extracted_lamps = []
-            for i in range(y):
-                cheb_eval = int(round(fitted_cheb(i)))
-                x_min = cheb_eval - half_width
-                x_max = cheb_eval + half_width
-                """Actual extraction of spectrum"""
-                spectrum_section = self.data[x_min:x_max, i]
-                extracted_spectrum.append(spectrum_section)
-                """Lamp extraction part"""
-                if self.lamps_data != [] and False:
-                    lamp_spectra = [[]] * self.science_object.lamp_count
-                    for e in range(self.science_object.lamp_count):
-                        lamp_data, lamp_type = self.lamps_data[e]
-                        lamp_section = lamp_data[x_min:x_max, i]
-                        lamp_spectra[e].append(lamp_section)
-                    extracted_lamps = lamp_spectra
-
-            # plt.imshow(extracted_spectrum,cmap='gray', clim=(5, 150))
-            # plt.show()
-            # print(fitted_cheb(0),fitted_cheb(1))
-            spectra.append([np.array(extracted_spectrum), extracted_lamps])
-
-        return spectra
+                log.warning('There are no lamps available for this Target.')
+            '''loop through traces'''
+            for trace in traces:
+                chebyshev, width = trace
+                print(chebyshev,width)
+        else:
+            return False
 
     def wavelength_calibration(self, extracted):
         object_data, lamps_data = extracted
