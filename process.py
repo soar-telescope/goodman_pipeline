@@ -4,6 +4,11 @@ import numpy as np
 from astropy.modeling import models, fitting
 import logging as log
 
+log.basicConfig(level=log.DEBUG)
+
+
+# import sys
+
 
 class Process:
     """hrllo
@@ -18,15 +23,18 @@ class Process:
         self.data = fits.getdata(self.path + self.science_object.file_name)
         self.header = fits.getheader(self.path + self.science_object.file_name)
         self.lamps_data = []
+        self.lamps_header = []
         if self.science_object.lamp_count > 0:
             for lamp_index in range(self.science_object.lamp_count):
                 lamp_data = fits.getdata(self.path + self.science_object.lamp_file[lamp_index])
-                lamp_type = self.science_object.lamp_type[lamp_index]
-                self.lamps_data.append([lamp_data, lamp_type])
+                # lamp_type = self.science_object.lamp_type[lamp_index]
+                self.lamps_data.append(lamp_data)
+                lamp_header = fits.getheader(self.path + self.science_object.lamp_file[lamp_index])
+                self.lamps_header.append(lamp_header)
         self.targets = self.identify_spectra()
         self.traces = self.trace(self.targets)
         self.extracted_data = self.extract(self.traces)
-        # self.wavelength_calibration(self.extracted_data)
+        self.wavelength_calibration(self.extracted_data)
 
     def identify_spectra(self):
         """Finds the location of the spectrum or spectra in case there are more
@@ -165,28 +173,88 @@ class Process:
         return traces
 
     def extract(self, traces):
-        if len(traces) > 0:
-            '''Initial checks'''
-            if self.science_object.lamp_count > 0:
-                all_lamps = []
-                for l in range(self.science_object.lamp_count):
-                    lamp = np.array([])
-                    all_lamps.append(lamp)
-            else:
-                log.warning('There are no lamps available for this Target.')
-            '''loop through traces'''
-            for trace in traces:
-                chebyshev, width = trace
-                print(chebyshev,width)
-        else:
-            return False
+        """Extracts the spectra and returns an stack of science data and lamps
 
-    def wavelength_calibration(self, extracted):
-        object_data, lamps_data = extracted
-        for object in object_data:
-            print("Data shape ", type(object), len(object))
-        one_d_spectrum = np.median(object_data, axis=0)
-        print("1D spectrum shape", one_d_spectrum.shape)
+        Needs to add background subtraction
+
+        Args:
+            traces (list):
+
+        Returns:
+
+        """
+        if len(traces) > 0:
+            '''loop through traces'''
+            sci_pack = []
+            for trace in traces:
+                '''Initial checks'''
+                extracted_object = []
+                if self.science_object.lamp_count > 0:
+                    all_lamps = []
+                    for l in range(self.science_object.lamp_count):
+                        lamp = np.array([])
+                        all_lamps.append(lamp)
+                else:
+                    log.warning('There are no lamps available for this Target.')
+                chebyshev, width = trace
+                if width % 2 == 1:
+                    half_width = int((width - 1) / 2)
+                else:
+                    half_width = int(width / 2)
+                '''Getting data shape'''
+                x, y = self.data.shape
+                sci = []
+                background = []
+                for i in range(y):
+                    x_min = int(round(chebyshev(i))) - half_width
+                    x_max = int(round(chebyshev(i))) + half_width
+                    data_point = np.sum(self.data[x_min:x_max, i])
+                    sci.append(data_point)
+                    # print(x_min, x_max,data_point)
+                    for e in range(self.science_object.lamp_count):
+                        lamp_point = np.sum(self.lamps_data[e][x_min:x_max, i])
+                        all_lamps[e] = np.append(all_lamps[e], lamp_point)
+                extracted_object.append(np.array(sci))
+                if self.science_object.lamp_count > 0:
+                    for l in range(self.science_object.lamp_count):
+                        extracted_object.append(np.array(all_lamps[l]))
+                # plt.plot(sci)
+                # plt.plot(all_lamps[0])
+                # plt.plot(all_lamps[1])
+                # plt.show()
+                # print(chebyshev, width, x, y)
+                sci_pack.append(extracted_object)
+            return sci_pack
+        else:
+            log.error("There are no traces discovered here!!.")
+            return []
+
+    def wavelength_calibration(self, extracted_targets):
+        if extracted_targets:
+            for target in extracted_targets:
+                '''First element in target is always the science target'''
+                sci_target = target[0]
+                lamps = target[1:]
+                calibrated_lamps = self.calibrate_lamps_with_template(lamps)
+                # print(len(target))
+            print(len(extracted_targets))
+        else:
+            log.error("Empty input data")
+
+    def calibrate_lamps_with_template(self, lamps):
+        log.info("Calibrating lamps!")
+        for e in range(len(lamps)):
+            log.debug(self.science_object.lamp_type[e])
+            lamp_header = self.lamps_header[e]
+            lamp_header['COMMENT'] = 'Extracted lamp'
+            lamp_hdu = fits.PrimaryHDU(np.array(lamps[e]), lamp_header)
+            out_file = 'lamp-' + self.science_object.lamp_type[e] + '.fits'
+            lamp_hdu.writeto(out_file, clobber=True)
+
+            plt.plot(lamps[e], label=self.science_object.lamp_type[e])
+        plt.legend(loc='best')
+        plt.show()
+        return True
 
 
 class IdentifiedTarget:
@@ -194,3 +262,8 @@ class IdentifiedTarget:
         self.amplitude = amplitude
         self.mean = mean
         self.stddev = stddev
+
+
+'''
+class Templates:
+    def __init__(self):'''
