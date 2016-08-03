@@ -24,6 +24,7 @@ class Process:
         self.header = fits.getheader(self.path + self.science_object.file_name)
         self.lamps_data = []
         self.lamps_header = []
+        self.region = None
         if self.science_object.lamp_count > 0:
             for lamp_index in range(self.science_object.lamp_count):
                 lamp_data = fits.getdata(self.path + self.science_object.lamp_file[lamp_index])
@@ -56,8 +57,11 @@ class Process:
             A list of IdentifiedTargets class objects
 
         """
-
+        # print(self.path + self.science_object.file_name)
+        # self.science_object.print_all()
         x, y = self.data.shape
+        self.region = np.ones(x)
+        # print(self.region)
         # print(x,y)
         sample_data = np.median(self.data[:, int(y / 2.) - 100:int(y / 2.) + 100], axis=1)
         x_axis = np.linspace(0, len(sample_data), x)
@@ -106,18 +110,25 @@ class Process:
         suggest is not much what you earn with this now is disabled by default. Enable it by changing do_gaussian_fit to
         True. Once there is a list of maximum locations a Chebyshev 1D of second order is fitted to define the trace.
         The Chebyshev function is defined for all the range of pixels in the dispersion direction of the image.
+        This method also mask the regions that will be extracted as science target (or spectrum) and the regions
+        that will be used for background subtractions. At first two regions are defined for each science target
+        at each side by an offset defined by the background_offset variable and the same width as the science target's
+        aperture. If there are background subtraction regions that fall into a science target they will be ignored.
+        In that case only one background region will be used.
+        If both subtraction regions are valid they will be averaged and then subtracted.
+        If no background region are valid, no background subtraction will happen.
 
-        Notes:
+        Note:
             Is not worth doing gaussian fits to the sub samples since it will not improve the result. The only case this
             might be useful is the case when someone does an interpolation along the spatial direction.
 
         Args:
             targets (list): Each element is a class that stores the parameters of the gaussian fitted to the data in
-            previous steps. This data tells the location in the image of the target or targets.
+                        previous steps. This data tells the location in the image of the target or targets.
 
         Returns:
             traces (list): Every element is a list with two elements. The first is the fitted Chebyshev class and the
-            second and last is the width to be extracted.
+                       second and last is the width to be extracted.
 
         """
 
@@ -131,13 +142,23 @@ class Process:
         n_samples = 50
         """sample width must be smaller or equal than ends_pix_spacing"""
         sample_width = 50
+        """Background offsets from target"""
+        background_offset = 5
 
         traces = []
+        regions = []
 
         for target in targets:
             x_min = int(target.mean - half_n_sigma * target.stddev)
             x_max = int(target.mean + half_n_sigma * target.stddev)
             width = x_max - x_min
+            """target value in mask is -1, for background 0 for non-masked is 1"""
+            self.mask(x_min, x_max, -1)
+
+            regions.append([x_min, x_max, width])
+            # """for background subtraction"""
+            # bk_min = int(target.mean + half_n_sigma * target.stddev)
+            # bk_max = int(target.mean + half_n_sigma * target.stddev)
 
             sample_data = self.data[x_min:x_max, :]
             sx, sy = sample_data.shape
@@ -169,8 +190,67 @@ class Process:
             fit_cheb = fitting.LinearLSQFitter()
             cheb = fit_cheb(chebyshev_init, max_index, max_positions)
             # current_trace
+            # bkg_offset = []
             traces.append([cheb, width])
+        # plt.show()
+        # print("backgrounds ",len(backgrounds))
+        for region in regions:
+            x_min, x_max, width = region
+            b_low_min = x_min - background_offset - width
+            b_low_max = x_min - background_offset
+            self.mask(b_low_min, b_low_max, 0)
+            b_high_min = x_max + background_offset
+            b_high_max = x_max + background_offset + width
+            self.mask(b_high_min, b_high_max, 0)
+            # print("region ", region)
+        # print(np.where(self.region == -1))
+        """
+        # plots the masked regions.
+        plt.title("Masked Regions for Background extraction")
+        plt.xlabel("Spatial Direction")
+        plt.ylabel("Intensity")
+        plt.plot(self.data[:,1000])
+        # plt.plot(self.region)
+        limits = []
+        for i in range(len(self.region)-1):
+            if self.region[i] != self.region[i+1]:
+                if limits == [] or len(limits) % 2 == 0:
+                    limits.append(i+1)
+                else:
+                    limits.append(i)
+        print(limits)
+        colors = ['red','green','blue']
+        ci = 0
+        for l in range(0,len(limits),2):
+            plt.axvspan(limits[l],limits[l+1],color=colors[ci], alpha=0.3)
+            ci += 1
+            if ci == 3:
+                ci = 0
+        plt.xlim([600,1000])
+        plt.savefig("background-extraction-zones"+self.science_object.name + ".png", dpi=300)
+        plt.show()
+        """
         return traces
+
+    def mask(self, mask_min, mask_max, value):
+        """masks the region that will be extracted
+
+        Args:
+            mask_min (int): Starting point to the region to be masked
+            mask_max (int): Ending point to the region to be masked
+            value (int): Value to be replaced -1 is for science targets and 0 for background
+
+        Returns:
+            True or False: True if the masking suceeds or false if it fails.
+
+        """
+        # print(type(self.region))
+        if int(value) not in self.region[mask_min:mask_max] and int(-1) not in self.region[mask_min:mask_max]:
+            self.region[mask_min:mask_max] = value
+            return True
+        else:
+            log.warning("Region %s:%s is already masked", min, max)
+            return False
 
     def extract(self, traces):
         """Extracts the spectra and returns an stack of science data and lamps
@@ -197,19 +277,58 @@ class Process:
                 else:
                     log.warning('There are no lamps available for this Target.')
                 chebyshev, width = trace
+                # log.debug("Offset for Background: %s", offset)
                 if width % 2 == 1:
                     half_width = int((width - 1) / 2)
                 else:
                     half_width = int(width / 2)
+                """Define background subtraction zones"""
+                background = []
+                limits = []
+                for i in range(len(self.region) - 1):
+                    if self.region[i] != self.region[i + 1]:
+                        limits.append(i + 1)
+                        """
+                        if limits == [] or len(limits) % 2 == 0:
+                            limits.append(i + 1)
+                        else:
+                            limits.append(i+1)
+                        """
+                for e in range(0, len(limits) - 1, 2):
+                    if limits[e + 1] - limits[e] == width and -1 not in self.region[limits[e]:limits[e + 1]]:
+                        background.append([limits[e], limits[e + 1]])
+                        log.debug("Defining background extraction zone [%s:%s] for target.",
+                                  limits[e],
+                                  limits[e + 1])
+                        # print(limits[e+1]-limits[e], width)
+
                 '''Getting data shape'''
                 x, y = self.data.shape
                 sci = []
-                background = []
+                unsubtracted = []
+                subtracted_background = []
+                # print(background)
+
                 for i in range(y):
                     x_min = int(round(chebyshev(i))) - half_width
                     x_max = int(round(chebyshev(i))) + half_width
-                    data_point = np.sum(self.data[x_min:x_max, i])
+                    if len(background) > 1:
+                        background_part = []
+                        for back in background:
+                            part = np.sum(self.data[back[0]:back[1], i])
+                            background_part.append(part)
+                        background_data = np.mean(background_part)
+                    elif len(background) == 1:
+                        background_data = np.sum(self.data[background[0][0]:background[0][1], i])
+                    else:
+                        background_data = 0
+                    # print background_data
+                    subtracted_background.append(background_data)
+
+                    data_point = np.sum(self.data[x_min:x_max, i]) - background_data
+                    # print("data point ", data_point, background_data)
                     sci.append(data_point)
+                    unsubtracted.append(np.sum(self.data[x_min:x_max, i]))
                     # print(x_min, x_max,data_point)
                     for e in range(self.science_object.lamp_count):
                         lamp_point = np.sum(self.lamps_data[e][x_min:x_max, i])
@@ -218,11 +337,26 @@ class Process:
                 if self.science_object.lamp_count > 0:
                     for l in range(self.science_object.lamp_count):
                         extracted_object.append(np.array(all_lamps[l]))
-                # plt.plot(sci)
-                # plt.plot(all_lamps[0])
-                # plt.plot(all_lamps[1])
-                # plt.show()
+
+                """Plot background subtraction"""
+                plt.title('Background Subtraction\n' + self.science_object.name)
+                plt.xlabel('Pixels (dispersion direction)')
+                plt.ylabel('Intensity (counts)')
+                plt.plot(sci, label='Background Subtracted')
+                plt.plot(unsubtracted, label='Unsubtracted')
+                plt.plot(subtracted_background, label='Background')
+                # plt.plot(all_lamps[0],label='lamp 1')
+                # plt.plot(all_lamps[1],label='lamp 2')
+                plt.legend(loc='best')
+                plt.tight_layout()
+                plt.savefig('background-subtraction_'
+                            + self.science_object.name
+                            + '_'
+                            + str(int(chebyshev(10)))
+                            + '.png', dpi=300)
+                plt.show()
                 # print(chebyshev, width, x, y)
+
                 sci_pack.append(extracted_object)
             return sci_pack
         else:
@@ -230,6 +364,16 @@ class Process:
             return []
 
     def wavelength_calibration(self, extracted_targets):
+        """Does the wavelength calibration to the data
+
+        Not completed yet
+
+        Args:
+            extracted_targets:
+
+        Returns:
+
+        """
         if extracted_targets:
             for target in extracted_targets:
                 '''First element in target is always the science target'''

@@ -44,29 +44,32 @@
 <dl class="class">
 <dt id="process.IdentifiedTarget">
 <em class="property">class </em><code class="descclassname">process.</code><code class="descname">IdentifiedTarget</code><span class="sig-paren">(</span><em>amplitude</em>, <em>mean</em>, <em>stddev</em><span class="sig-paren">)</span><a class="headerlink" href="#process.IdentifiedTarget" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="class">
 <dt id="process.Process">
 <em class="property">class </em><code class="descclassname">process.</code><code class="descname">Process</code><span class="sig-paren">(</span><em>source_path</em>, <em>sci_obj</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>hrllo</p>
+<dd><p>hrllo</p>
 <p>hello</p>
+<dl class="method">
+<dt id="process.Process.calibrate_lamps_with_template">
+<code class="descname">calibrate_lamps_with_template</code><span class="sig-paren">(</span><em>lamps</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.calibrate_lamps_with_template" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="process.Process.extract">
 <code class="descname">extract</code><span class="sig-paren">(</span><em>traces</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.extract" title="Permalink to this definition">¶</a></dt>
-<dd><p>extra</p>
+<dd><p>Extracts the spectra and returns an stack of science data and lamps</p>
+<p>Needs to add background subtraction</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traces</strong> &#8211; </td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">true</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traces</strong> (<em>list</em>) &#8211; </td>
 </tr>
 </tbody>
 </table>
+<p>Returns:</p>
 </dd></dl>
 
 <dl class="method">
@@ -82,13 +85,38 @@ is by defining a threshold which will be the Median + Standard Deviation from th
 then its maximum value&#8217;s position is found. Then for every position it tries to fit a gaussian profile in the
 whole subsample (not just the list with the points above the threshold). [THIS PART IS NOT IMPLEMENTED] If the
 gaussian fit yields something rare the candidate is discarded.</p>
-<p>I doesn&#8217;t take arguments because it will read the &lt;object&gt; self.science_object that contains all the
+<p>I doesn&#8217;t take arguments because it will read the &lt;object&gt; <strong>self.science_object</strong> that contains all the
 necessary data.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A list of IdentifiedTargets class objects</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="process.Process.mask">
+<code class="descname">mask</code><span class="sig-paren">(</span><em>mask_min</em>, <em>mask_max</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>masks the region that will be extracted</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mask_min</strong> (<em>int</em>) &#8211; Starting point to the region to be masked</li>
+<li><strong>mask_max</strong> (<em>int</em>) &#8211; Ending point to the region to be masked</li>
+<li><strong>value</strong> (<em>int</em>) &#8211; Value to be replaced -1 is for science targets and 0 for background</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if the masking suceeds or false if it fails.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">True or False</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -106,25 +134,33 @@ sample_width variables. The sub-samples are flattened along the dispersion direc
 the location of the maximum value is recorded. Alternatively is possible to do a gaussian fit but my tests
 suggest is not much what you earn with this now is disabled by default. Enable it by changing do_gaussian_fit to
 True. Once there is a list of maximum locations a Chebyshev 1D of second order is fitted to define the trace.
-The Chebyshev function is defined for all the range of pixels in the dispersion direction of the image.</p>
-<p class="rubric">Notes</p>
-<p>Is not worth doing gaussian fits to the sub samples</p>
+The Chebyshev function is defined for all the range of pixels in the dispersion direction of the image.
+This method also mask the regions that will be extracted as science target (or spectrum) and the regions
+that will be used for background subtractions. At first two regions are defined for each science target
+at each side by an offset defined by the background_offset variable and the same width as the science target&#8217;s
+aperture. If there are background subtraction regions that fall into a science target they will be ignored.
+In that case only one background region will be used.
+If both subtraction regions are valid they will be averaged and then subtracted.
+If no background region are valid, no background subtraction will happen.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Is not worth doing gaussian fits to the sub samples since it will not improve the result. The only case this
+might be useful is the case when someone does an interpolation along the spatial direction.</p>
+</div>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>targets</strong> (<em>list</em>) &#8211; Each element is a class that stores the parameters of the gaussian fitted to the data in</li>
-<li><strong>steps. This data tells the location in the image of the target or targets.</strong> (<em>previous</em>) &#8211; </li>
-</ul>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targets</strong> (<em>list</em>) &#8211; Each element is a class that stores the parameters of the gaussian fitted to the data in
+previous steps. This data tells the location in the image of the target or targets.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>traces</strong> &#8211;<dl class="docutils">
+<dt>Every element is a list with two elements. The first is the fitted Chebyshev class and the</dt>
+<dd>second and last is the width to be extracted.</dd>
+</dl>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>traces</strong> &#8211; Every element is a list with two elements. The first is the fitted Chebyshev class and the
-second and last is the width to be extracted.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
-</td>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
 </tr>
 </tbody>
 </table>
@@ -132,8 +168,19 @@ second and last is the width to be extracted.</p>
 
 <dl class="method">
 <dt id="process.Process.wavelength_calibration">
-<code class="descname">wavelength_calibration</code><span class="sig-paren">(</span><em>extracted</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.wavelength_calibration" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="descname">wavelength_calibration</code><span class="sig-paren">(</span><em>extracted_targets</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.wavelength_calibration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does the wavelength calibration to the data</p>
+<p>Not completed yet</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>extracted_targets</strong> &#8211; </td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
 
 </dd></dl>
 

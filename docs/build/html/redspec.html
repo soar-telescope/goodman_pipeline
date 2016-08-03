@@ -49,8 +49,7 @@ Simon Torres 2016-06-28</p>
 <dl class="class">
 <dt id="redspec.MainApp">
 <em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">MainApp</code><a class="headerlink" href="#redspec.MainApp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Defines and intialize all important variables for processing the data</p>
+<dd><p>Defines and intialize all important variables for processing the data</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -137,7 +136,17 @@ default value is lamps.txt</p>
 <dl class="method">
 <dt id="redspec.MainApp.organize_full_night">
 <code class="descname">organize_full_night</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.organize_full_night" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Organize the data according to the Observing Mode</p>
+<p>There are four observing modes defined</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Nothing. But modifies the output of</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="staticmethod">
 <dt id="redspec.MainApp.print_progress">
@@ -206,8 +215,7 @@ parsed to other methods.</td>
 <dl class="class">
 <dt id="redspec.Night">
 <em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">Night</code><span class="sig-paren">(</span><em>date</em>, <em>source</em>, <em>destiny</em>, <em>pattern</em>, <em>mode</em>, <em>lamps</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Stores all data relevant to the night being processed</p>
+<dd><p>Stores all data relevant to the night being processed</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The night class stores the data relative to single observing night
@@ -240,8 +248,7 @@ therefore this software works on a per-night basis</p>
 <dl class="class">
 <dt id="redspec.ScienceObject">
 <em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">ScienceObject</code><span class="sig-paren">(</span><em>name</em>, <em>file_name</em>, <em>obs_time</em>, <em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>class that defines a science object attributes</p>
+<dd><p>class that defines a science object attributes</p>
 <p>Sci objects, for science, are the main targets which have lamps for
 calibration. Their atritutes are: the name, the file name, the
 observation time, right ascension and declination. The same information
@@ -331,7 +338,7 @@ as the correlator between atributes of the lamp.</p>
 <dl class="method">
 <dt id="redspec.ScienceObject.print_all">
 <code class="descname">print_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject.print_all" title="Permalink to this definition">¶</a></dt>
-<dd><p>Prints all the relevant atributes of the object</p>
+<dd><p>Prints all the relevant attributes of the object</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">this method is mainly used for development purposes</p>
