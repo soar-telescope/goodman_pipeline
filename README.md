@@ -5,6 +5,8 @@
 The Goodman High Throughput Spectrograph is an imaging spectrograph
  if you wish to know more about the instrument please check the 
  [SOAR website](http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph)
+ 
+To see full documentation please go to the GitHub hosted site for [Goodman](https://simontorres.github.io/goodman/)
 
 ## What is contained in this package?
 

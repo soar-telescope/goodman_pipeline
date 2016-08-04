@@ -49,8 +49,11 @@
 <dl class="class">
 <dt id="process.Process">
 <em class="property">class </em><code class="descclassname">process.</code><code class="descname">Process</code><span class="sig-paren">(</span><em>source_path</em>, <em>sci_obj</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process" title="Permalink to this definition">¶</a></dt>
-<dd><p>hrllo</p>
-<p>hello</p>
+<dd><p>Set of tools for extracting Goodman High Throughput Spectrograph data.</p>
+<p>This class needs a path parsed as a string and a ScienceObject object. The ScienceObject class is defined in the
+module redspec.py and in principle the current module was made to service it. This class has been tested to work
+very well independently given that you successfully provide the previously mentioned ScienceObject and respective
+path to the data location.</p>
 <dl class="method">
 <dt id="process.Process.calibrate_lamps_with_template">
 <code class="descname">calibrate_lamps_with_template</code><span class="sig-paren">(</span><em>lamps</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.calibrate_lamps_with_template" title="Permalink to this definition">¶</a></dt>
@@ -60,16 +63,24 @@
 <dt id="process.Process.extract">
 <code class="descname">extract</code><span class="sig-paren">(</span><em>traces</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.extract" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extracts the spectra and returns an stack of science data and lamps</p>
-<p>Needs to add background subtraction</p>
+<p>Apart of traces this functions makes use of the class attribute region which contains a mask for the extraction
+zones identified different for science targets and for background zones. The background subtraction is only
+used for the science targets since it would not make sense to do it for lamps.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traces</strong> (<em>list</em>) &#8211; </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traces</strong> (<em>list</em>) &#8211; Contains a list per each science target previously detected. Every list has two elements
+that are: Chebyshev fitted to spectrum peaks along the full extension of the spectrum or along the
+full length of the dispersion axis.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>sci_pack</strong> &#8211; The sci_pack is list that contains numpy arrays. The first is always the science target
+and the following are lamps that are not calibrated yet.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
 </tr>
 </tbody>
 </table>
-<p>Returns:</p>
 </dd></dl>
 
 <dl class="method">
@@ -100,7 +111,12 @@ necessary data.</p>
 <dl class="method">
 <dt id="process.Process.mask">
 <code class="descname">mask</code><span class="sig-paren">(</span><em>mask_min</em>, <em>mask_max</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#process.Process.mask" title="Permalink to this definition">¶</a></dt>
-<dd><p>masks the region that will be extracted</p>
+<dd><p>Masks the region that will be extracted</p>
+<p>The class Process has the attribute region (self.region) which is a section across the spatial direction of the
+image being processed. It is filled with ones (1) meaning that is _free <a href="#id1"><span class="problematic" id="id2">zone_</span></a>. Every time a new science
+target is found a mask will be created with -1 values. This type of mask has priority over all the rest.
+For every science target two background extraction zones are defined and masked with 0 but if they
+interfere with another science target they will be ignored.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -108,7 +124,7 @@ necessary data.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>mask_min</strong> (<em>int</em>) &#8211; Starting point to the region to be masked</li>
 <li><strong>mask_max</strong> (<em>int</em>) &#8211; Ending point to the region to be masked</li>
-<li><strong>value</strong> (<em>int</em>) &#8211; Value to be replaced -1 is for science targets and 0 for background</li>
+<li><strong>value</strong> (<em>int</em>) &#8211; Value to be replaced. -1 is for science targets and 0 for background regions.</li>
 </ul>
 </td>
 </tr>
