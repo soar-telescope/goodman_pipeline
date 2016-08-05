@@ -60,7 +60,7 @@ class Process:
             A list of IdentifiedTargets class objects
 
         """
-
+        # TODO(simon) Improve target contamination rejections
         x, y = self.data.shape
         self.region = np.ones(x)
         sample_data = np.median(self.data[:, int(y / 2.) - 100:int(y / 2.) + 100], axis=1)

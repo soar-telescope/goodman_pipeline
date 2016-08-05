@@ -1,6 +1,8 @@
 # Goodman High Throughput Spectrograph
 **WARNING** This code is being developed and is not ready for
  scientific use. Always check the branch other than master.
+ 
+ If you are interested in this sotfware 
 
 The Goodman High Throughput Spectrograph is an imaging spectrograph
  if you wish to know more about the instrument please check the 
