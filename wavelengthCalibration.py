@@ -54,7 +54,6 @@ class WavelengthCalibration:
         else:
             log.error('There are no lamps to process')
 
-
     def interpolate(self, spectrum):
         """Creates an interpolated version of the input spectrum
 

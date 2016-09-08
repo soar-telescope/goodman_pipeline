@@ -74,3 +74,56 @@ After the extraction of the spectrum it will be packed and then parsed to the ne
 
 
 # Documentation Status Estimate
+In **Bold** are the classes and in _italics_ are their respective methods.
+The values presented here are based only on my personal perception and satisfaction about the status of progress
+
+## redspec.py
+- **MainApp** 100%
+  - _  __init__ _ 0%
+  - _get_args_  100%
+  - _set_night_ 95%  - Could be improved
+  - _organize_full_night_ 30%
+  - _convert_time_ 100%
+  - _ra_dec_to_deg_ 100%
+  - _print_spacers_ 100% - Most likely will be removed
+  - _print_progress_ 0% - Most likely will be removed
+
+- **Night** 70%
+  - _  __init__ _ 0%
+  - _add_sci_ 100%
+  - _add_lamp_ 100%
+  - _add_sci_object_ 0%
+  - _is_telescope_ 0%
+  
+- **ScienceObject** 100%
+  - _  __init__ _ 0%
+  - _add_lamp_ 100%
+  - _print_all_ 100%
+ 
+
+## process.py
+- **Process** 100%
+  - _  __init__ _ 0%
+  - _identify_spectra_ 100%
+  - _trace_ 100%
+  - _mask_ 100%
+  - _extract_ 100%
+
+- **IdentifiedTarget** 50%
+  - _  __init__ _ 0%
+  
+  
+## wavelengthCalibration.py
+- **WavelengthCalibration** 0%
+  - _  __init__ _ 0%
+  - _interpolate_ 100%
+  - _recenter_line_ 100% - Most likely will be removed
+  - _get_line_limits_ 100%
+  - _get_line_centers_ 100%
+  - _get_spectral_characteristics_ 70%
+  - _predicted_wavelength_ 0%
+  - _wavelength_solution_ 1%
+  - _get_lines_in_range_ 0%
+  - _pixel_axis_cross_correlate_ 0%
+  - _add_wavelength_solution_ 0%
+  - _get_wavelength_solution_ 0%
