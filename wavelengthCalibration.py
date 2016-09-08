@@ -2,6 +2,7 @@ from astropy.io import fits
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.modeling import models, fitting
+from specutils.wcs import specwcs
 import scipy.interpolate
 import linelist
 import logging as log
@@ -44,12 +45,12 @@ class WavelengthCalibration:
                 self.data0 = self.all_data[l]
                 self.header0 = self.all_headers[l]
                 log.info('Processing Comparison Lamp: %s' % self.header0['OBJECT'])
-                """Until here"""
                 self.data1 = self.interpolate(self.data0)
                 self.lines_limits = self.get_line_limits()
                 self.lines_center = self.get_line_centers(self.lines_limits)
                 self.spectral = self.get_spectral_characteristics()
                 self.wsolution = self.wavelength_solution()
+            self.header = self.add_wavelength_solution(self.header)
         else:
             log.error('There are no lamps to process')
 
@@ -267,6 +268,8 @@ class WavelengthCalibration:
         for i in range(0, len(limits), 2):
             center = (limits[i] + limits[i + 1]) / 2.
             width = limits[i + 1] - limits[i]
+            pixel_width = self.data1[0][limits[i + 1]] - self.data1[0][limits[i]]
+            log.debug('Approximate FWHM: %s pix %s Angstrom (pix * 0.65)', pixel_width, pixel_width * 0.65)
             i_min = int(center - 2 * width)
             i_max = int(center + 2 * width)
             pixel_axis = self.data1[0][i_min:i_max]
@@ -281,7 +284,7 @@ class WavelengthCalibration:
             plt.show()
             """
             centers.append(pixel_center)
-            print(center, width)
+            # print(center, width)
         return centers
 
     def get_spectral_characteristics(self):
@@ -333,25 +336,132 @@ class WavelengthCalibration:
 
     def wavelength_solution(self):
         """Preliminary Solution"""
-        pixel_axis = range(1,4097)
+        pixel_axis = range(1, 4097)
         # pixel_axis = pixel_axis - pixel_axis.size // 2
         slope = self.spectral['pix2'] - self.spectral['pix1']
-        intersect = self.spectral['pix1'] - slope
-        first_solution = models.Linear1D(slope, intersect)
-        inverse_solution = models.Linear1D(1/slope, - intersect / slope)
+        intercept = self.spectral['pix1'] - slope
+        first_solution = models.Linear1D(slope, intercept)
+
+        fit_linear = fitting.LinearLSQFitter()
         """Pixel to wavelength parameters"""
         # manual input for testing
         # pix0 = [205.39, 805.99, 1280.07, 2967.24, 3445.09, 3477.87]
         # wav0 = [3650.153, 4046.563, 4358.328, 5460.735, 5769.598, 5790.663]
+        """
+        pix1 = [1563.51,
+                1617.94,
+                1633.06,
+                1645.16,
+                1663.31,
+                1853.83,
+                1902.22,
+                1962.7,
+                2026.21,
+                3021.17,
+                3042.34,
+                3117.94,
+                3139.11,
+                3195.55,
+                3257.06]
+        # """
+        pix1 = [1564.375,
+                1616.652,
+                1632.724,
+                1662.721,
+                1841.678,
+                1855.135,
+                1899.701,
+                1962.554,
+                2026.459,
+                3021.701,
+                3037.413,
+                3118.79,
+                3139.954,
+                3192.895,
+                3260.514]
+        wav1 = [4545.0519,
+                4579.3495,
+                4589.8978,
+                4609.5673,
+                4726.8683,
+                4735.9058,
+                4764.8646,
+                4806.0205,
+                4847.8095,
+                5495.8738,
+                5506.1128,
+                5558.702,
+                5572.5413,
+                5606.733,
+                5650.7043]
+
+        cuhear = [[3888.646, 'HeI'],
+                  [3948.979, 'ArI'],
+                  [3964.727, 'HeI'],
+                  [4026.189, 'HeI'],
+                  [4044.418, 'ArI'],
+                  [4158.591, 'ArI'],
+                  [4181.884, 'ArI'],
+                  [4200.675, 'ArI'],
+                  [4259.362, 'ArI'],
+                  [4333.561, 'ArI'],
+                  [4471.477, 'HeI'],
+                  [4545.052, 'ArII'],
+                  [4657.901, 'ArII'],
+                  [4713.143, 'HeI'],
+                  [4764.865, 'ArII'],
+                  [4806.021, 'ArII'],
+                  [4879.864, 'ArII'],
+                  [4921.929, 'HeI'],
+                  [4965.080, 'ArII'],
+                  [5015.675, 'HeI'],
+                  [5162.285, 'ArI'],
+                  [5187.746, 'ArI'],
+                  [5495.874, 'ArI'],
+                  [5739.520, 'ArI'],
+                  [5875.618, 'HeI'],
+                  [5912.085, 'ArI'],
+                  [6416.307, 'ArI'],
+                  [6752.834, 'ArI'],
+                  [6871.289, 'ArI'],
+                  [6937.664, 'ArI'],
+                  [6965.431, 'ArI'],
+                  [7147.042, 'ArI'],
+                  [7206.980, 'ArI'],
+                  [7272.936, 'ArI'],
+                  [7281.349, 'HeI'],
+                  [7353.293, 'ArI'],
+                  [7372.118, 'ArI'],
+                  [7383.981, 'ArI'],
+                  [7503.869, 'ArI'],
+                  [7514.652, 'ArI'],
+                  [7635.106, 'ArI'],
+                  [7948.176, 'ArI'],
+                  [8006.157, 'ArI'],
+                  [8014.786, 'ArI'],
+                  [8103.693, 'ArI'],
+                  [8115.311, 'ArI'],
+                  [8264.523, 'ArI'],
+                  [8408.210, 'ArI'],
+                  [8424.648, 'ArI'],
+                  [8521.442, 'ArI'],
+                  [8667.944, 'ArI'],
+                  [8799.088, 'ArI']]
+
+        cuhear_colors = {'HeI': 'c', 'ArI': 'r', 'ArII': 'm',}
+
 
         lines_in_range = self.get_lines_in_range(self.spectral['blue'],
-                                                     self.spectral['red'],
-                                                     self.header0['OBJECT'])
+                                                 self.spectral['red'],
+                                                 self.header0['OBJECT'])
+        fos = fit_linear(first_solution, pix1, wav1)
+        print fos
+        inverse_solution = models.Linear1D(1/fos.slope.value, - fos.intercept.value / fos.slope.value)
 
         lines_to_pix = []
         for rline in lines_in_range:
             lines_to_pix.append(inverse_solution(rline))
-        pixel_offset = self.pixel_axis_cross_correlate(self.lines_center, lines_to_pix)
+        pixel_offset = self.pixel_axis_cross_correlate(self.lines_center, lines_in_range, lines_to_pix)
         new_lines_estimated = []
         differences = []
         for pixel in self.lines_center:
@@ -377,61 +487,144 @@ class WavelengthCalibration:
             new_slope = (wavel_center[e + 1] - wavel_center[e])/(pixel_center[e + 1] - pixel_center[e])
             slope_array.append(new_slope)
             print('Slope : ', new_slope)
-        first_solution.slope = np.mean(slope_array)
-        print('Median New Slope : ', np.mean(slope_array))
+        if slope_array != []:
+            first_solution.slope = np.median(slope_array)
+            print('Median New Slope : ', np.median(slope_array))
 
         # self.lines_center.pop(4)
         # new_lines_estimated.pop(4)
         print pixel_center
         print wavel_center
 
-        """This doesn't work very well"""
-        # # first_solution = models.Linear1D(slope, intersect)
+        """experiment"""
+        forced_sol = models.Linear1D(slope=0.65, intercept=first_solution.intercept.value)
+
+        for line in lines_in_range:
+            plt.axhline(line, color='r')
+        for line in self.lines_center:
+            plt.axvline(line, color='g')
+        plt.title('f(x) = %s x + %s' % (first_solution.slope.value, first_solution.intercept.value))
+        plt.xlabel('Pixels')
+        plt.ylabel('Angstrom')
+        plt.plot(pixel_axis, first_solution(pixel_axis), color='b')
+        plt.plot(pixel_axis, forced_sol(pixel_axis), color='m')
+        plt.plot(pix1, wav1, marker='o', color='c')
+
+
+        first_solution = models.Linear1D(slope, intercept)
         fit_wavelength = fitting.LinearLSQFitter()
-        solution = fit_wavelength(first_solution, pixel_center, wavel_center)
+        second_solution = fit_wavelength(first_solution, pix1, wav1)
+        plt.plot(pixel_axis, second_solution(pixel_axis), linestyle='--', color='k')
+        plt.show()
+
+        reference_file = '/data/simon/data/SOAR/work/goodman/test/extraction-tests/CuHeAr_600.fits'
+        reference_data = fits.getdata(reference_file)
+        reference_header = fits.getheader(reference_file)
+        # reference_value = float(reference_header['CRVAL1'])
+        # reference_pixel = int(reference_header['CRPIX1'])
+        # delta = float(reference_header['CDELT1'])
+        # text = reference_header['WAT1_001'].split()
+        # text_dict = {}
+        # for value in text:
+        #    key, val = value.split('=')
+        #     text_dict[key] = val
+        # length = len(reference_data)
+
+        # start = reference_value - (reference_pixel - 1) * delta
+        # stop = start + (length - 1) * delta
+        # print 'Start ', start, 'Stop ', stop, 'Length ', length
+        # wavelength_axis = np.linspace(start, stop, length)
+        wavelength_axis = self.get_wavelength_solution(reference_header)
+        rf = '/data/simon/data/SOAR/work/goodman/test/extraction-tests/CuHeAr_600_nonlinear.fits'
+        rd = fits.getdata(rf)
+        rh = fits.getheader(rf)
+        rwa = self.get_wavelength_solution(rh)
+
+
+
+
+        plt.figure(1)
+        plt.subplot(211)
+        plt.xlim((0, 4096))
+        plt.plot(pixel_axis, self.data0)
+        for line in self.lines_center:
+            plt.axvline(line, color='g')
+        plt.xlabel('Pixel')
+
+
 
         """This solution works"""
-        poli_init = models.Polynomial1D(degree=2, domain=[0, len(self.data0)])
+        poli_init = models.Polynomial1D(degree=2) # , domain=[0, len(self.data0)])
         poli_init.c0 = 1
         poli_init.c1 = 1
         poli_init.c2 = 1
         fit_poli = fitting.LinearLSQFitter()
         poli_solution = fit_poli(poli_init, pixel_center, wavel_center)
 
-        # p = np.polyfit(self.lines_center, new_lines_estimated, 2)
-        # solution = lambda x: np.polyval(p, x)
-        # print(p)
+        """--------------"""
+        plt.subplot(212)
+        # plt.xlim((start, stop))
+
+        for culine in cuhear:
+            plt.axvline(culine[0], color=cuhear_colors[culine[1]])
+        # for w in wav1:
+            # plt.axvline(w, color='c')
+        # for line in lines_in_range:
+            # plt.axvline(line, color='r')
+        # plt.plot(poli_solution(pixel_axis), self.data0)
+        plt.plot(wavelength_axis, reference_data, color='g')
+        # plt.plot(rwa, rd, color='b')
+        # for p in linelist.line_list['CuAr']:
+            # plt.axvline(p, color='k', linestyle='-.')
+        plt.xlabel('Angstrom - poli')
+        plt.tight_layout()
+        plt.show()
+        """--------------"""
+
+
         plt.plot(pixel_axis, poli_solution(pixel_axis), color='m', label='Poli')
 
-        plt.plot(pixel_axis, solution(pixel_axis), label='Solution')
+        # plt.plot(pixel_axis, solution(pixel_axis), label='Solution')
 
         plt.plot(pixel_center, wavel_center, color='g', linestyle='--', marker='o',label='New Last')
-        # plt.plot(pix0, wav0, color='r', linestyle='--', marker='o', label='Real')
+        plt.plot(pix1, wav1, color='r', linestyle='--', marker='o', label='Real')
+        plt.plot(pixel_axis, fos(pixel_axis), label='First Order')
         plt.legend(loc='best')
         plt.show()
 
+        """Continue work from here...."""
+
+        pixel_to_angstrom_ii = poli_solution(self.lines_center)
+
+        for line in pixel_to_angstrom_ii:
+            plt.axvline(line, color='c', linestyle='-.')
+        """
         for nline in wavel_center:
             plt.axvline(nline, color='r')
             print(nline)
         for rline in lines_in_range:
             plt.axvline(rline, linestyle='--', color='g')
+        # """
+        plt.plot(second_solution(pixel_axis), self.data0, color='r')
+        plt.plot(fos(pixel_axis), self.data0, color='c')
 
         plt.plot(poli_solution(pixel_axis), self.data0)
         plt.xlabel('Wavelength (angstrom)')
         plt.ylabel('Intensity (counts)')
+        plt.legend()
         plt.show()
+
+
+
 
         plt.plot(pixel_axis, self.data0)
         for pixel in self.lines_center:
             plt.axvline(pixel, color='r')
         plt.show()
         print first_solution
-        print solution
+        print second_solution
+        print poli_solution
         # """
-
-
-
-
         return poli_solution
 
     @staticmethod
@@ -450,7 +643,8 @@ class WavelengthCalibration:
         # print lines
         return sorted(lines)
 
-    def pixel_axis_cross_correlate(self, reference, pixel_lines):
+    def pixel_axis_cross_correlate(self, reference, lines_in_range, pixel_lines):
+
         root_pixel_axis = np.linspace(0, 4096, 4096)
         reference_axis = np.zeros(len(root_pixel_axis))
         pixel_lines_axis = np.zeros(len(root_pixel_axis))
@@ -462,7 +656,7 @@ class WavelengthCalibration:
             pixel_lines_axis += gaussian(root_pixel_axis)
 
         """Cross correlate"""
-        lag_position = range(-200, 200, 1)
+        lag_position = range(-400, 400, 1)
         correlation = []
         for lag in lag_position:
             correlation_value = 0
@@ -474,7 +668,7 @@ class WavelengthCalibration:
             correlation.append(correlation_value)
         i_max = np.argmax(correlation)
 
-        """
+        # """
         plt.title('Lag Position: %s' % lag_position[i_max])
         plt.axvline(lag_position[i_max])
         plt.plot(lag_position, correlation)
@@ -490,6 +684,7 @@ class WavelengthCalibration:
 
 
     def add_wavelength_solution(self, new_header):
+
         new_header['BANDID1'] = 'spectrum - background none, weights none, clean no'
         # new_header['APNUM1'] = '1 1 1452.06 1454.87'
         new_header['WCSDIM'] = 1
@@ -505,6 +700,96 @@ class WavelengthCalibration:
         new_header['DCLOG1'] = 'REFSPEC1 = %s' % c_lamp
 
         # fits.writeto(out_lamp, new_data, new_header, clobber=True)
+        return new_header
+
+    @staticmethod
+    def get_wavelength_solution(header):
+        """Reproduces wavelength solution from the image's header
+
+
+
+        Args:
+            header:
+
+        Returns:
+
+        """
+        ctype1 = header['CTYPE1']
+        if ctype1 == 'LINEAR':
+            reference_value = float(header['CRVAL1'])
+            reference_pixel = int(header['CRPIX1'])
+            delta = float(header['CDELT1'])
+            text = header['WAT1_001'].split()
+            text_dict = {}
+            for value in text:
+                key, val = value.split('=')
+                text_dict[key] = val
+            if int(header['NAXIS']) == 1:
+                length = int(header['NAXIS1'])
+                start = reference_value - (reference_pixel - 1) * delta
+                stop = start + (length - 1) * delta
+                log.debug('Start %s Stop %s Length %s', start, stop, length)
+                wavelength_axis = np.linspace(start, stop, length)
+                return wavelength_axis
+            else:
+                log.error('Can not work with multi-axis files.')
+                return False
+        elif ctype1 == 'MULTISPE':
+            if int(header['WCSDIM']) == 2:
+                try:
+                    ctype2 = header['CTYPE2']
+                    if ctype2 == 'MULTISPE':
+                        cdelt2 = header['CDELT2']
+                        cd22 = header['CD2_2']
+                        ltm22 = header['LTM2_2']
+                        waxmap01 = header['WAXMAP01']
+                        wat2_keys = header['WAT2_*']
+                        wat2 = ''
+                        for key in wat2_keys:
+                            wat2 += header[key]
+
+                        wat = wat2.split('"')
+                        """
+                        taken from ftp://iraf.noao.edu/iraf/web/projects/fitswcs/specwcs.html
+                        and http://shaileshahuja.blogspot.cl/2014/06/analysing-iraf-multispec-format-fits.html
+                        wat index and meaning
+                        0 : Aperture
+                        1 : Beam
+                        2 : dtype
+                            -1 Spectrum not calibrated
+                            0 Linear dispersion sampling
+                            1 Log-linear dispersion
+                            2 Nonlinear dispersion.
+                        3 : Dispersion Value at start
+                        4 : Average Dispersion delta
+                        5 : Number of Pixels
+                        6 : Doppler Factor
+                        7 : Aperture Low
+                        8 : Aperture High
+                        9+ : functions i
+
+                        """
+
+                        if 'spec' not in wat[1]:
+                            print(True)
+
+                        print(wat2)
+                        print(wat[1])
+                        aperture = wat[1][0]
+                        beam = wat[1][1]
+                        dtype = wat[1][2]
+                        
+                    else:
+                        log.debug('Nothing to do!')
+                except KeyError:
+                    log.error('KeyError')
+        elif ctype1 == 'PIXEL':
+            log.error('This header does not contain a wavelength solution')
+            return False
+
+
+
+
 
 
 """

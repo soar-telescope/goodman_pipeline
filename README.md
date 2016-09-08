@@ -28,3 +28,16 @@ Place the files in your system's **$PATH** variable and then you can call it fro
 Needs python2.7 and a newer version of numpy1.12.0 otherwise there will
 be problems with numpy.linspace
 
+# Development Status
+
+The pipeline is organized in three files (this might increase):
+
+## redspec.py
+- [x] Read and Parse Arguments (uses argparse). Also checks for consistency.
+- [x] Define Night Class. Reads header information from and creates a class that contain important _night_ information.
+- [ ] Set mode to be used at the telescope (while observing). Is not defined yet if this is really necessary.
+- [ ] Organize Full Night. Edits the Night Class.
+  * [x] Mode 0: One lamp for all targets in the night.
+  * [x] Mode 1: One or more lamps per science target.
+  * [ ] Mode 2: A text file defines what lamps will be used in what targets.
+  * [ ] Mode 3: No lamps, solution will be calculated from skylines.

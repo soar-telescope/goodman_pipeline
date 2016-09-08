@@ -406,6 +406,8 @@ class Process:
                     """Define limits of aperture for spectrum"""
                     x_min = int(round(chebyshev(i))) - half_width
                     x_max = int(round(chebyshev(i))) + half_width
+                    if i == int(y/2):
+                        log.debug('Aperture for extraction [%s:%s] at %s (add this to header)', x_min, x_max, i)
 
                     """If there are background extraction zones here are prepared to subtract"""
                     if len(background) > 1:
