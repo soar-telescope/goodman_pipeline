@@ -36,10 +36,10 @@ class Process:
                 self.lamps_data.append(lamp_data)
                 lamp_header = fits.getheader(self.path + self.science_object.lamp_file[lamp_index])
                 self.lamps_header.append(lamp_header)
-        self.targets = self.identify_spectra()
-        self.traces = self.trace(self.targets)
-        self.extracted_data = self.extract(self.traces)
-        wavelengthCalibration.WavelengthCalibration(self.path, self.extracted_data, self.science_object)
+            self.targets = self.identify_spectra()
+            self.traces = self.trace(self.targets)
+            self.extracted_data = self.extract(self.traces)
+            wavelengthCalibration.WavelengthCalibration(self.path, self.extracted_data, self.science_object)
 
     def identify_spectra(self):
         """Finds the location of the spectrum or spectra in case there are more

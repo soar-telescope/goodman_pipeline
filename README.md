@@ -33,11 +33,44 @@ be problems with numpy.linspace
 The pipeline is organized in three files (this might increase):
 
 ## redspec.py
+This module basically organizes the data and sort of makes a plan for processing the night.
+
 - [x] Read and Parse Arguments (uses argparse). Also checks for consistency.
 - [x] Define Night Class. Reads header information from and creates a class that contain important _night_ information.
 - [ ] Set mode to be used at the telescope (while observing). Is not defined yet if this is really necessary.
-- [ ] Organize Full Night. Edits the Night Class.
+- [ ] Organize Full Night. Edits the Night Class by adding SienceObject wich will be defined depending on one of the following modes.
   * [x] Mode 0: One lamp for all targets in the night.
   * [x] Mode 1: One or more lamps per science target.
   * [ ] Mode 2: A text file defines what lamps will be used in what targets.
   * [ ] Mode 3: No lamps, solution will be calculated from skylines.
+
+For every ScienceObject the module Process is called wich will do the actual work.
+
+## process.py
+In order to work this needs the source's path and a ScienceObject (class).
+
+- [x] Read target data and header.
+- [ ] For any of the modes that use comparison lamps:
+  1. [x] Read lamps data and header
+  2. [x] Identify single targets (one target in the slit)
+  3. [ ] Identify multiple targets (most of the work done but not tested recently)
+  4. [x] Trace spectrum.
+  5. [x] Extract data.
+- [ ] Nothing done for the case when skylines will be used as wavelength calibrators.
+
+After the extraction of the spectrum it will be packed and then parsed to the next module.
+
+## wavelengthCalibration.py
+**TODO**: find a better name
+
+- [x] Interpret science pack (parsed from previous module)
+- [ ] Automatic Wavelength Calibration
+  - [x] Identify lines
+  - [x] Estimate wavelength solution from information in the header
+  - [ ] Find wavelength solution (can be tricky and will take some time)
+- [ ] Automatic Wavelength Calibration by template (can also be tricky since dispersion is not linear)
+- [ ] Find wavelength solution interactively.
+- [ ] Put wavelength solution in the header and write down files.
+
+
+# Documentation Status Estimate
