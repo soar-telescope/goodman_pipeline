@@ -76,6 +76,7 @@ After the extraction of the spectrum it will be packed and then parsed to the ne
 # Documentation Status Estimate
 In **Bold** are the classes and in _italics_ are their respective methods.
 The values presented here are based only on my personal perception and satisfaction about the status of progress
+The class percentage doesn't take in account the completeness of 
 
 ## redspec.py
 - **MainApp** 100%
