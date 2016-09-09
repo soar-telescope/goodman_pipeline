@@ -1,0 +1,401 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>redspec module &mdash; Goodman Spectrum Extraction Tool 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Goodman Spectrum Extraction Tool 0.1 documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-redspec">
+<span id="redspec-module"></span><h1>redspec module<a class="headerlink" href="#module-redspec" title="Permalink to this headline">¶</a></h1>
+<p>Pipeline for GOODMAN spectra Extraction.</p>
+<p>This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded, etc. that match the &lt;pattern&gt;
+in the source folder, then classify them in two groups: Science or Lamps. For science images, finds the spectrum
+or spectra and traces it doing some fit.
+Simon Torres 2016-06-28</p>
+<dl class="class">
+<dt id="redspec.MainApp">
+<em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">MainApp</code><a class="headerlink" href="#redspec.MainApp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines and intialize all important variables for processing the data</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>doesn't take any arguments</strong> (<em>It</em>) &#8211; </td>
+</tr>
+</tbody>
+</table>
+<dl class="staticmethod">
+<dt id="redspec.MainApp.convert_time">
+<em class="property">static </em><code class="descname">convert_time</code><span class="sig-paren">(</span><em>in_time</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.convert_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts time to seconds since epoch</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>in_time</strong> (<em>str</em>) &#8211; time obtained from header&#8217;s keyword DATE-OBS</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">time in seconds since epoch</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="redspec.MainApp.get_args">
+<em class="property">static </em><code class="descname">get_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.get_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles the argparse library and returns the arguments</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><p>An object that contains all the variables parsed through the argument system
+The possible arguments to be returned are:</p>
+<dl class="docutils">
+<dt>-p or &#8211;data-path: has to be the source directory, where the data (images) is.</dt>
+<dd><p class="first last">the location is <strong>self.source</strong>
+default value is ./</p>
+</dd>
+<dt>-d or &#8211;proc-path: is the destination where all new files/data will be placed.</dt>
+<dd><p class="first last">the location is self.destiny
+default value is ./</p>
+</dd>
+<dt>-s or &#8211;search-pattern: the pattern that matches the reduced data that will be processed.</dt>
+<dd><p class="first last">the location is self.pattern
+default value is <a href="#id1"><span class="problematic" id="id2">fc_</span></a></p>
+</dd>
+<dt>-m or &#8211;obs-mode: is one of the predefined observing modes and the options are:</dt>
+<dd><p class="first last">0: One or more lamps taken during the beginning or end of the night, i.e. single
+calibration to all data in that night
+1: One or more lamps right before OR right after every science exposure.
+2: One or more lamps right before AND right after every science exposure.
+3: An ASCII file will be read. This file contains a matching of sience target files
+to respective calibration lamp file that will be used for calibration.
+the location is self.mode
+default value is 0</p>
+</dd>
+<dt>-l or &#8211;lamp-file: Name of the ASCII file that contains the relation between science files and lamp</dt>
+<dd><dl class="first docutils">
+<dt>files. An example is depicted below. Note that the lamps can be repeated.</dt>
+<dd><p class="first last">#example of how the file should look
+science_target_01.fits lamp_001.fits
+science_target_02.fits lamp_001.fits
+science_target_03.fits lamp_002.fits</p>
+</dd>
+</dl>
+<p class="last">the location is self.lamp_file
+default value is lamps.txt</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
+<li>In the case when -m or &#8211;obs-mode is set to 3 will requiere the name of file parsed with the -l or</li>
+<li>&#8211;lamp-file parameter an IOError is raised</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.MainApp.organize_full_night">
+<code class="descname">organize_full_night</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.organize_full_night" title="Permalink to this definition">¶</a></dt>
+<dd><p>Organize the data according to the Observing Mode</p>
+<p>There are four observing modes defined</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Nothing. But modifies the output of</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="redspec.MainApp.print_progress">
+<em class="property">static </em><code class="descname">print_progress</code><span class="sig-paren">(</span><em>current</em>, <em>total</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.print_progress" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="redspec.MainApp.print_spacers">
+<em class="property">static </em><code class="descname">print_spacers</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.print_spacers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Miscelaneous function to print uniform spacers</p>
+<p>Prints a spacer of 80 columns with  and 3 rows height. The first and last rows contains the symbol &#8220;=&#8221;
+repeated 80 times. The middle row contains the message centered and the extremes has one single &#8220;=&#8221; symbol.
+The only functionality of this is aesthetic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<em>str</em>) &#8211; a message to be printed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a True boolean</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="redspec.MainApp.ra_dec_to_deg">
+<em class="property">static </em><code class="descname">ra_dec_to_deg</code><span class="sig-paren">(</span><em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.ra_dec_to_deg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts right ascension and declination to degrees</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ra</strong> (<em>str</em>) &#8211; right ascension</li>
+<li><strong>dec</strong> (<em>str</em>) &#8211; declination</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">right ascension and declination in degrees</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.MainApp.set_night">
+<code class="descname">set_night</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.set_night" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines and initialize the &#8216;night&#8217; class</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>new_night</strong> &#8211; A class that stores critical data of the night that will be processed and can be
+parsed to other methods.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="redspec.Night">
+<em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">Night</code><span class="sig-paren">(</span><em>date</em>, <em>source</em>, <em>destiny</em>, <em>pattern</em>, <em>mode</em>, <em>lamps</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores all data relevant to the night being processed</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The night class stores the data relative to single observing night
+therefore this software works on a per-night basis</p>
+</div>
+<dl class="method">
+<dt id="redspec.Night.add_lamp">
+<code class="descname">add_lamp</code><span class="sig-paren">(</span><em>inlamp</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.add_lamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds lamp objects to list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.Night.add_sci">
+<code class="descname">add_sci</code><span class="sig-paren">(</span><em>insci</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.add_sci" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds science object to list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.Night.add_sci_object">
+<code class="descname">add_sci_object</code><span class="sig-paren">(</span><em>sci_obj</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.add_sci_object" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redspec.Night.is_telescope">
+<code class="descname">is_telescope</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.is_telescope" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="redspec.ScienceObject">
+<em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">ScienceObject</code><span class="sig-paren">(</span><em>name</em>, <em>file_name</em>, <em>obs_time</em>, <em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>class that defines a science object attributes</p>
+<p>Sci objects, for science, are the main targets which have lamps for
+calibration. Their atritutes are: the name, the file name, the
+observation time, right ascension and declination. The same information
+can be obtained for the lamps but they are treated as lists
+The list are created in a way that allows the use of elements&#8217; index
+as the correlator between atributes of the lamp.</p>
+<dl class="attribute">
+<dt id="redspec.ScienceObject.name">
+<code class="descname">name</code><a class="headerlink" href="#redspec.ScienceObject.name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; science object name</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.file_name">
+<code class="descname">file_name</code><a class="headerlink" href="#redspec.ScienceObject.file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; file name</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.obs_time">
+<code class="descname">obs_time</code><a class="headerlink" href="#redspec.ScienceObject.obs_time" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>str</em> &#8211; observing time in the format yyyy-mm-ddThh:mm:ss.ss for instance 2016-03-20T23:54:15.96</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.ra">
+<code class="descname">ra</code><a class="headerlink" href="#redspec.ScienceObject.ra" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; right ascension in degrees</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.dec">
+<code class="descname">dec</code><a class="headerlink" href="#redspec.ScienceObject.dec" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>float</em> &#8211; declination in degrees</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.lamp_count">
+<code class="descname">lamp_count</code><a class="headerlink" href="#redspec.ScienceObject.lamp_count" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>int</em> &#8211; lamps count</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.lamp_file">
+<code class="descname">lamp_file</code><a class="headerlink" href="#redspec.ScienceObject.lamp_file" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> &#8211; every element is a string with the file name of the lamp</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.lamp_type">
+<code class="descname">lamp_type</code><a class="headerlink" href="#redspec.ScienceObject.lamp_type" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> &#8211; every element is a string with the OBJECT value of the lamp i.e Cu, HgAr, etc</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.lamp_ra">
+<code class="descname">lamp_ra</code><a class="headerlink" href="#redspec.ScienceObject.lamp_ra" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> &#8211; every element is a float with lamp&#8217;s right ascension in degrees</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="redspec.ScienceObject.lamp_dec">
+<code class="descname">lamp_dec</code><a class="headerlink" href="#redspec.ScienceObject.lamp_dec" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> &#8211; every element is a float with lamp&#8217;s declination in degrees</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.ScienceObject.add_lamp">
+<code class="descname">add_lamp</code><span class="sig-paren">(</span><em>new_lamp</em>, <em>new_type</em>, <em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject.add_lamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a lamp to the science object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>new_lamp</strong> (<em>str</em>) &#8211; new lamp file name</li>
+<li><strong>new_type</strong> (<em>str</em>) &#8211; new lamp type</li>
+<li><strong>ra</strong> (<em>float</em>) &#8211; right ascension in degrees</li>
+<li><strong>dec</strong> (<em>float</em>) &#8211; declination in degrees</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.ScienceObject.print_all">
+<code class="descname">print_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject.print_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints all the relevant attributes of the object</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">this method is mainly used for development purposes</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/redspec.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Simon Torres R..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/redspec.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
