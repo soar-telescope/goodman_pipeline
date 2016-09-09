@@ -23,18 +23,22 @@
 <a id="goodman-high-throughput-spectrograph" class="anchor" href="#goodman-high-throughput-spectrograph" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Goodman High Throughput Spectrograph</h1>
 
 <p><strong>WARNING</strong> This code is being developed and is not ready for
- scientific use. Always check the branch other than master.</p>
+ scientific use. Always check the branch <strong>other than master</strong>.</p>
+
+<p>If you are interested in this software </p>
 
 <p>The Goodman High Throughput Spectrograph is an imaging spectrograph
  if you wish to know more about the instrument please check the 
  <a href="http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph">SOAR website</a></p>
+
+<p>To see full documentation please go to the GitHub hosted site for <a href="https://simontorres.github.io/goodman/">Goodman</a></p>
 
 <h2>
 <a id="what-is-contained-in-this-package" class="anchor" href="#what-is-contained-in-this-package" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is contained in this package?</h2>
 
 <p>This repository contains tools for spectroscopy, but after the data is 
 reduced, i.e. bias and flat corrected, for that part please use 
-<a href="link">David Sanmartim's</a> github repository.</p>
+<a href="https://github.com/dsanmartim/goodman_ccdreduction">David Sanmartim's</a> github repository.</p>
 
 <h4>
 <a id="redspecpy" class="anchor" href="#redspecpy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>redspec.py</h4>
@@ -51,6 +55,204 @@ reduced, i.e. bias and flat corrected, for that part please use
 
 <p>Needs python2.7 and a newer version of numpy1.12.0 otherwise there will
 be problems with numpy.linspace</p>
+
+<h1>
+<a id="development-status" class="anchor" href="#development-status" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Development Status</h1>
+
+<p>The pipeline is organized in three files (this might increase):</p>
+
+<h2>
+<a id="redspecpy-1" class="anchor" href="#redspecpy-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>redspec.py</h2>
+
+<p>This module basically organizes the data and sort of makes a plan for processing the night.</p>
+
+<ul>
+<li>[x] Read and Parse Arguments (uses argparse). Also checks for consistency.</li>
+<li>[x] Define Night Class. Reads header information from and creates a class that contain important <em>night</em> information.</li>
+<li>[ ] Set mode to be used at the telescope (while observing). Is not defined yet if this is really necessary.</li>
+<li>[ ] Organize Full Night. Edits the Night Class by adding SienceObject wich will be defined depending on one of the following modes.
+
+<ul>
+<li>[x] Mode 0: One lamp for all targets in the night.</li>
+<li>[x] Mode 1: One or more lamps per science target.</li>
+<li>[ ] Mode 2: A text file defines what lamps will be used in what targets.</li>
+<li>[ ] Mode 3: No lamps, solution will be calculated from skylines.</li>
+</ul>
+</li>
+</ul>
+
+<p>For every ScienceObject the module Process is called wich will do the actual work.</p>
+
+<h2>
+<a id="processpy" class="anchor" href="#processpy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>process.py</h2>
+
+<p>In order to work this needs the source's path and a ScienceObject (class).</p>
+
+<ul>
+<li>[x] Read target data and header.</li>
+<li>[ ] For any of the modes that use comparison lamps:
+
+<ol>
+<li>[x] Read lamps data and header</li>
+<li>[x] Identify single targets (one target in the slit)</li>
+<li>[ ] Identify multiple targets (most of the work done but not tested recently)</li>
+<li>[x] Trace spectrum.</li>
+<li>[x] Extract data.
+
+<ul>
+<li>[x] Normal Extraction</li>
+<li>[ ] Optimal extraction</li>
+</ul>
+</li>
+</ol>
+</li>
+<li>[ ] Nothing done for the case when skylines will be used as wavelength calibrators.</li>
+</ul>
+
+<p>After the extraction of the spectrum it will be packed and then parsed to the next module.</p>
+
+<h2>
+<a id="wavelengthcalibrationpy" class="anchor" href="#wavelengthcalibrationpy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>wavelengthCalibration.py</h2>
+
+<p><strong>TODO</strong>: find a better name</p>
+
+<ul>
+<li>[x] Interpret science pack (parsed from previous module)</li>
+<li>[ ] Automatic Wavelength Calibration
+
+<ul>
+<li>[x] Identify lines</li>
+<li>[x] Estimate wavelength solution from information in the header</li>
+<li>[ ] Find wavelength solution (can be tricky and will take some time)</li>
+</ul>
+</li>
+<li>[ ] Automatic Wavelength Calibration by template (can also be tricky since dispersion is not linear)</li>
+<li>[ ] Find wavelength solution interactively.</li>
+<li>[ ] Put wavelength solution in the header and write down files.</li>
+</ul>
+
+<h1>
+<a id="documentation-status-estimate" class="anchor" href="#documentation-status-estimate" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Documentation Status Estimate</h1>
+
+<p>In <strong>Bold</strong> are the classes and in <em>italics</em> are their respective methods.
+The values presented here are based only on my personal perception and satisfaction about the status of progress
+The class percentage doesn't take in account the completeness of </p>
+
+<h2>
+<a id="redspecpy-2" class="anchor" href="#redspecpy-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>redspec.py</h2>
+
+<ul>
+<li>
+<p><strong>MainApp</strong> 100%</p>
+
+<ul>
+<li>_  <strong>init</strong> _ 0%</li>
+<li>
+<em>get_args</em>  100%</li>
+<li>
+<em>set_night</em> 95%  - Could be improved</li>
+<li>
+<em>organize_full_night</em> 30%</li>
+<li>
+<em>convert_time</em> 100%</li>
+<li>
+<em>ra_dec_to_deg</em> 100%</li>
+<li>
+<em>print_spacers</em> 100% - Most likely will be removed</li>
+<li>
+<em>print_progress</em> 0% - Most likely will be removed</li>
+</ul>
+</li>
+<li>
+<p><strong>Night</strong> 70%</p>
+
+<ul>
+<li>_  <strong>init</strong> _ 0%</li>
+<li>
+<em>add_sci</em> 100%</li>
+<li>
+<em>add_lamp</em> 100%</li>
+<li>
+<em>add_sci_object</em> 0%</li>
+<li>
+<em>is_telescope</em> 0%</li>
+</ul>
+</li>
+<li>
+<p><strong>ScienceObject</strong> 100%</p>
+
+<ul>
+<li>_  <strong>init</strong> _ 0%</li>
+<li>
+<em>add_lamp</em> 100%</li>
+<li>
+<em>print_all</em> 100%</li>
+</ul>
+</li>
+</ul>
+
+<h2>
+<a id="processpy-1" class="anchor" href="#processpy-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>process.py</h2>
+
+<ul>
+<li>
+<p><strong>Process</strong> 100%</p>
+
+<ul>
+<li>_  <strong>init</strong> _ 0%</li>
+<li>
+<em>identify_spectra</em> 100%</li>
+<li>
+<em>trace</em> 100%</li>
+<li>
+<em>mask</em> 100%</li>
+<li>
+<em>extract</em> 100%</li>
+</ul>
+</li>
+<li>
+<p><strong>IdentifiedTarget</strong> 50%</p>
+
+<ul>
+<li>_  <strong>init</strong> _ 0%</li>
+</ul>
+</li>
+</ul>
+
+<h2>
+<a id="wavelengthcalibrationpy-1" class="anchor" href="#wavelengthcalibrationpy-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>wavelengthCalibration.py</h2>
+
+<ul>
+<li>
+<strong>WavelengthCalibration</strong> 0%
+
+<ul>
+<li>_  <strong>init</strong> _ 0%</li>
+<li>
+<em>interpolate</em> 100%</li>
+<li>
+<em>recenter_line</em> 100% - Most likely will be removed</li>
+<li>
+<em>get_line_limits</em> 100%</li>
+<li>
+<em>get_line_centers</em> 100%</li>
+<li>
+<em>get_spectral_characteristics</em> 70%</li>
+<li>
+<em>predicted_wavelength</em> 0%</li>
+<li>
+<em>wavelength_solution</em> 1%</li>
+<li>
+<em>get_lines_in_range</em> 0%</li>
+<li>
+<em>pixel_axis_cross_correlate</em> 0%</li>
+<li>
+<em>add_wavelength_solution</em> 0%</li>
+<li>
+<em>get_wavelength_solution</em> 0%</li>
+</ul>
+</li>
+</ul>
 
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/simontorres/goodman">Goodman</a> is maintained by <a href="https://github.com/simontorres">simontorres</a>.</span>
