@@ -56,6 +56,8 @@ In order to work this needs the source's path and a ScienceObject (class).
   3. [ ] Identify multiple targets (most of the work done but not tested recently)
   4. [x] Trace spectrum.
   5. [x] Extract data.
+    - [x] Normal Extraction
+    - [ ] Optimal extraction
 - [ ] Nothing done for the case when skylines will be used as wavelength calibrators.
 
 After the extraction of the spectrum it will be packed and then parsed to the next module.
