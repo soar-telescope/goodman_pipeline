@@ -765,7 +765,20 @@ class WavelengthCalibration:
                         6 : Doppler Factor
                         7 : Aperture Low
                         8 : Aperture High
-                        9+ : functions i
+                        ---
+                        9 : Weight
+                        10 : Zero-point offset
+                        11 : Function type
+                            1 Chebyshev polynomial
+                            2 Legendre polynomial
+                            3 Cubic spline
+                            4 Linear spline
+                            5 Pixel coordinate array
+                            6 Sampled coordinate array
+                        12 : Order of function
+                        13 : Minimum Pixel Value
+                        14 : Maximum Pixel Value
+                        15+ : Coefficients of functions i
 
                         """
 

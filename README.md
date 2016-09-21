@@ -84,19 +84,19 @@ The class percentage doesn't take in account the completeness of
 - **MainApp** 100%
   - _  __init__ _ 0%
   - _get_args_  100%
-  - _set_night_ 95%  - Could be improved
-  - _organize_full_night_ 30%
+  - _set_night_ 100%
+  - _organize_full_night_ 100%
   - _convert_time_ 100%
   - _ra_dec_to_deg_ 100%
   - _print_spacers_ 100% - Most likely will be removed
-  - _print_progress_ 0% - Most likely will be removed
+  - _print_progress_ 100% - Most likely will be removed
 
 - **Night** 70%
   - _  __init__ _ 0%
   - _add_sci_ 100%
   - _add_lamp_ 100%
-  - _add_sci_object_ 0%
-  - _is_telescope_ 0%
+  - _add_sci_object_ 100%
+  - _is_telescope_ 100%
   
 - **ScienceObject** 100%
   - _  __init__ _ 0%

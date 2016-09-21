@@ -166,7 +166,7 @@ Supported Observing modes are:
         else:
             if args.destiny[-1] != '/':
                 args.destiny += '/'
-        if args.mode == 3:
+        if args.mode == 2:
             print(args.source + args.lamp_file)
             if not os.path.isfile(args.source + args.lamp_file):
                 if args.lamp_file == 'lamps.txt':
@@ -182,6 +182,12 @@ Supported Observing modes are:
 
     def set_night(self):
         """Defines and initialize the 'night' class
+
+        Uses information parsed by arguments to construct a table with the values of the keys specified within the
+        code itself. A night object stores specific values regarding the night that is going to be processed. If the
+        program is not going to be used while observing at the telescope it creates two lists of images, one for
+        science and another for lamp files. Although the telescope mode is not fully developed yet, in case of it being
+        selected it will return the night object without the list of images.
 
         Returns:
             new_night (class): A class that stores critical data of the night that will be processed and can be
@@ -213,10 +219,27 @@ Supported Observing modes are:
     def organize_full_night(self):
         """Organize the data according to the Observing Mode
 
-        There are four observing modes defined
+        There are four observing modes defined by numbers in Python's style. From 0 to 3:
+
+        In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks
+        up the first calibration lamp and uses it to find the wavelength calibration it doesn't discriminate if the lamp
+        has good quality.
+
+        In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
+        in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure
+        time itself. For the sky distance calculation a flat sky is assumed.
+
+        In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
+        used by using a octothorp or hash (#) followed by one space. Not implemented yet.
+
+        In mode 3 no sky lamp is used, instead the science target's spectrum will be calibrated using sky lines.
 
         Returns:
-            Nothing. But modifies the output of
+            Nothing. But creates a ScienceObject object and stores it in the night class. ScienceObject is one of its
+            attributes.
+
+        Raises:
+            NotImplementedError: For mode 3.
 
         """
         self.print_spacers("Processing night %s" % self.night.date)
@@ -287,12 +310,15 @@ Supported Observing modes are:
             ff = open(lamps_file_full)
             ff = ff.readlines()
             for i in range(len(ff)):
-                ff[i] = ff[i].split()
-                print(ff[i])
+                if ff[i][0] != '#':
+                    ff[i] = ff[i].split()
+                    print(ff[i])
+
 
         if self.night.obsmode == 3:
             log.info("Observation mode 3")
             log.debug("No Lamps. Use sky lines")
+            raise NotImplementedError
 
         # science_object.print_all()
         # self.print_spacers(name)
@@ -367,6 +393,18 @@ Supported Observing modes are:
 
     @staticmethod
     def print_progress(current, total):
+        """Prints the percentage of a progress
+
+        It works for FOR loops, requires to know the full length of the loop. Prints to the standard output.
+
+        Args:
+            current (int): Current value in the range of the loop.
+            total (int): The length of the loop.
+
+        Returns:
+            Nothing
+
+        """
         if current == total:
             sys.stdout.write("Progress {:.2%}\n".format(1.0 * current / total))
         else:
@@ -408,10 +446,12 @@ class Night:
         self.all.extend(inlamp)
 
     def add_sci_object(self, sci_obj):
+        """Appends a ScienceObject to the class attribute sci_targets"""
         self.sci_targets.append(sci_obj)
         log.info("Added science object %s" % sci_obj.name)
 
     def is_telescope(self):
+        """Sets the operation mode as Telescope Mode"""
         self.telescope = True
 
 
