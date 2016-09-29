@@ -2,16 +2,20 @@ from astropy.io import fits
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.modeling import models, fitting
+from astropy.stats import sigma_clip
 from specutils.wcs import specwcs
 import scipy.interpolate
 import linelist
 import logging as log
 import glob # remove later
 import sys
+import time
+import wsBuilder
 
 
 class WavelengthCalibration:
     def __init__(self, path, sci_pack, science_object):
+        self.wsolution = None
         self.science_object = science_object
         self.slit_offset = 0
         self.interpolation_size = 200
@@ -20,7 +24,23 @@ class WavelengthCalibration:
         self.grating_frequency = 0
         self.grating_angle = float(0)
         self.camera_angle = float(0)
+        """Clicks recording"""
+        self.reference_clicks = []
+        self.reference_clicks_x = []
+        self.raw_data_clicks = []
+        self.raw_data_clicks_x = []
+        self.ref_click_plot = None
+        self.raw_click_plot = None
+        self.click_input_enabled = True
+        self.reference_bb = None
+        self.raw_data_bb = None
+        self.i_fig = None
+        self.filling_value = 1000
+        self.events = True
         # self.binning = self.header0[]
+        """Remove this one later"""
+        self.pixelcenter = []
+        """End Remove"""
         self.binning = 1
         self.pixel_count = 0
         self.alpha = 0
@@ -43,13 +63,20 @@ class WavelengthCalibration:
         if self.science_object.lamp_count > 0:
             for l in range(1,self.science_object.lamp_count + 1):
                 self.data0 = self.all_data[l]
+                self.raw_pixel_axis = range(1, len(self.data0) + 1, 1)
                 self.header0 = self.all_headers[l]
                 log.info('Processing Comparison Lamp: %s' % self.header0['OBJECT'])
                 self.data1 = self.interpolate(self.data0)
                 self.lines_limits = self.get_line_limits()
                 self.lines_center = self.get_line_centers(self.lines_limits)
                 self.spectral = self.get_spectral_characteristics()
-                self.wsolution = self.wavelength_solution()
+                if True:
+                    self.reference_solution = None
+                    self.interactive_wavelenth_solution()
+                    self.evaluate_solution()
+                else:
+                    pass
+                    # self.wsolution = self.wavelength_solution()
             self.header = self.add_wavelength_solution(self.header)
         else:
             log.error('There are no lamps to process')
@@ -84,7 +111,7 @@ class WavelengthCalibration:
         return [new_x_axis, new_spectrum]
 
     @staticmethod
-    def recenter_line(x, y, max_val, max_pos, model='gauss'):
+    def recenter_line_by_model(x, y, max_val, max_pos, model='gauss'):
         """Recalculates the center of a line by fitting a model
 
         This method fits one of the three line profiles to the input data. It works well in lines with good signal to
@@ -138,8 +165,8 @@ class WavelengthCalibration:
 
         This is the spectral line identifying method. It calculates a pseudo-derivative of the spectrum thus determining
         peaks. For a typical spectrum a pseudo-derivative, from now on just "derivative", will produce a series of
-        positive and negative peaks, for emission lines. Since we will be using it for comparison lamps we don't have
-        to worry about absorption lines and therefore this method only detects emission lines.
+        positive and negative peaks, for emission lines. Since we will be using it for comparison lamps only we don't
+        have to worry about absorption lines and therefore this method only detects emission lines.
         A threshold is defined by calculating the 75 percent of the standard deviation of the derivative. There
         is no particular reason for choosing 75 percent is just the value that worked best for all the test subjects.
         Then any search for lines must be done for values above and below of the threshold and its negative
@@ -275,13 +302,14 @@ class WavelengthCalibration:
             data_axis = self.data1[1][i_min:i_max]
             pixel_center = self.data1[0][int(round(center))]
             center_val = self.data1[1][int(round(center))]
-            new_center = self.recenter_line(pixel_axis, data_axis, center_val, pixel_center, 'gauss')
+            new_center = self.recenter_line_by_model(pixel_axis, data_axis, center_val, pixel_center, 'gauss')
             """
             plt.plot(pixel_axis, data_axis)
             plt.axvline(pixel_center)
             plt.axvline(new_center, color='m')
             plt.show()
             """
+            self.pixelcenter.append([pixel_center, center_val])
             centers.append(pixel_center)
             # print(center, width)
         return centers
@@ -333,20 +361,161 @@ class WavelengthCalibration:
                                          np.arctan((pixel * d - 2048) * 0.015 / 377.2)))
         return wavelength
 
+    def find_more_lines(self):
+        new_physical = []
+        new_wavelength = []
+        square_differences = []
+        if self.wsolution is not None:
+            wlines = self.wsolution(self.lines_center)
+            for i in range(len(wlines)):
+                closer_index = np.argmin(abs(linelist.line_list['CuAr'] - wlines[i]))
+                rline = linelist.line_list['CuAr'][closer_index]
+                rw_difference = wlines[i] - rline
+                print 'Difference w - r ', rw_difference, rline
+                square_differences.append(rw_difference ** 2)
+                new_physical.append(self.lines_center[i])
+                new_wavelength.append(rline)
+            clipped_differences = sigma_clip(square_differences, sigma=2, iters=10)
+            if len(new_wavelength) == len(new_physical) == len(clipped_differences):
+                for e in range(len(new_wavelength)):
+                    if clipped_differences is not np.ma.masked and new_wavelength[e] not in self.reference_clicks_x:
+                        self.reference_clicks_x.append(new_wavelength[e])
+                        self.reference_clicks.append([new_wavelength[e], self.filling_value])
+                        self.raw_data_clicks_x.append(new_physical[e])
+                        self.raw_data_clicks.append([new_physical[e], self.filling_value])
+        return True
+
+    def interactive_wavelenth_solution(self):
+        # def interactive_solution(raw_file, reference_file):
+        """------- Reference -------"""
+        reference_file = '/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear_reference_noao.fits'
+        ref_data = fits.getdata(reference_file)
+        ref_header = fits.getheader(reference_file)
+        reference = wsBuilder.ReadWavelengthSolution(ref_header, ref_data)
+        self.reference_solution = reference.get_wavelength_solution()
+        """------- RAW -------"""
+        # raw_data = fits.getdata(raw_file)
+        # raw_header = fits.getheader(raw_file)
+        raw = wsBuilder.ReadWavelengthSolution(self.data0, self.header0)
+        # raw_solution = raw.get_wavelength_solution()
+        """------- Plots -------"""
+        # plt.ion()
+
+        while self.click_input_enabled:
+            self.i_fig = plt.figure(1)
+            manager = plt.get_current_fig_manager()
+            manager.window.maximize()
+            # manager.window.attributes('-topmost', 0)
+            ax1 = plt.subplot(211)
+            ax1.set_title('Raw Data')
+            ax1.set_xlabel('Pixels')
+            ax1.set_ylabel('Intensity (counts)')
+            for idline in self.lines_center:
+                ax1.axvline(idline, linestyle='-.', color='r')
+            if self.raw_data_clicks != []:
+                for i in range(len(self.raw_data_clicks)):
+                    ax1.plot(self.raw_data_clicks_x[i], self.raw_data_clicks[i][1], marker='o', color='r')
+                    ax1.plot(self.raw_data_clicks[i][0], self.raw_data_clicks[i][1], marker='o', color='k')
+                    ax1.text(self.raw_data_clicks[i][0], self.raw_data_clicks[i][1] + 100, str(i + 1))
+            # self.raw_click_plot, = ax1.plot([], [], marker='o', color='k')
+            ax1.plot(self.raw_pixel_axis, self.data0, color='b')
+            ax1.set_xlim((0, 4096))
+
+            # print bb
+            # print plt.axes()
+
+            ax2 = plt.subplot(212)
+            # plt.xlim((3589, 4930))
+            ax2.set_title('Reference Data')
+            ax2.set_xlabel('Wavelength (Angstrom)')
+            ax2.set_ylabel('Intensity (counts)')
+            if self.reference_clicks != []:
+                for i in range(len(self.reference_clicks)):
+                    ax2.plot(self.reference_clicks_x[i], self.reference_clicks[i][1], marker='o', color='r')
+                    ax2.plot(self.reference_clicks[i][0], self.reference_clicks[i][1], marker='o', color='k')
+                    ax2.text(self.reference_clicks[i][0], self.reference_clicks[i][1] + 100, str(i + 1))
+            for rline in linelist.line_list['CuAr']:
+                ax2.axvline(rline, linestyle=':', color='m', alpha=0.9)
+            # self.ref_click_plot, = ax2.plot([], [], marker='o', color='k')
+            ax2.plot(self.reference_solution[0], self.reference_solution[1], color='b')
+            ax2.set_xlim((self.reference_solution[0][0], self.reference_solution[0][-1]))
+            if self.wsolution is not None:
+                ax2.plot(self.wsolution(self.raw_pixel_axis), self.data0, linestyle='-', color='r')
+            # plt.tight_layout()
+
+            plt.subplots_adjust(left=0.04, right=0.99, top=0.97, bottom=0.04, hspace=0.17)
+            self.raw_data_bb = ax1.get_position()
+            self.reference_bb = ax2.get_position()
+
+            # time.sleep(0.5)
+            if self.click_input_enabled:
+                self.i_fig.canvas.mpl_connect('button_press_event', self.on_click)
+                self.i_fig.canvas.mpl_connect('key_press_event', self.key_pressed)
+                print self.wsolution
+                plt.show()
+                # manager.window.set_focus()
+                # self.i_fig.canvas.draw()
+
+        for i in range(len(self.reference_clicks)):
+            print self.reference_clicks[i][0], self.raw_data_clicks[i][0]
+
+        return True
+
+    def evaluate_solution(self):
+        square_differences = []
+        wavelength_line_centers = self.wsolution(self.lines_center)
+
+        for wline in wavelength_line_centers:
+            # TODO define globals for reference data
+            closer_index = np.argmin(abs(linelist.line_list['CuAr'] - wline))
+            rline = linelist.line_list['CuAr'][closer_index]
+            rw_difference = wline - rline
+            print 'Difference w - r ', rw_difference, rline
+            square_differences.append(rw_difference ** 2)
+        clipped_square_differences = sigma_clip(square_differences, sigma=3, iters=5)
+        rms_error = np.sqrt(np.sum(clipped_square_differences) / len(clipped_square_differences))
+        print 'RMS Error :', rms_error
+        fig4 = plt.figure(4)
+        plt.plot(self.raw_pixel_axis, self.wsolution(self.raw_pixel_axis))
+        plt.plot(self.raw_data_clicks_x, self.reference_clicks_x, marker='o', color='g')
+        plt.xlabel('Pixel Axis')
+        plt.ylabel('Wavelength Axis')
+        plt.show()
+        return rms_error
+
+
+    def fit_pixel_to_wavelength(self):
+        if len(self.reference_clicks_x) and len(self.raw_data_clicks_x) > 0:
+            pixel = []
+            angstrom = []
+            for i in range(len(self.reference_clicks_x)):
+                pixel.append(self.raw_data_clicks_x[i])
+                angstrom.append(self.reference_clicks_x[i])
+            wavelength_solution = wsBuilder.WavelengthFitter(model='chebyshev', degree=3)
+            self.wsolution = wavelength_solution.ws_fit(pixel, angstrom)
+
+        else:
+            log.error('Clicks record is empty')
+            if self.wsolution is not None:
+                self.wsolution = None
+
+    """
     def wavelength_solution(self):
-        """Preliminary Solution"""
+        # Preliminary Solution
         pixel_axis = range(1, 4097)
         # pixel_axis = pixel_axis - pixel_axis.size // 2
         slope = self.spectral['pix2'] - self.spectral['pix1']
         intercept = self.spectral['pix1'] - slope
         first_solution = models.Linear1D(slope, intercept)
+        chebyshev_solution = models.Chebyshev1D(degree=3)
+        fit_chebyshev = fitting.LevMarLSQFitter()
 
         fit_linear = fitting.LinearLSQFitter()
-        """Pixel to wavelength parameters"""
+        # Pixel to wavelength parameters
         # manual input for testing
         # pix0 = [205.39, 805.99, 1280.07, 2967.24, 3445.09, 3477.87]
         # wav0 = [3650.153, 4046.563, 4358.328, 5460.735, 5769.598, 5790.663]
-        """
+
         pix1 = [1563.51,
                 1617.94,
                 1633.06,
@@ -362,7 +531,7 @@ class WavelengthCalibration:
                 3139.11,
                 3195.55,
                 3257.06]
-        # """
+
         pix1 = [1564.375,
                 1616.652,
                 1632.724,
@@ -447,6 +616,9 @@ class WavelengthCalibration:
                   [8667.944, 'ArI'],
                   [8799.088, 'ArI']]
 
+        cheb = fit_chebyshev(chebyshev_solution, pix1, wav1)
+        print(cheb)
+
         cuhear_colors = {'HeI': 'c', 'ArI': 'r', 'ArII': 'm',}
 
 
@@ -495,7 +667,7 @@ class WavelengthCalibration:
         print pixel_center
         print wavel_center
 
-        """experiment"""
+        # experiment
         forced_sol = models.Linear1D(slope=0.65, intercept=first_solution.intercept.value)
 
         for line in lines_in_range:
@@ -507,6 +679,7 @@ class WavelengthCalibration:
         plt.ylabel('Angstrom')
         plt.plot(pixel_axis, first_solution(pixel_axis), color='b')
         plt.plot(pixel_axis, forced_sol(pixel_axis), color='m')
+        plt.plot(pixel_axis, cheb(pixel_axis), color='c')
         plt.plot(pix1, wav1, marker='o', color='c')
 
 
@@ -515,6 +688,8 @@ class WavelengthCalibration:
         second_solution = fit_wavelength(first_solution, pix1, wav1)
         plt.plot(pixel_axis, second_solution(pixel_axis), linestyle='--', color='k')
         plt.show()
+
+
 
         reference_file = '/data/simon/data/SOAR/work/goodman/test/extraction-tests/CuHeAr_600.fits'
         reference_data = fits.getdata(reference_file)
@@ -552,7 +727,7 @@ class WavelengthCalibration:
 
 
 
-        """This solution works"""
+        # This solution works
         poli_init = models.Polynomial1D(degree=2) # , domain=[0, len(self.data0)])
         poli_init.c0 = 1
         poli_init.c1 = 1
@@ -560,26 +735,95 @@ class WavelengthCalibration:
         fit_poli = fitting.LinearLSQFitter()
         poli_solution = fit_poli(poli_init, pixel_center, wavel_center)
 
-        """--------------"""
+
         plt.subplot(212)
-        # plt.xlim((start, stop))
+        plt.xlim((cheb(0), cheb(4096)))
 
         for culine in cuhear:
             plt.axvline(culine[0], color=cuhear_colors[culine[1]])
-        # for w in wav1:
-            # plt.axvline(w, color='c')
+        for w in wav1:
+            plt.axvline(w, color='k')
         # for line in lines_in_range:
             # plt.axvline(line, color='r')
-        # plt.plot(poli_solution(pixel_axis), self.data0)
-        plt.plot(wavelength_axis, reference_data, color='g')
+        plt.plot(cheb(pixel_axis), self.data0)
+        # plt.plot(wavelength_axis, reference_data, color='g')
         # plt.plot(rwa, rd, color='b')
         # for p in linelist.line_list['CuAr']:
             # plt.axvline(p, color='k', linestyle='-.')
         plt.xlabel('Angstrom - poli')
         plt.tight_layout()
         plt.show()
-        """--------------"""
 
+        # get reference data
+        filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear_reference_noao.fits'
+        header = fits.getheader(filename)
+        data = fits.getdata(filename)
+        c = wsBuilder.ReadWavelengthSolution(header, data)
+        reference_data = c.get_wavelength_solution()
+        # print self.pixelcenter
+        plt.figure(figsize=(22, 13))
+
+        manager = plt.get_current_fig_manager()
+        manager.window.maximize()
+        plt.subplot(211)
+        plt.title('Lamp=CuHeAr Grating=600l slit=1.03')
+        plt.xlabel('Wavelength (Angstrom)')
+        plt.ylabel('Intensity (Counts)')
+        plt.plot(reference_data[0], reference_data[1])
+        plt.plot(cheb(pixel_axis), self.data0, color='k')
+        detected = cheb(self.lines_center)
+        ax = plt.gca()
+        y_min_0, y_max_0 = ax.get_ylim()
+        for lir in lines_in_range:
+            if cheb(1) <= lir <= cheb(2048):
+                plt.axvline(lir, linestyle=':')
+                plt.text(lir, 15000, '{:.3f}'.format(lir), rotation=90)
+        for i in range(len(detected)):
+            y_min_line = self.pixelcenter[i][1]/y_max_0 + 0.02
+            y_max_line = 0.8
+            y_text = 0.97 * y_max_0
+            x_text = detected[i] - 2
+            if y_max_line > 1:
+                print y_max_line
+                # y_text = y_min_line
+            if cheb(1) <= detected[i] <= cheb(2048):
+                plt.axvline(detected[i], ymin=y_min_line, ymax=y_max_line, linestyle='--', color='r')
+                plt.text(x_text, y_text, '{:.4f}'.format(detected[i]), rotation=90)
+        plt.xlim((cheb(1), cheb(2048)))
+
+        plt.subplot(212)
+        plt.title('Lamp=CuHeAr Grating=600l slit=1.03')
+        plt.xlabel('Wavelength (Angstrom)')
+        plt.ylabel('Intensity (Counts)')
+        plt.plot(reference_data[0], reference_data[1])
+        plt.plot(cheb(pixel_axis), self.data0, color='k')
+        detected = cheb(self.lines_center)
+        ax = plt.gca()
+        y_min_0, y_max_0 = ax.get_ylim()
+        for lir in lines_in_range:
+            if cheb(2048) <= lir <= cheb(4096):
+                plt.axvline(lir, linestyle=':')
+                plt.text(lir, 15000, '{:.3f}'.format(lir), rotation=90)
+        for i in range(len(detected)):
+            y_min_line = self.pixelcenter[i][1]/y_max_0 + 0.02
+            y_max_line = 0.8
+            y_text = 0.97 * y_max_0
+            x_text = detected[i] - 2
+            if i + 1 < len(detected):
+                if detected[i + 1] - detected[i] < 9:
+                    if detected[i] - detected[i - 1] > 15:
+                        x_text -= 4
+                elif detected[i] - detected[i - 1] < 9:
+                    x_text += 4
+
+                # y_text = y_min_line
+            if cheb(2048) <= detected[i] <= cheb(4096):
+                plt.axvline(detected[i], ymin=y_min_line, ymax=y_max_line, linestyle='--', color='r')
+                plt.text(x_text, y_text, '{:.4f}'.format(detected[i]), rotation=90)
+        plt.xlim((cheb(2048), cheb(4096)))
+        plt.tight_layout()
+        plt.savefig('test-plot.png')
+        plt.show()
 
         plt.plot(pixel_axis, poli_solution(pixel_axis), color='m', label='Poli')
 
@@ -591,19 +835,19 @@ class WavelengthCalibration:
         plt.legend(loc='best')
         plt.show()
 
-        """Continue work from here...."""
+        # Continue work from here....
 
         pixel_to_angstrom_ii = poli_solution(self.lines_center)
 
         for line in pixel_to_angstrom_ii:
             plt.axvline(line, color='c', linestyle='-.')
-        """
+
         for nline in wavel_center:
             plt.axvline(nline, color='r')
             print(nline)
         for rline in lines_in_range:
             plt.axvline(rline, linestyle='--', color='g')
-        # """
+        #
         plt.plot(second_solution(pixel_axis), self.data0, color='r')
         plt.plot(fos(pixel_axis), self.data0, color='c')
 
@@ -623,8 +867,9 @@ class WavelengthCalibration:
         print first_solution
         print second_solution
         print poli_solution
-        # """
+
         return poli_solution
+    """
 
     @staticmethod
     def get_lines_in_range(blue, red, lamp):
@@ -667,7 +912,8 @@ class WavelengthCalibration:
             correlation.append(correlation_value)
         i_max = np.argmax(correlation)
 
-        # """
+        """
+        plt.clf()
         plt.title('Lag Position: %s' % lag_position[i_max])
         plt.axvline(lag_position[i_max])
         plt.plot(lag_position, correlation)
@@ -799,153 +1045,150 @@ class WavelengthCalibration:
             log.error('This header does not contain a wavelength solution')
             return False
 
+    def recenter_line_by_data(self, data_name, x):
+        if data_name == 'reference':
+            pseudo_center = np.argmin(abs(self.reference_solution[0] - x))
+            reference_line_index = np.argmin(abs(linelist.line_list['CuAr'] - x))
+            reference_line_value = linelist.line_list['CuAr'][reference_line_index]
+            sub_x = self.reference_solution[0][pseudo_center - 10: pseudo_center + 10]
+            sub_y = self.reference_solution[1][pseudo_center - 10: pseudo_center + 10]
+            center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
+            print 'center of mass ', center_of_mass
+            fig2 = plt.figure(3)
+            plt.plot(sub_x, sub_y)
+            plt.axvline(center_of_mass)
+            plt.axvline(reference_line_value, color='r')
+            plt.show()
+            # return center_of_mass
+            return reference_line_value
+        elif data_name == 'raw-data':
+            pseudo_center = np.argmin(abs(self.raw_pixel_axis - x))
+            sub_x = self.raw_pixel_axis[pseudo_center - 10: pseudo_center + 10]
+            sub_y = self.data0[pseudo_center - 10: pseudo_center + 10]
+            center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
+            print 'center of mass ', center_of_mass
+            fig2 = plt.figure(3)
+            plt.plot(sub_x, sub_y)
+            plt.axvline(center_of_mass)
+            plt.show()
+            return center_of_mass
+        else:
+            log.error('Unrecognized data name')
 
-
-
-
-
-"""
-# path = '/data/simon/data/SOAR/work/goodman/test/extraction-tests/'
-# image_list = ['eefc_0046.SO2016A-019_0320.fits']
-for image in image_list:
-    data0 = fits.getdata(path + image)
-    header1 = fits.getheader(path + image)
-
-    data1 = interpolate(data0)
-    x_data = interpolate(np.linspace(0,len(data0),len(data0)))
-
-    median = np.median(data1)
-    mean = np.mean(data1)
-    threshold = median + mean
-    keepsearching = True
-    features = []
-    while keepsearching:
-        feature = []
-        subx = []
-        for i in range(len(data1)):
-            if data1[i] > threshold:
-                feature.append(data1[i])
-                subx.append(x_data[i])
-            elif feature != [] and len(feature) >= 3:
-                features.append([subx, feature])
-                print(len(feature))
-                feature = []
-                subx = []
+    def on_click(self, event):
+        # print event.button
+        self.events = True
+        if event.button == 2:
+            if event.xdata is not None and event.ydata is not None:
+                ix, iy = self.i_fig.transFigure.inverted().transform((event.x, event.y))
+                if self.reference_bb.contains(ix, iy):
+                    self.reference_clicks.append([event.xdata, event.ydata])
+                    self.reference_clicks_x.append(self.recenter_line_by_data('reference', event.xdata))
+                elif self.raw_data_bb.contains(ix, iy):
+                    self.raw_data_clicks.append([event.xdata, event.ydata])
+                    self.raw_data_clicks_x.append(self.recenter_line_by_data('raw-data', event.xdata))
+                # self.ref_click_plot.set_xdata(np.array(self.reference_clicks[:][0]))
+                # self.ref_click_plot.set_ydata(np.array(self.reference_clicks[:][1]))
+                # self.ref_click_plot.draw()
+                else:
+                    print ix, iy, 'Are not contained'
+                print 'click ', event.xdata, ' ', event.ydata, ' ', event.button
+                print event.x, event.y
             else:
-                feature = []
-                subx = []
-            if i == len(data1) - 1:
-                keepsearching = False
+                log.error('Clicked Region is out of boundary')
+        elif event.button == 3:
+            if len(self.reference_clicks) == len(self.raw_data_clicks):
+                self.click_input_enabled = False
+                log.info('Leaving interactive mode')
+            else:
+                if len(self.reference_clicks) < len(self.raw_data_clicks):
+                    log.info('There is %s click missing in the Reference plot',
+                             len(self.raw_data_clicks) - len(self.reference_clicks))
+                else:
+                    log.info('There is %s click missing in the New Data plot',
+                             len(self.reference_clicks) - len(self.raw_data_clicks))
 
-    print(len(features))
+    def key_pressed(self, event):
+        self.events = True
+        if event.key == 'f1':
+            log.info('Print help regarding interactive mode')
+            print("F1 : Prints Help.")
+            print("F2 : Fit wavelength solution model.")
+            print("F3 : Find new lines.")
+            print("F4 : Evaluate solution")
+            print("d : deletes closest point")
+            print("ctrl+d : deletes all recorded clicks")
+            print("ctrl+b : Go back to previous solution (deletes automatic added points")
+            print('Middle button click records data location.')
+            print("Right Button Click: Leaves interactive mode.")
+        elif event.key == 'f2':
+            log.debug('Calling function to fit wavelength Solution')
+            self.fit_pixel_to_wavelength()
+        elif event.key == 'f3':
+            if self.wsolution is not None:
+                self.find_more_lines()
+        elif event.key == 'f4':
+            if self.wsolution is not None and len(self.raw_data_clicks) > 0:
+                self.evaluate_solution()
+        elif event.key == 'd':
+            ix, iy = self.i_fig.transFigure.inverted().transform((event.x, event.y))
+            if self.raw_data_bb.contains(ix, iy):
+                print 'Deleting point'
+                print abs(self.raw_data_clicks_x - event.xdata)
+                closer_index = np.argmin(abs(self.raw_data_clicks_x - event.xdata))
+                print 'Index ' , closer_index
+                if len(self.raw_data_clicks) == len(self.reference_clicks):
+                    self.raw_data_clicks.pop(closer_index)
+                    self.raw_data_clicks_x.pop(closer_index)
+                    self.reference_clicks.pop(closer_index)
+                    self.reference_clicks_x.pop(closer_index)
+                else:
+                    self.raw_data_clicks.pop(closer_index)
+                    self.raw_data_clicks_x.pop(closer_index)
+            elif self.reference_bb.contains(ix, iy):
+                print 'Deleting point'
+                print 'reference ', self.reference_clicks
+                print self.reference_clicks_x
+                print abs(self.reference_clicks_x - event.xdata)
+                closer_index = np.argmin(abs(self.reference_clicks_x - event.xdata))
+                if len(self.raw_data_clicks) == len(self.reference_clicks):
+                    self.raw_data_clicks.pop(closer_index)
+                    self.raw_data_clicks_x.pop(closer_index)
+                    self.reference_clicks.pop(closer_index)
+                    self.reference_clicks_x.pop(closer_index)
+                else:
+                    self.reference_clicks.pop(closer_index)
+                    self.reference_clicks_x.pop(closer_index)
+        elif event.key == 'ctrl+b':
+            if self.raw_click_plot and self.ref_click_plot is not None:
+                log.info('Deleting automatic added points')
+                to_remove = []
+                for i in range(len(self.raw_data_clicks)):
+                    print self.raw_data_clicks[i], self.filling_value
+                    if self.raw_data_clicks[i][1] == self.filling_value:
+                        to_remove.append(i)
+                        print to_remove
+                remove = to_remove.sort(reverse=True)
+                if remove is not []:
+                    for index in remove:
+                        self.raw_data_clicks.pop(index)
+                        self.raw_data_clicks_x.pop(index)
+                        self.ref_click_plot.pop(index)
+                        self.reference_clicks_x.pop(index)
+        elif event.key == 'ctrl+d':
+            log.info('Deleting all recording Clicks')
+            answer = raw_input('Are you sure you want to delete all clicks? only typing "No" will stop it! : ')
+            if answer.lower() != 'no':
+                self.reference_clicks = []
+                self.raw_data_clicks = []
+            else:
+                log.info('No click was deleted this time!.')
+        else:
+            print event.key
 
-    # crval1 = float(header1['CRVAL1'])
-    # crpix1 = int(header1['CRPIX1'])
-    # delta1 = float(header1['CDELT1'])
-
-    # start1 = crval1 - (crpix1 - 1) * delta1
-    # stop1 = start1 + (len(data1) - 1) * delta1
-    # xa1 = np.linspace(start1, stop1, len(data1))
 
 
-    # plt.plot(xa1, data1, label='New Calibrated')
-    # plt.axhline(median)
-    print('Please Write down feature number and wavelength value, it will be requested later')
-    for i in range(len(features)):
-        line = features[i]
-        plt.plot(line[0], line[1])
-        imax = np.max(line[1])
-        amax = line[0][np.argmax(line[1])]
-        plt.annotate(str(i), xy=(amax, imax + 5), xycoords='data')
-    plt.title(header1['GRATING'])
-    plt.axhline(threshold, color='r')
-    plt.legend(loc='best')
-    # plt.savefig(path + 'features-id.png', dpi=300)
-    plt.show()
-    plt.clf()
-    print('Please enter wavelength value for feature')
-    print('Enter 0 to ignore')
-    line_list = {0: 3650.153,
-                 1: 0,
-                 2: 4046.563,
-                 3: 0,
-                 4: 0,
-                 5: 4358.328,
-                 6: 5460.735,
-                 7: 0,
-                 8: 5769.598,
-                 9: 5790.663,
-                 10: 0,
-                 11: 0,
-                 12: 0,
-                 13: 0,
-                 14: 0,
-                 15: 0,
-                 16: 0,
-                 17: 0,
-                 18: 0}
-    input_data = []
-    for i in range(len(features)):
-        line = features[i]
-        imax = line[0][np.argmax(line[1])]
-        # wavelength = raw_input('Wavelength value for feature %s : (%s)' % (i, line_list[i]))
-        wavelength = raw_input('Wavelength value for feature %s : ' % (i)) or '0'
-        # if line_list[i] != 0:
-        if wavelength != '0':
-            max_val = np.max(line[1])
-            gauss = recenter_line(line[0], line[1], max_val, imax, model='gauss')
-            # nmax = voigt.x_0.value
-            nmax = gauss.mean.value
-            input_data.append([nmax, float(wavelength)])
-            plt.title('Feature %s'%i)
-            plt.plot(line[0],line[1], label='Data')
-            plt.plot(line[0],gauss(line[0]), label='Gauss')
-            plt.axvline(nmax, color='r', label='New Center')
-            plt.axvline(imax, label='Old Center')
-            plt.legend(loc='best')
-            filename = path + 'recentering-task-feature-%s.png'%i
-            # plt.savefig(filename,dpi=300)
-            # plt.show()
-            plt.clf()
-    print input_data
-    p = []
-    w = []
-    for point in input_data:
-        p.append(point[0])
-        w.append(point[1])
-    wavelength_fit = 'linear'
-    if wavelength_fit == 'linear':
-        linear_init = models.Linear1D(1, 1)
-        fit_wavl = fitting.LinearLSQFitter()
-        wav = fit_wavl(linear_init, p, w)
-    elif wavelength_fit == 'poli':
-        poli_init = models.Polynomial1D(degree=2, domain=[p[0], p[-1]])
-        poli_init.c0 = 1
-        poli_init.c1 = 1
-        poli_init.c2 = 1
-        fit_poli = fitting.LinearLSQFitter()
-        wav = fit_poli(poli_init, p, w)
 
-    print(wav)
-    crpix = 1
-    crval = wav(crpix)
-    cdelt = wav(crpix + 1) - wav(crpix)
-    print('CRPIX1 %s CRVAL1 %s CDELT1 %s' % (crpix, crval, cdelt))
-
-    header1['CRVAL1'] = crval
-    header1['CRPIX1'] = crpix
-    header1['CDELT1'] = cdelt
-    header1['CD1_1'] = cdelt
-    header1['CTYPE1'] = 'LINEAR'
-    header1['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
-
-    fits.writeto(path + 'python-calibrated.fits', data0, header1, clobber=True)
-    print(wav(1), wav(2) - wav(1))
-    plt.plot(p, w, marker='o', linestyle='--', label='points')
-    plt.plot(p, wav(p), label='Model')
-    plt.legend(loc='best')
-    plt.show()
-"""
 
 if __name__ == '__main__':
     wav_cal = WavelengthCalibration()

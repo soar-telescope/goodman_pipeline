@@ -15,14 +15,41 @@ from specutils import Spectrum1D
 
 log.basicConfig(level=log.DEBUG)
 
+class WavelengthFitter:
+    def __init__(self, model='chebyshev', degree=3):
+        self.model_name = model
+        self.degree = degree
+        self.model = None
+        self.model_fit = None
+        self.model_constructor()
 
-class WavelengthSolution:
+    def model_constructor(self):
+        if self.model_name == 'chebyshev':
+            self.model = models.Chebyshev1D(degree=self.degree)
+            self.model_fit = fitting.LevMarLSQFitter()
+        elif self.model_name == 'linear':
+            self.model = models.Linear1D()
+            self.model_fit = fitting.LinearLSQFitter()
+        # return model
 
-    def __init__(self, header, data):
+    def ws_fit(self, physical, wavelength):
+        if self.model and self.model_fit is not None:
+            return self.model_fit(self.model, physical, wavelength)
+        else:
+            log.error('Either model or model fitter were not constructed')
+
+
+
+class ReadWavelengthSolution:
+
+    def __init__(self, header, data, reference=''):
         self.header = header
         self.data = data
+        self.reference_file_name = reference
         self.wat_wcs_dict = dict()
         self.wcs_dict = dict()
+
+        self.wave_intens = []
 
     def non_linear_solution(self, dimension):
         header = self.header
@@ -86,7 +113,7 @@ class WavelengthSolution:
                              'pmax': max_pix_val,
                              'fpar': params}
 
-            function = MathFunctions(self.wcs_dict)
+            function = ReadMathFunctions(self.wcs_dict)
             solution = function.get_solution()
             print solution
             print "%s"%params, len(params)
@@ -126,9 +153,16 @@ class WavelengthSolution:
                          'crpix': crpix,
                          'cdelt': cdelt,
                          'dtype': 0}
-        function = MathFunctions(self.wcs_dict)
+        function = ReadMathFunctions(self.wcs_dict)
         solution = function.get_solution()
+        # data = fits.getdata('/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600.fits')
+        x = range(1, len(self.data) + 1)
 
+        # plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'], self.wat_wcs_dict['units']))
+        self.wave_intens = [solution(x), self.data]
+        """
+        plt.title(self.header['OBJECT'])
+        plt.plot(solution(x), self.data)
         print solution(crpix), crval
 
         wav1 = [4545.0519,
@@ -146,14 +180,10 @@ class WavelengthSolution:
                 5572.5413,
                 5606.733,
                 5650.7043]
-        # data = fits.getdata('/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600.fits')
-        x = range(1, len(self.data) + 1)
-        plt.title(self.header['OBJECT'])
-        # plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'], self.wat_wcs_dict['units']))
-        plt.plot(solution(x), self.data)
         for line in wav1:
             plt.axvline(line, color='r')
         plt.show()
+        """
         return solution
 
 
@@ -169,8 +199,10 @@ class WavelengthSolution:
                 self.linear_solution()
             elif ctypen == 'MULTISPE':
                 self.non_linear_solution(dim)
+        return self.wave_intens
 
-class MathFunctions:
+
+class ReadMathFunctions:
 
     def __init__(self, wcs_dict):
         self.wcs = wcs_dict
@@ -205,7 +237,7 @@ class MathFunctions:
         return 0
 
     def linear_solution(self):
-        intercept = self.wcs['crval'] - self.wcs['crpix'] * self.wcs['cdelt']
+        intercept = self.wcs['crval'] - (self.wcs['crpix'] - 1) * self.wcs['cdelt']
         linear = models.Linear1D(slope=self.wcs['cdelt'], intercept=intercept)
         return linear
 
@@ -234,39 +266,59 @@ class MathFunctions:
             return self.solution
         else:
             log.error("The solution hasn't been found")
+"""
+def onclick(event):
+    print 'click ', event.xdata, ' ', event.ydata, ' ', event.button
+
+def interactive_solution(raw_file, reference_file):
+    # ------- Reference -------
+    ref_data = fits.getdata(reference_file)
+    ref_header = fits.getheader(reference_file)
+    reference = ReadWavelengthSolution(ref_header, ref_data)
+    reference_solution = reference.get_wavelength_solution()
+    # ------- RAW -------
+    raw_data = fits.getdata(raw_file)
+    raw_header = fits.getheader(raw_file)
+    raw_pixel_axis = range(1, len(raw_data) + 1, 1)
+    raw = ReadWavelengthSolution(raw_data, raw_header)
+    # raw_solution = raw.get_wavelength_solution()
+    # ------- Plots -------
+    fig = plt.figure(1)
+    manager = plt.get_current_fig_manager()
+    manager.window.maximize()
+    plt.subplot(211)
+    plt.title('Raw Data')
+    plt.xlabel('Pixels')
+    plt.ylabel('Intensity (counts)')
+    plt.plot(raw_pixel_axis, raw_data)
+    plt.xlim((0, 4096))
+
+    plt.subplot(212)
+    # plt.xlim((3589, 4930))
+    plt.title('Reference Data')
+    plt.xlabel('Wavelength (Angstrom)')
+    plt.ylabel('Intensity (counts)')
+    plt.plot(reference_solution[0], reference_solution[1])
+    plt.xlim((reference_solution[0][0], reference_solution[0][-1]))
+    plt.tight_layout()
+    fig.canvas.mpl_connect('button_press_event', onclick)
+    plt.show()
+"""
 
 
 if __name__ == '__main__':
     # filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600_nonlinear_2.fits'
     # filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600.fits'
-    filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear600nonlinearli.fits'
-    header = fits.getheader(filename)
-    data = fits.getdata(filename)
-    c = WavelengthSolution(header, data)
-    c.get_wavelength_solution()
+    # filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear600nonlinearli.fits'
+    raw_filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/exfc_0047.SO2016A-019_0320.fits'
+    ref_lamp = '/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear_reference_noao.fits'
+    # header = fits.getheader(raw_filename)
+    # data = fits.getdata(raw_filename)
+    # c = ReadWavelengthSolution(header, data, reference=ref_lamp)
+    # c.interactive_solution()
+    interactive_solution(raw_filename, ref_lamp)
     sys.exit(0)
-    """
-    wcsdim = int(header['WCSDIM'])
-    for dim in range(1, wcsdim + 1):
-        ctypen = header['CTYPE%s' % dim]
-        if ctypen == 'LINEAR':
-            print('Linear Solution')
-        elif ctypen == 'MULTISPE':
-            wat_head = header['WAT%s*' % dim]
 
-            if len(wat_head) == 1:
-                print('Get units')
-                print(wat_head)
-            elif len(wat_head) > 1:
-                wat_string = ''
-                for key in wat_head:
-                    wat_string += header[key]
-                    print(key, header[key])
-                wat_array = shlex.split(wat_string.replace('=', ' '))
-                if len(wat_array) % 2 == 0:
-                    for i in range(0, len(wat_array), 2):
-                        print wat_array[i], wat_array[i + 1]
-    """
 
 # print(wat)
 # spectrum = tc_read_fits_copy.read_goodman_non_linear_spectrum(filename=filename, dispersion_unit=u.angstrom)

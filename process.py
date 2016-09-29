@@ -9,7 +9,7 @@ log.basicConfig(level=log.DEBUG)
 
 
 # import sys
-
+plots_enabled = False
 
 class Process:
     """Set of tools for extracting Goodman High Throughput Spectrograph data.
@@ -76,12 +76,12 @@ class Process:
         log.debug('Selection Threshold: %s', threshold)
         keep_searching = True
         all_candidates = []
-        """
-        plt.plot(sample_data)
-        plt.axhline(threshold)
-        plt.show()
-        plt.clf()
-        """
+        if plots_enabled:
+            plt.plot(sample_data)
+            plt.axhline(threshold)
+            plt.show()
+            plt.clf()
+
         while keep_searching:
             candidate = []
             candidate_index = []
@@ -147,12 +147,14 @@ class Process:
             """
 
             residuals = sample_data - fitted_model(x_axis)
-            plt.plot(x_axis, sample_data)
-            plt.plot(x_axis, fitted_model(x_axis))
-            plt.plot(x_axis, residuals)
-            # plt.axvline(gauss.x_0.value)
-            plt.show()
-            plt.clf()
+            if plots_enabled:
+                plt.plot(x_axis, sample_data)
+                plt.plot(x_axis, fitted_model(x_axis))
+                plt.plot(x_axis, residuals)
+                # plt.axvline(gauss.x_0.value)
+                plt.show()
+                plt.clf()
+
 
         if len(identified_targets) > 0:
             log.info('Identified %s targets.', len(identified_targets))
@@ -261,11 +263,10 @@ class Process:
             cheb = fit_cheb(chebyshev_init, max_index, max_positions)
             traces.append([cheb, width])
 
-            """
-            plt.imshow(self.data, clim=(5, 150))
-            plt.plot(max_index, max_positions,color='r')
-            plt.show()
-            """
+            if plots_enabled:
+                plt.imshow(self.data, clim=(5, 150))
+                plt.plot(max_index, max_positions, color='r')
+                plt.show()
 
         """Mask Background Extraction zones"""
         # TODO(simon): Define what to do in case no background extraction zone is suitable for use.
@@ -280,32 +281,34 @@ class Process:
 
         # """
         # plots the masked regions.
-        plt.title("Masked Regions for Background extraction")
-        plt.xlabel("Spatial Direction")
-        plt.ylabel("Intensity")
-        for target in targets:
-            plt.axvline(target.mean)
-        plt.plot(self.data[:, 1000])
-        plt.plot(self.region)
-        limits = []
-        for i in range(len(self.region) - 1):
-            if self.region[i] != self.region[i + 1]:
-                if limits == [] or len(limits) % 2 == 0:
-                    limits.append(i + 1)
-                else:
-                    limits.append(i)
-        print(limits)
-        colors = ['red', 'green', 'blue']
-        ci = 0
-        for l in range(0, len(limits), 2):
-            plt.axvspan(limits[l], limits[l + 1], color=colors[ci], alpha=0.3)
-            ci += 1
-            if ci == 3:
-                ci = 0
-        """Watch out here! it works but might be an error."""
-        plt.xlim([target.mean - 200, target.mean + 200])
-        plt.savefig("background-extraction-zones" + self.science_object.name + "_2.png", dpi=300)
-        plt.show()
+        if plots_enabled:
+            plt.title("Masked Regions for Background extraction")
+            plt.xlabel("Spatial Direction")
+            plt.ylabel("Intensity")
+            for target in targets:
+                plt.axvline(target.mean)
+            plt.plot(self.data[:, 1000])
+            plt.plot(self.region)
+            limits = []
+            for i in range(len(self.region) - 1):
+                if self.region[i] != self.region[i + 1]:
+                    if limits == [] or len(limits) % 2 == 0:
+                        limits.append(i + 1)
+                    else:
+                        limits.append(i)
+            print(limits)
+            colors = ['red', 'green', 'blue']
+            ci = 0
+            for l in range(0, len(limits), 2):
+                plt.axvspan(limits[l], limits[l + 1], color=colors[ci], alpha=0.3)
+                ci += 1
+                if ci == 3:
+                    ci = 0
+            """Watch out here! it works but might be an error."""
+            plt.xlim([target.mean - 200, target.mean + 200])
+            plt.savefig("background-extraction-zones" + self.science_object.name + "_2.png", dpi=300)
+            plt.show()
+
         # """
         return traces
 
@@ -443,22 +446,24 @@ class Process:
                         headers.append(self.lamps_header[l])
                 # """
                 """Plot background subtraction"""
-                plt.title('Background Subtraction\n' + self.science_object.name)
-                plt.xlabel('Pixels (dispersion direction)')
-                plt.ylabel('Intensity (counts)')
-                plt.plot(sci, label='Background Subtracted')
-                plt.plot(unsubtracted, label='Unsubtracted')
-                plt.plot(subtracted_background, label='Background')
-                # plt.plot(all_lamps[0],label='lamp 1')
-                # plt.plot(all_lamps[1],label='lamp 2')
-                plt.legend(loc='best')
-                plt.tight_layout()
-                plt.savefig('background-subtraction_'
-                            + self.science_object.name
-                            + '_'
-                            + str(int(chebyshev(10)))
-                            + '.png', dpi=300)
-                plt.show()
+                if plots_enabled:
+                    plt.title('Background Subtraction\n' + self.science_object.name)
+                    plt.xlabel('Pixels (dispersion direction)')
+                    plt.ylabel('Intensity (counts)')
+                    plt.plot(sci, label='Background Subtracted')
+                    plt.plot(unsubtracted, label='Unsubtracted')
+                    plt.plot(subtracted_background, label='Background')
+                    # plt.plot(all_lamps[0],label='lamp 1')
+                    # plt.plot(all_lamps[1],label='lamp 2')
+                    plt.legend(loc='best')
+                    plt.tight_layout()
+                    plt.savefig('background-subtraction_'
+                                + self.science_object.name
+                                + '_'
+                                + str(int(chebyshev(10)))
+                                + '.png', dpi=300)
+                    plt.show()
+
                 # print(chebyshev, width, x, y)
                 # """
                 sci_pack.append(extracted_object)
