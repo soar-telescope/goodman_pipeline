@@ -29,8 +29,8 @@ class WavelengthCalibration:
         self.reference_clicks_x = []
         self.raw_data_clicks = []
         self.raw_data_clicks_x = []
-        self.ref_click_plot = None
-        self.raw_click_plot = None
+        # self.ref_click_plot = None
+        # self.raw_click_plot = None
         self.click_input_enabled = True
         self.reference_bb = None
         self.raw_data_bb = None
@@ -1107,7 +1107,6 @@ class WavelengthCalibration:
                 else:
                     log.info('There is %s click missing in the New Data plot',
                              len(self.reference_clicks) - len(self.raw_data_clicks))
-
     def key_pressed(self, event):
         self.events = True
         if event.key == 'f1':
@@ -1160,21 +1159,23 @@ class WavelengthCalibration:
                     self.reference_clicks.pop(closer_index)
                     self.reference_clicks_x.pop(closer_index)
         elif event.key == 'ctrl+b':
-            if self.raw_click_plot and self.ref_click_plot is not None:
-                log.info('Deleting automatic added points')
+            log.info('Deleting automatic added points. If exist.')
+            if self.raw_data_clicks_x is not [] and self.reference_clicks_x is not []:
                 to_remove = []
                 for i in range(len(self.raw_data_clicks)):
-                    print self.raw_data_clicks[i], self.filling_value
+                    # print self.raw_data_clicks[i], self.filling_value
                     if self.raw_data_clicks[i][1] == self.filling_value:
                         to_remove.append(i)
-                        print to_remove
-                remove = to_remove.sort(reverse=True)
-                if remove is not []:
-                    for index in remove:
+                        # print to_remove
+                to_remove = np.array(sorted(to_remove, reverse=True))
+                if len(to_remove) > 0:
+                    for index in to_remove:
                         self.raw_data_clicks.pop(index)
                         self.raw_data_clicks_x.pop(index)
-                        self.ref_click_plot.pop(index)
                         self.reference_clicks_x.pop(index)
+                        self.reference_clicks.pop(index)
+            # else:
+                # print self.raw_click_plot, self.ref_click_plot, 'mmm'
         elif event.key == 'ctrl+d':
             log.info('Deleting all recording Clicks')
             answer = raw_input('Are you sure you want to delete all clicks? only typing "No" will stop it! : ')
