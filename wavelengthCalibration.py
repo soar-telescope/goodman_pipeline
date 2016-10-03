@@ -25,18 +25,24 @@ class WavelengthCalibration:
         self.grating_angle = float(0)
         self.camera_angle = float(0)
         """Clicks recording"""
-        self.reference_clicks = []
         self.reference_clicks_x = []
-        self.raw_data_clicks = []
+        self.reference_clicks_y = []
         self.raw_data_clicks_x = []
+        self.raw_data_clicks_y = []
         # self.ref_click_plot = None
         # self.raw_click_plot = None
         self.click_input_enabled = True
         self.reference_bb = None
         self.raw_data_bb = None
         self.i_fig = None
+        self.ax1 = None
+        self.ax2 = None
+        self.points_ref = None
+        self.points_raw = None
+        self.line_raw = None
         self.filling_value = 1000
         self.events = True
+        self.first = True
         # self.binning = self.header0[]
         """Remove this one later"""
         self.pixelcenter = []
@@ -380,9 +386,9 @@ class WavelengthCalibration:
                 for e in range(len(new_wavelength)):
                     if clipped_differences is not np.ma.masked and new_wavelength[e] not in self.reference_clicks_x:
                         self.reference_clicks_x.append(new_wavelength[e])
-                        self.reference_clicks.append([new_wavelength[e], self.filling_value])
+                        self.reference_clicks_y.append(self.filling_value)
                         self.raw_data_clicks_x.append(new_physical[e])
-                        self.raw_data_clicks.append([new_physical[e], self.filling_value])
+                        self.raw_data_clicks_y.append(self.filling_value)
         return True
 
     def interactive_wavelenth_solution(self):
@@ -400,66 +406,111 @@ class WavelengthCalibration:
         # raw_solution = raw.get_wavelength_solution()
         """------- Plots -------"""
         # plt.ion()
-
+        self.i_fig = plt.figure(1)
+        #self.i_fig.show()
         while self.click_input_enabled:
-            self.i_fig = plt.figure(1)
-            manager = plt.get_current_fig_manager()
-            manager.window.maximize()
-            # manager.window.attributes('-topmost', 0)
-            ax1 = plt.subplot(211)
-            ax1.set_title('Raw Data')
-            ax1.set_xlabel('Pixels')
-            ax1.set_ylabel('Intensity (counts)')
-            for idline in self.lines_center:
-                ax1.axvline(idline, linestyle='-.', color='r')
-            if self.raw_data_clicks != []:
-                for i in range(len(self.raw_data_clicks)):
-                    ax1.plot(self.raw_data_clicks_x[i], self.raw_data_clicks[i][1], marker='o', color='r')
-                    ax1.plot(self.raw_data_clicks[i][0], self.raw_data_clicks[i][1], marker='o', color='k')
-                    ax1.text(self.raw_data_clicks[i][0], self.raw_data_clicks[i][1] + 100, str(i + 1))
-            # self.raw_click_plot, = ax1.plot([], [], marker='o', color='k')
-            ax1.plot(self.raw_pixel_axis, self.data0, color='b')
-            ax1.set_xlim((0, 4096))
+            if self.events or self.first:
+                self.events = False
+                manager = plt.get_current_fig_manager()
+                manager.window.maximize()
+                # manager.window.attributes('-topmost', 0)
+                self.ax1 = plt.subplot(211)
+                self.ax1.set_title('Raw Data')
+                self.ax1.set_xlabel('Pixels')
+                self.ax1.set_ylabel('Intensity (counts)')
+                for idline in self.lines_center:
+                    self.ax1.axvline(idline, linestyle='-.', color='r')
+                # if self.raw_data_clicks != []:
+                    # for i in range(len(self.raw_data_clicks)):
+                        # ax1.plot(self.raw_data_clicks_x[i], self.raw_data_clicks[i][1], marker='o', color='r')
+                        # ax1.plot(self.raw_data_clicks[i][0], self.raw_data_clicks[i][1], marker='o', color='k')
+                        # ax1.text(self.raw_data_clicks[i][0], self.raw_data_clicks[i][1] + 100, str(i + 1))
+                # self.raw_click_plot, = ax1.plot([], [], marker='o', color='k')
+                self.ax1.plot(self.raw_pixel_axis, self.data0, color='b')
+                self.ax1.set_xlim((0, 4096))
 
-            # print bb
-            # print plt.axes()
+                # print bb
+                # print plt.axes()
 
-            ax2 = plt.subplot(212)
-            # plt.xlim((3589, 4930))
-            ax2.set_title('Reference Data')
-            ax2.set_xlabel('Wavelength (Angstrom)')
-            ax2.set_ylabel('Intensity (counts)')
-            if self.reference_clicks != []:
-                for i in range(len(self.reference_clicks)):
-                    ax2.plot(self.reference_clicks_x[i], self.reference_clicks[i][1], marker='o', color='r')
-                    ax2.plot(self.reference_clicks[i][0], self.reference_clicks[i][1], marker='o', color='k')
-                    ax2.text(self.reference_clicks[i][0], self.reference_clicks[i][1] + 100, str(i + 1))
-            for rline in linelist.line_list['CuAr']:
-                ax2.axvline(rline, linestyle=':', color='m', alpha=0.9)
-            # self.ref_click_plot, = ax2.plot([], [], marker='o', color='k')
-            ax2.plot(self.reference_solution[0], self.reference_solution[1], color='b')
-            ax2.set_xlim((self.reference_solution[0][0], self.reference_solution[0][-1]))
-            if self.wsolution is not None:
-                ax2.plot(self.wsolution(self.raw_pixel_axis), self.data0, linestyle='-', color='r')
-            # plt.tight_layout()
+                self.ax2 = plt.subplot(212)
+                # plt.xlim((3589, 4930))
+                self.ax2.set_title('Reference Data')
+                self.ax2.set_xlabel('Wavelength (Angstrom)')
+                self.ax2.set_ylabel('Intensity (counts)')
+                # if self.reference_clicks != []:
+                    # for i in range(len(self.reference_clicks)):
+                        # ax2.plot(self.reference_clicks_x[i], self.reference_clicks[i][1], marker='o', color='r')
+                        # ax2.plot(self.reference_clicks[i][0], self.reference_clicks[i][1], marker='o', color='k')
+                        # ax2.text(self.reference_clicks[i][0], self.reference_clicks[i][1] + 100, str(i + 1))
+                for rline in linelist.line_list['CuAr']:
+                    self.ax2.axvline(rline, linestyle=':', color='m', alpha=0.9)
+                # self.ref_click_plot, = ax2.plot([], [], marker='o', color='k')
+                self.ax2.plot(self.reference_solution[0], self.reference_solution[1], color='b')
+                self.ax2.set_xlim((self.reference_solution[0][0], self.reference_solution[0][-1]))
+                # if self.wsolution is not None:
+                    # self.ax2.plot(self.wsolution(self.raw_pixel_axis), self.data0, linestyle='-', color='r')
+                # plt.tight_layout()
 
-            plt.subplots_adjust(left=0.04, right=0.99, top=0.97, bottom=0.04, hspace=0.17)
-            self.raw_data_bb = ax1.get_position()
-            self.reference_bb = ax2.get_position()
+                plt.subplots_adjust(left=0.04, right=0.99, top=0.97, bottom=0.04, hspace=0.17)
+                self.raw_data_bb = self.ax1.get_position()
+                self.reference_bb = self.ax2.get_position()
 
-            # time.sleep(0.5)
-            if self.click_input_enabled:
-                self.i_fig.canvas.mpl_connect('button_press_event', self.on_click)
-                self.i_fig.canvas.mpl_connect('key_press_event', self.key_pressed)
-                print self.wsolution
-                plt.show()
-                # manager.window.set_focus()
-                # self.i_fig.canvas.draw()
-
-        for i in range(len(self.reference_clicks)):
-            print self.reference_clicks[i][0], self.raw_data_clicks[i][0]
-
+                # time.sleep(0.5)
+                if self.click_input_enabled:
+                    self.i_fig.canvas.mpl_connect('button_press_event', self.on_click)
+                    self.i_fig.canvas.mpl_connect('key_press_event', self.key_pressed)
+                    print self.wsolution
+                    plt.show()
         return True
+
+    def update_clicks_plot(self, ax_num):
+        if ax_num == 'reference':
+            if self.points_ref is not None:
+                try:
+                    self.points_ref.remove()
+                    self.ax2.relim()
+                except:
+                    pass
+            self.points_ref,  = self.ax2.plot(self.reference_clicks_x,
+                                              self.reference_clicks_y,
+                                              linestyle='None',
+                                              marker='o',
+                                              color='r')
+            self.i_fig.canvas.draw()
+        elif ax_num == 'raw_data':
+            print self.points_raw
+            print dir(self.points_raw)
+            if self.points_raw is not None:
+                try:
+                    self.points_raw.remove()
+                    self.ax1.relim()
+                except:
+                    pass
+            self.points_raw, = self.ax1.plot(self.raw_data_clicks_x,
+                                             self.raw_data_clicks_y,
+                                             linestyle='None',
+                                             marker='o',
+                                             color='r')
+            self.i_fig.canvas.draw()
+        elif ax_num == 'delete':
+            if self.points_raw is not None and self.points_ref is not None:
+                self.points_raw.remove()
+                self.ax1.relim()
+                self.points_ref.remove()
+                self.ax2.relim()
+                self.i_fig.canvas.draw()
+
+    def plot_raw_over_reference(self, remove=False):
+        if self.wsolution is not None:
+            if self.line_raw is not None:
+                try:
+                    self.line_raw.remove()
+                    self.ax2.relim()
+                except:
+                    pass
+            if not remove:
+                self.line_raw, = self.ax2.plot(self.wsolution(self.raw_pixel_axis), self.data0, linestyle='-', color='r')
+            self.i_fig.canvas.draw()
 
     def evaluate_solution(self):
         square_differences = []
@@ -480,6 +531,7 @@ class WavelengthCalibration:
         plt.plot(self.raw_data_clicks_x, self.reference_clicks_x, marker='o', color='g')
         plt.xlabel('Pixel Axis')
         plt.ylabel('Wavelength Axis')
+        plt.title('RMS Error %s'%rms_error)
         plt.show()
         return rms_error
 
@@ -1082,11 +1134,15 @@ class WavelengthCalibration:
             if event.xdata is not None and event.ydata is not None:
                 ix, iy = self.i_fig.transFigure.inverted().transform((event.x, event.y))
                 if self.reference_bb.contains(ix, iy):
-                    self.reference_clicks.append([event.xdata, event.ydata])
+                    # self.reference_clicks.append([event.xdata, event.ydata])
                     self.reference_clicks_x.append(self.recenter_line_by_data('reference', event.xdata))
+                    self.reference_clicks_y.append(event.ydata)
+                    self.update_clicks_plot('reference')
                 elif self.raw_data_bb.contains(ix, iy):
-                    self.raw_data_clicks.append([event.xdata, event.ydata])
+                    # self.raw_data_clicks.append([event.xdata, event.ydata])
                     self.raw_data_clicks_x.append(self.recenter_line_by_data('raw-data', event.xdata))
+                    self.raw_data_clicks_y.append(event.ydata)
+                    self.update_clicks_plot('raw_data')
                 # self.ref_click_plot.set_xdata(np.array(self.reference_clicks[:][0]))
                 # self.ref_click_plot.set_ydata(np.array(self.reference_clicks[:][1]))
                 # self.ref_click_plot.draw()
@@ -1123,65 +1179,80 @@ class WavelengthCalibration:
         elif event.key == 'f2':
             log.debug('Calling function to fit wavelength Solution')
             self.fit_pixel_to_wavelength()
+            self.plot_raw_over_reference()
         elif event.key == 'f3':
             if self.wsolution is not None:
                 self.find_more_lines()
+                self.update_clicks_plot('reference')
+                self.update_clicks_plot('raw_data')
         elif event.key == 'f4':
-            if self.wsolution is not None and len(self.raw_data_clicks) > 0:
+            if self.wsolution is not None and len(self.raw_data_clicks_x) > 0:
                 self.evaluate_solution()
         elif event.key == 'd':
             ix, iy = self.i_fig.transFigure.inverted().transform((event.x, event.y))
             if self.raw_data_bb.contains(ix, iy):
                 print 'Deleting point'
                 print abs(self.raw_data_clicks_x - event.xdata)
-                closer_index = np.argmin(abs(self.raw_data_clicks_x - event.xdata))
+                closer_index = int(np.argmin(abs(self.raw_data_clicks_x - event.xdata)))
                 print 'Index ' , closer_index
-                if len(self.raw_data_clicks) == len(self.reference_clicks):
-                    self.raw_data_clicks.pop(closer_index)
+                if len(self.raw_data_clicks_x) == len(self.reference_clicks_x):
                     self.raw_data_clicks_x.pop(closer_index)
-                    self.reference_clicks.pop(closer_index)
+                    self.raw_data_clicks_y.pop(closer_index)
                     self.reference_clicks_x.pop(closer_index)
+                    self.reference_clicks_y.pop(closer_index)
+                    self.update_clicks_plot('reference')
+                    self.update_clicks_plot('raw_data')
                 else:
-                    self.raw_data_clicks.pop(closer_index)
                     self.raw_data_clicks_x.pop(closer_index)
+                    self.raw_data_clicks_y.pop(closer_index)
+                    self.update_clicks_plot('raw_data')
             elif self.reference_bb.contains(ix, iy):
                 print 'Deleting point'
-                print 'reference ', self.reference_clicks
+                # print 'reference ', self.reference_clicks_x, self.re
                 print self.reference_clicks_x
                 print abs(self.reference_clicks_x - event.xdata)
-                closer_index = np.argmin(abs(self.reference_clicks_x - event.xdata))
-                if len(self.raw_data_clicks) == len(self.reference_clicks):
-                    self.raw_data_clicks.pop(closer_index)
+                closer_index = int(np.argmin(abs(self.reference_clicks_x - event.xdata)))
+                if len(self.raw_data_clicks_x) == len(self.reference_clicks_x):
                     self.raw_data_clicks_x.pop(closer_index)
-                    self.reference_clicks.pop(closer_index)
+                    self.raw_data_clicks_y.pop(closer_index)
                     self.reference_clicks_x.pop(closer_index)
+                    self.reference_clicks_y.pop(closer_index)
+                    self.update_clicks_plot('reference')
+                    self.update_clicks_plot('raw_data')
                 else:
-                    self.reference_clicks.pop(closer_index)
                     self.reference_clicks_x.pop(closer_index)
+                    self.reference_clicks_y.pop(closer_index)
+                    self.update_clicks_plot('reference')
         elif event.key == 'ctrl+b':
             log.info('Deleting automatic added points. If exist.')
             if self.raw_data_clicks_x is not [] and self.reference_clicks_x is not []:
                 to_remove = []
-                for i in range(len(self.raw_data_clicks)):
+                for i in range(len(self.raw_data_clicks_x)):
                     # print self.raw_data_clicks[i], self.filling_value
-                    if self.raw_data_clicks[i][1] == self.filling_value:
+                    if self.raw_data_clicks_y[i] == self.filling_value:
                         to_remove.append(i)
                         # print to_remove
                 to_remove = np.array(sorted(to_remove, reverse=True))
                 if len(to_remove) > 0:
                     for index in to_remove:
-                        self.raw_data_clicks.pop(index)
                         self.raw_data_clicks_x.pop(index)
+                        self.raw_data_clicks_y.pop(index)
                         self.reference_clicks_x.pop(index)
-                        self.reference_clicks.pop(index)
+                        self.reference_clicks_y.pop(index)
+                    self.update_clicks_plot('reference')
+                    self.update_clicks_plot('raw_data')
             # else:
                 # print self.raw_click_plot, self.ref_click_plot, 'mmm'
         elif event.key == 'ctrl+d':
             log.info('Deleting all recording Clicks')
             answer = raw_input('Are you sure you want to delete all clicks? only typing "No" will stop it! : ')
             if answer.lower() != 'no':
-                self.reference_clicks = []
-                self.raw_data_clicks = []
+                self.reference_clicks_x = []
+                self.reference_clicks_y = []
+                self.raw_data_clicks_x = []
+                self.raw_data_clicks_y = []
+                self.update_clicks_plot('delete')
+                self.plot_raw_over_reference(remove=True)
             else:
                 log.info('No click was deleted this time!.')
         else:
