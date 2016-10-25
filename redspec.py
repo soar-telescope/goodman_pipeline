@@ -19,9 +19,11 @@ import argparse
 import logging as log
 import warnings
 from process import Process
+from wavelengthCalibration import WavelengthCalibration
 
 warnings.filterwarnings('ignore')
-log.basicConfig(level=log.DEBUG)
+FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
+log.basicConfig(level=log.DEBUG, format=FORMAT)
 
 __author__ = 'Simon Torres'
 __date__ = '2016-06-28'
@@ -41,16 +43,51 @@ class MainApp:
         self.ic = pd.DataFrame
         self.args = self.get_args()
         self.night = self.set_night()
-        if self.night.telescope:
-            log.info("Is telescope")
-        else:
-            self.organize_full_night()
-            print(len(self.night.sci_targets))
-            for i in range(len(self.night.sci_targets)):
-                science_object = self.night.sci_targets[i]
-                print(science_object)
-                print(self.night.sci_targets)
-                p = Process(self.night.source, science_object)
+        self.extracted_data = None
+        self.wsolution = None
+        self.calibration_lamp = None
+        self.wavelength_solution_obj = None
+
+    def __call__(self, *args, **kwargs):
+        self.organize_full_night()
+        # print(len(self.night.sci_targets))
+        for i in range(len(self.night.sci_targets)):
+            science_object = self.night.sci_targets[i]
+            # print(science_object)
+            # print(self.night.sci_targets)
+            process = Process(self.night.source, science_object, self.args)
+            if self.args.obsmode == 0:
+                if self.wavelength_solution_obj is None:
+                    self.extracted_data, self.night.sci_targets[i] = process()
+                    wavelength_calibration = WavelengthCalibration(self.night.source,
+                                                                   self.extracted_data,
+                                                                   self.night.sci_targets[i],
+                                                                   self.args)
+                    self.wavelength_solution_obj = wavelength_calibration()
+
+                    # self.night.set_night_wsolution(process.get_wsolution())
+                    # self.night.set_night_calibration_lamp(process.get_calibration_lamp())
+                else:
+                    log.debug(self.night.night_wsolution)
+                    self.extracted_data, self.night.sci_targets[i] = process(extract_lamps=False)
+                    wavelength_calibration = WavelengthCalibration(self.night.source,
+                                                                   self.extracted_data,
+                                                                   self.night.sci_targets[i],
+                                                                   self.args)
+                    wavelength_calibration(self.wavelength_solution_obj)
+            elif self.args.obsmode == 1:
+                self.extracted_data, self.night.sci_targets[i] = process()
+                wavelength_calibration = WavelengthCalibration(self.night.source,
+                                                               self.extracted_data,
+                                                               self.night.sci_targets[i],
+                                                               self.args)
+                self.wavelength_solution_obj = wavelength_calibration()
+            elif self.args.obsmode == 2:
+                raise NotImplementedError
+            elif self.args.obsmode == 3:
+                raise NotImplementedError
+            # else:
+                # process = Process(self.night.source, science_object, self.args, self.night.night_wsolution)
 
     @staticmethod
     def get_args():
@@ -72,10 +109,10 @@ class MainApp:
             -m or --obs-mode: is one of the predefined observing modes and the options are:
                     0: One or more lamps taken during the beginning or end of the night, i.e. single
                     calibration to all data in that night
-                    1: One or more lamps right before OR right after every science exposure.
-                    2: One or more lamps right before AND right after every science exposure.
-                    3: An ASCII file will be read. This file contains a matching of sience target files
+                    1: One or more lamps around every science exposure.
+                    2: An ASCII file will be read. This file contains a matching of science target files
                     to respective calibration lamp file that will be used for calibration.
+                    3: No lamp used, use sky-lines instead.
                     the location is self.mode
                     default value is 0
             -l or --lamp-file: Name of the ASCII file that contains the relation between science files and lamp
@@ -132,9 +169,18 @@ Supported Observing modes are:
                             default=0,
                             type=int,
                             metavar='<Observing Mode>',
-                            dest='mode',
+                            dest='obsmode',
                             choices=[0, 1, 2, 3],
                             help='Defines the mode of matching lamps to science targets.')
+
+        parser.add_argument('-r', '--reference-lamp',
+                            action='store',
+                            default='',
+                            type=str,
+                            metavar='<Lamp File>',
+                            dest='lamp_all_night',
+                            help="Name of reference lamp file for mode 0.\
+                             If not present, the first one in the list will be selected")
 
         parser.add_argument('-l', '--lamp-file',
                             action='store',
@@ -151,7 +197,19 @@ Supported Observing modes are:
                             dest='telescope',
                             help="Enables the <Telescope> mode i.e. it run sequentially,\
                                 designed to use while observing at the telescope. Catches\
-                                 new files arriving to the <source> folder.")
+                                 new files arriving to the <source> folder. (NI!)")
+
+        parser.add_argument('-i', '--interactive',
+                            action='store_true',
+                            default=False,
+                            dest='interactive_ws',
+                            help="Interactive wavelength solution. Disabled by default.")
+
+        parser.add_argument('-o', '--output-prefix',
+                            action='store',
+                            default='g_',
+                            dest='output_prefix',
+                            help="Prefix to add to calibrated spectrum.")
 
         args = parser.parse_args()
         if not os.path.isdir(args.source):
@@ -166,7 +224,7 @@ Supported Observing modes are:
         else:
             if args.destiny[-1] != '/':
                 args.destiny += '/'
-        if args.mode == 2:
+        if args.obsmode == 2:
             print(args.source + args.lamp_file)
             if not os.path.isfile(args.source + args.lamp_file):
                 if args.lamp_file == 'lamps.txt':
@@ -197,24 +255,23 @@ Supported Observing modes are:
         keys = ['date', 'date-obs', 'obstype', 'object', 'exptime', 'ra', 'dec']
         image_collection = ccd.ImageFileCollection(self.args.source, keys)
         self.ic = image_collection.summary.to_pandas()
-        type(self.ic)
+        # type(self.ic)
         date = self.ic.date[0]
         new_night = Night(date,
                           self.args.source,
                           self.args.destiny,
                           self.args.pattern,
-                          self.args.mode,
+                          self.args.obsmode,
                           self.args.lamp_file)
         if self.args.telescope:
             new_night.is_telescope()
             log.info("Telescope Mode is not implemented yet...")
             return new_night
         else:
-            new_night.add_sci(image_collection.files_filtered(obstype='OBJECT'))
-            new_night.add_lamp(image_collection.files_filtered(obstype='COMP'))
+            new_night.add_sci(self.ic.file[self.ic.obstype == 'OBJECT'])
+            new_night.add_lamp(self.ic.file[self.ic.obstype == 'COMP'])
+        print new_night
         return new_night
-        # print(self.args.telescope)
-        # return True
 
     def organize_full_night(self):
         """Organize the data according to the Observing Mode
@@ -247,10 +304,13 @@ Supported Observing modes are:
             log.info("Observation mode 0")
             log.debug("One lamp for all targets.")
             """
-            Need to define a better method for selecting the night
+            Need to define a better method for selecting the lamp
             Now is just picking the first in the list
             """
-            lamp = self.night.lamp[0]
+            if self.args.lamp_all_night is not '':
+                lamp = self.args.lamp_all_night
+            else:
+                lamp = self.night.lamp[0]
             log.debug("Lamp File: " + lamp)
             lamp_index = self.ic[self.ic['file'] == lamp].index.tolist()[0]
             lamp_name = self.ic.object.iloc[lamp_index]
@@ -286,7 +346,7 @@ Supported Observing modes are:
                     lamp_time = self.convert_time(self.ic['date-obs'][lamp_index])
                     lamp_exptime = self.ic.exptime.iloc[lamp_index]
                     lamp_ra, lamp_dec = self.ra_dec_to_deg(self.ic.ra.iloc[lamp_index], self.ic.dec.iloc[lamp_index])
-                    print(lamp, lamp_name, lamp_ra, lamp_dec)
+                    # print(lamp, lamp_name, lamp_ra, lamp_dec)
                     """Since we are not doing astrometry here we assume the sky is flat"""
                     sky_distance = np.sqrt((lamp_ra - ra) ** 2 + (lamp_dec - dec) ** 2)
                     if sky_distance <= 1e-3:
@@ -314,7 +374,6 @@ Supported Observing modes are:
                     ff[i] = ff[i].split()
                     print(ff[i])
 
-
         if self.night.obsmode == 3:
             log.info("Observation mode 3")
             log.debug("No Lamps. Use sky lines")
@@ -322,8 +381,8 @@ Supported Observing modes are:
 
         # science_object.print_all()
         # self.print_spacers(name)
-        print(self.night.sci)
-        print(self.night.lamp)
+        # print(self.night.sci)
+        # print(self.night.lamp)
 
     """Bunch of small functions"""
 
@@ -433,26 +492,47 @@ class Night:
         self.lamps_file = lamps
         self.sci_targets = []
         self.telescope = False
+        self.night_wsolution = None
+        self.night_calibration_lamp = None
 
-    def add_sci(self, insci):
+    def add_sci(self, in_sci):
         """Adds science object to list"""
-        self.sci.extend(insci)
-        self.all.extend(insci)
+        for new_sci in in_sci:
+            if self.pattern == new_sci[0:len(self.pattern)]:
+                self.sci.append(new_sci)
+                self.all.append(new_sci)
+            else:
+                log.info('Image %s rejected because does not match pattern!', new_sci)
         # self.sci_targets = [[]] * len(self.sci)
 
-    def add_lamp(self, inlamp):
+    def add_lamp(self, in_lamp):
         """Adds lamp objects to list"""
-        self.lamp.extend(inlamp)
-        self.all.extend(inlamp)
+        for new_lamp in in_lamp:
+            if self.pattern == new_lamp[0:len(self.pattern)]:
+                self.lamp.append(new_lamp)
+                self.all.append(new_lamp)
+            else:
+                log.info('Image %s rejected because does not match pattern!', new_lamp)
+
 
     def add_sci_object(self, sci_obj):
         """Appends a ScienceObject to the class attribute sci_targets"""
         self.sci_targets.append(sci_obj)
         log.info("Added science object %s" % sci_obj.name)
 
+    def set_night_calibration_lamp(self, calibration_lamp):
+        self.night_calibration_lamp = calibration_lamp
+
     def is_telescope(self):
         """Sets the operation mode as Telescope Mode"""
         self.telescope = True
+
+    def set_night_wsolution(self, wsolution):
+        if wsolution is not None:
+            self.night_wsolution = wsolution
+            log.info('Night Solution Defined')
+        else:
+            log.error("Wavelength solution still can't be defined")
 
 
 class ScienceObject:
@@ -525,4 +605,5 @@ class ScienceObject:
 
 
 if __name__ == '__main__':
-    App = MainApp()
+    app = MainApp()
+    app()

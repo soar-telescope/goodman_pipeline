@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy.modeling import models, fitting
 import logging as log
-import wavelengthCalibration
 
-log.basicConfig(level=log.DEBUG)
+
+FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
+log.basicConfig(level=log.DEBUG, format=FORMAT)
 
 
 # import sys
@@ -21,25 +22,40 @@ class Process:
 
     """
 
-    def __init__(self, source_path, sci_obj):
+    def __init__(self, source_path, sci_obj, args):
+        self.args = args
         self.science_object = sci_obj
         self.path = source_path
         self.data = fits.getdata(self.path + self.science_object.file_name)
-        self.header = fits.getheader(self.path + self.science_object.file_name)
+        self.header = self.add_wcs_keys(fits.getheader(self.path + self.science_object.file_name))
         self.lamps_data = []
         self.lamps_header = []
         self.region = None
-        if self.science_object.lamp_count > 0:
-            for lamp_index in range(self.science_object.lamp_count):
-                lamp_data = fits.getdata(self.path + self.science_object.lamp_file[lamp_index])
-                # lamp_type = self.science_object.lamp_type[lamp_index]
-                self.lamps_data.append(lamp_data)
-                lamp_header = fits.getheader(self.path + self.science_object.lamp_file[lamp_index])
-                self.lamps_header.append(lamp_header)
-            self.targets = self.identify_spectra()
-            self.traces = self.trace(self.targets)
-            self.extracted_data = self.extract(self.traces)
-            wavelengthCalibration.WavelengthCalibration(self.path, self.extracted_data, self.science_object)
+        self.targets = None
+        self.traces = None
+        self.extracted_data = None
+
+    def __call__(self, extract_lamps=True):
+
+        log.info('Processing Science File : %s', self.science_object.file_name)
+        if extract_lamps:
+            if self.science_object.lamp_count > 0:
+                for lamp_index in range(self.science_object.lamp_count):
+                    lamp_data = fits.getdata(self.path + self.science_object.lamp_file[lamp_index])
+                    # lamp_type = self.science_object.lamp_type[lamp_index]
+                    self.lamps_data.append(lamp_data)
+                    lamp_header = self.add_wcs_keys(
+                        fits.getheader(self.path + self.science_object.lamp_file[lamp_index]))
+                    self.lamps_header.append(lamp_header)
+            else:
+                log.error('There Are no lamps available for the target: %s', self.science_object.name)
+                return [None, None]
+
+        self.targets = self.identify_spectra()
+        self.traces = self.trace(self.targets)
+        self.extracted_data = self.extract(self.traces)
+
+        return [self.extracted_data, self.science_object]
 
     def identify_spectra(self):
         """Finds the location of the spectrum or spectra in case there are more
@@ -67,7 +83,7 @@ class Process:
         sample_data = np.median(self.data[:, int(y / 2.) - 100:int(y / 2.) + 100], axis=1)
         # x_axis = np.linspace(0, len(sample_data), x)
         x_axis = range(0, len(sample_data), 1)
-        print(x_axis)
+        # print(x_axis)
         std = np.nanstd(sample_data)
         log.debug('Standard Deviation: %s', std)
         median = np.nanmedian(sample_data)
@@ -99,7 +115,7 @@ class Process:
                 if i == len(sample_data) - 1:
                     keep_searching = False
         identified_targets = []
-        print('all ', all_candidates, len(all_candidates))
+        # print('all ', all_candidates, len(all_candidates))
         for single_candidate in all_candidates:
             cmax = np.argmax(single_candidate[0])
             max_val = np.max(single_candidate[0])
@@ -126,7 +142,7 @@ class Process:
                 voigt_init = models.Voigt1D(x_0=max_pos, amplitude_L=max_val, fwhm_L=8, fwhm_G=8)
                 fit_voigt = fitting.LevMarLSQFitter()
                 voigt = fit_voigt(voigt_init, x_axis, sample_data)
-                print(voigt)
+                # print(voigt)
                 identified_targets.append(IdentifiedTarget(
                                                             voigt.amplitude_L.value,
                                                             voigt.x_0.value,
@@ -183,8 +199,8 @@ class Process:
         If no background region are valid, no background subtraction will happen.
 
         Note:
-            Is not worth doing gaussian fits to the sub samples since it will not improve the result. The only case this
-            might be useful is the case when someone does an interpolation along the spatial direction.
+            It is not worth doing gaussian fits to the sub samples since it will not improve the result. The only case
+            this might be useful is the case when someone does an interpolation along the spatial direction.
 
         Args:
             targets (list): Each element is a class that stores the parameters of the gaussian fitted to the data in
@@ -296,7 +312,7 @@ class Process:
                         limits.append(i + 1)
                     else:
                         limits.append(i)
-            print(limits)
+            # print(limits)
             colors = ['red', 'green', 'blue']
             ci = 0
             for l in range(0, len(limits), 2):
@@ -360,7 +376,7 @@ class Process:
         if len(traces) > 0:
             '''Loop through traces'''
             sci_pack = []
-            for trace in traces:
+            for a in range(len(traces)):
                 '''Initial checks'''
                 extracted_object = []
                 headers = []
@@ -373,7 +389,7 @@ class Process:
                     log.warning('There are no lamps available for this Target.')
 
                 """Extraction of data parsed as argument"""
-                chebyshev, width = trace
+                chebyshev, width = traces[a]
                 # log.debug("Offset for Background: %s", offset)
                 if width % 2 == 1:
                     half_width = int((width - 1) / 2)
@@ -409,8 +425,10 @@ class Process:
                     """Define limits of aperture for spectrum"""
                     x_min = int(round(chebyshev(i))) - half_width
                     x_max = int(round(chebyshev(i))) + half_width
+                    apnum1 = '%s %s %s %s'%(a, 1, x_min, x_max)
                     if i == int(y/2):
-                        log.debug('Aperture for extraction [%s:%s] at %s (add this to header)', x_min, x_max, i)
+                        log.debug('Aperture for extraction [%s:%s] at %s', x_min, x_max, i)
+                        log.debug('APNUM1 = %s', apnum1)
 
                     """If there are background extraction zones here are prepared to subtract"""
                     if len(background) > 1:
@@ -433,16 +451,18 @@ class Process:
                     sci.append(data_point)
 
                     """Lamp extraction"""
-                    if self.science_object.lamp_count > 0:
+                    if len(self.lamps_data) > 0:
                         for e in range(self.science_object.lamp_count):
                             lamp_point = np.sum(self.lamps_data[e][x_min:x_max, i])
                             all_lamps[e] = np.append(all_lamps[e], lamp_point)
                 """Construction of extracted_object (to be returned)"""
                 extracted_object.append(np.array(sci))
+                self.header['APNUM1'] = apnum1
                 headers.append(self.header)
-                if self.science_object.lamp_count > 0:
+                if len(self.lamps_data) > 0:
                     for l in range(self.science_object.lamp_count):
                         extracted_object.append(np.array(all_lamps[l]))
+                        self.lamps_header[l]['APNUM1'] = apnum1
                         headers.append(self.lamps_header[l])
                 # """
                 """Plot background subtraction"""
@@ -473,7 +493,39 @@ class Process:
             log.error("There are no traces discovered here!!.")
             return []
 
+    def add_wcs_keys(self, header):
+        try:
+            header['BANDID1'] = 'spectrum - background none, weights none, clean no'
+            header['APNUM1'] = '1 1 0 0'
+            header['WCSDIM'] = 1
+            header['CTYPE1'] = 'LINEAR'
+            header['CRVAL1'] = 1
+            header['CRPIX1'] = 1
+            header['CDELT1'] = 1
+            header['CD1_1'] = 1
+            header['LTM1_1'] = 1
+            header['WAT0_001'] = 'system=equispec'
+            header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
+            header['DC-FLAG'] = 0
+            header['DCLOG1'] = 'REFSPEC1 = non set'
+        except:
+            log.error("Can't add wcs keywords to header")
+        finally:
+            return header
 
+    def get_wsolution(self):
+        if self.wsolution is not None:
+            return self.wsolution
+        else:
+            log.error("Wavelength Solution doesn't exist!")
+            return None
+
+    def get_calibration_lamp(self):
+        if self.wsolution is not None and self.calibration_lamp is not None:
+            return self.calibration_lamp
+        else:
+            log.error("Wavelength Solution doesn't exist!")
+            return None
 
 
 class IdentifiedTarget:

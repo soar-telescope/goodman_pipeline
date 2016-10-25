@@ -39,7 +39,6 @@ class WavelengthFitter:
             log.error('Either model or model fitter were not constructed')
 
 
-
 class ReadWavelengthSolution:
 
     def __init__(self, header, data, reference=''):
@@ -186,15 +185,13 @@ class ReadWavelengthSolution:
         """
         return solution
 
-
-
     def get_wavelength_solution(self):
         header = self.header
         wcsdim = int(header['WCSDIM'])
         for dim in range(1, wcsdim + 1):
             ctypen = header['CTYPE%s' % dim]
             if ctypen == 'LINEAR':
-                print('Linear Solution')
+                log.info('Reading Linear Solution')
                 # self.wcs_dict = {'dtype': 0}
                 self.linear_solution()
             elif ctypen == 'MULTISPE':
@@ -251,79 +248,21 @@ class ReadMathFunctions:
         return cheb
 
     def non_linear_legendre(self):
-        return False
+        raise NotImplementedError
 
     def non_linear_lspline(self):
-        return False
+        raise NotImplementedError
 
     def non_linear_cspline(self):
         """Cubic Spline"""
         # cubic_spline = models.
-        return True
+        raise NotImplementedError
 
     def get_solution(self):
         if self.solution != None:
             return self.solution
         else:
             log.error("The solution hasn't been found")
-"""
-def onclick(event):
-    print 'click ', event.xdata, ' ', event.ydata, ' ', event.button
-
-def interactive_solution(raw_file, reference_file):
-    # ------- Reference -------
-    ref_data = fits.getdata(reference_file)
-    ref_header = fits.getheader(reference_file)
-    reference = ReadWavelengthSolution(ref_header, ref_data)
-    reference_solution = reference.get_wavelength_solution()
-    # ------- RAW -------
-    raw_data = fits.getdata(raw_file)
-    raw_header = fits.getheader(raw_file)
-    raw_pixel_axis = range(1, len(raw_data) + 1, 1)
-    raw = ReadWavelengthSolution(raw_data, raw_header)
-    # raw_solution = raw.get_wavelength_solution()
-    # ------- Plots -------
-    fig = plt.figure(1)
-    manager = plt.get_current_fig_manager()
-    manager.window.maximize()
-    plt.subplot(211)
-    plt.title('Raw Data')
-    plt.xlabel('Pixels')
-    plt.ylabel('Intensity (counts)')
-    plt.plot(raw_pixel_axis, raw_data)
-    plt.xlim((0, 4096))
-
-    plt.subplot(212)
-    # plt.xlim((3589, 4930))
-    plt.title('Reference Data')
-    plt.xlabel('Wavelength (Angstrom)')
-    plt.ylabel('Intensity (counts)')
-    plt.plot(reference_solution[0], reference_solution[1])
-    plt.xlim((reference_solution[0][0], reference_solution[0][-1]))
-    plt.tight_layout()
-    fig.canvas.mpl_connect('button_press_event', onclick)
-    plt.show()
-"""
-
 
 if __name__ == '__main__':
-    # filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600_nonlinear_2.fits'
-    # filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600.fits'
-    # filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear600nonlinearli.fits'
-    raw_filename = '/data/simon/data/soar/work/goodman/test/extraction-tests/exfc_0047.SO2016A-019_0320.fits'
-    ref_lamp = '/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear_reference_noao.fits'
-    # header = fits.getheader(raw_filename)
-    # data = fits.getdata(raw_filename)
-    # c = ReadWavelengthSolution(header, data, reference=ref_lamp)
-    # c.interactive_solution()
-    interactive_solution(raw_filename, ref_lamp)
-    sys.exit(0)
-
-
-# print(wat)
-# spectrum = tc_read_fits_copy.read_goodman_non_linear_spectrum(filename=filename, dispersion_unit=u.angstrom)
-# print(spectrum[0].wavelength)
-# print(dir(spectrum[0]))
-# print(dir(spectrum[1]))
-# plt.plot(spectrum[0].wavelength, spectrum[0].data)
-# plt.show()
+    pass
