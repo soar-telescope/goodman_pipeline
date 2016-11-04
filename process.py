@@ -1,3 +1,8 @@
+"""Module that handles intermediate processess
+
+This module performs intermediate steps in the process to obtain a wavelength calibrated spectrum
+the __call__ method returns a list contained uni-dimensional data extracted and the modified instance of ScienceObject
+"""
 from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
@@ -5,14 +10,11 @@ from astropy.modeling import models, fitting
 import logging as log
 
 
-FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
+FORMAT = '%(levelname)s:%(filename)s:%(module)s: %(message)s'
 log.basicConfig(level=log.DEBUG, format=FORMAT)
 
 
-# import sys
-plots_enabled = False
-
-class Process:
+class Process(object):
     """Set of tools for extracting Goodman High Throughput Spectrograph data.
 
     This class needs a path parsed as a string and a ScienceObject object. The ScienceObject class is defined in the
@@ -30,6 +32,7 @@ class Process:
         self.header = self.add_wcs_keys(fits.getheader(self.path + self.science_object.file_name))
         self.lamps_data = []
         self.lamps_header = []
+        self.close_targets = False
         self.region = None
         self.targets = None
         self.traces = None
@@ -78,9 +81,9 @@ class Process:
 
         """
         # TODO(simon) Improve target contamination rejections
-        x, y = self.data.shape
-        self.region = np.ones(x)
-        sample_data = np.median(self.data[:, int(y / 2.) - 100:int(y / 2.) + 100], axis=1)
+        data_x, data_y = self.data.shape
+        self.region = np.ones(data_x)
+        sample_data = np.median(self.data[:, int(data_y / 2.) - 100:int(data_y / 2.) + 100], axis=1)
         # x_axis = np.linspace(0, len(sample_data), x)
         x_axis = range(0, len(sample_data), 1)
         # print(x_axis)
@@ -92,7 +95,7 @@ class Process:
         log.debug('Selection Threshold: %s', threshold)
         keep_searching = True
         all_candidates = []
-        if plots_enabled:
+        if self.args.plots_enabled:
             plt.plot(sample_data)
             plt.axhline(threshold)
             plt.show()
@@ -116,65 +119,91 @@ class Process:
                     keep_searching = False
         identified_targets = []
         # print('all ', all_candidates, len(all_candidates))
+        if self.args.plots_enabled:
+            for cand in all_candidates:
+                plt.plot(cand[1], cand[0])
+            plt.plot(sample_data, linestyle='--')
+            plt.show()
+            plt.clf()
         for single_candidate in all_candidates:
-            cmax = np.argmax(single_candidate[0])
-            max_val = np.max(single_candidate[0])
-            max_pos = single_candidate[1][cmax]
+            # if len(single_candidate[0]) <= 4:
+                # log.debug('Not enough data points to make it to a Science Target')
+            try:
+                cmax = np.argmax(single_candidate[0])
+                max_val = np.max(single_candidate[0])
+                max_pos = single_candidate[1][cmax]
 
-            model_to_fit = 'voigt'
+                model_to_fit = 'voigt'
 
-            if model_to_fit == 'gauss':
-                gauss_init = models.Gaussian1D(amplitude=max_val, mean=max_pos, stddev=4)
-                fit_gaussian = fitting.LevMarLSQFitter()
-                gauss = fit_gaussian(gauss_init, x_axis, sample_data)
-                identified_targets.append(IdentifiedTarget(gauss.amplitude.value, gauss.mean.value, gauss.stddev.value))
-                fitted_model = gauss
-            elif model_to_fit == 'lorentz':
-                lorentz_init = models.Lorentz1D(amplitude=max_val, x_0=max_pos, fwhm=8)
-                log.debug('Amplitude: %s X_0: %s FWHM: %s', max_val, max_pos, 8)
-                fit_lorentz = fitting.LevMarLSQFitter()
-                lorentz = fit_lorentz(lorentz_init, x_axis, sample_data)
-                # print(lorentz)
-                identified_targets.append(
-                    IdentifiedTarget(lorentz.amplitude.value, lorentz.x_0.value, lorentz.fwhm.value))
-                fitted_model = lorentz
-            elif model_to_fit == 'voigt':
-                voigt_init = models.Voigt1D(x_0=max_pos, amplitude_L=max_val, fwhm_L=8, fwhm_G=8)
-                fit_voigt = fitting.LevMarLSQFitter()
-                voigt = fit_voigt(voigt_init, x_axis, sample_data)
-                # print(voigt)
-                identified_targets.append(IdentifiedTarget(
-                                                            voigt.amplitude_L.value,
-                                                            voigt.x_0.value,
-                                                            voigt.fwhm_L.value,
-                                                            voigt.fwhm_G.value))
-                fitted_model = voigt
+                if model_to_fit == 'gauss':
+                    gauss_init = models.Gaussian1D(amplitude=max_val, mean=max_pos, stddev=4)
+                    fit_gaussian = fitting.LevMarLSQFitter()
+                    gauss = fit_gaussian(gauss_init, single_candidate[1], single_candidate[0])
+                    identified_targets.append(
+                        IdentifiedTarget(gauss.amplitude.value, gauss.mean.value, gauss.stddev.value))
+                    fitted_model = gauss
+                elif model_to_fit == 'lorentz':
+                    lorentz_init = models.Lorentz1D(amplitude=max_val, x_0=max_pos, fwhm=8)
+                    log.debug('Amplitude: %s X_0: %s FWHM: %s', max_val, max_pos, 8)
+                    fit_lorentz = fitting.LevMarLSQFitter()
+                    lorentz = fit_lorentz(lorentz_init, single_candidate[1], single_candidate[0])
+                    # print(lorentz)
+                    identified_targets.append(
+                        IdentifiedTarget(lorentz.amplitude.value, lorentz.x_0.value, lorentz.fwhm.value))
+                    fitted_model = lorentz
+                elif model_to_fit == 'voigt':
+                    voigt_init = models.Voigt1D(x_0=max_pos, amplitude_L=max_val, fwhm_L=8, fwhm_G=8)
+                    fit_voigt = fitting.LevMarLSQFitter()
+                    # voigt = fit_voigt(voigt_init, x_axis, sample_data)
+                    voigt = fit_voigt(voigt_init, single_candidate[1], single_candidate[0])
+                    # print(voigt)
+                    identified_targets.append(IdentifiedTarget(
+                        voigt.amplitude_L.value,
+                        voigt.x_0.value,
+                        voigt.fwhm_L.value,
+                        voigt.fwhm_G.value))
+                    fitted_model = voigt
 
-            """
-            x_0 : float
-             Position of the peak
-            amplitude_L : float
-             The Lorentzian amplitude
-            fwhm_L : float
-             The Lorentzian full width at half maximum
-            fwhm_G : float
-             The Gaussian full width at half maximum
+                # x_0 : float
+                # Position of the peak
+                # amplitude_L : float
+                # The Lorentzian amplitude
+                # fwhm_L : float
+                # The Lorentzian full width at half maximum
+                # fwhm_G : float
+                # The Gaussian full width at half maximum
 
-            """
-
-            residuals = sample_data - fitted_model(x_axis)
-            if plots_enabled:
-                plt.plot(x_axis, sample_data)
-                plt.plot(x_axis, fitted_model(x_axis))
-                plt.plot(x_axis, residuals)
-                # plt.axvline(gauss.x_0.value)
-                plt.show()
-                plt.clf()
+                residuals = sample_data - fitted_model(x_axis)
+                if self.args.plots_enabled:
+                    plt.plot(x_axis, sample_data)
+                    plt.plot(x_axis, fitted_model(x_axis))
+                    plt.plot(x_axis, residuals)
+                    # plt.axvline(gauss.x_0.value)
+                    plt.show()
+                    plt.clf()
+            except TypeError as err:
+                log.error(err)
+                log.info('Object candidate will be ignored. Most likely does not have enough points.')
 
 
         if len(identified_targets) > 0:
             log.info('Identified %s targets.', len(identified_targets))
-            return identified_targets
+            if len(identified_targets) > 1:
+                # check how close the targets are to each other
+                plt.plot(x_axis, sample_data)
+                center = (identified_targets[0].mean + identified_targets[1].mean)/2.
+                mean_width = (identified_targets[0].stddev + identified_targets[1].stddev)/2.
+                plt.axvspan(center - mean_width, center + mean_width, color='g', alpha=.5)
+                for target_index in range(0, len(identified_targets)):
+                    print identified_targets[target_index].stddev, identified_targets[target_index].fwhm_g
+                    half = identified_targets[target_index].stddev
+                    plt.axvspan(identified_targets[target_index].mean - half,
+                                identified_targets[target_index].mean + half,
+                                color='r', alpha=0.5)
+                plt.show()
+                return identified_targets
+            else:
+                return identified_targets
         else:
             log.error('No Target identified')
 
@@ -212,20 +241,20 @@ class Process:
 
         """
 
-        """True enables gaussian fits and false disables it. Gaussian fit was left for experimental purposes"""
+        # True enables gaussian fits and false disables it. Gaussian fit was left for experimental purposes
         do_gaussian_fit = False
-        """Voigt fits better"""
-        do_voigt_fit = False
-        "half of number of sigmas to be sub_sampled"
+        # Voigt fits better
+        do_voigt_fit = True
+        # half of number of sigmas to be sub_sampled
         half_n_sigma = 3
-        """space allowance in pixels for extreme of images"""
+        # space allowance in pixels for extreme of images
         ends_pix_spacing = 50
-        """Number of samples to be done in the dispersion direction"""
+        # Number of samples to be done in the dispersion direction
         n_samples = 50
-        """sample width must be smaller or equal than ends_pix_spacing"""
+        # sample width must be smaller or equal than ends_pix_spacing
         sample_width = 50
-        """Background offsets from target"""
-        background_offset = 5
+        # Background offsets from target
+        # background_offset = 5
 
         traces = []
         regions = []
@@ -234,20 +263,20 @@ class Process:
             x_min = int(target.mean - half_n_sigma * target.stddev)
             x_max = int(target.mean + half_n_sigma * target.stddev)
             width = x_max - x_min
-            background_offset = width
-            """target value in mask is -1, for background 0 for non-masked is 1"""
+            background_offset = 1.5 * width
+            # target value in mask is -1, for background 0 for non-masked is 1
             self.mask(x_min, x_max, -1)
 
             regions.append([x_min, x_max, width])
 
             sample_data = self.data[x_min:x_max, :]
-            sx, sy = sample_data.shape
+            sample_y = sample_data.shape[1]
 
             max_positions = []
             max_index = []
-            for y in np.linspace(0, sy - ends_pix_spacing, n_samples, dtype=int):
+            for index_y in np.linspace(0, sample_y - ends_pix_spacing, n_samples, dtype=int):
 
-                sub_sample = sample_data[:, y:y + n_samples]
+                sub_sample = sample_data[:, index_y:index_y + n_samples]
 
                 sub_median = np.median(sub_sample, axis=1)
                 sub_x_axis = range(len(sub_median))
@@ -256,35 +285,35 @@ class Process:
                 sub_max = np.max(sub_median)
 
                 if do_gaussian_fit:
-                    """Will leave this here just in case someone wants to experiment"""
-                    """A Voigt profile is better for this case"""
+                    # Will leave this here just in case someone wants to experiment
+                    # A Voigt profile is better for this case
                     gauss_init = models.Gaussian1D(amplitude=sub_max, mean=sub_argmax, stddev=1.)
                     fit_gaussian = fitting.LevMarLSQFitter()
                     gauss = fit_gaussian(gauss_init, sub_x_axis, sub_median)
                     max_positions.append(gauss.mean.value + x_min)
-                    max_index.append(y + int(sample_width / 2.))
+                    max_index.append(index_y + int(sample_width / 2.))
                 elif do_voigt_fit:
                     voigt_init = models.Voigt1D(x_0=sub_argmax, amplitude_L=sub_max, fwhm_L=8, fwhm_G=8)
                     fit_voigt = fitting.LevMarLSQFitter()
-                    voigt = fit_voigt(voigt_init, x_axis, sample_data)
+                    voigt = fit_voigt(voigt_init, sub_x_axis, sub_median)
                     max_positions.append(voigt.x_0.value + x_min)
-                    max_index.append(y + int(sample_width / 2.))
+                    max_index.append(index_y + int(sample_width / 2.))
                 else:
                     max_positions.append(sub_argmax + x_min)
-                    max_index.append(y + int(sample_width / 2.))
+                    max_index.append(index_y + int(sample_width / 2.))
 
-            """chebyshev fitting for defining the trace"""
-            chebyshev_init = models.Chebyshev1D(2, domain=[0, sy])
+            # chebyshev fitting for defining the trace
+            chebyshev_init = models.Chebyshev1D(2, domain=[0, sample_y])
             fit_cheb = fitting.LinearLSQFitter()
             cheb = fit_cheb(chebyshev_init, max_index, max_positions)
             traces.append([cheb, width])
 
-            if plots_enabled:
+            if self.args.plots_enabled:
                 plt.imshow(self.data, clim=(5, 150))
                 plt.plot(max_index, max_positions, color='r')
                 plt.show()
 
-        """Mask Background Extraction zones"""
+        # Mask Background Extraction zones
         # TODO(simon): Define what to do in case no background extraction zone is suitable for use.
         for region in regions:
             x_min, x_max, width = region
@@ -295,9 +324,9 @@ class Process:
             b_high_max = x_max + background_offset + width
             self.mask(b_high_min, b_high_max, 0)
 
-        # """
+        #
         # plots the masked regions.
-        if plots_enabled:
+        if self.args.plots_enabled:
             plt.title("Masked Regions for Background extraction")
             plt.xlabel("Spatial Direction")
             plt.ylabel("Intensity")
@@ -314,18 +343,18 @@ class Process:
                         limits.append(i)
             # print(limits)
             colors = ['red', 'green', 'blue']
-            ci = 0
-            for l in range(0, len(limits), 2):
-                plt.axvspan(limits[l], limits[l + 1], color=colors[ci], alpha=0.3)
-                ci += 1
-                if ci == 3:
-                    ci = 0
-            """Watch out here! it works but might be an error."""
+            colors_index = 0
+            for limit_index in range(0, len(limits), 2):
+                plt.axvspan(limits[limit_index], limits[limit_index + 1], color=colors[colors_index], alpha=0.3)
+                colors_index += 1
+                if colors_index == 3:
+                    colors_index = 0
+            # Watch out here! it works but might be an error.
             plt.xlim([target.mean - 200, target.mean + 200])
             plt.savefig("background-extraction-zones" + self.science_object.name + "_2.png", dpi=300)
             plt.show()
 
-        # """
+        #
         return traces
 
     def mask(self, mask_min, mask_max, value):
@@ -352,7 +381,7 @@ class Process:
             self.region[mask_min:mask_max] = value
             return True
         else:
-            log.warning("Region %s:%s is already masked", min, max)
+            log.warning("Region %s:%s is already masked", mask_min, mask_max)
             return False
 
     def extract(self, traces):
@@ -374,29 +403,30 @@ class Process:
 
         """
         if len(traces) > 0:
-            '''Loop through traces'''
+            # Loop through traces
             sci_pack = []
-            for a in range(len(traces)):
-                '''Initial checks'''
+            for trace_index in range(len(traces)):
+                # Initial checks
                 extracted_object = []
                 headers = []
+                # TODO(simon) this might be simplified in a pythonic way
                 if self.science_object.lamp_count > 0:
                     all_lamps = []
-                    for l in range(self.science_object.lamp_count):
+                    for lamp_index in range(self.science_object.lamp_count):
                         lamp = np.array([])
                         all_lamps.append(lamp)
                 else:
                     log.warning('There are no lamps available for this Target.')
 
-                """Extraction of data parsed as argument"""
-                chebyshev, width = traces[a]
+                # Extraction of data parsed as argument
+                chebyshev, width = traces[trace_index]
                 # log.debug("Offset for Background: %s", offset)
                 if width % 2 == 1:
                     half_width = int((width - 1) / 2)
                 else:
                     half_width = int(width / 2)
 
-                """Define background subtraction zones"""
+                # Define background subtraction zones
                 # TODO(simon): Make the background subtraction zones to follow the trace
                 background = []
                 limits = []
@@ -405,32 +435,33 @@ class Process:
                         log.debug("Found a mask limit.")
                         limits.append(i + 1)
 
-                for e in range(0, len(limits) - 1, 2):
-                    if limits[e + 1] - limits[e] == width and -1 not in self.region[limits[e]:limits[e + 1]]:
-                        background.append([limits[e], limits[e + 1]])
+                for limit_index in range(0, len(limits) - 1, 2):
+                    if limits[limit_index + 1] - limits[limit_index] == width and\
+                                    -1 not in self.region[limits[limit_index]:limits[limit_index + 1]]:
+                        background.append([limits[limit_index], limits[limit_index + 1]])
                         log.debug("Defining background extraction zone [%s:%s] for target.",
-                                  limits[e],
-                                  limits[e + 1])
+                                  limits[limit_index],
+                                  limits[limit_index + 1])
 
-                '''Getting data shape'''
-                x, y = self.data.shape
+                # Getting data shape
+                data_y = self.data.shape[1]
                 sci = []
 
                 unsubtracted = []
                 subtracted_background = []
 
-                """Actual extraction"""
-                """Avoid printing inside this loop since it goes through all the columns"""
-                for i in range(y):
-                    """Define limits of aperture for spectrum"""
+                # Actual extraction
+                # Avoid printing inside this loop since it goes through all the columns
+                for i in range(data_y):
+                    # Define limits of aperture for spectrum
                     x_min = int(round(chebyshev(i))) - half_width
                     x_max = int(round(chebyshev(i))) + half_width
-                    apnum1 = '%s %s %s %s'%(a, 1, x_min, x_max)
-                    if i == int(y/2):
+                    apnum1 = '%s %s %s %s'%(trace_index, 1, x_min, x_max)
+                    if i == int(data_y/2):
                         log.debug('Aperture for extraction [%s:%s] at %s', x_min, x_max, i)
                         log.debug('APNUM1 = %s', apnum1)
 
-                    """If there are background extraction zones here are prepared to subtract"""
+                    # If there are background extraction zones here are prepared to subtract
                     if len(background) > 1:
                         background_part = []
                         for back in background:
@@ -442,7 +473,7 @@ class Process:
                     else:
                         background_data = 0
 
-                    """Stored for debugging process"""
+                    # Stored for debugging process
                     # print background_data
                     subtracted_background.append(background_data)
                     unsubtracted.append(np.sum(self.data[x_min:x_max, i]))
@@ -450,23 +481,23 @@ class Process:
                     data_point = np.sum(self.data[x_min:x_max, i]) - background_data
                     sci.append(data_point)
 
-                    """Lamp extraction"""
+                    # Lamp extraction
                     if len(self.lamps_data) > 0:
-                        for e in range(self.science_object.lamp_count):
-                            lamp_point = np.sum(self.lamps_data[e][x_min:x_max, i])
-                            all_lamps[e] = np.append(all_lamps[e], lamp_point)
-                """Construction of extracted_object (to be returned)"""
+                        for limit_index in range(self.science_object.lamp_count):
+                            lamp_point = np.sum(self.lamps_data[limit_index][x_min:x_max, i])
+                            all_lamps[limit_index] = np.append(all_lamps[limit_index], lamp_point)
+                # Construction of extracted_object (to be returned)
                 extracted_object.append(np.array(sci))
                 self.header['APNUM1'] = apnum1
                 headers.append(self.header)
                 if len(self.lamps_data) > 0:
-                    for l in range(self.science_object.lamp_count):
-                        extracted_object.append(np.array(all_lamps[l]))
-                        self.lamps_header[l]['APNUM1'] = apnum1
-                        headers.append(self.lamps_header[l])
-                # """
-                """Plot background subtraction"""
-                if plots_enabled:
+                    for lamp_index in range(self.science_object.lamp_count):
+                        extracted_object.append(np.array(all_lamps[lamp_index]))
+                        self.lamps_header[lamp_index]['APNUM1'] = apnum1
+                        headers.append(self.lamps_header[lamp_index])
+                #
+                # Plot background subtraction
+                if self.args.plots_enabled:
                     plt.title('Background Subtraction\n' + self.science_object.name)
                     plt.xlabel('Pixels (dispersion direction)')
                     plt.ylabel('Intensity (counts)')
@@ -485,7 +516,7 @@ class Process:
                     plt.show()
 
                 # print(chebyshev, width, x, y)
-                # """
+                #
                 sci_pack.append(extracted_object)
                 sci_pack.append(headers)
             return sci_pack
@@ -493,7 +524,14 @@ class Process:
             log.error("There are no traces discovered here!!.")
             return []
 
-    def add_wcs_keys(self, header):
+    @staticmethod
+    def add_wcs_keys(header):
+        """Adds generic keyword to the header
+
+        Linear wavelength solutions require a set of standard fits keywords. Later on they will be updated accordingly
+
+        The main goal of putting them here is to have consistent and nicely ordered headers
+        """
         try:
             header['BANDID1'] = 'spectrum - background none, weights none, clean no'
             header['APNUM1'] = '1 1 0 0'
@@ -508,27 +546,15 @@ class Process:
             header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
             header['DC-FLAG'] = 0
             header['DCLOG1'] = 'REFSPEC1 = non set'
-        except:
-            log.error("Can't add wcs keywords to header")
-        finally:
             return header
-
-    def get_wsolution(self):
-        if self.wsolution is not None:
-            return self.wsolution
-        else:
-            log.error("Wavelength Solution doesn't exist!")
-            return None
-
-    def get_calibration_lamp(self):
-        if self.wsolution is not None and self.calibration_lamp is not None:
-            return self.calibration_lamp
-        else:
-            log.error("Wavelength Solution doesn't exist!")
-            return None
+        except TypeError as err:
+            log.error("Can't add wcs keywords to header")
+            log.debug(err)
 
 
-class IdentifiedTarget:
+
+
+class IdentifiedTarget(object):
     """Allows for easy storage and manipulation of the targets found.
 
     """
@@ -539,7 +565,3 @@ class IdentifiedTarget:
         self.stddev = stddev
         self.fwhm_g = fwhmg
 
-
-'''
-class Templates:
-    def __init__(self):'''

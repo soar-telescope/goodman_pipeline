@@ -13,14 +13,37 @@ The current elements present are:
 
 """
 import logging as log
+import pandas
+
 FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 log.basicConfig(level=log.DEBUG, format=FORMAT)
 
-class ReferenceData:
-    def __init__(self):
-        self.reference_files_path = './refdata/'
+
+class ReferenceData(object):
+    """Contains spectroscopic reference lines values and filename to templates.
+
+    This class stores:
+        - file names for reference fits spectrum
+        - file names for CSV tables with reference lines and relative intensities
+        - line positions only for the elements used in SOAR comparison lamps
+    """
+    def __init__(self, args):
+        """Initializes the class ReferenceData
+
+        Args:
+            args(class): All the arguments parsed to the parent program
+        """
+        self.args = args
+        # self.reference_files_path = os.path.expanduser('~/') + './refdata/'
         self.lamps_file_list = {'cuhear': 'cuhear_reference_noao.fits',
-                                'hgar': 'hgar_reference_soar.fits'}
+                                'hgar': 'hgar_reference_soar.fits',
+                                'hgarne': 'hgar_reference_soar.fits'}
+        self.line_list_files = {'cu': 'Cu_3000A-10000A_clean.csv',
+                                'he': 'He_3000A-10000A_clean.csv',
+                                'ne': 'Ne_3000A-10000A_clean.csv',
+                                'ar': 'Ar_3000A-10000A_clean.csv',
+                                'hg': 'Hg_3000A-10000A_clean.csv'}
+
         self.line_list = {'hg': [3125.67,
                                  3131.70,
                                  3341.48,
@@ -658,30 +681,79 @@ class ReferenceData:
                                  9784.5028,
                                  10470.0535]}
 
-    def get_line_list_by_name(self, name):
-        elements = [name[i:i + 2].lower() for i in range(0, len(name), 2)]
+    def get_line_list_by_name(self, lamp_name):
+        """Get the reference lines for elements in the lamp's name
+
+        Splits the name in chunks of two characters assuming each one of them represents an element in the comparison
+        lamp, then fetches the list of line positions available and appends it to a list that will be return ordered.
+
+        Args:
+            lamp_name(str): Lamp's name as in the header keyword OBJECT
+
+        Returns:
+            line_list(list): Sorted line list
+        """
+        elements = [lamp_name[i:i + 2].lower() for i in range(0, len(lamp_name), 2)]
         line_list = []
         for element in elements:
             line_list.extend(self.line_list[element])
         return sorted(line_list)
 
     def get_lines_in_range(self, blue, red, lamp_name):
+        """Get the reference lines for a given comparison lamp in a wavelength range
+
+        Select the reference lines available for all the elements in the comparison lamp in the spectral range specified
+        by blue and red
+
+        Args:
+            blue(float): Blue limit for lines required
+            red(float): Red limit for lines required
+            lamp_name(str): Lamp's name as in the header keyword OBJECT
+
+        Returns:
+            lines(list): Sorted line list
+        """
         lines = []
         if len(lamp_name) % 2 == 0:
-            for e in range(0, len(lamp_name), 2):
-                element = lamp_name[e:e + 2]
+            for element_index in range(0, len(lamp_name), 2):
+                element = lamp_name[element_index:element_index + 2]
                 all_lines = self.line_list[element]
                 for line in all_lines:
                     if blue <= line <= red:
                         lines.append(line)
         return sorted(lines)
 
-    def get_reference_lamps_by_name(self, name):
-        lamp_name = name.lower()
-        reference_lamp = None
+    def get_reference_lamps_by_name(self, lamp_name):
+        """Get lamp's template by element
+
+        Some lamp templates are available for selected configurations.
+
+        Args:
+            lamp_name(str): Lamp's name as in the header keyword OBJECT
+
+        Returns:
+            reference_lamp(str): Full path to reference lamps
+        """
+        lamp_name = lamp_name.lower()
         try:
-            reference_lamp = self.reference_files_path + self.lamps_file_list[lamp_name]
+            reference_lamp = self.args.reference_dir + self.lamps_file_list[lamp_name]
+            return reference_lamp
         except KeyError:
             log.error('Reference lamp %s does not exist', lamp_name)
-        finally:
-            return reference_lamp
+            return None
+
+    def get_ref_spectrum_from_linelist(self, blue, red, name):
+        """Experimental
+
+        Builds a unidimensional spectrum to be used as a template for finding an automatic wavelength solution
+        """
+        if len(name) % 2 == 0:
+            elements = [name[i:i + 2].lower() for i in range(0, len(name), 2)]
+            for element in elements:
+                linelist_file = self.line_list_files[element]
+                pandas_data_frame = pandas.read_csv(self.args.reference_dir + linelist_file)
+                print linelist_file, pandas_data_frame, blue, red
+
+        else:
+            log.error('Error in the calibration lamp name: %s', name)
+            return None

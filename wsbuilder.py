@@ -1,21 +1,14 @@
-from specutils.wcs import specwcs
-from astropy.io import fits
-import numpy as np
+from __future__ import print_function
 import shlex
-import sys
 import logging as log
 from astropy.modeling import models, fitting
-# from specutils.io import read_fits
-import tc_read_fits_copy
-import astropy.units as u
 import matplotlib.pyplot as plt
 
-from specutils.wcs import specwcs
-from specutils import Spectrum1D
 
 log.basicConfig(level=log.DEBUG)
 
-class WavelengthFitter:
+
+class WavelengthFitter(object):
     def __init__(self, model='chebyshev', degree=3):
         self.model_name = model
         self.degree = degree
@@ -39,7 +32,7 @@ class WavelengthFitter:
             log.error('Either model or model fitter were not constructed')
 
 
-class ReadWavelengthSolution:
+class ReadWavelengthSolution(object):
 
     def __init__(self, header, data, reference=''):
         self.header = header
@@ -71,12 +64,12 @@ class ReadWavelengthSolution:
                     for i in range(0, len(wat_array), 2):
                         # if wat_array[i] not in self.wcs_dict.keys():
                         self.wat_wcs_dict[wat_array[i]] = wat_array[i + 1]
-                        print wat_array[i], wat_array[i + 1]
+                        print(wat_array[i], wat_array[i + 1])
 
         for key in self.wat_wcs_dict.keys():
             log.debug("%s -%s- %s", dimension, key, self.wat_wcs_dict[key])
         if 'spec1' in self.wat_wcs_dict.keys():
-            print self.wat_wcs_dict['spec1']
+            print(self.wat_wcs_dict['spec1'])
             spec = self.wat_wcs_dict['spec1'].split()
             aperture = int(spec[0])
             beam = int(spec[1])
@@ -114,8 +107,8 @@ class ReadWavelengthSolution:
 
             function = ReadMathFunctions(self.wcs_dict)
             solution = function.get_solution()
-            print solution
-            print "%s"%params, len(params)
+            print(solution)
+            print("%s %s" % (params, len(params)))
             wav1 = [4545.0519,
                     4579.3495,
                     4589.8978,
@@ -132,12 +125,12 @@ class ReadWavelengthSolution:
                     5606.733,
                     5650.7043]
             # data = fits.getdata('/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear600nonlinearli.fits')
-            x = range(1, len(self.data) + 1)
+            x_axis = range(1, len(self.data) + 1)
             # x0 = range(len(self.data))
-            print('x data', x[0], x[-1], len(self.data))
+            print('x data', x_axis[0], x_axis[-1], len(self.data))
             plt.title(self.header['OBJECT'])
             plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'], self.wat_wcs_dict['units']))
-            plt.plot(solution(x), self.data)
+            plt.plot(solution(x_axis), self.data)
             # plt.plot(solution(x0), self.data, color='g')
             for line in wav1:
                 plt.axvline(line, color='r')
@@ -155,34 +148,10 @@ class ReadWavelengthSolution:
         function = ReadMathFunctions(self.wcs_dict)
         solution = function.get_solution()
         # data = fits.getdata('/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600.fits')
-        x = range(1, len(self.data) + 1)
+        x_axis = range(1, len(self.data) + 1)
 
         # plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'], self.wat_wcs_dict['units']))
-        self.wave_intens = [solution(x), self.data]
-        """
-        plt.title(self.header['OBJECT'])
-        plt.plot(solution(x), self.data)
-        print solution(crpix), crval
-
-        wav1 = [4545.0519,
-                4579.3495,
-                4589.8978,
-                4609.5673,
-                4726.8683,
-                4735.9058,
-                4764.8646,
-                4806.0205,
-                4847.8095,
-                5495.8738,
-                5506.1128,
-                5558.702,
-                5572.5413,
-                5606.733,
-                5650.7043]
-        for line in wav1:
-            plt.axvline(line, color='r')
-        plt.show()
-        """
+        self.wave_intens = [solution(x_axis), self.data]
         return solution
 
     def get_wavelength_solution(self):
@@ -199,7 +168,7 @@ class ReadWavelengthSolution:
         return self.wave_intens
 
 
-class ReadMathFunctions:
+class ReadMathFunctions(object):
 
     def __init__(self, wcs_dict):
         self.wcs = wcs_dict
@@ -220,7 +189,7 @@ class ReadMathFunctions:
             elif self.wcs['ftype'] == '4':
                 self.non_linear_lspline()
             elif self.wcs['ftype'] == '5':
-                #pixel coordinates
+                # pixel coordinates
                 pass
             elif self.wcs['ftype'] == '6':
                 # sampled coordinate array
@@ -230,7 +199,8 @@ class ReadMathFunctions:
         else:
             log.error('Not Implemented')
 
-    def none(self):
+    @staticmethod
+    def none():
         return 0
 
     def linear_solution(self):
@@ -238,13 +208,14 @@ class ReadMathFunctions:
         linear = models.Linear1D(slope=self.wcs['cdelt'], intercept=intercept)
         return linear
 
-    def log_linear(self):
+    @staticmethod
+    def log_linear():
         return False
 
     def chebyshev(self):
         cheb = models.Chebyshev1D(degree=self.wcs['order'], domain=[self.wcs['pmin'], self.wcs['pmax']], )
-        for p in range(self.wcs['order']):
-            cheb.parameters[p] = self.wcs['fpar'][p]
+        for param_index in range(self.wcs['order']):
+            cheb.parameters[param_index] = self.wcs['fpar'][param_index]
         return cheb
 
     def non_linear_legendre(self):
@@ -259,7 +230,7 @@ class ReadMathFunctions:
         raise NotImplementedError
 
     def get_solution(self):
-        if self.solution != None:
+        if self.solution is not None:
             return self.solution
         else:
             log.error("The solution hasn't been found")

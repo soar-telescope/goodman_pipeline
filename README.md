@@ -35,6 +35,7 @@ The pipeline is organized in three files (this might increase):
 ## redspec.py
 This module basically organizes the data and sort of makes a plan for processing the night.
 
+- [x] Ability to operate Blue and Red camera. (transparent for the user)
 - [x] Read and Parse Arguments (uses argparse). Also checks for consistency.
 - [x] Define Night Class. Reads header information from and creates a class that contain important _night_ information.
 - [ ] Set mode to be used at the telescope (while observing). Is not defined yet if this is really necessary.
@@ -71,8 +72,9 @@ After the extraction of the spectrum it will be packed and then parsed to the ne
   - [x] Estimate wavelength solution from information in the header
   - [ ] Find wavelength solution (can be tricky and will take some time)
 - [ ] Automatic Wavelength Calibration by template (can also be tricky since dispersion is not linear)
-- [ ] Find wavelength solution interactively.
-- [ ] Put wavelength solution in the header and write down files.
+- [x] Find wavelength solution interactively.
+- [x] Linearize spectrum
+- [x] Put wavelength solution in the header and write down files.
 
 
 # Documentation Status Estimate
@@ -116,17 +118,30 @@ The class percentage doesn't take in account the completeness of
   - _  __init__ _ 0%
   
   
-## wavelengthCalibration.py
+## wavelength.py
 - **WavelengthCalibration** 0%
-  - _  __init__ _ 0%
-  - _interpolate_ 100%
-  - _recenter_line_ 100% - Most likely will be removed
+  
+  - _ __init__ _ 0%
+  - _ __call__ _ 0%
+  - _get_wsolution_ 0%
+  - _get_calibration_lamp_ 0%
+  - _get_wavelength_solution_ 0%
   - _get_line_limits_ 100%
   - _get_line_centers_ 100%
-  - _get_spectral_characteristics_ 70%
+  - _get_spectral_characteristics_ 0%
+  - _interpolate_ 100%
+  - _recenter_line_by_model_ 0%
+  - _recenter_line_by_data_ 0%
   - _predicted_wavelength_ 0%
-  - _wavelength_solution_ 1%
-  - _get_lines_in_range_ 0%
+  - _automatic_wavelength_solution_ 0%
   - _pixel_axis_cross_correlate_ 0%
-  - _add_wavelength_solution_ 0%
-  - _get_wavelength_solution_ 0%
+  - _interactive_wavelength_solution_ 0%
+  - _on_click_ 0%
+  - _find_more_lines_ 0%
+  - _update_clicks_plot_ 0%
+  - _plot_raw_over_reference_ 0%
+  - _evaluate_solution_ 0%
+  - _fit_pixel_to_wavelength_ 0%
+  - _linearize_spectrum_ 0%
+  - _add_wavelength_solution_ 0%  
+  

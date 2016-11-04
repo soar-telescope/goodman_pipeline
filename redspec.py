@@ -7,7 +7,7 @@ or spectra and traces it doing some fit.
 Simon Torres 2016-06-28
 
 """
-
+from __future__ import print_function
 import sys
 import os
 import numpy as np
@@ -19,7 +19,7 @@ import argparse
 import logging as log
 import warnings
 from process import Process
-from wavelengthCalibration import WavelengthCalibration
+from wavelength import WavelengthCalibration
 
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
@@ -32,7 +32,7 @@ __email__ = "storres@ctio.noao.edu"
 __status__ = "Development"
 
 
-class MainApp:
+class MainApp(object):
     """Defines and intialize all important variables for processing the data
 
     Args:
@@ -40,7 +40,7 @@ class MainApp:
 
     """
     def __init__(self):
-        self.ic = pd.DataFrame
+        self.image_collection = pd.DataFrame
         self.args = self.get_args()
         self.night = self.set_night()
         self.extracted_data = None
@@ -158,7 +158,7 @@ Supported Observing modes are:
 
         parser.add_argument('-s', '--search-pattern',
                             action='store',
-                            default='fc_',
+                            default='fzh.',
                             type=str,
                             metavar='<Search Pattern>',
                             dest='pattern',
@@ -207,11 +207,40 @@ Supported Observing modes are:
 
         parser.add_argument('-o', '--output-prefix',
                             action='store',
-                            default='g_',
+                            default='g',
                             dest='output_prefix',
                             help="Prefix to add to calibrated spectrum.")
 
+        parser.add_argument('-R', '--reference-files',
+                            action='store',
+                            default='refdata/',
+                            dest='reference_dir',
+                            help="Reference files location")
+
+        parser.add_argument('--plots-enabled',
+                            action='store_true',
+                            default=False,
+                            dest='plots_enabled',
+                            help="Show plots of intermediate steps. For debugging only.")
+
         args = parser.parse_args()
+
+        # there must be a more elegant way to do this
+        root_path = os.path.realpath(__file__).split('/')
+        root_path[-1] = ''
+        root_full_path = '/'.join(root_path)
+        reference_full_path = root_full_path + args.reference_dir
+        if not os.path.isdir(reference_full_path):
+            log.info("Reference files directory doesn't exist.")
+            try:
+                os.path.os.makedirs(reference_full_path)
+                log.info('Reference Files Directory is: %s', reference_full_path)
+                args.reference_dir = reference_full_path
+            except OSError as err:
+                log.error(err)
+        else:
+            args.reference_dir = reference_full_path
+
         if not os.path.isdir(args.source):
             leave = True
             log.error("Source Directory doesn't exist.")
@@ -254,9 +283,9 @@ Supported Observing modes are:
         """
         keys = ['date', 'date-obs', 'obstype', 'object', 'exptime', 'ra', 'dec']
         image_collection = ccd.ImageFileCollection(self.args.source, keys)
-        self.ic = image_collection.summary.to_pandas()
-        # type(self.ic)
-        date = self.ic.date[0]
+        self.image_collection = image_collection.summary.to_pandas()
+        # type(self.image_collection)
+        date = self.image_collection.date[0]
         new_night = Night(date,
                           self.args.source,
                           self.args.destiny,
@@ -268,9 +297,8 @@ Supported Observing modes are:
             log.info("Telescope Mode is not implemented yet...")
             return new_night
         else:
-            new_night.add_sci(self.ic.file[self.ic.obstype == 'OBJECT'])
-            new_night.add_lamp(self.ic.file[self.ic.obstype == 'COMP'])
-        print new_night
+            new_night.add_sci(self.image_collection.file[self.image_collection.obstype == 'OBJECT'])
+            new_night.add_lamp(self.image_collection.file[self.image_collection.obstype == 'COMP'])
         return new_night
 
     def organize_full_night(self):
@@ -300,91 +328,129 @@ Supported Observing modes are:
 
         """
         self.print_spacers("Processing night %s" % self.night.date)
+
         if self.night.obsmode == 0:
-            log.info("Observation mode 0")
-            log.debug("One lamp for all targets.")
-            """
-            Need to define a better method for selecting the lamp
-            Now is just picking the first in the list
-            """
-            if self.args.lamp_all_night is not '':
-                lamp = self.args.lamp_all_night
-            else:
-                lamp = self.night.lamp[0]
-            log.debug("Lamp File: " + lamp)
-            lamp_index = self.ic[self.ic['file'] == lamp].index.tolist()[0]
-            lamp_name = self.ic.object.iloc[lamp_index]
-            # lamp_obs_time = self.ic['date-obs'][lamp_index]
-            lamp_ra, lamp_dec = self.ra_dec_to_deg(self.ic.ra.iloc[lamp_index], self.ic.ra.iloc[lamp_index])
-            for target in self.night.sci:
-                index = self.ic[self.ic['file'] == target].index.tolist()[0]
-                name = self.ic.object.iloc[index]
-                obs_time = self.ic['date-obs'][index]
-                ra, dec = self.ra_dec_to_deg(self.ic.ra.iloc[index], self.ic.dec.iloc[index])
-                science_object = ScienceObject(name, target, obs_time, ra, dec)
-                science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
-                self.night.add_sci_object(science_object)
-            return
+            self.obsmode_one()
+
         if self.night.obsmode == 1:
-            log.info("Observation mode 1")
-            log.debug("One or more lamps around the target")
-            for target in self.night.sci:
-                """Get basic data of the target"""
-                index = self.ic[self.ic['file'] == target].index.tolist()[0]
-                name = self.ic.object.iloc[index]
-                obs_time = self.ic['date-obs'][index]
-                exptime = self.ic.exptime.iloc[index]
-                ra, dec = self.ra_dec_to_deg(self.ic.ra.iloc[index], self.ic.dec.iloc[index])
-                """Reformat some data of the target for comparison"""
-                target_time = self.convert_time(obs_time)
-                """Define ScienceObject object"""
-                science_object = ScienceObject(name, target, obs_time, ra, dec)
-                """Loop trough lamps to find a match for target"""
-                for lamp in self.night.lamp:
-                    lamp_index = self.ic[self.ic['file'] == lamp].index.tolist()[0]
-                    lamp_name = self.ic.object.iloc[lamp_index]
-                    lamp_time = self.convert_time(self.ic['date-obs'][lamp_index])
-                    lamp_exptime = self.ic.exptime.iloc[lamp_index]
-                    lamp_ra, lamp_dec = self.ra_dec_to_deg(self.ic.ra.iloc[lamp_index], self.ic.dec.iloc[lamp_index])
-                    # print(lamp, lamp_name, lamp_ra, lamp_dec)
-                    """Since we are not doing astrometry here we assume the sky is flat"""
-                    sky_distance = np.sqrt((lamp_ra - ra) ** 2 + (lamp_dec - dec) ** 2)
-                    if sky_distance <= 1e-3:
-                        log.debug("Lamps by distance")
-                        time_dif = abs(target_time - lamp_time) - abs(exptime + lamp_exptime)
-                        if time_dif <= 300:
-                            science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
-                            # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
-                        else:
-                            log.warning("Lamp within sky distance but too large time difference. Ignored.")
-                self.night.add_sci_object(science_object)
-            return
+            self.obsmode_one()
 
         if self.night.obsmode == 2:
-            log.info("Observation mode 2")
-            log.debug("A text file defines the relation of lamps and science targets")
-            log.debug(self.night.lamps_file)
-            lamps_file_full = self.night.source + self.night.lamps_file
-            log.debug(lamps_file_full)
-
-            ff = open(lamps_file_full)
-            ff = ff.readlines()
-            for i in range(len(ff)):
-                if ff[i][0] != '#':
-                    ff[i] = ff[i].split()
-                    print(ff[i])
+            self.obsmode_two()
 
         if self.night.obsmode == 3:
-            log.info("Observation mode 3")
-            log.debug("No Lamps. Use sky lines")
-            raise NotImplementedError
+            self.obsmode_three()
 
         # science_object.print_all()
         # self.print_spacers(name)
         # print(self.night.sci)
         # print(self.night.lamp)
 
-    """Bunch of small functions"""
+    def obsmode_zero(self):
+        """Observing/Processing mode 0
+
+        In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks
+        up the first calibration lamp and uses it to find the wavelength calibration it doesn't discriminate if the lamp
+        has good quality.
+        """
+        log.info("Observation mode 0")
+        log.debug("One lamp for all targets.")
+        # Need to define a better method for selecting the lamp
+        # Now is just picking the first in the list
+        if self.args.lamp_all_night is not '':
+            lamp = self.args.lamp_all_night
+        else:
+            lamp = self.night.lamp[0]
+        log.debug("Lamp File: %s", lamp)
+        lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
+        lamp_name = self.image_collection.object.iloc[lamp_index]
+        # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
+        lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+                                               self.image_collection.ra.iloc[lamp_index])
+        for target in self.night.sci:
+            index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
+            name = self.image_collection.object.iloc[index]
+            obs_time = self.image_collection['date-obs'][index]
+            right_ascension, declination = self.ra_dec_to_deg(self.image_collection.ra.iloc[index],
+                                                              self.image_collection.dec.iloc[index])
+            science_object = ScienceObject(name, target, obs_time, right_ascension, declination)
+            science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+            self.night.add_sci_object(science_object)
+        return
+
+    def obsmode_one(self):
+        """Observing/Processing mode 1
+
+        In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
+        in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure
+        time itself. For the sky distance calculation a flat sky is assumed.
+        """
+        log.info("Observation mode 1")
+        log.debug("One or more lamps around the target")
+        for target in self.night.sci:
+            # Get basic data of the target
+            index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
+            name = self.image_collection.object.iloc[index]
+            obs_time = self.image_collection['date-obs'][index]
+            exptime = self.image_collection.exptime.iloc[index]
+            right_ascension, declination = self.ra_dec_to_deg(self.image_collection.ra.iloc[index],
+                                                              self.image_collection.dec.iloc[index])
+            # Reformat some data of the target for comparison
+            target_time = self.convert_time(obs_time)
+            # Define ScienceObject object
+            science_object = ScienceObject(name, target, obs_time, right_ascension, declination)
+            # Loop trough lamps to find a match for target
+            for lamp in self.night.lamp:
+                lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
+                lamp_name = self.image_collection.object.iloc[lamp_index]
+                lamp_time = self.convert_time(self.image_collection['date-obs'][lamp_index])
+                lamp_exptime = self.image_collection.exptime.iloc[lamp_index]
+                lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+                                                       self.image_collection.dec.iloc[lamp_index])
+                # print(lamp, lamp_name, lamp_ra, lamp_dec)
+                # Since we are not doing astrometry here we assume the sky is flat
+                sky_distance = np.sqrt((lamp_ra - right_ascension) ** 2 + (lamp_dec - declination) ** 2)
+                if sky_distance <= 1e-3:
+                    log.debug("Lamps by distance")
+                    time_dif = abs(target_time - lamp_time) - abs(exptime + lamp_exptime)
+                    if time_dif <= 300:
+                        science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+                        # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
+                    else:
+                        log.warning("Lamp within sky distance but too large time difference. Ignored.")
+            self.night.add_sci_object(science_object)
+        return
+
+    def obsmode_two(self):
+        """Observing/Processing mode 2
+
+        In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
+        used by using a octothorp or hash (#) followed by one space. Not implemented yet.
+        """
+        log.info("Observation mode 2")
+        log.debug("A text file defines the relation of lamps and science targets")
+        log.debug(self.night.lamps_file)
+        lamps_file_full = self.night.source + self.night.lamps_file
+        log.debug(lamps_file_full)
+
+        read_file = open(lamps_file_full)
+        read_file = read_file.readlines()
+        for i in range(len(read_file)):
+            if read_file[i][0] != '#':
+                read_file[i] = read_file[i].split()
+                print(read_file[i])
+
+    @staticmethod
+    def obsmode_three():
+        """Observing/Processing Mode 3
+
+        In mode 3 no sky lamp is used, instead the science target's spectrum will be calibrated using sky lines.
+        """
+        log.info("Observation mode 3")
+        log.debug("No Lamps. Use sky lines")
+        raise NotImplementedError
+
+    # Bunch of small functions
 
     @staticmethod
     def convert_time(in_time):
@@ -400,25 +466,29 @@ Supported Observing modes are:
         return time.mktime(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
 
     @staticmethod
-    def ra_dec_to_deg(ra, dec):
+    def ra_dec_to_deg(right_ascension, declination):
         """Converts right ascension and declination to degrees
 
         Args:
-            ra (str): right ascension
-            dec (str): declination
+            right_ascension (str): right ascension
+            declination (str): declination
 
         Returns:
             right ascension and declination in degrees
 
         """
-        ra = ra.split(":")
-        dec = dec.split(":")
+        right_ascension = right_ascension.split(":")
+        declination = declination.split(":")
         # RIGHT ASCENTION conversion
-        ra_deg = (float(ra[0]) + (float(ra[1]) + (float(ra[2]) / 60.)) / 60.) * (360. / 24.)
+        right_ascension_deg = (float(right_ascension[0])
+                               + (float(right_ascension[1])
+                                  + (float(right_ascension[2]) / 60.)) / 60.) * (360. / 24.)
         # DECLINATION conversion
-        sign = float(dec[0]) / abs(float(dec[0]))
-        dec_deg = sign * (abs(float(dec[0])) + (float(dec[1]) + (float(dec[2]) / 60.)) / 60.)
-        return ra_deg, dec_deg
+        sign = float(declination[0]) / abs(float(declination[0]))
+        declination_deg = sign * (abs(float(declination[0]))
+                                  + (float(declination[1])
+                                     + (float(declination[2]) / 60.)) / 60.)
+        return right_ascension_deg, declination_deg
 
     @staticmethod
     def print_spacers(message):
@@ -440,14 +510,14 @@ Supported Observing modes are:
         if len(message) % 2 == 1 and int(columns) % 2 != 1:
             message += " "
         bar_length = int(columns)
-        bar = "=" * bar_length
+        spacer_bar = "=" * bar_length
         blanks = bar_length - 2
         space_length = int((blanks - len(message)) / 2)
         message_bar = "=" + " " * space_length + message + " " * space_length + "="
-        print(bar)
+        print(spacer_bar)
 
         print(message_bar)
-        print(bar)
+        print(spacer_bar)
         return True
 
     @staticmethod
@@ -472,7 +542,7 @@ Supported Observing modes are:
         return
 
 
-class Night:
+class Night(object):
     """Stores all data relevant to the night being processed
 
     Note:
@@ -514,13 +584,13 @@ class Night:
             else:
                 log.info('Image %s rejected because does not match pattern!', new_lamp)
 
-
     def add_sci_object(self, sci_obj):
         """Appends a ScienceObject to the class attribute sci_targets"""
         self.sci_targets.append(sci_obj)
-        log.info("Added science object %s" % sci_obj.name)
+        log.info("Added science object %s", sci_obj.name)
 
     def set_night_calibration_lamp(self, calibration_lamp):
+        """Sets the filename of the calibration lamp as an attribute"""
         self.night_calibration_lamp = calibration_lamp
 
     def is_telescope(self):
@@ -528,6 +598,7 @@ class Night:
         self.telescope = True
 
     def set_night_wsolution(self, wsolution):
+        """Sets the wavelength solution as a class attribute"""
         if wsolution is not None:
             self.night_wsolution = wsolution
             log.info('Night Solution Defined')
@@ -535,7 +606,7 @@ class Night:
             log.error("Wavelength solution still can't be defined")
 
 
-class ScienceObject:
+class ScienceObject(object):
     """class that defines a science object attributes
 
     Sci objects, for science, are the main targets which have lamps for
@@ -549,8 +620,8 @@ class ScienceObject:
         name (str): science object name
         file_name (str): file name
         obs_time (str): observing time in the format yyyy-mm-ddThh:mm:ss.ss for instance 2016-03-20T23:54:15.96
-        ra (float): right ascension in degrees
-        dec (float): declination in degrees
+        right_ascension (float): right ascension in degrees
+        declination (float): declination in degrees
         lamp_count (int): lamps count
         lamp_file (list): every element is a string with the file name of the lamp
         lamp_type (list): every element is a string with the OBJECT value of the lamp i.e Cu, HgAr, etc
@@ -559,32 +630,32 @@ class ScienceObject:
 
     """
 
-    def __init__(self, name, file_name, obs_time, ra, dec):
+    def __init__(self, name, file_name, obs_time, right_ascension, declination):
         self.name = name
         self.file_name = file_name
         self.obs_time = obs_time
-        self.ra = ra
-        self.dec = dec
+        self.right_ascension = right_ascension
+        self.declination = declination
         self.lamp_count = 0
         self.lamp_file = []
         self.lamp_type = []
         self.lamp_ra = []
         self.lamp_dec = []
 
-    def add_lamp(self, new_lamp, new_type, ra, dec):
+    def add_lamp(self, new_lamp, new_type, right_ascension, declination):
         """Adds a lamp to the science object
 
         Args:
             new_lamp (str): new lamp file name
             new_type (str): new lamp type
-            ra (float): right ascension in degrees
-            dec (float): declination in degrees
+            right_ascension (float): right ascension in degrees
+            declination (float): declination in degrees
 
         """
         self.lamp_file.append(new_lamp)
         self.lamp_type.append(new_type)
-        self.lamp_ra.append(ra)
-        self.lamp_dec.append(dec)
+        self.lamp_ra.append(right_ascension)
+        self.lamp_dec.append(declination)
         self.lamp_count = int(len(self.lamp_file))
 
     def print_all(self):
@@ -594,16 +665,19 @@ class ScienceObject:
             this method is mainly used for development purposes
 
         """
-        log.info("Name: %s" % self.name)
-        log.info("File: %s" % self.file_name)
-        log.info("Obs-T: %s" % self.obs_time)
+        log.info("Name: %s", self.name)
+        log.info("File: %s", self.file_name)
+        log.info("Obs-T: %s", self.obs_time)
         if self.lamp_count > 0:
-            log.info("Lamp N: %s" % self.lamp_count)
+            log.info("Lamp N: %s", self.lamp_count)
             for i in range(self.lamp_count):
-                log.info("Lamp %s: %s" % ((i + 1), self.lamp_file[i]))
-                log.info("Type %s: %s" % ((i + 1), self.lamp_type[i]))
+                log.info("Lamp %s: %s", (i + 1), self.lamp_file[i])
+                log.info("Type %s: %s", (i + 1), self.lamp_type[i])
 
 
 if __name__ == '__main__':
-    app = MainApp()
-    app()
+    MAIN_APP = MainApp()
+    try:
+        MAIN_APP()
+    except KeyboardInterrupt:
+        sys.exit(0)
