@@ -104,6 +104,7 @@ following answers to your needs. (some parts were omitted)
    you need to change some settings:
       1. Add sphinxcontrib.napoleon
       2. Insert $PATH variable into the system
+      3. Add napoleon settings
 
    ```python
    # conf.py
@@ -154,6 +155,39 @@ following answers to your needs. (some parts were omitted)
    Apply or click OK. In the upper right corner of pycharm you should find
    the option for `build-documentation` if you used the same name for this
    particular configuration.
+
+## Local Management - How to use github pages
+
+**This section is incomplete if you need assistance in this regard
+please contact me**
+
+In oder to minimize the chance of making a mistake I set up the following
+configuration.
+
+The code development directory is in `~/development/soar/goodman` and
+the documentation is in `~/documentation/soar/goodman`. The git
+repository is basically the same with the only difference being that in 
+the documentation folder I checkout `gh-pages` and in development I 
+work with the `master` branch or any of the code branches.
+ 
+### Procedure
+1. Create directories and clone from github
+    ```shell
+    $ mkdir ~/development/soar
+    $ cd !*
+    $ git clone git@github.com:simontorres/goodman.git
+    $ 
+    $ cd
+    $ mkdir ~/documentation/soar/
+    $ cd !*
+    $ git clone git@github.com:simontorres/goodman.git
+    $ cd goodman
+    $ git checkout gh-pages
+    ```
+
+2. Inside your code development directory is a folder called `docs`. Here
+is where you run `sphinx-quickstart`. After this it will contain a file
+named `Makefile` and two folders `source` and `build`
 
 ### Final Thoughts
 
