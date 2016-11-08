@@ -6,6 +6,8 @@
 Welcome to Goodman Spectroscopic Tools's documentation!
 =======================================================
 
+.. include:: README.rst
+
 Contents:
 
 .. toctree::
