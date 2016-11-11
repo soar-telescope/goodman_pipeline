@@ -47,10 +47,10 @@
   <div class="section" id="goodman-high-throughput-spectrograph">
 <h1>Goodman High Throughput Spectrograph<a class="headerlink" href="#goodman-high-throughput-spectrograph" title="Permalink to this headline">¶</a></h1>
 <p><strong>WARNING</strong> This code is being developed and is not ready for scientific
-use. Always check the branch <strong>other than master</strong>.</p>
-<p>If you are interested in this software</p>
-<p>The Goodman High Throughput Spectrograph is an imaging spectrograph if
-you wish to know more about the instrument please check the <a class="reference external" href="http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph">SOAR
+use. Always check the branch <strong>standard</strong> which is the one where the latest version is.</p>
+<p>If you are interested in this software please contact me.</p>
+<p>The Goodman High Throughput Spectrograph is an imaging spectrograph operating in
+the SOAR Observatory, Chile. If you wish to know more about the instrument please check the <a class="reference external" href="http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph">SOAR
 website</a></p>
 <p>To see full documentation please go to the GitHub hosted site for
 <a class="reference external" href="https://simontorres.github.io/goodman/">Goodman</a></p>
@@ -153,67 +153,97 @@ percentage doesn&#8217;t take in account the completeness of</p>
 <h2>redspec.py<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>MainApp</strong> 100%</li>
-<li>_ <strong>init</strong> _ 0%</li>
-<li><em>get</em>args_ 100%</li>
-<li><em>set</em>night_ 100%</li>
-<li><em>organize</em>full_night_ 100%</li>
-<li><em>convert</em>time_ 100%</li>
-<li><em>ra</em>dec_to_deg_ 100%</li>
-<li><em>print</em>spacers_ 100% - Most likely will be removed</li>
-<li><em>print</em>progress_ 100% - Most likely will be removed</li>
-<li><strong>Night</strong> 70%</li>
-<li>_ <strong>init</strong> _ 0%</li>
-<li><em>add</em>sci_ 100%</li>
-<li><em>add</em>lamp_ 100%</li>
-<li><em>add</em>sci_object_ 100%</li>
-<li><em>is</em>telescope_ 100%</li>
-<li><strong>ScienceObject</strong> 100%</li>
-<li>_ <strong>init</strong> _ 0%</li>
-<li><em>add</em>lamp_ 100%</li>
-<li><em>print</em>all_ 100%</li>
 </ul>
+<blockquote>
+<div><ul class="simple">
+<li><strong>__init__</strong> 0%</li>
+<li><em>get_args</em> 100%</li>
+<li><em>set_night</em> 100%</li>
+<li><em>organize_full_night</em> 100%</li>
+<li><em>convert_time</em> 100%</li>
+<li><em>ra_dec_to_deg</em> 100%</li>
+<li><em>print_spacers</em> 100% - Most likely will be removed</li>
+<li><em>print_progress</em> 100% - Most likely will be removed</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><strong>Night</strong> 70%</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><strong>__init__</strong> 0%</li>
+<li><em>add_sci</em> 100%</li>
+<li><em>add_lamp</em> 100%</li>
+<li><em>add_sci_object</em> 100%</li>
+<li><em>is_telescope</em> 100%</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><strong>ScienceObject</strong> 100%</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><strong>__init__</strong> 0%</li>
+<li><em>add_lamp</em> 100%</li>
+<li><em>print_all</em> 100%</li>
+</ul>
+</div></blockquote>
 </div>
 <div class="section" id="id3">
 <h2>process.py<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>Process</strong> 100%</li>
-<li>_ <strong>init</strong> _ 0%</li>
-<li><em>identify</em>spectra_ 100%</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><strong>__init__</strong> 0%</li>
+<li><em>identify_spectra</em> 100%</li>
 <li><em>trace</em> 100%</li>
 <li><em>mask</em> 100%</li>
 <li><em>extract</em> 100%</li>
-<li><strong>IdentifiedTarget</strong> 50%</li>
-<li>_ <strong>init</strong> _ 0%</li>
 </ul>
+</div></blockquote>
+<ul class="simple">
+<li><strong>IdentifiedTarget</strong> 50%</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li><strong>__init__</strong> 0%</li>
+</ul>
+</div></blockquote>
 </div>
 <div class="section" id="wavelength-py">
 <h2>wavelength.py<a class="headerlink" href="#wavelength-py" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><strong>WavelengthCalibration</strong> 0%</li>
-<li>_ <strong>init</strong> _ 0%</li>
-<li>_ <strong>call</strong> _ 0%</li>
-<li><em>get</em>wsolution_ 0%</li>
-<li><em>get</em>calibration_lamp_ 0%</li>
-<li><em>get</em>wavelength_solution_ 0%</li>
-<li><em>get</em>line_limits_ 100%</li>
-<li><em>get</em>line_centers_ 100%</li>
-<li><em>get</em>spectral_characteristics_ 0%</li>
-<li><em>interpolate</em> 100%</li>
-<li><em>recenter</em>line_by_model_ 0%</li>
-<li><em>recenter</em>line_by_data_ 0%</li>
-<li><em>predicted</em>wavelength_ 0%</li>
-<li><em>automatic</em>wavelength_solution_ 0%</li>
-<li><em>pixel</em>axis_cross_correlate_ 0%</li>
-<li><em>interactive</em>wavelength_solution_ 0%</li>
-<li><em>on</em>click_ 0%</li>
-<li><em>find</em>more_lines_ 0%</li>
-<li><em>update</em>clicks_plot_ 0%</li>
-<li><em>plot</em>raw_over_reference_ 0%</li>
-<li><em>evaluate</em>solution_ 0%</li>
-<li><em>fit</em>pixel_to_wavelength_ 0%</li>
-<li><em>linearize</em>spectrum_ 0%</li>
-<li><em>add</em>wavelength_solution_ 0%</li>
 </ul>
+<blockquote>
+<div><ul class="simple">
+<li><strong>__init__</strong> 0%</li>
+<li><strong>__call__</strong> 0%</li>
+<li><em>get_wsolution</em> 0%</li>
+<li><em>get_calibration_lamp</em> 0%</li>
+<li><em>get_wavelength_solution</em> 0%</li>
+<li><em>get_line_limits</em> 100%</li>
+<li><em>get_line_centers</em> 100%</li>
+<li><em>get_spectral_characteristics</em> 0%</li>
+<li><em>interpolate</em> 100%</li>
+<li><em>recenter_line_by_model</em> 0%</li>
+<li><em>recenter_line_by_data</em> 0%</li>
+<li><em>predicted_wavelength</em> 0%</li>
+<li><em>automatic_wavelength_solution</em> 0%</li>
+<li><em>pixel_axis_cross_correlate</em> 0%</li>
+<li><em>interactive_wavelength_solution</em> 0%</li>
+<li><em>on_click</em> 0%</li>
+<li><em>find_more_lines</em> 0%</li>
+<li><em>update_clicks_plot</em> 0%</li>
+<li><em>plot_raw_over_reference</em> 0%</li>
+<li><em>evaluate_solution</em> 0%</li>
+<li><em>fit_pixel_to_wavelength</em> 0%</li>
+<li><em>linearize_spectrum</em> 0%</li>
+<li><em>add_wavelength_solution</em> 0%</li>
+</ul>
+</div></blockquote>
 </div>
 </div>
 

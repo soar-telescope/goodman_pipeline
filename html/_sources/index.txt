@@ -6,6 +6,8 @@
 Welcome to Goodman Spectroscopic Tools's documentation!
 =======================================================
 
+* :ref:`modindex`
+
 .. include:: README.rst
 
 Contents:

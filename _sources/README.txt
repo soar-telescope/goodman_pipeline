@@ -2,12 +2,12 @@ Goodman High Throughput Spectrograph
 ====================================
 
 **WARNING** This code is being developed and is not ready for scientific
-use. Always check the branch **other than master**.
+use. Always check the branch **standard** which is the one where the latest version is.
 
-If you are interested in this software
+If you are interested in this software please contact me.
 
-The Goodman High Throughput Spectrograph is an imaging spectrograph if
-you wish to know more about the instrument please check the `SOAR
+The Goodman High Throughput Spectrograph is an imaging spectrograph operating in
+the SOAR Observatory, Chile. If you wish to know more about the instrument please check the `SOAR
 website <http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph>`__
 
 To see full documentation please go to the GitHub hosted site for
@@ -121,68 +121,74 @@ redspec.py
 
 -  **MainApp** 100%
 
--  \_ **init** \_ 0%
--  *get*\ args\_ 100%
--  *set*\ night\_ 100%
--  *organize*\ full\_night\_ 100%
--  *convert*\ time\_ 100%
--  *ra*\ dec\_to\_deg\_ 100%
--  *print*\ spacers\_ 100% - Most likely will be removed
--  *print*\ progress\_ 100% - Most likely will be removed
+  -  **\_\_init\_\_** 0%
+  -  *get\_args* 100%
+  -  *set\_night* 100%
+  -  *organize\_full\_night* 100%
+  -  *convert\_time* 100%
+  -  *ra\_dec\_to\_deg* 100%
+  -  *print\_spacers* 100% - Most likely will be removed
+  -  *print\_progress* 100% - Most likely will be removed
+
 
 -  **Night** 70%
--  \_ **init** \_ 0%
--  *add*\ sci\_ 100%
--  *add*\ lamp\_ 100%
--  *add*\ sci\_object\_ 100%
--  *is*\ telescope\_ 100%
+
+  -  **\_\_init\_\_** 0%
+  -  *add\_sci* 100%
+  -  *add\_lamp* 100%
+  -  *add\_sci\_object* 100%
+  -  *is\_telescope* 100%
+
 
 -  **ScienceObject** 100%
--  \_ **init** \_ 0%
--  *add*\ lamp\_ 100%
--  *print*\ all\_ 100%
+
+  -  **\_\_init\_\_** 0%
+  -  *add\_lamp* 100%
+  -  *print\_all* 100%
 
 process.py
 ----------
 
 -  **Process** 100%
 
--  \_ **init** \_ 0%
--  *identify*\ spectra\_ 100%
--  *trace* 100%
--  *mask* 100%
--  *extract* 100%
+  -  **\_\_init\_\_** 0%
+  -  *identify\_spectra* 100%
+  -  *trace* 100%
+  -  *mask* 100%
+  -  *extract* 100%
+
 
 -  **IdentifiedTarget** 50%
--  \_ **init** \_ 0%
+
+  -  **\_\_init\_\_** 0%
 
 wavelength.py
 -------------
 
 -  **WavelengthCalibration** 0%
 
--  \_ **init** \_ 0%
--  \_ **call** \_ 0%
--  *get*\ wsolution\_ 0%
--  *get*\ calibration\_lamp\_ 0%
--  *get*\ wavelength\_solution\_ 0%
--  *get*\ line\_limits\_ 100%
--  *get*\ line\_centers\_ 100%
--  *get*\ spectral\_characteristics\_ 0%
--  *interpolate* 100%
--  *recenter*\ line\_by\_model\_ 0%
--  *recenter*\ line\_by\_data\_ 0%
--  *predicted*\ wavelength\_ 0%
--  *automatic*\ wavelength\_solution\_ 0%
--  *pixel*\ axis\_cross\_correlate\_ 0%
--  *interactive*\ wavelength\_solution\_ 0%
--  *on*\ click\_ 0%
--  *find*\ more\_lines\_ 0%
--  *update*\ clicks\_plot\_ 0%
--  *plot*\ raw\_over\_reference\_ 0%
--  *evaluate*\ solution\_ 0%
--  *fit*\ pixel\_to\_wavelength\_ 0%
--  *linearize*\ spectrum\_ 0%
--  *add*\ wavelength\_solution\_ 0%
+  -  **\_\_init\_\_** 0%
+  -  **\_\_call\_\_** 0%
+  -  *get\_wsolution* 0%
+  -  *get\_calibration\_lamp* 0%
+  -  *get\_wavelength\_solution* 0%
+  -  *get\_line\_limits* 100%
+  -  *get\_line\_centers* 100%
+  -  *get\_spectral\_characteristics* 0%
+  -  *interpolate* 100%
+  -  *recenter\_line\_by\_model* 0%
+  -  *recenter\_line\_by\_data* 0%
+  -  *predicted\_wavelength* 0%
+  -  *automatic\_wavelength\_solution* 0%
+  -  *pixel\_axis\_cross\_correlate* 0%
+  -  *interactive\_wavelength\_solution* 0%
+  -  *on\_click* 0%
+  -  *find\_more\_lines* 0%
+  -  *update\_clicks\_plot* 0%
+  -  *plot\_raw\_over\_reference* 0%
+  -  *evaluate\_solution* 0%
+  -  *fit\_pixel\_to\_wavelength* 0%
+  -  *linearize\_spectrum* 0%
+  -  *add\_wavelength\_solution* 0%
 
 

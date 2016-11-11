@@ -46,6 +46,7 @@
             
   <div class="section" id="module-wsbuilder">
 <span id="wsbuilder-module"></span><h1>wsbuilder module<a class="headerlink" href="#module-wsbuilder" title="Permalink to this headline">¶</a></h1>
+<p>Set of class and method to handle wavelength solutions</p>
 <dl class="class">
 <dt id="wsbuilder.ReadMathFunctions">
 <em class="property">class </em><code class="descclassname">wsbuilder.</code><code class="descname">ReadMathFunctions</code><span class="sig-paren">(</span><em>wcs_dict</em><span class="sig-paren">)</span><a class="headerlink" href="#wsbuilder.ReadMathFunctions" title="Permalink to this definition">¶</a></dt>
@@ -97,20 +98,40 @@
 <dt id="wsbuilder.ReadWavelengthSolution">
 <em class="property">class </em><code class="descclassname">wsbuilder.</code><code class="descname">ReadWavelengthSolution</code><span class="sig-paren">(</span><em>header</em>, <em>data</em>, <em>reference=''</em><span class="sig-paren">)</span><a class="headerlink" href="#wsbuilder.ReadWavelengthSolution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<dl class="method">
-<dt id="wsbuilder.ReadWavelengthSolution.get_wavelength_solution">
-<code class="descname">get_wavelength_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wsbuilder.ReadWavelengthSolution.get_wavelength_solution" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<p>Read wavelength solutions from a fits header</p>
 <dl class="method">
 <dt id="wsbuilder.ReadWavelengthSolution.linear_solution">
 <code class="descname">linear_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wsbuilder.ReadWavelengthSolution.linear_solution" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Linear solution reader</p>
+<p>This method read the apropriate keywords and defines a linear wavelength solution</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>solution</strong> &#8211; Callable wavelength solution model</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="wsbuilder.ReadWavelengthSolution.non_linear_solution">
 <code class="descname">non_linear_solution</code><span class="sig-paren">(</span><em>dimension</em><span class="sig-paren">)</span><a class="headerlink" href="#wsbuilder.ReadWavelengthSolution.non_linear_solution" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Non linear solutions reader</p>
+<p class="rubric">Notes</p>
+<p>Not all kind of non-linear solutions are implemented</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension</strong> (<em>int</em>) &#8211; Solutions can be multi-dimensionals, this method is called for each one of them.</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -118,15 +139,32 @@
 <dt id="wsbuilder.WavelengthFitter">
 <em class="property">class </em><code class="descclassname">wsbuilder.</code><code class="descname">WavelengthFitter</code><span class="sig-paren">(</span><em>model='chebyshev'</em>, <em>degree=3</em><span class="sig-paren">)</span><a class="headerlink" href="#wsbuilder.WavelengthFitter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Contains methods to do pixel to angstrom fit</p>
 <dl class="method">
 <dt id="wsbuilder.WavelengthFitter.model_constructor">
 <code class="descname">model_constructor</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wsbuilder.WavelengthFitter.model_constructor" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Generates callable mathematical model</p>
+<p>It can do chebyshev and linear model only but is easy to implement others.
+Chebyshev 3rd degree is by default since provided the best results for Goodman data.</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="wsbuilder.WavelengthFitter.ws_fit">
 <code class="descname">ws_fit</code><span class="sig-paren">(</span><em>physical</em>, <em>wavelength</em><span class="sig-paren">)</span><a class="headerlink" href="#wsbuilder.WavelengthFitter.ws_fit" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Wavelength solution fit</p>
+<p>Takes a list of pixel values and its respective wavelength values to do a fit to
+the mathematical model defined with the class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>fitted_model</strong> &#8211; Fitted model</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">class</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 </dd></dl>
 
