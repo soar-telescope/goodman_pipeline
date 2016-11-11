@@ -1,6 +1,6 @@
 # Goodman High Throughput Spectrograph
 **WARNING** This code is being developed and is not ready for
- scientific use. Always check the branch **other than master**.
+scientific use. Always check the branch **other than master**.
  
  If you are interested in this software 
 
@@ -52,11 +52,11 @@ In order to work this needs the source's path and a ScienceObject (class).
 
 - [x] Read target data and header.
 - [ ] For any of the modes that use comparison lamps:
-  1. [x] Read lamps data and header
-  2. [x] Identify single targets (one target in the slit)
-  3. [ ] Identify multiple targets (most of the work done but not tested recently)
-  4. [x] Trace spectrum.
-  5. [x] Extract data.
+  * [x] Read lamps data and header
+  * [x] Identify single targets (one target in the slit)
+  * [ ] Identify multiple targets (most of the work done but not tested recently)
+  * [x] Trace spectrum.
+  * [x] Extract data.
     - [x] Normal Extraction
     - [ ] Optimal extraction
 - [ ] Nothing done for the case when skylines will be used as wavelength calibrators.
@@ -84,6 +84,7 @@ The class percentage doesn't take in account the completeness of
 
 ## redspec.py
 - **MainApp** 100%
+
   - _  __init__ _ 0%
   - _get_args_  100%
   - _set_night_ 100%
@@ -108,6 +109,7 @@ The class percentage doesn't take in account the completeness of
 
 ## process.py
 - **Process** 100%
+
   - _  __init__ _ 0%
   - _identify_spectra_ 100%
   - _trace_ 100%

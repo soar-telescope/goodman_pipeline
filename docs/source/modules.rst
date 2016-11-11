@@ -4,8 +4,9 @@ goodman
 .. toctree::
    :maxdepth: 4
 
-   deprecated
+   linelist
    process
    redgoodman
    redspec
-   test-process
+   wavelength
+   wsbuilder

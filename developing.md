@@ -189,6 +189,67 @@ work with the `master` branch or any of the code branches.
 is where you run `sphinx-quickstart`. After this it will contain a file
 named `Makefile` and two folders `source` and `build`
 
+### How to include Markdown README to index
+
+Although I will recomend to write an .rst file instead, I will include the
+necessary steps to achieve that. I didn't get the results I wanted with
+Markdown.
+
+1. Install recommonmark
+    ```shell
+    $ sudo pip2.7 install recommonmark
+    `
+2. Edit Sphinx's `conf.py` and add the following lines.
+    ```python
+    from recommonmark.parser import CommonMarkParser
+    
+    source_suffix = ['.rst', '.md']
+    
+    source_parsers = {
+        '.md' : CommonMarkParser,
+    }
+    ```
+ 
+4. go to `docs/sources` and add the following line to `index.rst`:
+    ```shell
+    .. include:: README.md
+    ```
+
+So it will look like this:
+
+    ```text
+    Welcome to Goodman Spectroscopic Tools's documentation!
+    ===========================================================
+
+    .. include:: README.md
+
+    Contents:
+
+    .. toctree::
+       :maxdepth: 2
+
+    Indices and tables
+    ======================
+
+    * :ref:`genindex`
+    * :ref:`modindex`
+    * :ref:`search`
+    ```
+
+5. Use `make html` in your documentation's root folder (where the Makefile is located)
+
+But you can also convert your Markdown README to .rst using `pandoc`.
+    
+    ```shell
+    $ sudo yum install pandoc
+    ```
+    
+And you can use it with:
+    
+    ```shell
+    $ pandoc --from=markdown --to=rst --output=README.rst README.md 
+    ```
+
 ### Final Thoughts
 
 These tools are highly customizable so expect some troubles setting this 

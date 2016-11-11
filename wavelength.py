@@ -84,8 +84,9 @@ class WavelengthCalibration(object):
                     self.lamp_name = self.header0['OBJECT']
                     log.info('Processing Comparison Lamp: %s', self.lamp_name)
                     self.data1 = self.interpolate(self.data0)
-                    self.lines_limits = self.get_line_limits()
-                    self.lines_center = self.get_line_centers(self.lines_limits)
+                    # self.lines_limits = self.get_line_limits()
+                    # self.lines_center = self.get_line_centers(self.lines_limits)
+                    self.lines_center = self.get_lines_in_lamp()
                     self.spectral = self.get_spectral_characteristics()
                     if self.args.interactive_ws:
                         self.interactive_wavelength_solution()
@@ -154,6 +155,54 @@ class WavelengthCalibration(object):
         else:
             log.error('Wavelength solution has not been calculated yet.')
 
+    def get_lines_in_lamp(self):
+        """Identify peaks in a lamp spectrum
+
+        This method goes through all the data points in a 1D spectrum recording whether there is a trend
+        to increase or to decrease. It also records the length of the trend. If there was rising trend
+        it will check if trend length is 3 or larger and if the point is above the median of the spectrum.
+        If these criteria are met the last rising pixel value is recorded as a line candidate.
+
+        Notes:
+            This method will only work for comparison lamps.
+
+        Returns:
+            lines_candidates (list): A common list containing pixel values at approximate location of lines.
+        """
+        lines_candidates = []
+        prev_point = None
+        status = None
+        trend_length = 0
+        median = np.median(self.data0)
+        for pixel in range(len(self.data0)):
+            point = self.data0[pixel]
+            print(point)
+            if prev_point is None:
+                prev_point = point
+                status = 0
+            else:
+                if point > prev_point:
+                    if status == 1:
+                        trend_length += 1
+                    elif status == -1:
+                        trend_length = 1
+                    status = 1
+                elif point < prev_point:
+                    if status == 1 and trend_length > 2 and point > median:
+                        lines_candidates.append(pixel - 1)
+                    status = -1
+                    trend_length = 1
+                else:
+                    pass
+            prev_point = point
+        if self.args.plots_enabled:
+            for line in lines_candidates:
+                plt.axvline(line - 1, color='m')
+            plt.axhline(median, color='g')
+            plt.plot(self.data0, color='b')
+            plt.show()
+        return lines_candidates
+
     def get_line_limits(self):
         """Method for identifying lines in a spectrum
 
@@ -214,7 +263,7 @@ class WavelengthCalibration(object):
                         if len(limits) % 2 == 1 and partial_min - limits[-1] < spacing:
                             limits.append(partial_min)
                             # plt.axvline(partial_max, color='g')
-                        elif not limits:
+                        elif limits != []:
                             if partial_min - limits[-1] > spacing:
                                 plt.axvline(partial_min, color='m')
                                 limits = limits[:-1]
@@ -428,7 +477,7 @@ class WavelengthCalibration(object):
             ref_data = fits.getdata(reference_file)
             ref_header = fits.getheader(reference_file)
             fits_ws_reader = wsbuilder.ReadWavelengthSolution(ref_header, ref_data)
-            self.reference_solution = fits_ws_reader.get_wavelength_solution()
+            self.reference_solution = fits_ws_reader()
         else:
             reference_plots_enabled = False
             log.error('Please Check the OBJECT Keyword of your reference data')

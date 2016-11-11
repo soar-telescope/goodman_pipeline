@@ -1,3 +1,7 @@
+"""Set of class and method to handle wavelength solutions
+
+
+"""
 from __future__ import print_function
 import shlex
 import logging as log
@@ -9,7 +13,15 @@ log.basicConfig(level=log.DEBUG)
 
 
 class WavelengthFitter(object):
+    """Contains methods to do pixel to angstrom fit"""
+
     def __init__(self, model='chebyshev', degree=3):
+        """Initializes the class
+
+        Args:
+            model (str): Name of the model to fit, Chebyshev (default) or Linear
+            degree (int): Degree of the model. Only needed by Chebyshev model.
+        """
         self.model_name = model
         self.degree = degree
         self.model = None
@@ -17,6 +29,11 @@ class WavelengthFitter(object):
         self.model_constructor()
 
     def model_constructor(self):
+        """Generates callable mathematical model
+
+        It can do chebyshev and linear model only but is easy to implement others.
+        Chebyshev 3rd degree is by default since provided the best results for Goodman data.
+        """
         if self.model_name == 'chebyshev':
             self.model = models.Chebyshev1D(degree=self.degree)
             self.model_fit = fitting.LevMarLSQFitter()
@@ -26,13 +43,23 @@ class WavelengthFitter(object):
         # return model
 
     def ws_fit(self, physical, wavelength):
+        """Wavelength solution fit
+
+        Takes a list of pixel values and its respective wavelength values to do a fit to
+        the mathematical model defined with the class.
+
+        Returns:
+            fitted_model (class): Fitted model
+        """
         if self.model and self.model_fit is not None:
-            return self.model_fit(self.model, physical, wavelength)
+            fitted_model = self.model_fit(self.model, physical, wavelength)
+            return fitted_model
         else:
             log.error('Either model or model fitter were not constructed')
 
 
 class ReadWavelengthSolution(object):
+    """Read wavelength solutions from a fits header"""
 
     def __init__(self, header, data, reference=''):
         self.header = header
@@ -40,10 +67,41 @@ class ReadWavelengthSolution(object):
         self.reference_file_name = reference
         self.wat_wcs_dict = dict()
         self.wcs_dict = dict()
-
         self.wave_intens = []
 
+    def __call__(self):
+        """call method
+
+        Discriminates from header's keywords what kind of solution is present
+        and call the apropriate method for linear or non-linear solutions.
+
+        Returns:
+            self.wave_intens (list): Returns the class attribute which is a two dimension list
+            the first element is the x_axis in angstrom and the second is the y_axis in intensity
+        """
+        wcsdim = int(self.header['WCSDIM'])
+        for dim in range(1, wcsdim + 1):
+            ctypen = self.header['CTYPE%s' % dim]
+            if ctypen == 'LINEAR':
+                log.info('Reading Linear Solution')
+                # self.wcs_dict = {'dtype': 0}
+                self.linear_solution()
+            elif ctypen == 'MULTISPE':
+                self.non_linear_solution(dim)
+        return self.wave_intens
+
     def non_linear_solution(self, dimension):
+        """Non linear solutions reader
+
+        Notes:
+            Not all kind of non-linear solutions are implemented
+
+        Args:
+            dimension (int): Solutions can be multi-dimensionals, this method is called for each one of them.
+
+        Returns:
+
+        """
         header = self.header
         ctypen = header['CTYPE%s' % dimension]
         if ctypen == 'MULTISPE':
@@ -107,8 +165,8 @@ class ReadWavelengthSolution(object):
 
             function = ReadMathFunctions(self.wcs_dict)
             solution = function.get_solution()
-            print(solution)
-            print("%s %s" % (params, len(params)))
+            # print(solution)
+            # print("%s %s" % (params, len(params)))
             wav1 = [4545.0519,
                     4579.3495,
                     4589.8978,
@@ -127,7 +185,7 @@ class ReadWavelengthSolution(object):
             # data = fits.getdata('/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear600nonlinearli.fits')
             x_axis = range(1, len(self.data) + 1)
             # x0 = range(len(self.data))
-            print('x data', x_axis[0], x_axis[-1], len(self.data))
+            # print('x data', x_axis[0], x_axis[-1], len(self.data))
             plt.title(self.header['OBJECT'])
             plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'], self.wat_wcs_dict['units']))
             plt.plot(solution(x_axis), self.data)
@@ -138,6 +196,13 @@ class ReadWavelengthSolution(object):
             print(spec)
 
     def linear_solution(self):
+        """Linear solution reader
+
+        This method read the apropriate keywords and defines a linear wavelength solution
+
+        Returns:
+            solution (class): Callable wavelength solution model
+        """
         crval = float(self.header['CRVAL1'])
         crpix = int(self.header['CRPIX1'])
         cdelt = float(self.header['CDELT1'])
@@ -154,18 +219,6 @@ class ReadWavelengthSolution(object):
         self.wave_intens = [solution(x_axis), self.data]
         return solution
 
-    def get_wavelength_solution(self):
-        header = self.header
-        wcsdim = int(header['WCSDIM'])
-        for dim in range(1, wcsdim + 1):
-            ctypen = header['CTYPE%s' % dim]
-            if ctypen == 'LINEAR':
-                log.info('Reading Linear Solution')
-                # self.wcs_dict = {'dtype': 0}
-                self.linear_solution()
-            elif ctypen == 'MULTISPE':
-                self.non_linear_solution(dim)
-        return self.wave_intens
 
 
 class ReadMathFunctions(object):

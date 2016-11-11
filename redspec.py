@@ -330,7 +330,7 @@ Supported Observing modes are:
         self.print_spacers("Processing night %s" % self.night.date)
 
         if self.night.obsmode == 0:
-            self.obsmode_one()
+            self.obsmode_zero()
 
         if self.night.obsmode == 1:
             self.obsmode_one()

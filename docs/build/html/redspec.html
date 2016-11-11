@@ -6,9 +6,9 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>redspec module &mdash; Goodman Spectrum Extraction Tool 0.1 documentation</title>
+    <title>redspec module &mdash; Goodman Spectroscopic Tools 0.1 documentation</title>
     
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,16 +23,21 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Goodman Spectrum Extraction Tool 0.1 documentation" href="index.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
+    <link rel="top" title="Goodman Spectroscopic Tools 0.1 documentation" href="index.html" /> 
   </head>
   <body role="document">
-  
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Goodman Spectroscopic Tools 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -49,7 +54,8 @@ Simon Torres 2016-06-28</p>
 <dl class="class">
 <dt id="redspec.MainApp">
 <em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">MainApp</code><a class="headerlink" href="#redspec.MainApp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Defines and intialize all important variables for processing the data</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Defines and intialize all important variables for processing the data</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -100,10 +106,10 @@ default value is <a href="#id1"><span class="problematic" id="id2">fc_</span></a
 <dt>-m or &#8211;obs-mode: is one of the predefined observing modes and the options are:</dt>
 <dd><p class="first last">0: One or more lamps taken during the beginning or end of the night, i.e. single
 calibration to all data in that night
-1: One or more lamps right before OR right after every science exposure.
-2: One or more lamps right before AND right after every science exposure.
-3: An ASCII file will be read. This file contains a matching of sience target files
+1: One or more lamps around every science exposure.
+2: An ASCII file will be read. This file contains a matching of science target files
 to respective calibration lamp file that will be used for calibration.
+3: No lamp used, use sky-lines instead.
 the location is self.mode
 default value is 0</p>
 </dd>
@@ -134,15 +140,60 @@ default value is lamps.txt</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="redspec.MainApp.obsmode_one">
+<code class="descname">obsmode_one</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.obsmode_one" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observing/Processing mode 1</p>
+<p>In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
+in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure
+time itself. For the sky distance calculation a flat sky is assumed.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="redspec.MainApp.obsmode_three">
+<em class="property">static </em><code class="descname">obsmode_three</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.obsmode_three" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observing/Processing Mode 3</p>
+<p>In mode 3 no sky lamp is used, instead the science target&#8217;s spectrum will be calibrated using sky lines.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.MainApp.obsmode_two">
+<code class="descname">obsmode_two</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.obsmode_two" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observing/Processing mode 2</p>
+<p>In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
+used by using a octothorp or hash (#) followed by one space. Not implemented yet.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.MainApp.obsmode_zero">
+<code class="descname">obsmode_zero</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.obsmode_zero" title="Permalink to this definition">¶</a></dt>
+<dd><p>Observing/Processing mode 0</p>
+<p>In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks
+up the first calibration lamp and uses it to find the wavelength calibration it doesn&#8217;t discriminate if the lamp
+has good quality.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="redspec.MainApp.organize_full_night">
 <code class="descname">organize_full_night</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.organize_full_night" title="Permalink to this definition">¶</a></dt>
 <dd><p>Organize the data according to the Observing Mode</p>
-<p>There are four observing modes defined</p>
+<p>There are four observing modes defined by numbers in Python&#8217;s style. From 0 to 3:</p>
+<p>In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks
+up the first calibration lamp and uses it to find the wavelength calibration it doesn&#8217;t discriminate if the lamp
+has good quality.</p>
+<p>In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
+in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure
+time itself. For the sky distance calculation a flat sky is assumed.</p>
+<p>In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
+used by using a octothorp or hash (#) followed by one space. Not implemented yet.</p>
+<p>In mode 3 no sky lamp is used, instead the science target&#8217;s spectrum will be calibrated using sky lines.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Nothing. But modifies the output of</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Nothing. But creates a ScienceObject object and stores it in the night class. ScienceObject is one of its
+attributes.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code> &#8211; For mode 3.</td>
 </tr>
 </tbody>
 </table>
@@ -151,7 +202,24 @@ default value is lamps.txt</p>
 <dl class="staticmethod">
 <dt id="redspec.MainApp.print_progress">
 <em class="property">static </em><code class="descname">print_progress</code><span class="sig-paren">(</span><em>current</em>, <em>total</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.print_progress" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Prints the percentage of a progress</p>
+<p>It works for FOR loops, requires to know the full length of the loop. Prints to the standard output.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>current</strong> (<em>int</em>) &#8211; Current value in the range of the loop.</li>
+<li><strong>total</strong> (<em>int</em>) &#8211; The length of the loop.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Nothing</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="staticmethod">
 <dt id="redspec.MainApp.print_spacers">
@@ -174,15 +242,15 @@ The only functionality of this is aesthetic.</p>
 
 <dl class="staticmethod">
 <dt id="redspec.MainApp.ra_dec_to_deg">
-<em class="property">static </em><code class="descname">ra_dec_to_deg</code><span class="sig-paren">(</span><em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.ra_dec_to_deg" title="Permalink to this definition">¶</a></dt>
+<em class="property">static </em><code class="descname">ra_dec_to_deg</code><span class="sig-paren">(</span><em>right_ascension</em>, <em>declination</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.ra_dec_to_deg" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts right ascension and declination to degrees</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ra</strong> (<em>str</em>) &#8211; right ascension</li>
-<li><strong>dec</strong> (<em>str</em>) &#8211; declination</li>
+<li><strong>right_ascension</strong> (<em>str</em>) &#8211; right ascension</li>
+<li><strong>declination</strong> (<em>str</em>) &#8211; declination</li>
 </ul>
 </td>
 </tr>
@@ -197,6 +265,11 @@ The only functionality of this is aesthetic.</p>
 <dt id="redspec.MainApp.set_night">
 <code class="descname">set_night</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.MainApp.set_night" title="Permalink to this definition">¶</a></dt>
 <dd><p>Defines and initialize the &#8216;night&#8217; class</p>
+<p>Uses information parsed by arguments to construct a table with the values of the keys specified within the
+code itself. A night object stores specific values regarding the night that is going to be processed. If the
+program is not going to be used while observing at the telescope it creates two lists of images, one for
+science and another for lamp files. Although the telescope mode is not fully developed yet, in case of it being
+selected it will return the night object without the list of images.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -215,7 +288,8 @@ parsed to other methods.</td>
 <dl class="class">
 <dt id="redspec.Night">
 <em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">Night</code><span class="sig-paren">(</span><em>date</em>, <em>source</em>, <em>destiny</em>, <em>pattern</em>, <em>mode</em>, <em>lamps</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stores all data relevant to the night being processed</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Stores all data relevant to the night being processed</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">The night class stores the data relative to single observing night
@@ -223,32 +297,47 @@ therefore this software works on a per-night basis</p>
 </div>
 <dl class="method">
 <dt id="redspec.Night.add_lamp">
-<code class="descname">add_lamp</code><span class="sig-paren">(</span><em>inlamp</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.add_lamp" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_lamp</code><span class="sig-paren">(</span><em>in_lamp</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.add_lamp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds lamp objects to list</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="redspec.Night.add_sci">
-<code class="descname">add_sci</code><span class="sig-paren">(</span><em>insci</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.add_sci" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_sci</code><span class="sig-paren">(</span><em>in_sci</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.add_sci" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds science object to list</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="redspec.Night.add_sci_object">
 <code class="descname">add_sci_object</code><span class="sig-paren">(</span><em>sci_obj</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.add_sci_object" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Appends a ScienceObject to the class attribute sci_targets</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="redspec.Night.is_telescope">
 <code class="descname">is_telescope</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.is_telescope" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Sets the operation mode as Telescope Mode</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.Night.set_night_calibration_lamp">
+<code class="descname">set_night_calibration_lamp</code><span class="sig-paren">(</span><em>calibration_lamp</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.set_night_calibration_lamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the filename of the calibration lamp as an attribute</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="redspec.Night.set_night_wsolution">
+<code class="descname">set_night_wsolution</code><span class="sig-paren">(</span><em>wsolution</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.Night.set_night_wsolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the wavelength solution as a class attribute</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="redspec.ScienceObject">
-<em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">ScienceObject</code><span class="sig-paren">(</span><em>name</em>, <em>file_name</em>, <em>obs_time</em>, <em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject" title="Permalink to this definition">¶</a></dt>
-<dd><p>class that defines a science object attributes</p>
+<em class="property">class </em><code class="descclassname">redspec.</code><code class="descname">ScienceObject</code><span class="sig-paren">(</span><em>name</em>, <em>file_name</em>, <em>obs_time</em>, <em>right_ascension</em>, <em>declination</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>class that defines a science object attributes</p>
 <p>Sci objects, for science, are the main targets which have lamps for
 calibration. Their atritutes are: the name, the file name, the
 observation time, right ascension and declination. The same information
@@ -274,14 +363,14 @@ as the correlator between atributes of the lamp.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="redspec.ScienceObject.ra">
-<code class="descname">ra</code><a class="headerlink" href="#redspec.ScienceObject.ra" title="Permalink to this definition">¶</a></dt>
+<dt id="redspec.ScienceObject.right_ascension">
+<code class="descname">right_ascension</code><a class="headerlink" href="#redspec.ScienceObject.right_ascension" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em> &#8211; right ascension in degrees</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="redspec.ScienceObject.dec">
-<code class="descname">dec</code><a class="headerlink" href="#redspec.ScienceObject.dec" title="Permalink to this definition">¶</a></dt>
+<dt id="redspec.ScienceObject.declination">
+<code class="descname">declination</code><a class="headerlink" href="#redspec.ScienceObject.declination" title="Permalink to this definition">¶</a></dt>
 <dd><p><em>float</em> &#8211; declination in degrees</p>
 </dd></dl>
 
@@ -317,7 +406,7 @@ as the correlator between atributes of the lamp.</p>
 
 <dl class="method">
 <dt id="redspec.ScienceObject.add_lamp">
-<code class="descname">add_lamp</code><span class="sig-paren">(</span><em>new_lamp</em>, <em>new_type</em>, <em>ra</em>, <em>dec</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject.add_lamp" title="Permalink to this definition">¶</a></dt>
+<code class="descname">add_lamp</code><span class="sig-paren">(</span><em>new_lamp</em>, <em>new_type</em>, <em>right_ascension</em>, <em>declination</em><span class="sig-paren">)</span><a class="headerlink" href="#redspec.ScienceObject.add_lamp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a lamp to the science object</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -326,8 +415,8 @@ as the correlator between atributes of the lamp.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>new_lamp</strong> (<em>str</em>) &#8211; new lamp file name</li>
 <li><strong>new_type</strong> (<em>str</em>) &#8211; new lamp type</li>
-<li><strong>ra</strong> (<em>float</em>) &#8211; right ascension in degrees</li>
-<li><strong>dec</strong> (<em>float</em>) &#8211; declination in degrees</li>
+<li><strong>right_ascension</strong> (<em>float</em>) &#8211; right ascension in degrees</li>
+<li><strong>declination</strong> (<em>float</em>) &#8211; declination in degrees</li>
 </ul>
 </td>
 </tr>
@@ -354,13 +443,7 @@ as the correlator between atributes of the lamp.</p>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
+        <div class="sphinxsidebarwrapper">
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -382,20 +465,21 @@ as the correlator between atributes of the lamp.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="footer">
-      &copy;2016, Simon Torres R..
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.5</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
-      
-      |
-      <a href="_sources/redspec.txt"
-          rel="nofollow">Page source</a>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Goodman Spectroscopic Tools 0.1 documentation</a> &raquo;</li> 
+      </ul>
     </div>
-
-    
-
-    
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Simon Torres R..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.5.
+    </div>
   </body>
 </html>

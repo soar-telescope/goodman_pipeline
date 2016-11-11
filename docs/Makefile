@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
-BUILDDIR      = build
+BUILDDIR      = /user/simon/documentation/soar/goodman
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -91,9 +91,9 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/GoodmanSpectrumExtractionTool.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/GoodmanSpectroscopicTools.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/GoodmanSpectrumExtractionTool.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/GoodmanSpectroscopicTools.qhc"
 
 .PHONY: applehelp
 applehelp:
@@ -110,8 +110,8 @@ devhelp:
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/GoodmanSpectrumExtractionTool"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/GoodmanSpectrumExtractionTool"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/GoodmanSpectroscopicTools"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/GoodmanSpectroscopicTools"
 	@echo "# devhelp"
 
 .PHONY: epub
