@@ -55,14 +55,14 @@ class MainApp(object):
             science_object = self.night.sci_targets[i]
             # print(science_object)
             # print(self.night.sci_targets)
-            process = Process(self.night.source, science_object, self.args)
+            process = Process(science_object, self.args)
             if self.args.obsmode == 0:
                 if self.wavelength_solution_obj is None:
                     self.extracted_data, self.night.sci_targets[i] = process()
-                    wavelength_calibration = WavelengthCalibration(self.night.source,
-                                                                   self.extracted_data,
+                    wavelength_calibration = WavelengthCalibration(self.extracted_data,
                                                                    self.night.sci_targets[i],
                                                                    self.args)
+
                     self.wavelength_solution_obj = wavelength_calibration()
 
                     # self.night.set_night_wsolution(process.get_wsolution())
@@ -70,17 +70,17 @@ class MainApp(object):
                 else:
                     log.debug(self.night.night_wsolution)
                     self.extracted_data, self.night.sci_targets[i] = process(extract_lamps=False)
-                    wavelength_calibration = WavelengthCalibration(self.night.source,
-                                                                   self.extracted_data,
+                    wavelength_calibration = WavelengthCalibration(self.extracted_data,
                                                                    self.night.sci_targets[i],
                                                                    self.args)
+
                     wavelength_calibration(self.wavelength_solution_obj)
             elif self.args.obsmode == 1:
                 self.extracted_data, self.night.sci_targets[i] = process()
-                wavelength_calibration = WavelengthCalibration(self.night.source,
-                                                               self.extracted_data,
+                wavelength_calibration = WavelengthCalibration(self.extracted_data,
                                                                self.night.sci_targets[i],
                                                                self.args)
+
                 self.wavelength_solution_obj = wavelength_calibration()
             elif self.args.obsmode == 2:
                 raise NotImplementedError
@@ -281,17 +281,17 @@ Supported Observing modes are:
             parsed to other methods.
 
         """
-        keys = ['date', 'date-obs', 'obstype', 'object', 'exptime', 'ra', 'dec']
+        keys = ['date', 'date-obs', 'obstype', 'object', 'exptime', 'ra', 'dec', 'grating']
         image_collection = ccd.ImageFileCollection(self.args.source, keys)
         self.image_collection = image_collection.summary.to_pandas()
         # type(self.image_collection)
+
         date = self.image_collection.date[0]
-        new_night = Night(date,
-                          self.args.source,
-                          self.args.destiny,
-                          self.args.pattern,
-                          self.args.obsmode,
-                          self.args.lamp_file)
+        new_night = Night(date, self.args)
+
+        gratings_array = self.image_collection.grating.unique()
+        new_night.set_gratings(gratings=gratings_array)
+
         if self.args.telescope:
             new_night.is_telescope()
             log.info("Telescope Mode is not implemented yet...")
@@ -329,16 +329,16 @@ Supported Observing modes are:
         """
         self.print_spacers("Processing night %s" % self.night.date)
 
-        if self.night.obsmode == 0:
+        if self.args.obsmode == 0:
             self.obsmode_zero()
 
-        if self.night.obsmode == 1:
+        if self.args.obsmode == 1:
             self.obsmode_one()
 
-        if self.night.obsmode == 2:
+        if self.args.obsmode == 2:
             self.obsmode_two()
 
-        if self.night.obsmode == 3:
+        if self.args.obsmode == 3:
             self.obsmode_three()
 
         # science_object.print_all()
@@ -352,6 +352,11 @@ Supported Observing modes are:
         In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks
         up the first calibration lamp and uses it to find the wavelength calibration it doesn't discriminate if the lamp
         has good quality.
+
+        Notes:
+            Although you can parse one lamp as a whole night lamp it is not recommended since there might be
+            different gratings which would rise the need to give one lamp per grating and in this case it better
+            to let the software choose the first in the list and assume there will be no bad lamps.
         """
         log.info("Observation mode 0")
         log.debug("One lamp for all targets.")
@@ -364,18 +369,36 @@ Supported Observing modes are:
         log.debug("Lamp File: %s", lamp)
         lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
         lamp_name = self.image_collection.object.iloc[lamp_index]
+        lamp_grating = self.image_collection.grating.iloc[lamp_index]
         # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
         lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
                                                self.image_collection.ra.iloc[lamp_index])
         for target in self.night.sci:
             index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
             name = self.image_collection.object.iloc[index]
+            grating = self.image_collection.grating.iloc[index]
+            # print('Grating', grating)
             obs_time = self.image_collection['date-obs'][index]
             right_ascension, declination = self.ra_dec_to_deg(self.image_collection.ra.iloc[index],
                                                               self.image_collection.dec.iloc[index])
             science_object = ScienceObject(name, target, obs_time, right_ascension, declination)
-            science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+            if lamp_grating == grating:
+                science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+            else:
+                log.info('Gratings do not match. Looking for another one.')
+                comp_files = self.image_collection[(self.image_collection['grating'] == grating)
+                                                   & (self.image_collection['obstype'] == 'COMP')].index.tolist()
+                # print(comp_files)
+                lamp_index = comp_files[0]
+                lamp_name = self.image_collection.object.iloc[lamp_index]
+                lamp_grating = self.image_collection.grating.iloc[lamp_index]
+                # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
+                lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+                                                       self.image_collection.ra.iloc[lamp_index])
+                science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+            science_object.print_all()
             self.night.add_sci_object(science_object)
+
         return
 
     def obsmode_one(self):
@@ -393,6 +416,7 @@ Supported Observing modes are:
             name = self.image_collection.object.iloc[index]
             obs_time = self.image_collection['date-obs'][index]
             exptime = self.image_collection.exptime.iloc[index]
+            grating = self.image_collection.grating.iloc[index]
             right_ascension, declination = self.ra_dec_to_deg(self.image_collection.ra.iloc[index],
                                                               self.image_collection.dec.iloc[index])
             # Reformat some data of the target for comparison
@@ -405,19 +429,24 @@ Supported Observing modes are:
                 lamp_name = self.image_collection.object.iloc[lamp_index]
                 lamp_time = self.convert_time(self.image_collection['date-obs'][lamp_index])
                 lamp_exptime = self.image_collection.exptime.iloc[lamp_index]
+                lamp_grating = self.image_collection.grating.iloc[lamp_index]
                 lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
                                                        self.image_collection.dec.iloc[lamp_index])
                 # print(lamp, lamp_name, lamp_ra, lamp_dec)
-                # Since we are not doing astrometry here we assume the sky is flat
-                sky_distance = np.sqrt((lamp_ra - right_ascension) ** 2 + (lamp_dec - declination) ** 2)
-                if sky_distance <= 1e-3:
-                    log.debug("Lamps by distance")
-                    time_dif = abs(target_time - lamp_time) - abs(exptime + lamp_exptime)
-                    if time_dif <= 300:
-                        science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
-                        # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
-                    else:
-                        log.warning("Lamp within sky distance but too large time difference. Ignored.")
+                if lamp_grating == grating:
+                    # Since we are not doing astrometry here we assume the sky is flat
+                    sky_distance = np.sqrt((lamp_ra - right_ascension) ** 2 + (lamp_dec - declination) ** 2)
+                    if sky_distance <= 1e-3:
+                        log.debug("Lamps by distance")
+                        time_dif = abs(target_time - lamp_time) - abs(exptime + lamp_exptime)
+                        if time_dif <= 300:
+                            science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+                            # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
+                        else:
+                            log.warning("Lamp within sky distance but too large time difference %s. Ignored.", time_dif)
+                else:
+                    log.info('Gratings do not match')
+            science_object.print_all()
             self.night.add_sci_object(science_object)
         return
 
@@ -484,7 +513,12 @@ Supported Observing modes are:
                                + (float(right_ascension[1])
                                   + (float(right_ascension[2]) / 60.)) / 60.) * (360. / 24.)
         # DECLINATION conversion
-        sign = float(declination[0]) / abs(float(declination[0]))
+        # print(declination)
+        # sign = float(declination[0]) / abs(float(declination[0]))
+        if float(declination[0]) == abs(float(declination[0])):
+            sign = 1
+        else:
+            sign = -1
         declination_deg = sign * (abs(float(declination[0]))
                                   + (float(declination[1])
                                      + (float(declination[2]) / 60.)) / 60.)
@@ -550,25 +584,33 @@ class Night(object):
         therefore this software works on a per-night basis
     """
 
-    def __init__(self, date, source, destiny, pattern, mode, lamps):
+    def __init__(self, date, args):
+        # source, destiny, pattern, mode, lamps
         self.all = []
         self.date = date
         self.sci = []
         self.lamp = []
-        self.source = source
-        self.destiny = destiny
-        self.pattern = pattern
-        self.obsmode = mode
-        self.lamps_file = lamps
+        self.args = args
+        # self.args.source,
+        # self.args.destiny,
+        # self.args.pattern,
+        # self.args.obsmode,
+        # self.args.lamp_file
+        # self.source = args.source
+        # self.destiny = args.destiny
+        # self.pattern = args.pattern
+        # self.obsmode = args.obsmode
+        # self.lamps_file = args.lamps_file
         self.sci_targets = []
         self.telescope = False
         self.night_wsolution = None
         self.night_calibration_lamp = None
+        self.gratings = None
 
     def add_sci(self, in_sci):
         """Adds science object to list"""
         for new_sci in in_sci:
-            if self.pattern == new_sci[0:len(self.pattern)]:
+            if self.args.pattern == new_sci[0:len(self.args.pattern)]:
                 self.sci.append(new_sci)
                 self.all.append(new_sci)
             else:
@@ -578,7 +620,7 @@ class Night(object):
     def add_lamp(self, in_lamp):
         """Adds lamp objects to list"""
         for new_lamp in in_lamp:
-            if self.pattern == new_lamp[0:len(self.pattern)]:
+            if self.args.pattern == new_lamp[0:len(self.args.pattern)]:
                 self.lamp.append(new_lamp)
                 self.all.append(new_lamp)
             else:
@@ -588,6 +630,10 @@ class Night(object):
         """Appends a ScienceObject to the class attribute sci_targets"""
         self.sci_targets.append(sci_obj)
         log.info("Added science object %s", sci_obj.name)
+
+    def set_gratings(self, gratings):
+        """Adds an array of the names of all the gratings observed in the night"""
+        self.gratings = gratings
 
     def set_night_calibration_lamp(self, calibration_lamp):
         """Sets the filename of the calibration lamp as an attribute"""

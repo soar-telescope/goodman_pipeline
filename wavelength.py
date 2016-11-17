@@ -19,7 +19,7 @@ log.basicConfig(level=log.DEBUG, format=FORMAT)
 
 class WavelengthCalibration(object):
 
-    def __init__(self, path, sci_pack, science_object, args):
+    def __init__(self, sci_pack, science_object, args):
         self.args = args
         self.wsolution = None
         self.reference_data = ReferenceData(self.args)
@@ -63,7 +63,7 @@ class WavelengthCalibration(object):
         # self.binning = self.header0[]
         self.pixelcenter = []
         """this data must come parsed"""
-        self.path = path
+        self.path = self.args.source
         self.all_data = sci_pack[0]
         self.all_headers = sci_pack[1]
         self.sci = self.all_data[0]
@@ -176,7 +176,7 @@ class WavelengthCalibration(object):
         median = np.median(self.data0)
         for pixel in range(len(self.data0)):
             point = self.data0[pixel]
-            print(point)
+            # print(point)
             if prev_point is None:
                 prev_point = point
                 status = 0

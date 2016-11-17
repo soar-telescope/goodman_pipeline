@@ -24,10 +24,10 @@ class Process(object):
 
     """
 
-    def __init__(self, source_path, sci_obj, args):
+    def __init__(self, sci_obj, args):
         self.args = args
         self.science_object = sci_obj
-        self.path = source_path
+        self.path = self.args.source
         self.data = fits.getdata(self.path + self.science_object.file_name)
         self.header = self.add_wcs_keys(fits.getheader(self.path + self.science_object.file_name))
         self.lamps_data = []
@@ -54,11 +54,93 @@ class Process(object):
                 log.error('There Are no lamps available for the target: %s', self.science_object.name)
                 return [None, None]
 
-        self.targets = self.identify_spectra()
+        self.targets = self.identify_spectra_2()
         self.traces = self.trace(self.targets)
         self.extracted_data = self.extract(self.traces)
 
         return [self.extracted_data, self.science_object]
+
+    def identify_spectra_2(self):
+        # define data shape and samples
+
+        y_size, x_size  = self.data.shape
+        self.region = np.ones(y_size)
+        half_width = int(0.05 * x_size)
+        # print x_size, y_size, int(0.05 * x_size)
+        sample = np.median(self.data[:, (x_size / 2) - half_width:(x_size / 2) + half_width], axis=1)
+        sample_median = np.median(sample)
+        sample_std = np.std(sample)
+
+        plt.figure()
+        plt.hist(sample, bins=100, log=True)
+        plt.show()
+
+
+        # search for spectra
+        all_found = []
+        rising = False
+        falling = False
+        trend_length = 0
+        for i in range(len(sample) - 1):
+            if sample[i] > max(1.1 * sample_median, sample_std):
+                if sample[i] > sample[i + 1]:
+                    if rising and trend_length > 4:
+                        all_found.append(i)
+                        plt.axvline(i, color='r')
+                        trend_length = 0
+                    rising = False
+                    falling = True
+                    trend_length += 1
+                else:
+                    if falling and trend_length > 4:
+                        plt.axvline(i, color='g')
+                        trend_length = 0
+                        pass
+                    rising = True
+                    falling = False
+                    trend_length += 1
+        plt.plot(sample)
+        plt.axhline(sample_median, color='m')
+        plt.axhline(1.1 * sample_median, color='c')
+        plt.axhline(sample_std, color='k')
+        plt.show()
+        # validate targets
+        identified_targets = []
+        for spectrum in all_found:
+            # print spectrum
+            for i in range(0, min(spectrum, abs(y_size - spectrum)) - 100):
+                # print spectrum - i, spectrum + i, y_size - spectrum, x_size
+                if sample[spectrum - i] < sample[(spectrum - i) - 1] or sample[spectrum + i] < sample[(spectrum + i) + 1]:
+                    # plt.plot([x for x in range(spectrum - i, spectrum + i)], sample[spectrum - i:spectrum + i], color='g')
+                    try:
+                        sub_sample_x_axis = [x for x in range(spectrum - i, spectrum + i)]
+                        sub_sample = sample[spectrum - i:spectrum + i]
+                        voigt_init = models.Voigt1D(x_0=spectrum, amplitude_L=sample[spectrum], fwhm_L=8, fwhm_G=8)
+                        fit_voigt = fitting.LevMarLSQFitter()
+                        voigt = fit_voigt(voigt_init, sub_sample_x_axis, sub_sample)
+                        # print(voigt)
+                        if abs(voigt.x_0.value - spectrum) < 5:
+                            identified_targets.append(IdentifiedTarget(
+                                voigt.amplitude_L.value,
+                                voigt.x_0.value,
+                                voigt.fwhm_L.value,
+                                voigt.fwhm_G.value))
+                            # fitted_model = voigt
+                            plt.plot(sub_sample_x_axis, voigt(sub_sample_x_axis))
+                            plt.axvline(voigt.x_0.value, color='k')
+                        else:
+                            log.info('Spectrum found at pixel %s is discarded', spectrum)
+                    except TypeError:
+                        pass
+                    break
+        if self.args.plots_enabled:
+            plt.axhline(sample_median, color='m')
+            plt.axhline(1.1 * sample_median, color='c')
+            plt.plot(sample)
+            plt.show()
+        for target in identified_targets:
+            print target
+        return identified_targets
 
     def identify_spectra(self):
         """Finds the location of the spectrum or spectra in case there are more
@@ -279,6 +361,7 @@ class Process(object):
                 sub_sample = sample_data[:, index_y:index_y + n_samples]
 
                 sub_median = np.median(sub_sample, axis=1)
+                # print sub_median
                 sub_x_axis = range(len(sub_median))
 
                 sub_argmax = np.argmax(sub_median)
