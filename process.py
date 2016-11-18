@@ -54,27 +54,27 @@ class Process(object):
                 log.error('There Are no lamps available for the target: %s', self.science_object.name)
                 return [None, None]
 
-        self.targets = self.identify_spectra_2()
+        self.targets = self.identify_spectra()
         self.traces = self.trace(self.targets)
         self.extracted_data = self.extract(self.traces)
 
         return [self.extracted_data, self.science_object]
 
-    def identify_spectra_2(self):
+    def identify_spectra(self):
         # define data shape and samples
 
         y_size, x_size  = self.data.shape
         self.region = np.ones(y_size)
-        half_width = int(0.05 * x_size)
+        half_width = int(0.03 * x_size)
+        sample_loc = int(x_size / 2.)
         # print x_size, y_size, int(0.05 * x_size)
-        sample = np.median(self.data[:, (x_size / 2) - half_width:(x_size / 2) + half_width], axis=1)
+        sample = np.median(self.data[:, sample_loc:sample_loc + 2 * half_width], axis=1)
         sample_median = np.median(sample)
         sample_std = np.std(sample)
 
-        plt.figure()
-        plt.hist(sample, bins=100, log=True)
-        plt.show()
-
+        # plt.figure()
+        # plt.hist(sample, bins=100, log=True)
+        # plt.show()
 
         # search for spectra
         all_found = []
@@ -99,11 +99,7 @@ class Process(object):
                     rising = True
                     falling = False
                     trend_length += 1
-        plt.plot(sample)
-        plt.axhline(sample_median, color='m')
-        plt.axhline(1.1 * sample_median, color='c')
-        plt.axhline(sample_std, color='k')
-        plt.show()
+
         # validate targets
         identified_targets = []
         for spectrum in all_found:
@@ -112,182 +108,49 @@ class Process(object):
                 # print spectrum - i, spectrum + i, y_size - spectrum, x_size
                 if sample[spectrum - i] < sample[(spectrum - i) - 1] or sample[spectrum + i] < sample[(spectrum + i) + 1]:
                     # plt.plot([x for x in range(spectrum - i, spectrum + i)], sample[spectrum - i:spectrum + i], color='g')
+                    sample_width = abs(2 * i)
+
                     try:
                         sub_sample_x_axis = [x for x in range(spectrum - i, spectrum + i)]
                         sub_sample = sample[spectrum - i:spectrum + i]
+                        # centroid = np.sum(sub_sample_x_axis * sub_sample) / np.sum(sub_sample)
+                        # old procedure
                         voigt_init = models.Voigt1D(x_0=spectrum, amplitude_L=sample[spectrum], fwhm_L=8, fwhm_G=8)
                         fit_voigt = fitting.LevMarLSQFitter()
                         voigt = fit_voigt(voigt_init, sub_sample_x_axis, sub_sample)
-                        # print(voigt)
+                        print(voigt)
                         if abs(voigt.x_0.value - spectrum) < 5:
                             identified_targets.append(IdentifiedTarget(
                                 voigt.amplitude_L.value,
                                 voigt.x_0.value,
                                 voigt.fwhm_L.value,
-                                voigt.fwhm_G.value))
+                                voigt.fwhm_G.value,
+                                sample_width,
+                                sample_loc))
                             # fitted_model = voigt
-                            plt.plot(sub_sample_x_axis, voigt(sub_sample_x_axis))
-                            plt.axvline(voigt.x_0.value, color='k')
+                            if self.args.plots_enabled:
+                                plt.axvspan(spectrum - i, spectrum + i, color='r', alpha=0.3, label='Spectrum width')
+                                plt.plot(sub_sample_x_axis, voigt(sub_sample_x_axis), label='Voigt Fit')
+                                # plt.axvline(centroid, color='k')
+                                plt.axvline(voigt.x_0.value, color='m', label='Voigt x_0')
+                                plt.axvline(spectrum, color='c', label='Spectrum location')
                         else:
                             log.info('Spectrum found at pixel %s is discarded', spectrum)
                     except TypeError:
                         pass
                     break
+
         if self.args.plots_enabled:
-            plt.axhline(sample_median, color='m')
-            plt.axhline(1.1 * sample_median, color='c')
-            plt.plot(sample)
+            plt.axhline(sample_median, color='m', label='Median')
+            plt.axhline(1.1 * sample_median, color='c', label='110% Median')
+            plt.plot(sample, label='Data')
+            plt.xlabel('Pixel (Spatial Direction)')
+            plt.ylabel('Intensity')
+            plt.legend(loc='best')
             plt.show()
         for target in identified_targets:
             print target
         return identified_targets
-
-    def identify_spectra(self):
-        """Finds the location of the spectrum or spectra in case there are more
-
-        Performs an analysis along the spatial direction to determine the presence of important peaks which will be
-        identified as science targets (or objects). A sample of the image of 200 pixels is taken more or less in the
-        middle of the spectrum and then flattened along the dispersion direction, thus having enough signal to identify
-        and differentiate a target or the targets from background signal. The method to find the spectrum or spectra
-        is by defining a threshold which will be the Median + Standard Deviation from this unidimentional profile
-        (spatial direction). For every group of points that are above the threshold a python list will be created and
-        then its maximum value's position is found. Then for every position it tries to fit a gaussian profile in the
-        whole subsample (not just the list with the points above the threshold). [THIS PART IS NOT IMPLEMENTED] If the
-        gaussian fit yields something rare the candidate is discarded.
-
-        I doesn't take arguments because it will read the <object> **self.science_object** that contains all the
-        necessary data.
-
-        Returns:
-            A list of IdentifiedTargets class objects
-
-        """
-        # TODO(simon) Improve target contamination rejections
-        data_x, data_y = self.data.shape
-        self.region = np.ones(data_x)
-        sample_data = np.median(self.data[:, int(data_y / 2.) - 100:int(data_y / 2.) + 100], axis=1)
-        # x_axis = np.linspace(0, len(sample_data), x)
-        x_axis = range(0, len(sample_data), 1)
-        # print(x_axis)
-        std = np.nanstd(sample_data)
-        log.debug('Standard Deviation: %s', std)
-        median = np.nanmedian(sample_data)
-        log.debug('Median: %s', median)
-        threshold = median + std
-        log.debug('Selection Threshold: %s', threshold)
-        keep_searching = True
-        all_candidates = []
-        if self.args.plots_enabled:
-            plt.plot(sample_data)
-            plt.axhline(threshold)
-            plt.show()
-            plt.clf()
-
-        while keep_searching:
-            candidate = []
-            candidate_index = []
-            found = False
-            for i in range(len(sample_data)):
-                if sample_data[i] > threshold:
-                    found = True
-                    candidate.append(sample_data[i])
-                    candidate_index.append(i)
-                elif found:
-                    all_candidates.append([candidate, candidate_index])
-                    candidate = []
-                    candidate_index = []
-                    found = False
-                if i == len(sample_data) - 1:
-                    keep_searching = False
-        identified_targets = []
-        # print('all ', all_candidates, len(all_candidates))
-        if self.args.plots_enabled:
-            for cand in all_candidates:
-                plt.plot(cand[1], cand[0])
-            plt.plot(sample_data, linestyle='--')
-            plt.show()
-            plt.clf()
-        for single_candidate in all_candidates:
-            # if len(single_candidate[0]) <= 4:
-                # log.debug('Not enough data points to make it to a Science Target')
-            try:
-                cmax = np.argmax(single_candidate[0])
-                max_val = np.max(single_candidate[0])
-                max_pos = single_candidate[1][cmax]
-
-                model_to_fit = 'voigt'
-
-                if model_to_fit == 'gauss':
-                    gauss_init = models.Gaussian1D(amplitude=max_val, mean=max_pos, stddev=4)
-                    fit_gaussian = fitting.LevMarLSQFitter()
-                    gauss = fit_gaussian(gauss_init, single_candidate[1], single_candidate[0])
-                    identified_targets.append(
-                        IdentifiedTarget(gauss.amplitude.value, gauss.mean.value, gauss.stddev.value))
-                    fitted_model = gauss
-                elif model_to_fit == 'lorentz':
-                    lorentz_init = models.Lorentz1D(amplitude=max_val, x_0=max_pos, fwhm=8)
-                    log.debug('Amplitude: %s X_0: %s FWHM: %s', max_val, max_pos, 8)
-                    fit_lorentz = fitting.LevMarLSQFitter()
-                    lorentz = fit_lorentz(lorentz_init, single_candidate[1], single_candidate[0])
-                    # print(lorentz)
-                    identified_targets.append(
-                        IdentifiedTarget(lorentz.amplitude.value, lorentz.x_0.value, lorentz.fwhm.value))
-                    fitted_model = lorentz
-                elif model_to_fit == 'voigt':
-                    voigt_init = models.Voigt1D(x_0=max_pos, amplitude_L=max_val, fwhm_L=8, fwhm_G=8)
-                    fit_voigt = fitting.LevMarLSQFitter()
-                    # voigt = fit_voigt(voigt_init, x_axis, sample_data)
-                    voigt = fit_voigt(voigt_init, single_candidate[1], single_candidate[0])
-                    # print(voigt)
-                    identified_targets.append(IdentifiedTarget(
-                        voigt.amplitude_L.value,
-                        voigt.x_0.value,
-                        voigt.fwhm_L.value,
-                        voigt.fwhm_G.value))
-                    fitted_model = voigt
-
-                # x_0 : float
-                # Position of the peak
-                # amplitude_L : float
-                # The Lorentzian amplitude
-                # fwhm_L : float
-                # The Lorentzian full width at half maximum
-                # fwhm_G : float
-                # The Gaussian full width at half maximum
-
-                residuals = sample_data - fitted_model(x_axis)
-                if self.args.plots_enabled:
-                    plt.plot(x_axis, sample_data)
-                    plt.plot(x_axis, fitted_model(x_axis))
-                    plt.plot(x_axis, residuals)
-                    # plt.axvline(gauss.x_0.value)
-                    plt.show()
-                    plt.clf()
-            except TypeError as err:
-                log.error(err)
-                log.info('Object candidate will be ignored. Most likely does not have enough points.')
-
-
-        if len(identified_targets) > 0:
-            log.info('Identified %s targets.', len(identified_targets))
-            if len(identified_targets) > 1:
-                # check how close the targets are to each other
-                plt.plot(x_axis, sample_data)
-                center = (identified_targets[0].mean + identified_targets[1].mean)/2.
-                mean_width = (identified_targets[0].stddev + identified_targets[1].stddev)/2.
-                plt.axvspan(center - mean_width, center + mean_width, color='g', alpha=.5)
-                for target_index in range(0, len(identified_targets)):
-                    print identified_targets[target_index].stddev, identified_targets[target_index].fwhm_g
-                    half = identified_targets[target_index].stddev
-                    plt.axvspan(identified_targets[target_index].mean - half,
-                                identified_targets[target_index].mean + half,
-                                color='r', alpha=0.5)
-                plt.show()
-                return identified_targets
-            else:
-                return identified_targets
-        else:
-            log.error('No Target identified')
 
     def trace(self, targets):
         """Finds the trace of a spectrum given an initial location
@@ -328,7 +191,7 @@ class Process(object):
         # Voigt fits better
         do_voigt_fit = True
         # half of number of sigmas to be sub_sampled
-        half_n_sigma = 3
+        half_n_sigma = 5
         # space allowance in pixels for extreme of images
         ends_pix_spacing = 50
         # Number of samples to be done in the dispersion direction
@@ -342,8 +205,11 @@ class Process(object):
         regions = []
 
         for target in targets:
-            x_min = int(target.mean - half_n_sigma * target.stddev)
-            x_max = int(target.mean + half_n_sigma * target.stddev)
+            target.print_all()
+            # x_min = int(target.mean - half_n_sigma * target.stddev)
+            x_min = int(target.mean - target.raw_width / 2.)
+            # x_max = int(target.mean + half_n_sigma * target.stddev)
+            x_max = int(target.mean + target.raw_width / 2.)
             width = x_max - x_min
             background_offset = 1.5 * width
             # target value in mask is -1, for background 0 for non-masked is 1
@@ -361,6 +227,7 @@ class Process(object):
                 sub_sample = sample_data[:, index_y:index_y + n_samples]
 
                 sub_median = np.median(sub_sample, axis=1)
+
                 # print sub_median
                 sub_x_axis = range(len(sub_median))
 
@@ -381,63 +248,79 @@ class Process(object):
                     voigt = fit_voigt(voigt_init, sub_x_axis, sub_median)
                     max_positions.append(voigt.x_0.value + x_min)
                     max_index.append(index_y + int(sample_width / 2.))
+                    if False:
+                        plt.plot(sub_x_axis, sub_median, color='r', label='Data')
+                        plt.plot(sub_x_axis, voigt(sub_x_axis), color='g', label='Voigt Fit')
+                        plt.xlabel('Pixel (spatial direction)')
+                        plt.ylabel('Intensity')
+                        plt.legend(loc='best')
+                        plt.show()
+
                 else:
                     max_positions.append(sub_argmax + x_min)
                     max_index.append(index_y + int(sample_width / 2.))
 
             # chebyshev fitting for defining the trace
-            chebyshev_init = models.Chebyshev1D(2, domain=[0, sample_y])
-            fit_cheb = fitting.LinearLSQFitter()
-            cheb = fit_cheb(chebyshev_init, max_index, max_positions)
-            traces.append([cheb, width])
+            if np.std(max_positions) < width:
+                chebyshev_init = models.Chebyshev1D(2, domain=[0, sample_y])
+                fit_cheb = fitting.LinearLSQFitter()
+                cheb = fit_cheb(chebyshev_init, max_index, max_positions)
 
-            if self.args.plots_enabled:
-                plt.imshow(self.data, clim=(5, 150))
-                plt.plot(max_index, max_positions, color='r')
-                plt.show()
 
-        # Mask Background Extraction zones
-        # TODO(simon): Define what to do in case no background extraction zone is suitable for use.
-        for region in regions:
-            x_min, x_max, width = region
-            b_low_min = x_min - background_offset - width
-            b_low_max = x_min - background_offset
-            self.mask(b_low_min, b_low_max, 0)
-            b_high_min = x_max + background_offset
-            b_high_max = x_max + background_offset + width
-            self.mask(b_high_min, b_high_max, 0)
+                # Mask Background Extraction zones
+                # TODO(simon): Define what to do in case no background extraction zone is suitable for use.
+                for region in regions:
+                    x_min, x_max, width = region
+                    b_low_min = x_min - background_offset - width
+                    b_low_max = x_min - background_offset
+                    self.mask(b_low_min, b_low_max, 0)
+                    b_high_min = x_max + background_offset
+                    b_high_max = x_max + background_offset + width
+                    self.mask(b_high_min, b_high_max, 0)
 
-        #
-        # plots the masked regions.
-        if self.args.plots_enabled:
-            plt.title("Masked Regions for Background extraction")
-            plt.xlabel("Spatial Direction")
-            plt.ylabel("Intensity")
-            for target in targets:
-                plt.axvline(target.mean)
-            plt.plot(self.data[:, 1000])
-            plt.plot(self.region)
-            limits = []
-            for i in range(len(self.region) - 1):
-                if self.region[i] != self.region[i + 1]:
-                    if limits == [] or len(limits) % 2 == 0:
-                        limits.append(i + 1)
-                    else:
-                        limits.append(i)
-            # print(limits)
-            colors = ['red', 'green', 'blue']
-            colors_index = 0
-            for limit_index in range(0, len(limits), 2):
-                plt.axvspan(limits[limit_index], limits[limit_index + 1], color=colors[colors_index], alpha=0.3)
-                colors_index += 1
-                if colors_index == 3:
+                traces.append([cheb, width, self.region])
+
+                if self.args.plots_enabled:
+                    plt.imshow(self.data, clim=(5, 150))
+                    plt.plot(max_index, max_positions, marker='o', color='g', label='Sampled values')
+                    plt.plot(cheb(range(0, sample_y)), linestyle='--', label='Trace fit (Cheb)')
+                    # plt.plot(max_index, max_positions, )
+                    plt.xlabel('Dispersion Direction')
+                    plt.ylabel('Spatial Direction')
+                    plt.tight_layout()
+                    plt.show()
+
+                    plt.title("Masked Regions for Background extraction")
+                    plt.xlabel("Spatial Direction")
+                    plt.ylabel("Intensity")
+                    for target in targets:
+                        plt.axvline(target.mean)
+                    plt.plot(self.data[:, 2000])
+                    plt.plot(self.region)
+                    limits = []
+                    for i in range(len(self.region) - 1):
+                        if self.region[i] != self.region[i + 1]:
+                            if limits == [] or len(limits) % 2 == 0:
+                                limits.append(i + 1)
+                            else:
+                                limits.append(i)
+                    # print(limits)
+                    colors = ['red', 'green', 'blue']
                     colors_index = 0
-            # Watch out here! it works but might be an error.
-            plt.xlim([target.mean - 200, target.mean + 200])
-            plt.savefig("background-extraction-zones" + self.science_object.name + "_2.png", dpi=300)
-            plt.show()
+                    for limit_index in range(0, len(limits), 2):
+                        plt.axvspan(limits[limit_index], limits[limit_index + 1], color=colors[colors_index],
+                                    alpha=0.3)
+                        colors_index += 1
+                        if colors_index == 3:
+                            colors_index = 0
+                    # Watch out here! it works but might be an error.
+                    # plt.xlim([target.mean - 200, target.mean + 200])
+                    # plt.savefig("background-extraction-zones" + self.science_object.name + "_2.png", dpi=300)
+                    plt.show()
 
-        #
+            else:
+                log.error('Target at %s discarded', int(target.mean))
+
         return traces
 
     def mask(self, mask_min, mask_max, value):
@@ -492,6 +375,7 @@ class Process(object):
                 # Initial checks
                 extracted_object = []
                 headers = []
+                history_headers = []
                 # TODO(simon) this might be simplified in a pythonic way
                 if self.science_object.lamp_count > 0:
                     all_lamps = []
@@ -502,7 +386,7 @@ class Process(object):
                     log.warning('There are no lamps available for this Target.')
 
                 # Extraction of data parsed as argument
-                chebyshev, width = traces[trace_index]
+                chebyshev, width, _ = traces[trace_index]
                 # log.debug("Offset for Background: %s", offset)
                 if width % 2 == 1:
                     half_width = int((width - 1) / 2)
@@ -522,9 +406,10 @@ class Process(object):
                     if limits[limit_index + 1] - limits[limit_index] == width and\
                                     -1 not in self.region[limits[limit_index]:limits[limit_index + 1]]:
                         background.append([limits[limit_index], limits[limit_index + 1]])
-                        log.debug("Defining background extraction zone [%s:%s] for target.",
-                                  limits[limit_index],
-                                  limits[limit_index + 1])
+                        hist = "Defining background extraction zone [%s:%s] for target." % (limits[limit_index],
+                                                                                            limits[limit_index + 1])
+                        history_headers.append(hist)
+                        log.debug(hist)
 
                 # Getting data shape
                 data_y = self.data.shape[1]
@@ -539,10 +424,12 @@ class Process(object):
                     # Define limits of aperture for spectrum
                     x_min = int(round(chebyshev(i))) - half_width
                     x_max = int(round(chebyshev(i))) + half_width
-                    apnum1 = '%s %s %s %s'%(trace_index, 1, x_min, x_max)
+                    apnum1 = '%s %s %s %s'%(trace_index + 1, 1, x_min, x_max)
                     if i == int(data_y/2):
-                        log.debug('Aperture for extraction [%s:%s] at %s', x_min, x_max, i)
-                        log.debug('APNUM1 = %s', apnum1)
+                        hist = 'Aperture for extraction [%s:%s] at %s' % (x_min, x_max, i)
+                        history_headers.append(hist)
+                        log.debug(hist)
+                        log.debug('APNUM%s = %s', int(trace_index) + 1, apnum1)
 
                     # If there are background extraction zones here are prepared to subtract
                     if len(background) > 1:
@@ -571,12 +458,15 @@ class Process(object):
                             all_lamps[limit_index] = np.append(all_lamps[limit_index], lamp_point)
                 # Construction of extracted_object (to be returned)
                 extracted_object.append(np.array(sci))
-                self.header['APNUM1'] = apnum1
+                self.header['APNUM%s' % str(int(trace_index + 1))] = apnum1
+                if history_headers != []:
+                    for hist in history_headers:
+                        self.header['HISTORY'] = hist
                 headers.append(self.header)
                 if len(self.lamps_data) > 0:
                     for lamp_index in range(self.science_object.lamp_count):
                         extracted_object.append(np.array(all_lamps[lamp_index]))
-                        self.lamps_header[lamp_index]['APNUM1'] = apnum1
+                        self.lamps_header[lamp_index]['APNUM%s' % str(int(trace_index + 1))] = apnum1
                         headers.append(self.lamps_header[lamp_index])
                 #
                 # Plot background subtraction
@@ -591,11 +481,11 @@ class Process(object):
                     # plt.plot(all_lamps[1],label='lamp 2')
                     plt.legend(loc='best')
                     plt.tight_layout()
-                    plt.savefig('background-subtraction_'
-                                + self.science_object.name
-                                + '_'
-                                + str(int(chebyshev(10)))
-                                + '.png', dpi=300)
+                    # plt.savefig('background-subtraction_'
+                    #            + self.science_object.name
+                    #            + '_'
+                    #            + str(int(chebyshev(10)))
+                    #            + '.png', dpi=300)
                     plt.show()
 
                 # print(chebyshev, width, x, y)
@@ -642,9 +532,19 @@ class IdentifiedTarget(object):
 
     """
 
-    def __init__(self, amplitude, mean, stddev, fwhmg=0):
+    def __init__(self, amplitude, mean, stddev, fwhmg=0, raw_width=None, sample_loc=None):
         self.amplitude = amplitude
         self.mean = mean
         self.stddev = stddev
         self.fwhm_g = fwhmg
+        self.raw_width = raw_width
+        self.sample_loc = sample_loc
+
+    def print_all(self):
+        log.debug('Amplitude: %s', self.amplitude)
+        log.debug('Mean: %s', self.mean)
+        log.debug('Std Deviation: %s', self.stddev)
+        log.debug('FWHM (gauss): %s', self.fwhm_g)
+        log.debug('Raw Width: %s', self.raw_width)
+        log.debug('Sample Location: %s', self.sample_loc)
 
