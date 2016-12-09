@@ -62,8 +62,12 @@ class Process(object):
 
     def identify_spectra(self):
         # define data shape and samples
-
-        y_size, x_size  = self.data.shape
+        # TODO (simon): Make the software handle this problem
+        try:
+            y_size, x_size = self.data.shape
+        except ValueError:
+            log.error('Image is not 2D')
+            return False
         self.region = np.ones(y_size)
         half_width = int(0.03 * x_size)
         sample_loc = int(x_size / 2.)
@@ -450,7 +454,7 @@ class Process(object):
                         hist = 'Aperture for extraction [%s:%s] at %s' % (x_min, x_max, i)
                         history_headers.append(hist)
                         log.debug(hist)
-                        log.debug('APNUM%s = %s', int(trace_index) + 1, apnum1)
+                        log.debug('APNUM1 = %s', apnum1)
 
                     # If there are background extraction zones here are prepared to subtract
                     if len(background) > 1:
@@ -483,9 +487,9 @@ class Process(object):
                 # Construction of extracted_object (to be returned)
                 # extracted_object.append(np.array(sci))
                 sci_pack.add_data(np.array(sci))
-                if int(trace_index + 1) > 1:
-                    new_header.rename_keyword('APNUM1', 'APNUM%s' % str(int(trace_index + 1)))
-                new_header['APNUM%s' % str(int(trace_index + 1))] = apnum1
+                # if int(trace_index + 1) > 1:
+                #     new_header.rename_keyword('APNUM1', 'APNUM%s' % str(int(trace_index + 1)))
+                new_header['APNUM1'] = apnum1
                 if history_headers != []:
                     for hist in history_headers:
                         new_header['HISTORY'] = hist
@@ -495,7 +499,7 @@ class Process(object):
                     for lamp_index in range(self.science_object.lamp_count):
                         # extracted_object.append(np.array(all_lamps[lamp_index]))
                         sci_pack.add_lamp(np.array(all_lamps[lamp_index]))
-                        self.lamps_header[lamp_index]['APNUM%s' % str(int(trace_index + 1))] = apnum1
+                        self.lamps_header[lamp_index]['APNUM1'] = apnum1
                         sci_pack.add_lamp_header(self.lamps_header[lamp_index])
                         # headers.append(self.lamps_header[lamp_index])
                 #
