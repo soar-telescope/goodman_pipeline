@@ -52,8 +52,12 @@ class WavelengthFitter(object):
             fitted_model (class): Fitted model
         """
         if self.model and self.model_fit is not None:
-            fitted_model = self.model_fit(self.model, physical, wavelength)
-            return fitted_model
+            try:
+                fitted_model = self.model_fit(self.model, physical, wavelength)
+                return fitted_model
+            except TypeError as error:
+                log.info('Please add more data points.')
+                log.error('TypeError: %s', error)
         else:
             log.error('Either model or model fitter were not constructed')
 
@@ -213,7 +217,8 @@ class ReadWavelengthSolution(object):
         function = ReadMathFunctions(self.wcs_dict)
         solution = function.get_solution()
         # data = fits.getdata('/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600.fits')
-        x_axis = range(1, len(self.data) + 1)
+        # x_axis = range(1, len(self.data) + 1)
+        x_axis = range(len(self.data))
 
         # plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'], self.wat_wcs_dict['units']))
         self.wave_intens = [solution(x_axis), self.data]
@@ -258,6 +263,7 @@ class ReadMathFunctions(object):
 
     def linear_solution(self):
         intercept = self.wcs['crval'] - (self.wcs['crpix'] - 1) * self.wcs['cdelt']
+        # intercept = self.wcs['crval'] - self.wcs['crpix'] * self.wcs['cdelt']
         linear = models.Linear1D(slope=self.wcs['cdelt'], intercept=intercept)
         return linear
 

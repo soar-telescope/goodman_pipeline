@@ -11,7 +11,7 @@ import logging as log
 
 
 FORMAT = '%(levelname)s:%(filename)s:%(module)s: %(message)s'
-log.basicConfig(level=log.DEBUG, format=FORMAT)
+log.basicConfig(level=log.INFO, format=FORMAT)
 
 
 class Process(object):
@@ -118,7 +118,7 @@ class Process(object):
                         voigt_init = models.Voigt1D(x_0=spectrum, amplitude_L=sample[spectrum], fwhm_L=8, fwhm_G=8)
                         fit_voigt = fitting.LevMarLSQFitter()
                         voigt = fit_voigt(voigt_init, sub_sample_x_axis, sub_sample)
-                        print(voigt)
+                        # print(voigt)
                         if abs(voigt.x_0.value - spectrum) < 5:
                             identified_targets.append(IdentifiedTarget(
                                 voigt.amplitude_L.value,
@@ -141,6 +141,7 @@ class Process(object):
                     break
 
         if self.args.plots_enabled:
+            plt.title(self.science_object.name)
             plt.axhline(sample_median, color='m', label='Median')
             plt.axhline(1.1 * sample_median, color='c', label='110% Median')
             plt.plot(sample, label='Data')
@@ -148,8 +149,8 @@ class Process(object):
             plt.ylabel('Intensity')
             plt.legend(loc='best')
             plt.show()
-        for target in identified_targets:
-            print target
+        # for target in identified_targets:
+            # print target
         return identified_targets
 
     def trace(self, targets):
@@ -205,7 +206,7 @@ class Process(object):
         regions = []
 
         for target in targets:
-            target.print_all()
+            # target.print_all()
             # x_min = int(target.mean - half_n_sigma * target.stddev)
             x_min = int(target.mean - target.raw_width / 2.)
             # x_max = int(target.mean + half_n_sigma * target.stddev)
@@ -251,6 +252,7 @@ class Process(object):
                     if False:
                         plt.plot(sub_x_axis, sub_median, color='r', label='Data')
                         plt.plot(sub_x_axis, voigt(sub_x_axis), color='g', label='Voigt Fit')
+                        plt.title(self.science_object.name)
                         plt.xlabel('Pixel (spatial direction)')
                         plt.ylabel('Intensity')
                         plt.legend(loc='best')
@@ -279,24 +281,39 @@ class Process(object):
                     self.mask(b_high_min, b_high_max, 0)
 
                 traces.append([cheb, width, self.region])
+                self.science_object.update_no_targets(add_one=True)
 
                 if self.args.plots_enabled:
-                    plt.imshow(self.data, clim=(5, 150))
-                    plt.plot(max_index, max_positions, marker='o', color='g', label='Sampled values')
-                    plt.plot(cheb(range(0, sample_y)), linestyle='--', label='Trace fit (Cheb)')
+                    fig1 = plt.figure(1)
+                    fig1.canvas.set_window_title('Trace')
+                    plt.title(self.science_object.name)
+                    plt.imshow(self.data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
+                    plt.plot(max_index, max_positions, marker='o', color='y', label='Sampled values')
+                    plt.plot(cheb(range(0, sample_y)), linestyle='--', color='r', label='Trace fit (Cheb)')
                     # plt.plot(max_index, max_positions, )
                     plt.xlabel('Dispersion Direction')
                     plt.ylabel('Spatial Direction')
+                    plt.legend(loc='best')
+                    plt.xlim((0, self.data.shape[1]))
+                    plt.ylim((0, self.data.shape[0]))
                     plt.tight_layout()
                     plt.show()
 
-                    plt.title("Masked Regions for Background extraction")
+                    half_width = int(0.03 * self.data.shape[1])
+                    sample_loc = int(self.data.shape[1] / 2.)
+                    # print x_size, y_size, int(0.05 * x_size)
+                    sample = np.median(self.data[:, sample_loc:sample_loc + 2 * half_width], axis=1)
+
+                    fig2 = plt.figure(2)
+                    fig2.canvas.set_window_title('Masked Regions')
+
+                    plt.title("Masked Regions for Background extraction\n%s" % self.science_object.name)
                     plt.xlabel("Spatial Direction")
                     plt.ylabel("Intensity")
                     for target in targets:
-                        plt.axvline(target.mean)
-                    plt.plot(self.data[:, 2000])
-                    plt.plot(self.region)
+                        plt.axvline(target.mean, color='k', linestyle='--', label='Target Mean')
+                    plt.plot(sample, color='k', label='Data Sample')
+                    # plt.plot(self.region)
                     limits = []
                     for i in range(len(self.region) - 1):
                         if self.region[i] != self.region[i + 1]:
@@ -305,17 +322,25 @@ class Process(object):
                             else:
                                 limits.append(i)
                     # print(limits)
-                    colors = ['red', 'green', 'blue']
-                    colors_index = 0
+                    # colors = ['red', 'green', 'blue']
+                    # colors_index = 0
+                    plt.axvspan(None, None, color='r', alpha=0.3, label='Background')
+                    plt.axvspan(None, None, color='k', alpha=0.3, label='Object')
                     for limit_index in range(0, len(limits), 2):
-                        plt.axvspan(limits[limit_index], limits[limit_index + 1], color=colors[colors_index],
-                                    alpha=0.3)
-                        colors_index += 1
-                        if colors_index == 3:
-                            colors_index = 0
+                        if self.region[limits[limit_index]] == -1:
+                            color = 'k'
+                        elif self.region[limits[limit_index]] == 0:
+                            color = 'r'
+                        else:
+                            color = 'w'
+                        plt.axvspan(limits[limit_index], limits[limit_index + 1], color=color, alpha=0.3)
+                        # colors_index += 1
+                        # if colors_index == 3:
+                            # colors_index = 0
                     # Watch out here! it works but might be an error.
                     # plt.xlim([target.mean - 200, target.mean + 200])
                     # plt.savefig("background-extraction-zones" + self.science_object.name + "_2.png", dpi=300)
+                    plt.legend(loc='best')
                     plt.show()
 
             else:
@@ -370,18 +395,14 @@ class Process(object):
         """
         if len(traces) > 0:
             # Loop through traces
-            sci_pack = []
+            sci_pack = SciencePack()
+
             for trace_index in range(len(traces)):
                 # Initial checks
-                extracted_object = []
-                headers = []
                 history_headers = []
-                # TODO(simon) this might be simplified in a pythonic way
+                new_header = self.header.copy()
                 if self.science_object.lamp_count > 0:
-                    all_lamps = []
-                    for lamp_index in range(self.science_object.lamp_count):
-                        lamp = np.array([])
-                        all_lamps.append(lamp)
+                    all_lamps = [np.array([]) for lamp_index in range(self.science_object.lamp_count)]
                 else:
                     log.warning('There are no lamps available for this Target.')
 
@@ -436,6 +457,8 @@ class Process(object):
                         background_part = []
                         for back in background:
                             part = np.sum(self.data[back[0]:back[1], i])
+                            # background_median = np.median(self.data[back[0]:back[1], i])
+                            # part2 = abs(x_max - x_min) * background_median
                             background_part.append(part)
                         background_data = np.mean(background_part)
                     elif len(background) == 1:
@@ -449,6 +472,7 @@ class Process(object):
                     unsubtracted.append(np.sum(self.data[x_min:x_max, i]))
 
                     data_point = np.sum(self.data[x_min:x_max, i]) - background_data
+                    # print('DATA POINT ', np.sum(self.data[x_min:x_max, i]), background_data)
                     sci.append(data_point)
 
                     # Lamp extraction
@@ -457,26 +481,36 @@ class Process(object):
                             lamp_point = np.sum(self.lamps_data[limit_index][x_min:x_max, i])
                             all_lamps[limit_index] = np.append(all_lamps[limit_index], lamp_point)
                 # Construction of extracted_object (to be returned)
-                extracted_object.append(np.array(sci))
-                self.header['APNUM%s' % str(int(trace_index + 1))] = apnum1
+                # extracted_object.append(np.array(sci))
+                sci_pack.add_data(np.array(sci))
+                if int(trace_index + 1) > 1:
+                    new_header.rename_keyword('APNUM1', 'APNUM%s' % str(int(trace_index + 1)))
+                new_header['APNUM%s' % str(int(trace_index + 1))] = apnum1
                 if history_headers != []:
                     for hist in history_headers:
-                        self.header['HISTORY'] = hist
-                headers.append(self.header)
+                        new_header['HISTORY'] = hist
+                # headers.append(new_header)
+                sci_pack.add_header(new_header)
                 if len(self.lamps_data) > 0:
                     for lamp_index in range(self.science_object.lamp_count):
-                        extracted_object.append(np.array(all_lamps[lamp_index]))
+                        # extracted_object.append(np.array(all_lamps[lamp_index]))
+                        sci_pack.add_lamp(np.array(all_lamps[lamp_index]))
                         self.lamps_header[lamp_index]['APNUM%s' % str(int(trace_index + 1))] = apnum1
-                        headers.append(self.lamps_header[lamp_index])
+                        sci_pack.add_lamp_header(self.lamps_header[lamp_index])
+                        # headers.append(self.lamps_header[lamp_index])
                 #
                 # Plot background subtraction
                 if self.args.plots_enabled:
+                    # sci_sample = sci[int(len(sci) / 2.) - 30:int(len(sci) / 2.) + 30]
+                    fig = plt.figure(1)
+                    fig.canvas.set_window_title('Subtraction')
                     plt.title('Background Subtraction\n' + self.science_object.name)
                     plt.xlabel('Pixels (dispersion direction)')
                     plt.ylabel('Intensity (counts)')
-                    plt.plot(sci, label='Background Subtracted')
-                    plt.plot(unsubtracted, label='Unsubtracted')
-                    plt.plot(subtracted_background, label='Background')
+                    plt.xlim((0, len(sci)))
+                    plt.plot(sci, color='k', alpha=1, label='Background Subtracted')
+                    plt.plot(unsubtracted, color='k', alpha=0.5, label='Unsubtracted')
+                    plt.plot(subtracted_background, color='r', label='Background')
                     # plt.plot(all_lamps[0],label='lamp 1')
                     # plt.plot(all_lamps[1],label='lamp 2')
                     plt.legend(loc='best')
@@ -488,10 +522,6 @@ class Process(object):
                     #            + '.png', dpi=300)
                     plt.show()
 
-                # print(chebyshev, width, x, y)
-                #
-                sci_pack.append(extracted_object)
-                sci_pack.append(headers)
             return sci_pack
         else:
             log.error("There are no traces discovered here!!.")
@@ -548,3 +578,35 @@ class IdentifiedTarget(object):
         log.debug('Raw Width: %s', self.raw_width)
         log.debug('Sample Location: %s', self.sample_loc)
 
+
+class SciencePack(object):
+
+    def __init__(self):
+        self.data = []
+        self.headers = []
+        self.lamps_data = []
+        self.lamps_headers = []
+
+    def add_data(self, new_data):
+        self.data.append(new_data)
+
+    def add_header(self, new_header):
+        self.headers.append(new_header)
+
+    def add_lamp(self, new_lamp):
+        self.lamps_data.append(new_lamp)
+
+    def add_lamp_header(self, new_lamp_header):
+        self.lamps_headers.append(new_lamp_header)
+
+    def check_consistency(self):
+        if len(self.data) == len(self.headers):
+            log.debug('Science data and headers are consistent')
+        else:
+            log.error('Science data and headers are not consistent')
+            log.error('Data: %s, Headers: %s', len(self.data), len(self.headers))
+        if len(self.lamps_data) == len(self.lamps_headers):
+            log.debug('Lamps data and headers are consistent')
+        else:
+            log.error('Lamps data and headers are not consistent')
+            log.error('Lamps: %s, Headers: %s', len(self.data), len(self.headers))

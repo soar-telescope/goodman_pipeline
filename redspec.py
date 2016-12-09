@@ -18,12 +18,12 @@ import pandas as pd
 import argparse
 import logging as log
 import warnings
-from process import Process
+from process import Process, SciencePack
 from wavelength import WavelengthCalibration
 
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
-log.basicConfig(level=log.DEBUG, format=FORMAT)
+log.basicConfig(level=log.INFO, format=FORMAT)
 
 __author__ = 'Simon Torres'
 __date__ = '2016-06-28'
@@ -59,29 +59,43 @@ class MainApp(object):
             if self.args.obsmode == 0:
                 if self.wavelength_solution_obj is None:
                     self.extracted_data, self.night.sci_targets[i] = process()
+                    if isinstance(self.extracted_data, SciencePack):
+                        wavelength_calibration = WavelengthCalibration(self.extracted_data,
+                                                                       self.night.sci_targets[i],
+                                                                       self.args)
+
+                        self.wavelength_solution_obj = wavelength_calibration()
+
+                        # self.night.set_night_wsolution(process.get_wsolution())
+                        # self.night.set_night_calibration_lamp(process.get_calibration_lamp())
+                    else:
+                        log.error('No data was extracted from this target.')
+                else:
+                    if self.wavelength_solution_obj.check_compatibility(process.header):
+                        log.debug(self.night.night_wsolution)
+                        self.extracted_data, self.night.sci_targets[i] = process(extract_lamps=True)
+                        if isinstance(self.extracted_data, SciencePack):
+                            wavelength_calibration = WavelengthCalibration(self.extracted_data,
+                                                                           self.night.sci_targets[i],
+                                                                           self.args)
+
+                            wavelength_calibration(self.wavelength_solution_obj)
+                        else:
+                            log.error('No data was extracted from this target.')
+                    else:
+                        log.debug('Incompatibility of solution to new data')
+                        time.sleep(3)
+                        # TODO(simon): complete this part
+            elif self.args.obsmode == 1:
+                self.extracted_data, self.night.sci_targets[i] = process()
+                if self.extracted_data != []:
                     wavelength_calibration = WavelengthCalibration(self.extracted_data,
                                                                    self.night.sci_targets[i],
                                                                    self.args)
 
                     self.wavelength_solution_obj = wavelength_calibration()
-
-                    # self.night.set_night_wsolution(process.get_wsolution())
-                    # self.night.set_night_calibration_lamp(process.get_calibration_lamp())
                 else:
-                    log.debug(self.night.night_wsolution)
-                    self.extracted_data, self.night.sci_targets[i] = process(extract_lamps=False)
-                    wavelength_calibration = WavelengthCalibration(self.extracted_data,
-                                                                   self.night.sci_targets[i],
-                                                                   self.args)
-
-                    wavelength_calibration(self.wavelength_solution_obj)
-            elif self.args.obsmode == 1:
-                self.extracted_data, self.night.sci_targets[i] = process()
-                wavelength_calibration = WavelengthCalibration(self.extracted_data,
-                                                               self.night.sci_targets[i],
-                                                               self.args)
-
-                self.wavelength_solution_obj = wavelength_calibration()
+                    log.error('No data was extracted from this target.')
             elif self.args.obsmode == 2:
                 raise NotImplementedError
             elif self.args.obsmode == 3:
@@ -254,7 +268,7 @@ Supported Observing modes are:
             if args.destiny[-1] != '/':
                 args.destiny += '/'
         if args.obsmode == 2:
-            print(args.source + args.lamp_file)
+            # print(args.source + args.lamp_file)
             if not os.path.isfile(args.source + args.lamp_file):
                 if args.lamp_file == 'lamps.txt':
                     leave = True
@@ -360,19 +374,7 @@ Supported Observing modes are:
         """
         log.info("Observation mode 0")
         log.debug("One lamp for all targets.")
-        # Need to define a better method for selecting the lamp
-        # Now is just picking the first in the list
-        if self.args.lamp_all_night is not '':
-            lamp = self.args.lamp_all_night
-        else:
-            lamp = self.night.lamp[0]
-        log.debug("Lamp File: %s", lamp)
-        lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
-        lamp_name = self.image_collection.object.iloc[lamp_index]
-        lamp_grating = self.image_collection.grating.iloc[lamp_index]
-        # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
-        lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
-                                               self.image_collection.ra.iloc[lamp_index])
+
         for target in self.night.sci:
             index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
             name = self.image_collection.object.iloc[index]
@@ -381,22 +383,40 @@ Supported Observing modes are:
             obs_time = self.image_collection['date-obs'][index]
             right_ascension, declination = self.ra_dec_to_deg(self.image_collection.ra.iloc[index],
                                                               self.image_collection.dec.iloc[index])
-            science_object = ScienceObject(name, target, obs_time, right_ascension, declination)
+            science_object = ScienceObject(name, target, obs_time, right_ascension, declination, grating)
+
+            comp_files = self.image_collection[(self.image_collection['grating'] == grating)
+                                               & (self.image_collection['obstype'] == 'COMP')].index.tolist()
+            # Need to define a better method for selecting the lamp
+            # Now is just picking the first in the list
+            if self.args.lamp_all_night is not '':
+                lamp = self.args.lamp_all_night
+                lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
+            else:
+                lamp_index = comp_files[0]
+                lamp = self.image_collection.file.iloc[lamp_index]
+            log.debug("Lamp File: %s", lamp)
+
+            lamp_name = self.image_collection.object.iloc[lamp_index]
+            lamp_grating = self.image_collection.grating.iloc[lamp_index]
+            # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
+            lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+                                                   self.image_collection.ra.iloc[lamp_index])
+
             if lamp_grating == grating:
                 science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
-            else:
-                log.info('Gratings do not match. Looking for another one.')
-                comp_files = self.image_collection[(self.image_collection['grating'] == grating)
-                                                   & (self.image_collection['obstype'] == 'COMP')].index.tolist()
+            # else:
+                # log.info('Gratings do not match. Looking for another one.')
+
                 # print(comp_files)
-                lamp_index = comp_files[0]
-                lamp_name = self.image_collection.object.iloc[lamp_index]
+                # lamp_index = comp_files[0]
+                # lamp_name = self.image_collection.object.iloc[lamp_index]
                 lamp_grating = self.image_collection.grating.iloc[lamp_index]
                 # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
-                lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
-                                                       self.image_collection.ra.iloc[lamp_index])
-                science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
-            science_object.print_all()
+                # lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+                #                                        self.image_collection.ra.iloc[lamp_index])
+                # science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+            # science_object.print_all()
             self.night.add_sci_object(science_object)
 
         return
@@ -422,7 +442,7 @@ Supported Observing modes are:
             # Reformat some data of the target for comparison
             target_time = self.convert_time(obs_time)
             # Define ScienceObject object
-            science_object = ScienceObject(name, target, obs_time, right_ascension, declination)
+            science_object = ScienceObject(name, target, obs_time, right_ascension, declination, grating)
             # Loop trough lamps to find a match for target
             for lamp in self.night.lamp:
                 lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
@@ -446,7 +466,7 @@ Supported Observing modes are:
                             log.warning("Lamp within sky distance but too large time difference %s. Ignored.", time_dif)
                 else:
                     log.info('Gratings do not match')
-            science_object.print_all()
+            # science_object.print_all()
             self.night.add_sci_object(science_object)
         return
 
@@ -676,7 +696,7 @@ class ScienceObject(object):
 
     """
 
-    def __init__(self, name, file_name, obs_time, right_ascension, declination):
+    def __init__(self, name, file_name, obs_time, right_ascension, declination, grating):
         self.name = name
         self.file_name = file_name
         self.obs_time = obs_time
@@ -687,6 +707,8 @@ class ScienceObject(object):
         self.lamp_type = []
         self.lamp_ra = []
         self.lamp_dec = []
+        self.grating = grating
+        self.no_targets = 0
 
     def add_lamp(self, new_lamp, new_type, right_ascension, declination):
         """Adds a lamp to the science object
@@ -704,6 +726,24 @@ class ScienceObject(object):
         self.lamp_dec.append(declination)
         self.lamp_count = int(len(self.lamp_file))
 
+    def update_no_targets(self, new_value=None, add_one=False):
+        """Update number of spectra in an image
+
+        An spectral image may contain multiple science target's spectra this method is set to update its number
+        as a class attribute. There are two ways it can work. Add one to the existing number or set a new one.
+
+        Args:
+            new_value (int): New value for number of targets
+            add_one (bool): If True increase the count by one.
+        """
+        if add_one:
+            self.no_targets += 1
+            log.debug('Number of targets is %s', self.no_targets)
+        elif new_value is not None:
+            self.no_targets = new_value
+        else:
+            log.debug('Nothing to do: new_value: %s add_one: %s', new_value, str(add_one))
+
     def print_all(self):
         """Prints all the relevant attributes of the object
 
@@ -711,6 +751,7 @@ class ScienceObject(object):
             this method is mainly used for development purposes
 
         """
+        print(' ')
         log.info("Name: %s", self.name)
         log.info("File: %s", self.file_name)
         log.info("Obs-T: %s", self.obs_time)
@@ -719,6 +760,7 @@ class ScienceObject(object):
             for i in range(self.lamp_count):
                 log.info("Lamp %s: %s", (i + 1), self.lamp_file[i])
                 log.info("Type %s: %s", (i + 1), self.lamp_type[i])
+        # time.sleep(10)
 
 
 if __name__ == '__main__':
