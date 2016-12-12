@@ -16,14 +16,16 @@ import textwrap
 import ccdproc as ccd
 import pandas as pd
 import argparse
-import logging as log
+import logging
 import warnings
 from process import Process, SciencePack
 from wavelength import WavelengthCalibration
 
 warnings.filterwarnings('ignore')
-FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
-log.basicConfig(level=log.INFO, format=FORMAT)
+FORMAT = '%(asctime)s:%(levelname)s:%(module)s: %(message)s'
+DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
+logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
+log = logging.getLogger('redspec')
 
 __author__ = 'Simon Torres'
 __date__ = '2016-06-28'

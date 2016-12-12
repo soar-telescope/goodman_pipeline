@@ -7,11 +7,12 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy.modeling import models, fitting
-import logging as log
+import logging
 
 
-FORMAT = '%(levelname)s:%(filename)s:%(module)s: %(message)s'
-log.basicConfig(level=log.INFO, format=FORMAT)
+# FORMAT = '%(levelname)s:%(filename)s:%(module)s: %(message)s'
+# log.basicConfig(level=log.INFO, format=FORMAT)
+log = logging.getLogger('redspec.process')
 
 
 class Process(object):
@@ -55,8 +56,9 @@ class Process(object):
                 return [None, None]
 
         self.targets = self.identify_spectra()
-        self.traces = self.trace(self.targets)
-        self.extracted_data = self.extract(self.traces)
+        if self.targets is not None:
+            self.traces = self.trace(self.targets)
+            self.extracted_data = self.extract(self.traces)
 
         return [self.extracted_data, self.science_object]
 
@@ -67,7 +69,7 @@ class Process(object):
             y_size, x_size = self.data.shape
         except ValueError:
             log.error('Image is not 2D')
-            return False
+            return None
         self.region = np.ones(y_size)
         half_width = int(0.03 * x_size)
         sample_loc = int(x_size / 2.)

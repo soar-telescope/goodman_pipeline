@@ -4,12 +4,13 @@
 """
 from __future__ import print_function
 import shlex
-import logging as log
+import logging
 from astropy.modeling import models, fitting
 import matplotlib.pyplot as plt
 
 
-log.basicConfig(level=log.DEBUG)
+# log.basicConfig(level=log.DEBUG)
+log = logging.getLogger('redspec.wsbuilder')
 
 
 class WavelengthFitter(object):

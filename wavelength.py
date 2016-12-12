@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from astropy.stats import sigma_clip
 import scipy.interpolate
-import logging as log
+import logging
 import matplotlib.image as mpimg
 import matplotlib.ticker as mtick
 from scipy import signal
@@ -17,8 +17,9 @@ import time
 from linelist import ReferenceData
 import wsbuilder
 
-FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
-log.basicConfig(level=log.INFO, format=FORMAT)
+# FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
+# log.basicConfig(level=log.INFO, format=FORMAT)
+log = logging.getLogger('redspec.wavelength')
 
 
 class WavelengthCalibration(object):
@@ -64,6 +65,7 @@ class WavelengthCalibration(object):
         self.ax4_plots = None
         self.ax4_com = None
         self.ax4_rlv = None
+        self.legends = None
         self.points_ref = None
         self.points_raw = None
         self.line_raw = None
@@ -559,7 +561,7 @@ class WavelengthCalibration(object):
             self.ax4_rlv = self.ax4.axvline(reference_line_value, linestyle='-', color='r', label='Reference Line Value')
             self.ax4_com = self.ax4.axvline(center_of_mass, linestyle='--', color='b', label='Centroid')
             self.ax4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-            ### self.ax4.legend(loc=4)
+            self.ax4.legend(loc=3, framealpha=0.5)
             self.i_fig.canvas.draw()
             # return center_of_mass
             return reference_line_value
@@ -586,7 +588,7 @@ class WavelengthCalibration(object):
             self.ax4_rlv = self.ax4.axvline(raw_line_value, linestyle='-', color='r', label='Line Center')
             self.ax4_com = self.ax4.axvline(center_of_mass, linestyle='--',color='b', label='Centroid')
             self.ax4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-            ### self.ax4.legend(loc=4)
+            self.ax4.legend(loc=3, framealpha=0.5)
             self.i_fig.canvas.draw()
             # return center_of_mass
             return raw_line_value
@@ -653,9 +655,9 @@ class WavelengthCalibration(object):
         self.ax1.set_xlim((0, len(self.lamp_data)))
         # ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2e'))
         self.ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-        ### self.ax1.legend(loc='best')
+        self.ax1.legend(loc=2)
         # self.ax1.set_yscale('log')
-        first_plot = time.time() - start
+        # first_plot = time.time() - start
         # print('first plot ', first_plot)
 
         # self.ax3 = plt.subplot(212)
@@ -668,23 +670,16 @@ class WavelengthCalibration(object):
         self.ax3.set_xlim((self.blue_limit, self.red_limit))
         self.ax3.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
         self.ax3.plot([], linestyle=':', color='r', label='Reference Line Values')
-        segundo_plot = time.time() - start
+        # segundo_plot = time.time() - start
         # print('segundo plot', segundo_plot)
         for rline in self.reference_data.get_line_list_by_name(self.lamp_name):
             self.ax3.axvline(rline, linestyle=':', color='r')
         if reference_plots_enabled:
-            l1, = self.ax3.plot(self.reference_solution[0], self.reference_solution[1], color='k', label='Reference Lamp Data')
+            self.ax3.plot(self.reference_solution[0], self.reference_solution[1], color='k', label='Reference Lamp Data')
             # self.ax3.set_xlim((self.reference_solution[0][0], self.reference_solution[0][-1]))
             # self.ax3.set_xlim((self.blue_limit, self.red_limit))
         # self.ax3.set_yscale('log')
-        ### self.ax3.legend(loc='best')
-
-        # help plot
-        self.ax2.set_title('Help')
-        self.ax2.set_xticks([])
-        self.ax2.set_yticks([])
-        self.leg = self.ax2.legend([l1], ['xxxx'], mode='expand', frameon=False)
-
+        self.ax3.legend(loc=2)
 
         # self.ax2.set_axis_off()
         # ToDo (simon): figure out what to do here.
@@ -705,6 +700,11 @@ class WavelengthCalibration(object):
         self.ax4_rlv, = self.ax4.plot([])
         # image = mpimg.imread('/user/simon/development/soar/goodman/soar_outside.png')
         # self.ax4_plots = self.ax4.imshow(image)
+
+        # help plot and legends
+        self.ax2.set_title('Help')
+        self.ax2.set_xticks([])
+        self.ax2.set_yticks([])
 
         plt.subplots_adjust(left=0.05, right=0.99, top=0.97, bottom=0.04, hspace=0.17, wspace=0.11)
         self.raw_data_bb = self.ax1.get_position()
@@ -830,7 +830,7 @@ class WavelengthCalibration(object):
                 self.update_clicks_plot('eval_plots')
 
         elif event.key == 'f6':
-            log.info('Linearize spectrum')
+            log.info('Linearize and smoothing spectrum')
             if self.wsolution is not None:
                 self.linearize_spectrum(self.lamp_data, plots=True)
         elif event.key == 'ctrl+b':
@@ -956,8 +956,7 @@ class WavelengthCalibration(object):
                                                color='r',
                                                alpha=0.4,
                                                label='New Wavelength Solution')
-            # changed yesterday
-            ### self.ax3.legend(loc='best')
+            self.ax3.legend(loc=2)
             self.i_fig.canvas.draw()
 
     def evaluate_solution(self, plots=False):
@@ -971,15 +970,12 @@ class WavelengthCalibration(object):
                 rw_difference = wline - rline
                 # print 'Difference w - r ', rw_difference, rline
                 differences = np.append(differences, rw_difference)
-                # differences.append(rw_difference)
-            # differences = np.array(differences)
+
             clipping_sigma = 1.5
             # print(differences)
             clipped_differences = sigma_clip(differences, sigma=clipping_sigma, iters=5, cenfunc=np.ma.median)
             once_clipped_differences = sigma_clip(differences, sigma=clipping_sigma, iters=1, cenfunc=np.ma.median)
 
-            # sigma_value = clipped_differences.std()
-            # data_mean = clipped_differences.mean()
             npoints = len(clipped_differences)
             n_rejections = np.ma.count_masked(clipped_differences)
             square_differences = []
@@ -1002,10 +998,7 @@ class WavelengthCalibration(object):
                 self.ax4.set_ylim(once_clipped_differences.min(), once_clipped_differences.max())
                 # self.ax4.set_ylim(- rms_error, 2 * rms_error)
                 self.ax4.set_xlim(np.min(self.lines_center), np.max(self.lines_center))
-                self.ax4_rlv = self.ax4.scatter(self.lines_center, differences, marker='x', color='k', label='Removed Points')
-                # print(data_mean - clipping_sigma / 2. * sigma_value)
-                # print(data_mean + clipping_sigma / 2. * sigma_value)
-                # print(clipped_differences.min(), )
+                self.ax4_rlv = self.ax4.scatter(self.lines_center, differences, marker='x', color='k', label='Rejected Points')
                 self.ax4_com = self.ax4.axhspan(clipped_differences.min(),
                                                 clipped_differences.max(),
                                                 color='k',
@@ -1029,15 +1022,10 @@ class WavelengthCalibration(object):
                                   color=increment_color,
                                   fontsize=15)
 
-                #         ax.text(0.95, 0.01, 'colored text in axes coords',
-                # verticalalignment='bottom', horizontalalignment='right',
-                # transform=ax.transAxes,
-                # color='green', fontsize=15)
-                # self.ax4.axhline(rms_error, color='r')
                 self.ax4.set_xlabel('Pixel Axis (Pixels)')
                 self.ax4.set_ylabel('Difference (Angstroms)')
 
-                ### self.ax4.legend(loc=4)
+                self.ax4.legend(loc=3, framealpha=0.5)
                 self.i_fig.canvas.draw()
 
             return [self.rms_error, npoints, n_rejections]
@@ -1065,23 +1053,31 @@ class WavelengthCalibration(object):
         if self.wsolution is not None:
             x_axis = self.wsolution(pixel_axis)
             new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
-            tck = scipy.interpolate.splrep(x_axis, data, s=0)
+            tck = scipy.interpolate.splrep(x_axis, data, s=0 )
             linearized_data = scipy.interpolate.splev(new_x_axis, tck, der=0)
+            smoothed_linearized_data = signal.medfilt(linearized_data)
             if plots:
                 fig6 = plt.figure(6)
+                plt.xlabel('Wavelength (Angstrom)')
+                plt.ylabel('Intensity (Counts)')
                 fig6.canvas.set_window_title('Linearized Data')
-                plt.plot(x_axis, data, color='b')
-                plt.plot(new_x_axis, linearized_data, color='r', linestyle=':')
+                plt.plot(x_axis, data, color='k', label='Data')
+                plt.plot(new_x_axis, linearized_data, color='r', linestyle=':', label='Linearized Data')
+                plt.plot(new_x_axis, smoothed_linearized_data, color='m', alpha=0.5, label='Smoothed Linearized Data')
                 plt.tight_layout()
+                plt.legend(loc=3)
                 plt.show()
                 fig7 = plt.figure(7)
+                plt.xlabel('Pixels')
+                plt.ylabel('Angstroms')
                 fig7.canvas.set_window_title('Wavelength Solution')
-                plt.plot(x_axis, color='b')
-                plt.plot(new_x_axis, color='r')
+                plt.plot(x_axis, color='b', label='Non linear wavelength-axis')
+                plt.plot(new_x_axis, color='r', label='Linear wavelength-axis')
                 plt.tight_layout()
+                plt.legend(loc=3)
                 plt.show()
 
-            return [new_x_axis, linearized_data]
+            return [new_x_axis, smoothed_linearized_data]
 
     def add_wavelength_solution(self, new_header, spectrum, original_filename, evaluation_comment=None, index=None):
         if evaluation_comment is None:
@@ -1125,6 +1121,7 @@ class WavelengthCalibration(object):
         new_filename = self.args.destiny + self.args.output_prefix + original_filename.replace('.fits', '') + f_end
 
         fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
+        log.info('Written new file: %s', new_filename)
         # print new_header
         return new_header
 
