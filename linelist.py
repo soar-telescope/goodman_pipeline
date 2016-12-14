@@ -744,7 +744,7 @@ class ReferenceData(object):
             return None
 
     def get_ref_spectrum_from_linelist(self, blue, red, name):
-        """Experimental
+        """Experimental not working at the moment
 
         Builds a unidimensional spectrum to be used as a template for finding an automatic wavelength solution
         """

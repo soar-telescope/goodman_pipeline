@@ -193,53 +193,17 @@ class WavelengthCalibration(object):
     def get_lines_in_lamp(self):
         """Identify peaks in a lamp spectrum
 
-        This method goes through all the data points in a 1D spectrum recording whether there is a trend
-        to increase or to decrease. It also records the length of the trend. If there was rising trend
-        it will check if trend length is 3 or larger and if the point is above the median of the spectrum.
-        If these criteria are met the last rising pixel value is recorded as a line candidate.
-
-        Notes:
-            This method will only work for comparison lamps.
+        Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission lines then it calls the recenter_lines
+        method that will recenter them using a "center of mass", because, not always the maximum value (peak)
+        is the center of the line.
 
         Returns:
             lines_candidates (list): A common list containing pixel values at approximate location of lines.
         """
-        # lines_candidates = []
-        # prev_point = None
-        # status = None
-        # trend_length = 0
-        # median = np.median(self.lamp_data)
-        # stddev = np.std(self.lamp_data)
-        #
-        # for pixel_index in range(len(self.lamp_data)):
-        #     point = self.lamp_data[pixel_index]
-        #     # print(point)
-        #     if prev_point is None:
-        #         prev_point = point
-        #         status = 0
-        #     else:
-        #         if point > prev_point:
-        #             if status == 1:
-        #                 trend_length += 1
-        #             elif status == -1:
-        #                 trend_length = 1
-        #             status = 1
-        #         elif point < prev_point:
-        #             if status == 1 and trend_length > 2 and point > median:
-        #                 lines_candidates.append(pixel_index - 1)
-        #             status = -1
-        #             trend_length = 1
-        #         else:
-        #             pass
-        #     prev_point = point
-
         filtered_data = np.where(np.abs(self.lamp_data > self.lamp_data.min() + 0.05 * self.lamp_data.max()),
                                         self.lamp_data,
                                         0)
         peaks = signal.argrelmax(filtered_data, axis=0, order=6)[0]
-        for value in peaks:
-            plt.axvline(value, color='r')
-
         lines_center = self.recenter_lines(self.lamp_data, peaks)
 
         if self.args.plots_enabled:
@@ -260,12 +224,15 @@ class WavelengthCalibration(object):
         return lines_center
 
     def recenter_lines(self, data, lines, plots=False):
+        """Finds the centroid of an emission line
+
+        For every line center (pixel value) it will scan left first until the data stops decreasing, it assumes it
+        is an emission line and then will scan right until it stops decreasing too. Defined those limits it will
+        """
         new_center = []
         x_size = data.shape[0]
         median = np.median(data)
         for line in lines:
-            # id left limit
-            # print(line)
             condition = True
             left_index = int(line)
             while condition and left_index - 2 > 0:
@@ -305,13 +272,6 @@ class WavelengthCalibration(object):
                 new_center.append(line + 1)
             else:
                 new_center.append(centroid + 1)
-            # if plots:
-                # plt.axvline(centroid, color='m')
-                # plt.plot(sub_x_axis, sub_data)
-                # plt.plot(data, color='r', linestyle='--')
-                # plt.xlim([left_limit, right_limit])
-                # plt.ylim([min(sub_data), max(sub_data)])
-                # plt.show()
         if plots:
             fig = plt.figure(1)
             fig.canvas.set_window_title('Lines Detected in Lamp')
@@ -323,132 +283,6 @@ class WavelengthCalibration(object):
                 plt.axvline(center, color='k', linestyle='.-', label='New Center')
             plt.show()
         return new_center
-
-    # def get_line_limits(self):
-    #     """Method for identifying lines in a spectrum
-    #
-    #     This is the spectral line identifying method. It calculates a pseudo-derivative of the spectrum thus determining
-    #     peaks. For a typical spectrum a pseudo-derivative, from now on just "derivative", will produce a series of
-    #     positive and negative peaks, for emission lines. Since we will be using it for comparison lamps only we don't
-    #     have to worry about absorption lines and therefore this method only detects emission lines.
-    #     A threshold is defined by calculating the 75 percent of the standard deviation of the derivative. There
-    #     is no particular reason for choosing 75 percent is just the value that worked best for all the test subjects.
-    #     Then any search for lines must be done for values above and below of the threshold and its negative
-    #     respectively.  There are a few control mechanisms that ensures that an actual good line is being detected. For
-    #     instance: For each line both positive and negative derivative's peaks are stored and are called limits. In order
-    #     to add a (first) positive limits the number of previously stored limits must be even, meaning that we are
-    #     "opening" a new line. Correspondingly if we are adding  a (last) negative limit we have to have added previously
-    #     a odd amount of limits meaning that we are "closing" a line. At this point there is another constraint, it
-    #     cannot be separated by an amount larger than a defined spacing, or we would be having a very broad line and lamp
-    #     lines are expected to be very narrow.
-    #
-    #     Notes:
-    #         The lines detected by this method are usually the best lines in the spectrum. There is a certain amount of
-    #         lines missed but in very crowded regions.
-    #
-    #         Very important to note that the line centers found using the data produced here are very precise.
-    #
-    #     Returns:
-    #         limits (list): List of line limits in consecutive pairs. This is considered by the method that uses this
-    #         list for further processing. The values are index values not pixel values.
-    #
-    #     """
-    #     if self.line_search_method == 'derivative':
-    #         # in fact is a pseudo-derivative
-    #         derivative = []
-    #         # derivative2 = []
-    #         faux_x = range(0, len(self.data1[1]) - 1)
-    #         # faux_x2 = range(0, len(self.data1[1]) - 2)
-    #         # print faux_x
-    #         for i in faux_x:
-    #             derivative.append(self.data1[1][i + 1] - self.data1[1][i])
-    #         # for e in faux_x2:
-    #         #    derivative2.append(derivative[e] - derivative[e+1])
-    #         threshold = np.std(derivative) * .75
-    #         new_range = 0
-    #         spacing = 1500
-    #         limits = []
-    #         for i in range(len(derivative) - 1):
-    #             if i > new_range:
-    #                 if derivative[i] > threshold and derivative[i + 1] - derivative[i] >= 0:
-    #                     partial_max = i + np.argmax(derivative[i:i + spacing])
-    #                     # print i, partial_min
-    #                     new_range = partial_max + (partial_max - i)
-    #                     if limits == [] or len(limits) % 2 == 0:
-    #                         limits.append(partial_max)
-    #                     else:
-    #                         plt.axvline(partial_max, color='k')
-    #                 elif derivative[i] < -threshold and derivative[i + 1] - derivative[i] <= 0:
-    #                     partial_min = i + np.argmin(derivative[i:i + spacing])
-    #                     new_range = partial_min + (partial_min - i)
-    #                     if len(limits) % 2 == 1 and partial_min - limits[-1] < spacing:
-    #                         limits.append(partial_min)
-    #                         # plt.axvline(partial_max, color='g')
-    #                     elif limits != []:
-    #                         if partial_min - limits[-1] > spacing:
-    #                             plt.axvline(partial_min, color='m')
-    #                             limits = limits[:-1]
-    #         if len(limits) % 2 == 1:
-    #             limits = limits[:-1]
-    #
-    #         # Produce Plots
-    #         if self.args.plots_enabled:
-    #             for i in range(len(limits)):
-    #                 if i % 2 == 0:
-    #                     plt.axvline(limits[i], color='r')
-    #                 elif i % 2 == 1:
-    #                     plt.axvline(limits[i], color='g')
-    #
-    #             plt.title('Line Identification')
-    #             # plt.plot(self.data1[1], label='Spectrum')
-    #             plt.plot(faux_x, derivative, label='1st Derivative')
-    #             plt.axhline(0, color='m')
-    #             # plt.plot(faux_x2, derivative2, label='2nd')
-    #             plt.axhline(threshold)
-    #             plt.axhline(-threshold)
-    #             plt.legend(loc='best')
-    #             # plt.plot(pixel_axis, self.data1[1])
-    #             plt.savefig(self.path + 'line-identification-201.png', dpi=300)
-    #             plt.show()
-    #             # """
-    #         return limits
-    #
-    # def get_line_centers(self, limits):
-    #     """Finds the center of the lines using limits previously found
-    #
-    #     This method is very simple and could be integrated in the get_line_limits method but I'd rather have the limit
-    #     information available for later. Basically finds the mean value of the line limits and then finds the
-    #     correspoing pixel value, adds it up to the "centers" list.
-    #
-    #     Args:
-    #         limits (list): Line limits in the list's index domain.
-    #
-    #     Returns:
-    #         centers (list): Line centers in pixel values as floats.
-    #
-    #     """
-    #     centers = []
-    #     for i in range(0, len(limits), 2):
-    #         center = (float(limits[i]) + float(limits[i + 1])) / 2.
-    #         width = limits[i + 1] - limits[i]
-    #         pixel_width = self.data1[0][limits[i + 1]] - self.data1[0][limits[i]]
-    #         log.debug('Approximate FWHM: %s pix %s Angstrom (pix * 0.65)', pixel_width, pixel_width * 0.65)
-    #         i_min = int(center - 2 * width)
-    #         i_max = int(center + 2 * width)
-    #         pixel_axis = self.data1[0][i_min:i_max]
-    #         data_axis = self.data1[1][i_min:i_max]
-    #         pixel_center = self.data1[0][int(round(center))]
-    #         center_val = self.data1[1][int(round(center))]
-    #         # new_center = self.recenter_line_by_model(pixel_axis, data_axis, center_val, pixel_center, 'gauss')
-    #         if self.args.plots_enabled:
-    #             plt.plot(pixel_axis, data_axis)
-    #             plt.axvline(pixel_center)
-    #             # plt.axvline(new_center, color='m')
-    #             plt.show()
-    #         self.pixelcenter.append([pixel_center, center_val])
-    #         centers.append(pixel_center)
-    #         # print(center, width)
-    #     return centers
 
     def get_spectral_characteristics(self):
         """Calculates some Goodman's specific spectroscopic values.
@@ -683,14 +517,19 @@ class WavelengthCalibration(object):
 
         # self.ax2.set_axis_off()
         # ToDo (simon): figure out what to do here.
+        # help plot and legends
+        self.ax2.set_title('Help')
+        self.ax2.set_xticks([])
+        self.ax2.set_yticks([])
 
-        # self.ax2.text(1, 11, 'F1:', fontsize=15)
-        # self.ax2.text(1.3, 11, 'Prints Help (remove this one)', fontsize=13)
-        # self.ax2.text(1, 10, 'F2:', fontsize=15)
-        # self.ax2.text(1.3, 10, 'Fit Wavelength Solution to points collected', fontsize=13)
-        # self.ax2.text(1, 9, 'F3: Find new lines, use with caution!.', fontsize=15)
-        # self.ax2.set_ylim((0, 12))
-        # self.ax2.set_xlim((0.95, 3.5))
+        self.ax2.text(1, 11, 'F1:', fontsize=15)
+        self.ax2.text(1.25, 11, 'Prints Help (remove this one)', fontsize=13)
+        self.ax2.text(1, 10, 'F2:', fontsize=15)
+        self.ax2.text(1.25, 10, 'Fit Wavelength Solution to points collected', fontsize=13)
+        self.ax2.text(1, 9, 'F3:', fontsize=15)
+        self.ax2.text(1.25, 9, 'Find new lines, use with caution!.', fontsize=13)
+        self.ax2.set_ylim((0, 12))
+        self.ax2.set_xlim((0.95, 3.5))
 
 
         # zoomed plot
@@ -701,10 +540,7 @@ class WavelengthCalibration(object):
         # image = mpimg.imread('/user/simon/development/soar/goodman/soar_outside.png')
         # self.ax4_plots = self.ax4.imshow(image)
 
-        # help plot and legends
-        self.ax2.set_title('Help')
-        self.ax2.set_xticks([])
-        self.ax2.set_yticks([])
+
 
         plt.subplots_adjust(left=0.05, right=0.99, top=0.97, bottom=0.04, hspace=0.17, wspace=0.11)
         self.raw_data_bb = self.ax1.get_position()
