@@ -5,18 +5,19 @@ to the image's header following the FITS standard.
 """
 
 # TODO Reformat file - It is confusing at the moment
-# TODO Reformat _ Re-order imports (first "import ...", then "from ... import ..." alphabetically) 
+# TODO Reformat _ Re-order imports (first "import ...", then "from ... import ..." alphabetically)
+# TODO (simon): Discuss this because there are other rules that will probably conflict with this request.
 from __future__ import print_function
-from astropy.io import fits
-import numpy as np
-import matplotlib.pyplot as plt
-from astropy.stats import sigma_clip
-import scipy.interpolate
 import logging
+import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import matplotlib.ticker as mtick
-from scipy import signal
+import numpy as np
+import scipy.interpolate
 import time
+from astropy.io import fits
+from astropy.stats import sigma_clip
+from scipy import signal
 from linelist import ReferenceData
 import wsbuilder
 
@@ -527,23 +528,7 @@ class WavelengthCalibration(object):
         # self.ax3.set_yscale('log')
         self.ax3.legend(loc=2)
 
-        # self.ax2.set_axis_off()
-        # ToDo (simon): figure out what to do here.
-        # help plot and legends
-        self.ax2.set_title('Help')
-        self.ax2.set_xticks([])
-        self.ax2.set_yticks([])
-
-        self.ax2.text(1, 11, 'F1:', fontsize=15)
-        self.ax2.text(1.25, 11, 'Prints Help (remove this one)', fontsize=13)
-        self.ax2.text(1, 10, 'F2:', fontsize=15)
-        self.ax2.text(1.25, 10, 'Fit Wavelength Solution to points collected', fontsize=13)
-        self.ax2.text(1, 9, 'F3:', fontsize=15)
-        self.ax2.text(1.25, 9, 'Find new lines, use when the solution is', fontsize=13)
-        self.ax2.text(1.25, 8.5, 'already decent and want to improve it!.', fontsize=13)
-        self.ax2.set_ylim((0, 12))
-        self.ax2.set_xlim((0.95, 3.5))
-
+        self.display_help_text()
 
         # zoomed plot
         self.display_onscreen_message('Use middle button click to select a line')
@@ -561,11 +546,12 @@ class WavelengthCalibration(object):
         self.reference_bb = self.ax3.get_position()
         self.contextual_bb = self.ax4.get_position()
 
-        if self.click_input_enabled:
-            self.i_fig.canvas.mpl_connect('button_press_event', self.on_click)
-            self.i_fig.canvas.mpl_connect('key_press_event', self.key_pressed)
-            # print self.wsolution
-            plt.show()
+        # if self.click_input_enabled:
+        self.i_fig.canvas.mpl_connect('button_press_event', self.on_click)
+        self.i_fig.canvas.mpl_connect('key_press_event', self.key_pressed)
+        # print self.wsolution
+        plt.show()
+
         return True
 
     def on_click(self, event):
@@ -617,7 +603,7 @@ class WavelengthCalibration(object):
             print("d : deletes closest point")
             # print("l : resample spectrum to a linear dispersion axis")
             print("ctrl+d : deletes all recorded clicks")
-            print("ctrl+b : Go back to previous solution (deletes automatic added points")
+            print("ctrl+z : Go back to previous solution (deletes automatic added points")
             print('Middle Button Click: records data location.')
             print("Right Button Click: Leaves interactive mode.")
         elif event.key == 'f2':
@@ -702,7 +688,7 @@ class WavelengthCalibration(object):
             log.info('Linearize and smoothing spectrum')
             if self.wsolution is not None:
                 self.linearize_spectrum(self.lamp_data, plots=True)
-        elif event.key == 'ctrl+b':
+        elif event.key == 'ctrl+z':
             log.info('Deleting automatic added points. If exist.')
             if self.raw_data_clicks_x is not [] and self.reference_clicks_x is not []:
                 to_remove = []
@@ -736,8 +722,16 @@ class WavelengthCalibration(object):
                 self.plot_raw_over_reference(remove=True)
             else:
                 log.info('No click was deleted this time!.')
+        elif event.key == 'enter':
+            if self.wsolution is not None:
+                log.info('Closing figure')
+                plt.close('all')
+            else:
+                message = 'There is still no wavelength solution!'
+                log.info(message)
+                self.display_onscreen_message(message)
         else:
-            # print event.key
+            print(event.key)
             pass
 
     def find_more_lines(self):
@@ -865,7 +859,7 @@ class WavelengthCalibration(object):
                         self.ax4.relim()
                     except:
                         pass
-                self.ax4.set_title('RMSE %.3f \n %s points and %s rejections' % (self.rms_error, npoints, n_rejections))
+                self.ax4.set_title('RMS Error %.3f \n %d points (%d rejected)' % (self.rms_error, npoints, n_rejections))
                 self.ax4.set_ylim(once_clipped_differences.min(), once_clipped_differences.max())
                 # self.ax4.set_ylim(- rms_error, 2 * rms_error)
                 self.ax4.set_xlim(np.min(self.lines_center), np.max(self.lines_center))
@@ -874,6 +868,7 @@ class WavelengthCalibration(object):
                                                 clipped_differences.max(),
                                                 color='k',
                                                 alpha=0.4,
+                                                edgecolor=None,
                                                 label='%s Sigma' % clipping_sigma)
                 self.ax4_plots = self.ax4.scatter(self.lines_center, clipped_differences, label='Differences')
                 if self.rms_error is not None and old_rms_error is not None:
@@ -1012,7 +1007,7 @@ class WavelengthCalibration(object):
         new_filename = self.args.destiny + self.args.output_prefix + original_filename.replace('.fits', '') + f_end
 
         fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
-        log.info('Written new file: %s', new_filename)
+        log.info('Created new file: %s', new_filename)
         # print new_header
         return new_header
 
@@ -1035,7 +1030,7 @@ class WavelengthCalibration(object):
                     new_line = ''
                     line_length = 0
                     e = i
-                elif i == len(split_message) - 1:
+                if i == len(split_message) - 1:
                     new_line = ' '.join(split_message[e:])
                     # print(new_line, len(new_line))
                     full_message.append(new_line)
@@ -1057,6 +1052,37 @@ class WavelengthCalibration(object):
         except:
             pass
         return
+
+    def display_help_text(self):
+        self.ax2.set_title('Help')
+        self.ax2.set_xticks([])
+        self.ax2.set_yticks([])
+
+        self.ax2.text(1, 11, 'F1:', fontsize=15)
+        self.ax2.text(1.25, 11, 'Prints Help (remove this one)', fontsize=13)
+        self.ax2.text(1, 10, 'F2:', fontsize=15)
+        self.ax2.text(1.25, 10, 'Fit Wavelength Solution to points', fontsize=13)
+        self.ax2.text(1.25, 9.5, 'collected', fontsize=13)
+        self.ax2.text(1, 9, 'F3:', fontsize=15)
+        self.ax2.text(1.25, 9, 'Find new lines, use when the solution is', fontsize=13)
+        self.ax2.text(1.25, 8.5, 'already decent and want to improve it!.', fontsize=13)
+        self.ax2.text(1, 8, 'F4:', fontsize=15)
+        self.ax2.text(1.25, 8, 'Evaluate Solution', fontsize=13)
+        self.ax2.text(1, 7, 'F6:', fontsize=15)
+        self.ax2.text(1.25, 7, 'Linearize Data', fontsize=13)
+        self.ax2.text(1, 6, 'd :', fontsize=15)
+        self.ax2.text(1.25, 6, 'Delete Closest Point', fontsize=13)
+        self.ax2.text(1, 5, 'Ctrl+d:', fontsize=15)
+        self.ax2.text(1.5, 5, 'Delete all recorded clicks. Requires', fontsize=13)
+        self.ax2.text(1.5, 4.5, 'confirmation on the terminal.', fontsize=13)
+        self.ax2.text(1, 4, 'Ctrl+z:', fontsize=15)
+        self.ax2.text(1.5, 4, 'Remove all automatic added points.', fontsize=13)
+        self.ax2.text(1.5, 3.5, 'Undo what F3 does.', fontsize=13)
+        self.ax2.text(1, 3, 'Middle Button Click:', fontsize=15)
+        self.ax2.text(1.25, 2.5, 'Finds and records line position', fontsize=13)
+        # self.ax2.text(1, 2, 'F3:', fontsize=15)
+        self.ax2.set_ylim((0, 12))
+        self.ax2.set_xlim((0.95, 3.5))
 
 
 
