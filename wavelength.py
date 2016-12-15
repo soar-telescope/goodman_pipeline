@@ -527,7 +527,8 @@ class WavelengthCalibration(object):
         self.ax2.text(1, 10, 'F2:', fontsize=15)
         self.ax2.text(1.25, 10, 'Fit Wavelength Solution to points collected', fontsize=13)
         self.ax2.text(1, 9, 'F3:', fontsize=15)
-        self.ax2.text(1.25, 9, 'Find new lines, use with caution!.', fontsize=13)
+        self.ax2.text(1.25, 9, 'Find new lines, use when the solution is', fontsize=13)
+        self.ax2.text(1.25, 8.5, 'already decent and want to improve it!.', fontsize=13)
         self.ax2.set_ylim((0, 12))
         self.ax2.set_xlim((0.95, 3.5))
 
@@ -619,9 +620,10 @@ class WavelengthCalibration(object):
             if self.wsolution is not None and len(self.raw_data_clicks_x) > 0:
                 self.evaluate_solution(plots=True)
         elif event.key == 'd':
+            # TODO (simon): simplify this code.
             figure_x, figure_y = self.i_fig.transFigure.inverted().transform((event.x, event.y))
             if self.raw_data_bb.contains(figure_x, figure_y):
-                log.debug('Deleting point')
+                log.debug('Deleting raw point')
                 # print abs(self.raw_data_clicks_x - event.xdata)
                 closer_index = int(np.argmin(abs(self.raw_data_clicks_x - event.xdata)))
                 # print 'Index ', closer_index
@@ -633,11 +635,20 @@ class WavelengthCalibration(object):
                     self.update_clicks_plot('reference')
                     self.update_clicks_plot('raw_data')
                 else:
-                    self.raw_data_clicks_x.pop(closer_index)
-                    self.raw_data_clicks_y.pop(closer_index)
-                    self.update_clicks_plot('raw_data')
+                    if closer_index == len(self.raw_data_clicks_x) - 1:
+                        self.raw_data_clicks_x.pop(closer_index)
+                        self.raw_data_clicks_y.pop(closer_index)
+                        self.update_clicks_plot('raw_data')
+                    else:
+                        self.raw_data_clicks_x.pop(closer_index)
+                        self.raw_data_clicks_y.pop(closer_index)
+                        self.reference_clicks_x.pop(closer_index)
+                        self.reference_clicks_y.pop(closer_index)
+                        self.update_clicks_plot('reference')
+                        self.update_clicks_plot('raw_data')
+
             elif self.reference_bb.contains(figure_x, figure_y):
-                log.debug('Deleting point')
+                log.debug('Deleting reference point')
                 # print 'reference ', self.reference_clicks_x, self.re
                 # print self.reference_clicks_x
                 # print abs(self.reference_clicks_x - event.xdata)
@@ -650,9 +661,18 @@ class WavelengthCalibration(object):
                     self.update_clicks_plot('reference')
                     self.update_clicks_plot('raw_data')
                 else:
-                    self.reference_clicks_x.pop(closer_index)
-                    self.reference_clicks_y.pop(closer_index)
-                    self.update_clicks_plot('reference')
+                    if closer_index == len(self.reference_clicks_x) - 1:
+                        self.reference_clicks_x.pop(closer_index)
+                        self.reference_clicks_y.pop(closer_index)
+                        self.update_clicks_plot('reference')
+                    else:
+                        self.raw_data_clicks_x.pop(closer_index)
+                        self.raw_data_clicks_y.pop(closer_index)
+                        self.reference_clicks_x.pop(closer_index)
+                        self.reference_clicks_y.pop(closer_index)
+                        self.update_clicks_plot('reference')
+                        self.update_clicks_plot('raw_data')
+                    
             elif self.contextual_bb.contains(figure_x, figure_y):
                 closer_index_ref = int(np.argmin(abs(self.reference_clicks_x - event.ydata)))
                 closer_index_raw = int(np.argmin(abs(self.raw_data_clicks_x - event.xdata)))
