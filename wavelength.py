@@ -381,12 +381,13 @@ class WavelengthCalibration(object):
             center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
             # print 'centroid ', center_of_mass
             # plt.figure(3)
-            if self.ax4_plots is not None or self.ax4_com is not None or self.ax4_rlv is not None:
-                try:
-                    self.ax4.cla()
-                    self.ax4.relim()
-                except:
-                    pass
+            # if self.ax4_plots is not None or self.ax4_com is not None or self.ax4_rlv is not None:
+            try:
+                self.ax4.cla()
+                self.ax4.relim()
+            except:
+                pass
+
 
             self.ax4.set_title('Reference Data Clicked Line')
             self.ax4.set_xlabel('Wavelength (Angstrom)')
@@ -409,9 +410,14 @@ class WavelengthCalibration(object):
             center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
             # print 'centroid ', center_of_mass
             # plt.figure(3)
-            if self.ax4_plots is not None or self.ax4_com is not None or self.ax4_rlv is not None:
+            # if self.ax4_plots is not None or self.ax4_com is not None or self.ax4_rlv is not None:
+            try:
                 self.ax4.cla()
                 self.ax4.relim()
+            except:
+                pass
+                # self.ax4.cla()
+                # self.ax4.relim()
 
                 # except:
                 #     pass
@@ -534,10 +540,11 @@ class WavelengthCalibration(object):
 
 
         # zoomed plot
-        self.ax4.set_title('Contextual Information')
-        self.ax4_plots = self.ax4.text(0.25, 0.25, "Goodman\nSpectrograph\nSoar Telescope", fontsize=20)
-        self.ax4_com, = self.ax4.plot([])
-        self.ax4_rlv, = self.ax4.plot([])
+        self.display_onscreen_message('Use middle button click to select a line')
+        # self.ax4.set_title('Contextual Information')
+        # self.ax4_plots = self.ax4.text(0.25, 0.25, "Goodman\nSpectrograph\nSoar Telescope", fontsize=20)
+        # self.ax4_com, = self.ax4.plot([])
+        # self.ax4_rlv, = self.ax4.plot([])
         # image = mpimg.imread('/user/simon/development/soar/goodman/soar_outside.png')
         # self.ax4_plots = self.ax4.imshow(image)
 
@@ -711,6 +718,8 @@ class WavelengthCalibration(object):
                     # print self.raw_click_plot, self.ref_click_plot, 'mmm'
         elif event.key == 'ctrl+d':
             log.info('Deleting all recording Clicks')
+            self.display_onscreen_message(message='Delete all clicks? Answer on the terminal.')
+            # time.sleep(10)
             answer = raw_input('Are you sure you want to delete all clicks? only typing "No" will stop it! : ')
             if answer.lower() != 'no':
                 self.reference_clicks_x = []
@@ -890,17 +899,37 @@ class WavelengthCalibration(object):
 
     def fit_pixel_to_wavelength(self):
         if len(self.reference_clicks_x) and len(self.raw_data_clicks_x) > 0:
-            pixel = []
-            angstrom = []
-            for i in range(len(self.reference_clicks_x)):
-                pixel.append(self.raw_data_clicks_x[i])
-                angstrom.append(self.reference_clicks_x[i])
-            wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
-            self.wsolution = wavelength_solution.ws_fit(pixel, angstrom)
-            # changed yesterday
-            self.evaluate_solution(plots=True)
+            if len(self.reference_clicks_x) < 4 or len(self.raw_data_clicks_x) < 4:
+                message = 'Not enough clicks! Minimum 4 each side.'
+                self.display_onscreen_message(message)
+                return
+            if len(self.reference_clicks_x) != len(self.raw_data_clicks_x):
+                if len(self.reference_clicks_x) < len(self.raw_data_clicks_x):
+                    n = len(self.raw_data_clicks_x) - len(self.reference_clicks_x)
+                    if n == 1:
+                        message_text = '%s Reference Click is missing!.' % n
+                    else:
+                        message_text = '%s Reference Clicks are missing!.' % n
+                else:
+                    n = len(self.reference_clicks_x) - len(self.raw_data_clicks_x)
+                    if n == 1:
+                        message_text = '%s Raw Click is missing!.' % n
+                    else:
+                        message_text = '%s Raw Clicks are missing!.' % n
+                self.display_onscreen_message(message_text)
+            else:
+                pixel = []
+                angstrom = []
+                for i in range(len(self.reference_clicks_x)):
+                    pixel.append(self.raw_data_clicks_x[i])
+                    angstrom.append(self.reference_clicks_x[i])
+                wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
+                self.wsolution = wavelength_solution.ws_fit(pixel, angstrom)
+                self.evaluate_solution(plots=True)
+
         else:
             log.error('Clicks record is empty')
+            self.display_onscreen_message(message='Clicks record is empty')
             if self.wsolution is not None:
                 self.wsolution = None
 
@@ -980,6 +1009,49 @@ class WavelengthCalibration(object):
         log.info('Written new file: %s', new_filename)
         # print new_header
         return new_header
+
+    def display_onscreen_message(self, message='', color='red'):
+        """Uses the four subplot to display a message"""
+        full_message = [message]
+        if len(message) > 30:
+            full_message = []
+            split_message = message.split(' ')
+            line_length = 0
+            new_line = ''
+            e = 0
+            for i in range(len(split_message)):
+                # print(i, len(split_message))
+                line_length += len(split_message[i]) + 1
+                if line_length >= 30:
+                    new_line = ' '.join(split_message[e:i])
+                    # print(new_line, len(new_line))
+                    full_message.append(new_line)
+                    new_line = ''
+                    line_length = 0
+                    e = i
+                elif i == len(split_message) - 1:
+                    new_line = ' '.join(split_message[e:])
+                    # print(new_line, len(new_line))
+                    full_message.append(new_line)
+        try:
+            self.ax4.cla()
+            self.ax4.relim()
+            self.ax4.set_xticks([])
+            self.ax4.set_yticks([])
+            self.ax4.set_title('Message')
+            for i in range(len(full_message)):
+                self.ax4.text(0.05, 0.95 - i * 0.05,
+                              full_message[i],
+                              verticalalignment='top',
+                              horizontalalignment='left',
+                              transform=self.ax4.transAxes,
+                              color=color,
+                              fontsize=15)
+            self.i_fig.canvas.draw()
+        except:
+            pass
+        return
+
 
 
 class WavelengthSolution(object):
