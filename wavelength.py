@@ -3,6 +3,9 @@
 This module gets the extracted data to produce a wavelength solution, linerize the spectrum and write the solution
 to the image's header following the FITS standard.
 """
+
+# TODO Reformat file - It is confusing at the moment
+# TODO Reformat _ Re-order imports (first "import ...", then "from ... import ..." alphabetically) 
 from __future__ import print_function
 from astropy.io import fits
 import numpy as np
@@ -23,8 +26,10 @@ log = logging.getLogger('redspec.wavelength')
 
 
 class WavelengthCalibration(object):
-
+    # TODO - Documentation missing
     def __init__(self, sci_pack, science_object, args):
+        # TODO - Documentation missing
+        # TODO - Uninstanced atributes should be None instead of 0
         self.args = args
         self.wsolution = None
         self.rms_error = None
@@ -83,6 +88,7 @@ class WavelengthCalibration(object):
         self.reference_solution = None
 
     def __call__(self, wsolution_obj=None):
+        # TODO - Documentation missing
         log.info('Processing Science Target: %s', self.science_pack.headers[0]['OBJECT'])
         if wsolution_obj is None:
             if self.science_object.lamp_count > 0:
