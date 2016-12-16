@@ -30,13 +30,12 @@ class WavelengthCalibration(object):
     # TODO - Documentation missing
     def __init__(self, sci_pack, science_object, args):
         # TODO - Documentation missing
-        # TODO - Uninstanced atributes should be None instead of 0
         self.args = args
         self.wsolution = None
         self.rms_error = None
         self.reference_data = ReferenceData(self.args)
         self.science_object = science_object
-        self.slit_offset = 0
+        self.slit_offset = None
         self.interpolation_size = 200
         self.line_search_method = 'derivative'
         """Instrument configuration and spectral characteristics"""
@@ -44,16 +43,16 @@ class WavelengthCalibration(object):
                               'KOSI_600': 600,
                               '930': 930,
                               'RALC_1200-BLUE': 1200}
-        self.grating_frequency = 0
+        self.grating_frequency = None
         self.grating_angle = float(0)
         self.camera_angle = float(0)
         self.binning = 1
-        self.pixel_count = 0
-        self.alpha = 0
-        self.beta = 0
-        self.center_wavelength = 0
-        self.blue_limit = 0
-        self.red_limit = 0
+        self.pixel_count = None
+        self.alpha = None
+        self.beta = None
+        self.center_wavelength = None
+        self.blue_limit = None
+        self.red_limit = None
         """Interactive wavelength finding"""
         self.reference_clicks_x = []
         self.reference_clicks_y = []
@@ -89,7 +88,19 @@ class WavelengthCalibration(object):
         self.reference_solution = None
 
     def __call__(self, wsolution_obj=None):
-        # TODO - Documentation missing
+        """Call method for the WavelengthSolution Class
+
+        It takes extracted data and produces wavelength calibrated by means of an interactive mode. The call method
+        takes care of the order and logic needed to call the different methods.
+
+        Args:
+            wsolution_obj (object): Mathematical model of the wavelength solution if exist. If it doesnt is a None
+
+        Returns:
+            wavelength_solution (object): The mathematical model of the wavelength solution. If it fails to create it
+                                          will return a None element.
+
+        """
         log.info('Processing Science Target: %s', self.science_pack.headers[0]['OBJECT'])
         if wsolution_obj is None:
             if self.science_object.lamp_count > 0:
@@ -651,8 +662,6 @@ class WavelengthCalibration(object):
         Args:
             event (object): Key pressed event
 
-
-
         """
         self.events = True
         if event.key == 'f1' or event.key == '?':
@@ -802,9 +811,9 @@ class WavelengthCalibration(object):
         This method is part of the interactive wavelength solution mechanism. If a wavelength solution exist it uses the
         line centers in pixels to estimate their respective wavelength and then search for the closest value in the list
         of reference lines for the elements in the comparison lamp. Then it filters the worst of them by doing sigma
-        clipping. Finally it adds them to the class' variables that contains the list of reference points.
+        clipping. Finally it adds them to the class' attributes that contains the list of reference points.
 
-        Better results are obtained if the solution is already good. Visual inspection also improves final result.
+        Better results are obtained if the solution is already decent. Visual inspection also improves final result.
         """
         new_physical = []
         new_wavelength = []
@@ -829,7 +838,16 @@ class WavelengthCalibration(object):
                         self.raw_data_clicks_y.append(self.filling_value)
         return True
 
-    def update_clicks_plot(self, action=None, pixel_axis=None, differences=None, **kwargs):
+    def update_clicks_plot(self, action=None):
+        """Update the points that represent clicks on lamp plots
+
+        When you mark a line a red dot marks the position of the line at the exact y location of the click, for the x
+        location it will use the value obtained by means of the recentering method. There are three possible actions:
+        Update the reference plot's click, the raw data clicks or delete them all.
+
+        Args:
+            action (str): A string that could be 'reference', 'raw_data' or 'delete' depending on the action desired
+        """
         # print(type(action), type(pixel_axis), type(differences))
         if action == 'reference':
             if self.points_ref is not None:
@@ -868,6 +886,15 @@ class WavelengthCalibration(object):
                 self.i_fig.canvas.draw()
 
     def plot_raw_over_reference(self, remove=False):
+        """Overplot raw data over reference lamp using current wavelength solution model
+
+        Once the wavelength solution is obtained this method is called to apply the already mentioned solution to the
+        raw data and then overplot it on the reference lamp plot. This is very useful to have a visual idea of how far
+        or close the solution is.
+
+        Args:
+            remove (bool): True or False depending whether you want to remove the overplotted lamp or not
+        """
         if self.wsolution is not None:
             if self.line_raw is not None:
                 try:
@@ -887,6 +914,24 @@ class WavelengthCalibration(object):
             self.i_fig.canvas.draw()
 
     def evaluate_solution(self, plots=False):
+        """Calculate the Root Mean Square Error of the solution
+
+        Once the wavelength solution is obtained it has to be evaluated. The line centers found for the raw comparison
+        lamp will be converted to, according to the new solution, angstrom. Then for each line the closest reference
+        line value is obtained. The difference is stored. Then this differences are cleaned by means of a sigma clipping
+        method that will rule out any outlier or any line that is not well matched. Then, using the sigma clipped
+        differences the Root Mean Square error is calculated.
+
+        It also creates a plot in the bottom right subplot of the interactive window, showing an scatter plot plus some
+        information regarding the quality of the fit.
+
+        Args:
+            plots (bool): Whether to create the plot or not
+
+        Returns:
+            results (list): Contains three elements: rms_error (float), npoints (int), n_rejections (int)
+
+        """
         if self.wsolution is not None:
             differences = np.array([])
             wavelength_line_centers = self.wsolution(self.lines_center)
@@ -942,8 +987,10 @@ class WavelengthCalibration(object):
                         increment_color = 'green'
                     else:
                         increment_color = 'white'
+                    message = r'$\Delta$ RMSE %+.3f' % rms_error_difference
+                    #self.display_onscreen_message(message=message, color=increment_color)
                     self.ax4.text(0.05, 0.95,
-                                  '%+.3f' % rms_error_difference,
+                                  message,
                                   verticalalignment='top',
                                   horizontalalignment='left',
                                   transform=self.ax4.transAxes,
@@ -956,11 +1003,28 @@ class WavelengthCalibration(object):
                 self.ax4.legend(loc=3, framealpha=0.5)
                 self.i_fig.canvas.draw()
 
-            return [self.rms_error, npoints, n_rejections]
+            results = [self.rms_error, npoints, n_rejections]
+            return results
         else:
             log.error('Solution is still non-existent!')
 
     def fit_pixel_to_wavelength(self):
+        """Does the fit to find the wavelength solution
+
+        Once you have four data points on each side (raw and reference or pixel and angstrom) it calculates the fit
+        usign a Chebyshev model of third degree. This was chosen because it worked better compared to the rest. There is
+        a slight deviation from linearity in all Goodman data, therefore a linear model could not be used, also is said
+        that a Spline of third degree is "too flexible" which I also experienced and since the deviation from linearity
+        is not extreme it seemed that it was not necesary to implement.
+
+        This method checks that the data that will be used as input to calculate the fit have the same dimensions and
+        warns the user in case is not.
+
+        Returns:
+            None (None): An empty return is created to finish the execution of the method when a fit will not be
+                         possible
+
+        """
         if len(self.reference_clicks_x) and len(self.raw_data_clicks_x) > 0:
             if len(self.reference_clicks_x) < 4 or len(self.raw_data_clicks_x) < 4:
                 message = 'Not enough clicks! Minimum 4 each side.'
@@ -997,6 +1061,24 @@ class WavelengthCalibration(object):
                 self.wsolution = None
 
     def linearize_spectrum(self, data, plots=False):
+        """Produces a linearized version of the spectrum
+
+        Storing wavelength solutions in a FITS header is not simple at all for non-linear solutions therefore is easier
+        for the final user and for the development code to have the spectrum linearized. It first finds a spline
+        representation of the data, then creates a linear wavelength axis (angstrom) and finally it resamples the data
+        from the spline representation to the linear wavelength axis.
+
+        It also applies a median filter of kernel size three to smooth the linearized spectrum. Sometimes the splines
+        produce funny things when the original data is too steep.
+
+        Args:
+            data (Array): The non-linear spectrum
+            plots (bool): Whether to show the plots or not
+
+        Returns:
+            linear_data (list): Contains two elements: Linear wavelength axis and the smoothed linearized data itself.
+
+        """
         pixel_axis = range(1, len(data) + 1, 1)
         if self.wsolution is not None:
             x_axis = self.wsolution(pixel_axis)
@@ -1025,9 +1107,30 @@ class WavelengthCalibration(object):
                 plt.legend(loc=3)
                 plt.show()
 
-            return [new_x_axis, smoothed_linearized_data]
+            linear_data = [new_x_axis, smoothed_linearized_data]
+            return linear_data
 
     def add_wavelength_solution(self, new_header, spectrum, original_filename, evaluation_comment=None, index=None):
+        """Add wavelength solution to the new FITS header
+
+        Defines FITS header keyword values that will represent the wavelength solution in the header so that the image
+        can be read in any other astronomical tool. (e.g. IRAF)
+
+        Notes:
+            This method also saves the data to a new FITS file, This should be in separated methods to have more control
+            on either process.
+
+        Args:
+            new_header (object): An Astropy header object
+            spectrum (Array): A numpy array that corresponds to the processed data
+            original_filename (str): Original Image file name
+            evaluation_comment (str): A comment with information regarding the quality of the wavelength solution
+            index (int): If in one 2D image there are more than one target the index represents the target number.
+
+        Returns:
+            new_header (object): An Astropy header object. Although not necessary since there is no further processing
+
+        """
         if evaluation_comment is None:
             rms_error, n_points, n_rejections = self.evaluate_solution()
             self.evaluation_comment = 'Lamp Solution RMSE = %s Npoints = %s, NRej = %s' % (rms_error,
@@ -1074,7 +1177,16 @@ class WavelengthCalibration(object):
         return new_header
 
     def display_onscreen_message(self, message='', color='red'):
-        """Uses the four subplot to display a message"""
+        """Uses the fourth subplot to display a message
+
+        Displays a warning message on the bottom right subplot of the interactive window. It is capable to break down
+        the message in more than one line if necessary.
+
+        Args:
+            message (str): The message to be displayed
+            color (str): Color name for the font's color
+
+        """
         full_message = [message]
         if len(message) > 30:
             full_message = []
@@ -1116,6 +1228,15 @@ class WavelengthCalibration(object):
         return
 
     def display_help_text(self):
+        """Shows static text on the top right subplot
+
+        This will print static help text on the top right subplot of the interactive window.
+
+        Notes:
+            This is really hard to format and having a proper GUI should help to have probably richer formatted text
+            on the screen.
+
+        """
         self.ax2.set_title('Help')
         self.ax2.set_xticks([])
         self.ax2.set_yticks([])
@@ -1146,7 +1267,6 @@ class WavelengthCalibration(object):
         self.ax2.text(1.46, 2, 'Close Figure and apply wavelength Solution', fontsize=13)
         self.ax2.set_ylim((0, 12))
         self.ax2.set_xlim((0.95, 3.5))
-
 
 
 class WavelengthSolution(object):
