@@ -379,6 +379,27 @@ class WavelengthCalibration(object):
         return [new_x_axis, new_spectrum]
 
     def recenter_line_by_data(self, data_name, x_data):
+        """Finds a better center for a click-selected line
+
+        This method is called by another method that handles click events. An argument is parsed that will tell
+        which plot was the clicked and what is the x-value in data coordinates. Then the closest pixel center
+        will be found and from there will extract a 20 pixel wide sample of the data (this could be a future improvement
+        the width of the extraction should depend on the FWHM of the lines). The sample of the data is used to calculate
+        a centroid (center of mass) which is a good approximation but could be influenced by data shape or if the click
+        was too far (unquantified yet). That is why for the reference data, a database of laboratory line center will be
+        used and for raw data the line centers are calculated earlier in the process, independently of any human input.
+
+        It also will plot the sample, the centroid and the reference line center at the fourth subplot, bottom right
+        corner.
+
+        Args:
+            data_name (str): 'reference' or 'raw-data' is where the click was done
+            x_data (float): click x-axis value in data coordinates
+
+        Returns:
+            reference_line_value (float): The value the line center that will be used later to do the wavelength fit
+
+        """
         if data_name == 'reference':
             pseudo_center = np.argmin(abs(self.reference_solution[0] - x_data))
             reference_line_index = np.argmin(abs(self.reference_data.get_line_list_by_name(self.lamp_name) - x_data))
@@ -443,6 +464,7 @@ class WavelengthCalibration(object):
             log.error('Unrecognized data name')
 
     def predicted_wavelength(self, pixel):
+        # TODO (simon): Update with bruno's new calculations
         alpha = self.alpha
         beta = self.beta
         # pixel_count = self.pixel_count
