@@ -476,19 +476,53 @@ class WavelengthCalibration(object):
         return wavelength
 
     def automatic_wavelength_solution(self):
+        """Automatic Wavelength Solution NotImplemented
+
+        Raises:
+            NotImplemented
+
+        """
         # needs:
         #   - self.sci, self.header
         #   - self.lines_center
         raise NotImplemented
-        return
 
     def interactive_wavelength_solution(self):
         """Find the wavelength solution interactively
 
+        Using matplotlib graphical interface we developed an interactive method to find the wavelength solution. It is
+        capable of tracing the slight deviation from linearity of the data. It uses a combination of previously
+        wavelength calibrated comparison lamp and laboratory line centers. Those two are combined in a single plot,
+        bottom left, to help to visually identify their counterparts in the raw data and viceversa. In the other hand,
+        raw data is previously processed to find the lines present. They are stored as a list and used as the correct
+        center of the line. Once you select a line, the centroid will be calculated and the closest line will be
+        returned.
+
+        This method generates a GUI like plot using matplolib, capable of handling keyboard and click events. The window
+        consist of four plots:
+
+        In the top left side will be a wide plot named raw data. This is the uncalibrated comparison lamp associated to
+        the science image that is being processed.
+
+        Then in the bottom left, there is the reference plot, where a previously calibrated lamp is displayed along with
+        the reference line values.
+
+        In the top right side there is a permanent help text with the basic functions plus a short description.
+
+        And finally in the bottom right side you will find a more dynamic plot. It will show a zoomed line when you mark
+        one with a click, a scatter plot when you do a fit to the recorded clicks and also will show warnings in case
+        something is going wrong.
+
+        For future release there is the plan to put all this method as a new class even with an indepentend QT GUI.
+
+        Notes:
+            This method uses the GTK3Agg backend, it will not work with other.
+
+
+
 
 
         """
-        start = time.time()
         plt.switch_backend('GTK3Agg')
         reference_file = self.reference_data.get_reference_lamps_by_name(self.lamp_name)
         if reference_file is not None:
@@ -503,16 +537,13 @@ class WavelengthCalibration(object):
             log.error('Please Check the OBJECT Keyword of your reference data')
 
         # ------- Plots -------
-        plot_creation = time.time() - start
-        # print('plot creation ', plot_creation)
         self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = plt.subplots(2,
-                                                                               2,
-                                                                               gridspec_kw={'width_ratios': [4, 1]})
+                                                                                2,
+                                                                                gridspec_kw={'width_ratios': [4, 1]})
         self.i_fig.canvas.set_window_title('Science Target: %s' % self.science_object.name)
         manager = plt.get_current_fig_manager()
         manager.window.maximize()
-        # manager.window.attributes('-topmost', 0)
-        # self.ax1 = plt.subplot(211)
+
         self.ax1.set_title('Raw Data - %s' % self.lamp_name)
         self.ax1.set_xlabel('Pixels')
         self.ax1.set_ylabel('Intensity (counts)')
@@ -520,48 +551,28 @@ class WavelengthCalibration(object):
         for idline in self.lines_center:
             self.ax1.axvline(idline, linestyle='--', color='r')
         self.ax1.plot(self.raw_pixel_axis, self.lamp_data, color='k', label='Raw Data')
-        # self.ax1.plot(self.lamp_data, color='b')
+
         self.ax1.set_xlim((0, len(self.lamp_data)))
-        # ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2e'))
+
         self.ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
         self.ax1.legend(loc=2)
-        # self.ax1.set_yscale('log')
-        # first_plot = time.time() - start
-        # print('first plot ', first_plot)
-
-        # self.ax3 = plt.subplot(212)
         self.ax3.set_title('Reference Data')
         self.ax3.set_xlabel('Wavelength (Angstrom)')
         self.ax3.set_ylabel('Intensity (counts)')
-        # self.ax3.axvline(self.blue_limit, color='k')
-        # self.ax3.axvline(self.center_wavelength, color='k')
-        # self.ax3.axvline(self.red_limit, color='k')
         self.ax3.set_xlim((self.blue_limit, self.red_limit))
         self.ax3.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
         self.ax3.plot([], linestyle=':', color='r', label='Reference Line Values')
-        # segundo_plot = time.time() - start
-        # print('segundo plot', segundo_plot)
+
         for rline in self.reference_data.get_line_list_by_name(self.lamp_name):
             self.ax3.axvline(rline, linestyle=':', color='r')
         if reference_plots_enabled:
             self.ax3.plot(self.reference_solution[0], self.reference_solution[1], color='k', label='Reference Lamp Data')
-            # self.ax3.set_xlim((self.reference_solution[0][0], self.reference_solution[0][-1]))
-            # self.ax3.set_xlim((self.blue_limit, self.red_limit))
-        # self.ax3.set_yscale('log')
         self.ax3.legend(loc=2)
 
         self.display_help_text()
 
         # zoomed plot
         self.display_onscreen_message('Use middle button click to select a line')
-        # self.ax4.set_title('Contextual Information')
-        # self.ax4_plots = self.ax4.text(0.25, 0.25, "Goodman\nSpectrograph\nSoar Telescope", fontsize=20)
-        # self.ax4_com, = self.ax4.plot([])
-        # self.ax4_rlv, = self.ax4.plot([])
-        # image = mpimg.imread('/user/simon/development/soar/goodman/soar_outside.png')
-        # self.ax4_plots = self.ax4.imshow(image)
-
-
 
         plt.subplots_adjust(left=0.05, right=0.99, top=0.97, bottom=0.04, hspace=0.17, wspace=0.11)
         self.raw_data_bb = self.ax1.get_position()
@@ -577,7 +588,17 @@ class WavelengthCalibration(object):
         return True
 
     def on_click(self, event):
-        # print event.button
+        """Handles Click events for Interactive Mode
+
+        Detects where the click was done and calls the corresponding method. For now it only handles the middle button
+        but that might change for future releases. There are two regions of interest as for where a click was done.
+        The raw and reference data respectively. For any of such regions it will call the method that recenter the line
+        and once the desired value is returned it will be appended to the list that contains all the correspondent line
+        positions, raw (pixels) and reference (angstrom)
+
+        Args:
+            event (object): Click event
+        """
         self.events = True
         if event.button == 2:
             if event.xdata is not None and event.ydata is not None:
@@ -592,47 +613,66 @@ class WavelengthCalibration(object):
                     self.raw_data_clicks_x.append(self.recenter_line_by_data('raw-data', event.xdata))
                     self.raw_data_clicks_y.append(event.ydata)
                     self.update_clicks_plot('raw_data')
-                # self.ref_click_plot.set_xdata(np.array(self.reference_clicks[:][0]))
-                # self.ref_click_plot.set_ydata(np.array(self.reference_clicks[:][1]))
-                # self.ref_click_plot.draw()
                 else:
                     log.debug(figure_x, figure_y, 'Are not contained')
-                # print 'click ', event.xdata, ' ', event.ydata, ' ', event.button
-                # print event.x, event.y
             else:
                 log.error('Clicked Region is out of boundaries')
-        elif event.button == 3:
-            if len(self.reference_clicks_x) == len(self.raw_data_clicks_x):
-                self.click_input_enabled = False
-                log.info('Leaving interactive mode')
-            else:
-                if len(self.reference_clicks_x) < len(self.raw_data_clicks_x):
-                    log.info('There is %s click missing in the Reference plot',
-                             len(self.raw_data_clicks_x) - len(self.reference_clicks_x))
-                else:
-                    log.info('There is %s click missing in the New Data plot',
-                             len(self.reference_clicks_x) - len(self.raw_data_clicks_x))
+        # elif event.button == 3:
+        #     if len(self.reference_clicks_x) == len(self.raw_data_clicks_x):
+        #         self.click_input_enabled = False
+        #         log.info('Leaving interactive mode')
+        #     else:
+        #         if len(self.reference_clicks_x) < len(self.raw_data_clicks_x):
+        #             log.info('There is %s click missing in the Reference plot',
+        #                      len(self.raw_data_clicks_x) - len(self.reference_clicks_x))
+        #         else:
+        #             log.info('There is %s click missing in the New Data plot',
+        #                      len(self.reference_clicks_x) - len(self.raw_data_clicks_x))
 
     def key_pressed(self, event):
+        """Key event handler
+
+        There are several key events that need to be taken care of. See a brief description of each one of them below:
+
+        F1 or ?: Prints a help message
+        F2 or f: Fit wavelength solution model.
+        F3 or a: Find new lines.
+        F4: Evaluate solution
+        F6 or l: Linearize data although this is done automatically after the wavelength function is fit
+        d: deletes closest point
+        ctrl+d: deletes all recorded clicks
+        ctrl+z: Reverts the action of F3 or a.
+        Middle Button Click: records data location.
+        Enter: Close figure and apply solution if exists.
+
+        Notes:
+            This method must be simplified
+
+        Args:
+            event (object): Key pressed event
+
+
+
+        """
         self.events = True
-        if event.key == 'f1':
+        if event.key == 'f1' or event.key == '?':
             log.info('Print help regarding interactive mode')
-            print("F1 : Prints Help.")
-            print("F2 : Fit wavelength solution model.")
-            print("F3 : Find new lines.")
-            print("F4 : Evaluate solution")
-            print("F6 : Linearize data (for testing not definitive)")
-            print("d : deletes closest point")
+            print("F1 or ?: Prints Help.")
+            print("F2 or f: Fit wavelength solution model.")
+            print("F3 or a: Find new lines.")
+            print("F4: Evaluate solution")
+            print("F6 or l: Linearize data (for testing not definitive)")
+            print("d: deletes closest point")
             # print("l : resample spectrum to a linear dispersion axis")
-            print("ctrl+d : deletes all recorded clicks")
-            print("ctrl+z : Go back to previous solution (deletes automatic added points")
+            print("ctrl+d: deletes all recorded clicks")
+            print("ctrl+z: Go back to previous solution (deletes automatic added points")
             print('Middle Button Click: records data location.')
-            print("Right Button Click: Leaves interactive mode.")
-        elif event.key == 'f2':
+            print("Enter: Close figure and apply solution if exists.")
+        elif event.key == 'f2' or event.key == 'f':
             log.debug('Calling function to fit wavelength Solution')
             self.fit_pixel_to_wavelength()
             self.plot_raw_over_reference()
-        elif event.key == 'f3':
+        elif event.key == 'f3' or event.key == 'a':
             if self.wsolution is not None:
                 self.find_more_lines()
                 self.update_clicks_plot('reference')
@@ -706,7 +746,7 @@ class WavelengthCalibration(object):
                 self.update_clicks_plot('raw_data')
                 self.update_clicks_plot('eval_plots')
 
-        elif event.key == 'f6':
+        elif event.key == 'f6' or event.key == 'l':
             log.info('Linearize and smoothing spectrum')
             if self.wsolution is not None:
                 self.linearize_spectrum(self.lamp_data, plots=True)
@@ -1080,29 +1120,30 @@ class WavelengthCalibration(object):
         self.ax2.set_xticks([])
         self.ax2.set_yticks([])
 
-        self.ax2.text(1, 11, 'F1:', fontsize=15)
-        self.ax2.text(1.25, 11, 'Prints Help (remove this one)', fontsize=13)
-        self.ax2.text(1, 10, 'F2:', fontsize=15)
-        self.ax2.text(1.25, 10, 'Fit Wavelength Solution to points', fontsize=13)
-        self.ax2.text(1.25, 9.5, 'collected', fontsize=13)
-        self.ax2.text(1, 9, 'F3:', fontsize=15)
-        self.ax2.text(1.25, 9, 'Find new lines, use when the solution is', fontsize=13)
-        self.ax2.text(1.25, 8.5, 'already decent and want to improve it!.', fontsize=13)
-        self.ax2.text(1, 8, 'F4:', fontsize=15)
-        self.ax2.text(1.25, 8, 'Evaluate Solution', fontsize=13)
-        self.ax2.text(1, 7, 'F6:', fontsize=15)
-        self.ax2.text(1.25, 7, 'Linearize Data', fontsize=13)
-        self.ax2.text(1, 6, 'd :', fontsize=15)
-        self.ax2.text(1.25, 6, 'Delete Closest Point', fontsize=13)
-        self.ax2.text(1, 5, 'Ctrl+d:', fontsize=15)
+        self.ax2.text(1, 11, 'F1 or ?:', fontsize=13)
+        self.ax2.text(1.46, 11, 'Prints Help (remove this one)', fontsize=13)
+        self.ax2.text(1, 10, 'F2 or f:', fontsize=13)
+        self.ax2.text(1.46, 10, 'Fit Wavelength Solution to points', fontsize=13)
+        self.ax2.text(1.46, 9.5, 'collected', fontsize=13)
+        self.ax2.text(1, 9, 'F3 or a:', fontsize=13)
+        self.ax2.text(1.46, 9, 'Find new lines, use when the solution is', fontsize=13)
+        self.ax2.text(1.46, 8.5, 'already decent and want to improve it!.', fontsize=13)
+        self.ax2.text(1, 8, 'F4:', fontsize=13)
+        self.ax2.text(1.46, 8, 'Evaluate Solution', fontsize=13)
+        self.ax2.text(1, 7, 'F6 or l:', fontsize=13)
+        self.ax2.text(1.46, 7, 'Linearize Data', fontsize=13)
+        self.ax2.text(1, 6, 'd :', fontsize=13)
+        self.ax2.text(1.46, 6, 'Delete Closest Point', fontsize=13)
+        self.ax2.text(1, 5, 'Ctrl+d:', fontsize=13)
         self.ax2.text(1.5, 5, 'Delete all recorded clicks. Requires', fontsize=13)
         self.ax2.text(1.5, 4.5, 'confirmation on the terminal.', fontsize=13)
-        self.ax2.text(1, 4, 'Ctrl+z:', fontsize=15)
+        self.ax2.text(1, 4, 'Ctrl+z:', fontsize=13)
         self.ax2.text(1.5, 4, 'Remove all automatic added points.', fontsize=13)
         self.ax2.text(1.5, 3.5, 'Undo what F3 does.', fontsize=13)
-        self.ax2.text(1, 3, 'Middle Button Click:', fontsize=15)
-        self.ax2.text(1.25, 2.5, 'Finds and records line position', fontsize=13)
-        # self.ax2.text(1, 2, 'F3:', fontsize=15)
+        self.ax2.text(1, 3, 'Middle Button Click:', fontsize=13)
+        self.ax2.text(1.46, 2.5, 'Finds and records line position', fontsize=13)
+        self.ax2.text(1, 2, 'Enter :', fontsize=13)
+        self.ax2.text(1.46, 2, 'Close Figure and apply wavelength Solution', fontsize=13)
         self.ax2.set_ylim((0, 12))
         self.ax2.set_xlim((0.95, 3.5))
 

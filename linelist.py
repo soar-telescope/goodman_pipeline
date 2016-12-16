@@ -36,7 +36,7 @@ class ReferenceData(object):
         """
         self.args = args
         # self.reference_files_path = os.path.expanduser('~/') + './refdata/'
-        self.lamps_file_list = {'cuhear': 'cuhear_reference_noao.fits',
+        self.lamps_file_list = {'cuhear': 'goodman_comp_600M0_CuHeAr.fits',
                                 'hgar': 'hgar_reference_soar.fits',
                                 'hgarne': 'goodman_comp_400M2_GG455_HgArNe.fits'}
         self.line_list_files = {'cu': 'Cu_3000A-10000A_clean.csv',
