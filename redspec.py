@@ -196,7 +196,7 @@ Supported Observing modes are:
 
         parser.add_argument('-s', '--search-pattern',
                             action='store',
-                            default='fzh.',
+                            default='fzh_',
                             type=str,
                             metavar='<Search Pattern>',
                             dest='pattern',
@@ -327,8 +327,13 @@ Supported Observing modes are:
 
         """
         keys = ['date', 'date-obs', 'obstype', 'object', 'exptime', 'ra', 'dec', 'grating']
-        image_collection = ccd.ImageFileCollection(self.args.source, keys)
-        self.image_collection = image_collection.summary.to_pandas()
+        try:
+            image_collection = ccd.ImageFileCollection(self.args.source, keys)
+            self.image_collection = image_collection.summary.to_pandas()
+        except ValueError as error:
+            log.error('The images contain duplicated keywords')
+            log.error('ValueError: %s', error)
+            sys.exit(0)
         # type(self.image_collection)
 
         date = self.image_collection.date[0]

@@ -46,7 +46,7 @@ Will run the following defaults:
 - [ ] Interactive Mode **True**
 - [ ] Data Path **./**
 - [ ] Destination folder for processed data **./**
-- [ ] Search Pattern **fzh.**
+- [ ] Search Pattern **fzh_**
 - [ ] Output prefix **g**
 - [ ] Reference Files Path [/path/to/this/repo/]**refdata/**
 - [ ] Plots Enabled **False**
