@@ -156,7 +156,7 @@ class MainApp(object):
                         science_target_03.fits lamp_002.fits
                     the location is self.lamp_file
                     default value is lamps.txt
-            -i or --interactive: Interactive Wavelength Solution. Disabled by default
+            -i or --non-interactive: Interactive Wavelength Solution. Enabled by default
             -o or --output-prefix: Prefix to use to name wavelength calibrated spectrum
             -R or --reference-files: Directory of reference files location
             --plots-enabled: Show plots for intermediate steps. For debugging only.
@@ -237,11 +237,11 @@ Supported Observing modes are:
         #                         designed to use while observing at the telescope. Catches\
         #                          new files arriving to the <source> folder. (NI!)")
 
-        parser.add_argument('-i', '--interactive',
-                            action='store_true',
-                            default=False,
+        parser.add_argument('-i', '--non-interactive',
+                            action='store_false',
+                            default=True,
                             dest='interactive_ws',
-                            help="Interactive wavelength solution. Disabled by default.")
+                            help="Interactive wavelength solution. Enabled by default.")
 
         parser.add_argument('-o', '--output-prefix',
                             action='store',
