@@ -370,7 +370,8 @@ class WavelengthCalibration(object):
 
         # self.pixel_count = len(self.lamp_data)
         # Calculations
-        self.alpha = self.grating_angle + self.slit_offset
+        # TODO (simon): Check whether is necessary to remove the self.slit_offset variable
+        self.alpha = self.grating_angle + 0. # self.slit_offset
         self.beta = self.camera_angle - self.grating_angle
         self.center_wavelength = 10 * (1e6 / self.grating_frequency) * (
             np.sin(self.alpha * np.pi / 180.) + np.sin(self.beta * np.pi / 180.))
@@ -590,11 +591,15 @@ class WavelengthCalibration(object):
         for idline in self.lines_center:
             self.ax1.axvline(idline, linestyle='--', color='r')
         self.ax1.plot(self.raw_pixel_axis, self.lamp_data, color='k', label='Raw Data')
-
         self.ax1.set_xlim((0, len(self.lamp_data)))
-
         self.ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
         self.ax1.legend(loc=2)
+
+        # Update y limits to have an extra 5% to top and bottom
+        ax1_ylim = self.ax1.get_ylim()
+        ax1_y_range = ax1_ylim[1] - ax1_ylim[0]
+        self.ax1.set_ylim((ax1_ylim[0] - 0.05 * ax1_y_range, ax1_ylim[1] + 0.05 * ax1_y_range))
+
         self.ax3.set_title('Reference Data')
         self.ax3.set_xlabel('Wavelength (Angstrom)')
         self.ax3.set_ylabel('Intensity (counts)')
@@ -607,6 +612,12 @@ class WavelengthCalibration(object):
         if reference_plots_enabled:
             self.ax3.plot(self.reference_solution[0], self.reference_solution[1], color='k', label='Reference Lamp Data')
         self.ax3.legend(loc=2)
+
+        # Update y limits to have an extra 5% to top and bottom
+        ax3_ylim = self.ax3.get_ylim()
+        ax3_y_range = ax3_ylim[1] - ax3_ylim[0]
+        self.ax3.set_ylim((ax3_ylim[0] - 0.05 * ax3_y_range, ax3_ylim[1] + 0.05 * ax3_y_range))
+        # print(ax3_ylim)
 
         self.display_help_text()
 
@@ -1270,29 +1281,30 @@ class WavelengthCalibration(object):
         self.ax2.set_yticks([])
 
         self.ax2.text(1, 11, 'F1 or ?:', fontsize=13)
-        self.ax2.text(1.46, 11, 'Prints Help (remove this one)', fontsize=13)
-        self.ax2.text(1, 10, 'F2 or f:', fontsize=13)
-        self.ax2.text(1.46, 10, 'Fit Wavelength Solution to points', fontsize=13)
-        self.ax2.text(1.46, 9.5, 'collected', fontsize=13)
-        self.ax2.text(1, 9, 'F3 or a:', fontsize=13)
-        self.ax2.text(1.46, 9, 'Find new lines, use when the solution is', fontsize=13)
-        self.ax2.text(1.46, 8.5, 'already decent and want to improve it!.', fontsize=13)
-        self.ax2.text(1, 8, 'F4:', fontsize=13)
-        self.ax2.text(1.46, 8, 'Evaluate Solution', fontsize=13)
-        self.ax2.text(1, 7, 'F6 or l:', fontsize=13)
-        self.ax2.text(1.46, 7, 'Linearize Data', fontsize=13)
-        self.ax2.text(1, 6, 'd :', fontsize=13)
-        self.ax2.text(1.46, 6, 'Delete Closest Point', fontsize=13)
-        self.ax2.text(1, 5, 'Ctrl+d:', fontsize=13)
-        self.ax2.text(1.5, 5, 'Delete all recorded clicks. Requires', fontsize=13)
-        self.ax2.text(1.5, 4.5, 'confirmation on the terminal.', fontsize=13)
-        self.ax2.text(1, 4, 'Ctrl+z:', fontsize=13)
-        self.ax2.text(1.5, 4, 'Remove all automatic added points.', fontsize=13)
-        self.ax2.text(1.5, 3.5, 'Undo what F3 does.', fontsize=13)
-        self.ax2.text(1, 3, 'Middle Button Click:', fontsize=13)
-        self.ax2.text(1.46, 2.5, 'Finds and records line position', fontsize=13)
-        self.ax2.text(1, 2, 'Enter :', fontsize=13)
-        self.ax2.text(1.46, 2, 'Close Figure and apply wavelength Solution', fontsize=13)
+        self.ax2.text(1.46, 11, 'Prints Help.', fontsize=13)
+        self.ax2.text(1, 10.5, 'F2 or f:', fontsize=13)
+        self.ax2.text(1.46, 10.5, 'Fit Wavelength Solution to points', fontsize=13)
+        self.ax2.text(1.46, 10, 'collected', fontsize=13)
+        self.ax2.text(1, 9.5, 'F3 or a:', fontsize=13)
+        self.ax2.text(1.46, 9.5, 'Find new lines, use when the solution', fontsize=13)
+        self.ax2.text(1.46, 9, 'is already decent.', fontsize=13)
+        self.ax2.text(1, 8.5, 'F4:', fontsize=13)
+        self.ax2.text(1.46, 8.5, 'Evaluate Solution', fontsize=13)
+        self.ax2.text(1, 8, 'F6 or l:', fontsize=13)
+        self.ax2.text(1.46, 8, 'Linearize Data', fontsize=13)
+        self.ax2.text(1, 7.5, 'd :', fontsize=13)
+        self.ax2.text(1.46, 7.5, 'Delete Closest Point', fontsize=13)
+        self.ax2.text(1, 7, 'Ctrl+d:', fontsize=13)
+        self.ax2.text(1.5, 7, 'Delete all recorded clicks. Requires', fontsize=13)
+        self.ax2.text(1.5, 6.5, 'confirmation on the terminal.', fontsize=13)
+        self.ax2.text(1, 6, 'Ctrl+z:', fontsize=13)
+        self.ax2.text(1.5, 6, 'Remove all automatic added points.', fontsize=13)
+        self.ax2.text(1.5, 5.5, 'Undo what F3 does.', fontsize=13)
+        self.ax2.text(1, 5, 'Middle Button Click:', fontsize=13)
+        self.ax2.text(1.46, 4.5, 'Finds and records line position', fontsize=13)
+        self.ax2.text(1, 4, 'Enter :', fontsize=13)
+        self.ax2.text(1.46, 4, 'Close Figure and apply wavelength', fontsize=13)
+        self.ax2.text(1.46, 3.5, 'solution', fontsize=13)
         self.ax2.set_ylim((0, 12))
         self.ax2.set_xlim((0.95, 3.5))
 
