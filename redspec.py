@@ -37,11 +37,18 @@ __status__ = "Development"
 class MainApp(object):
     """Defines and intialize all important variables for processing the data
 
-    Args:
-        It doesn't take any arguments
+    The MainApp class controls the way the night is organize to its further processing. It also sets the appropriate
+    parameters that will allow for a smooth working in all the other modules.
 
     """
     def __init__(self):
+        """Initalization of important parameters
+
+        Initializes the list of images using ccdproc.ImageFileCollection and pandas the get the arguments that define
+        the working of the pipeline using arpargse and instantiate a Night class, an object that will store relevant
+        information of the observed night being processed.
+
+        """
         self.image_collection = pd.DataFrame
         self.args = self.get_args()
         self.night = self.set_night()
@@ -50,7 +57,15 @@ class MainApp(object):
         self.calibration_lamp = None
         self.wavelength_solution_obj = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self):
+        """Call method for the MainApp class
+
+        This is equivalent to a main() function where all the logic and controls are implemented.
+
+        Raises:
+            NotImplementedError: For observing modes 2 and 3
+
+        """
         self.organize_full_night()
         # print(len(self.night.sci_targets))
         for i in range(len(self.night.sci_targets)):
@@ -131,6 +146,8 @@ class MainApp(object):
                     3: No lamp used, use sky-lines instead.
                     the location is self.mode
                     default value is 0
+            -r or --reference-lamp: Name of reference lamp file for mode 0. If not present, the first one in the list
+                    will be selected
             -l or --lamp-file: Name of the ASCII file that contains the relation between science files and lamp
                     files. An example is depicted below. Note that the lamps can be repeated.
                         #example of how the file should look
@@ -139,6 +156,10 @@ class MainApp(object):
                         science_target_03.fits lamp_002.fits
                     the location is self.lamp_file
                     default value is lamps.txt
+            -i or --interactive: Interactive Wavelength Solution. Disabled by default
+            -o or --output-prefix: Prefix to use to name wavelength calibrated spectrum
+            -R or --reference-files: Directory of reference files location
+            --plots-enabled: Show plots for intermediate steps. For debugging only.
 
         Raises:
             In the case when -m or --obs-mode is set to 3 will requiere the name of file parsed with the -l or
@@ -151,10 +172,11 @@ class MainApp(object):
                                              '''Extracts goodman spectra and does wavelength calibration.\n\n\
 Supported Observing modes are:
     <0>: (Default) reads lamps taken at the begining or end of the night.\n\
-    <1>: one or more lamps around science exposure.\n\
-    <2>: ASCII file describing which science target uses which lamp.\n\
-    <3>: No lamps. Uses the sky lines
+    <1>: one or more lamps around science exposure.
     '''))
+    # \n\
+    # <2>: ASCII file describing which science target uses which lamp.\n\
+    # <3>: No lamps. Uses the sky lines
 
         parser.add_argument('-p', '--data-path',
                             action='store',
@@ -207,13 +229,13 @@ Supported Observing modes are:
                             help="Name of an ASCII file describing which science target\
                                 uses which lamp. default <lamp.txt>")
 
-        parser.add_argument('-t', '--telescope',
-                            action='store_true',
-                            default=False,
-                            dest='telescope',
-                            help="Enables the <Telescope> mode i.e. it run sequentially,\
-                                designed to use while observing at the telescope. Catches\
-                                 new files arriving to the <source> folder. (NI!)")
+        # parser.add_argument('-t', '--telescope',
+        #                     action='store_true',
+        #                     default=False,
+        #                     dest='telescope',
+        #                     help="Enables the <Telescope> mode i.e. it run sequentially,\
+        #                         designed to use while observing at the telescope. Catches\
+        #                          new files arriving to the <source> folder. (NI!)")
 
         parser.add_argument('-i', '--interactive',
                             action='store_true',
@@ -224,14 +246,16 @@ Supported Observing modes are:
         parser.add_argument('-o', '--output-prefix',
                             action='store',
                             default='g',
+                            metavar='<Out Prefix>',
                             dest='output_prefix',
                             help="Prefix to add to calibrated spectrum.")
 
         parser.add_argument('-R', '--reference-files',
                             action='store',
                             default='refdata/',
+                            metavar='<Reference Dir>',
                             dest='reference_dir',
-                            help="Reference files location")
+                            help="Directory of Reference files location")
 
         parser.add_argument('--plots-enabled',
                             action='store_true',
@@ -266,6 +290,11 @@ Supported Observing modes are:
         if not os.path.isdir(args.destiny):
             leave = True
             log.error("Destination folder doesn't exist.")
+            try:
+                os.path.os.makedirs(args.destiny)
+                log.info('Destination folder created: %s', args.destiny)
+            except:
+                pass
         else:
             if args.destiny[-1] != '/':
                 args.destiny += '/'
@@ -308,13 +337,13 @@ Supported Observing modes are:
         gratings_array = self.image_collection.grating.unique()
         new_night.set_gratings(gratings=gratings_array)
 
-        if self.args.telescope:
-            new_night.is_telescope()
-            log.info("Telescope Mode is not implemented yet...")
-            return new_night
-        else:
-            new_night.add_sci(self.image_collection.file[self.image_collection.obstype == 'OBJECT'])
-            new_night.add_lamp(self.image_collection.file[self.image_collection.obstype == 'COMP'])
+        # if self.args.telescope:
+        #     new_night.is_telescope()
+        #     log.info("Telescope Mode is not implemented yet...")
+        #     return new_night
+        # else:
+        new_night.add_sci(self.image_collection.file[self.image_collection.obstype == 'OBJECT'])
+        new_night.add_lamp(self.image_collection.file[self.image_collection.obstype == 'COMP'])
         return new_night
 
     def organize_full_night(self):
@@ -322,9 +351,9 @@ Supported Observing modes are:
 
         There are four observing modes defined by numbers in Python's style. From 0 to 3:
 
-        In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks
+        In mode 0 one lamp is used to calibrate all the science targets of the night. As of December 2016 it picks
         up the first calibration lamp and uses it to find the wavelength calibration it doesn't discriminate if the lamp
-        has good quality.
+        has good quality. It can also be parsed as an argument using -r or --reference-lamp
 
         In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
         in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure
@@ -333,14 +362,14 @@ Supported Observing modes are:
         In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
         used by using a octothorp or hash (#) followed by one space. Not implemented yet.
 
-        In mode 3 no sky lamp is used, instead the science target's spectrum will be calibrated using sky lines.
+        In mode 3 no sky lamp is used, instead the science target's spectrum will be calibrated using sky lines. Not
+        implemented yet.
 
-        Returns:
-            Nothing. But creates a ScienceObject object and stores it in the night class. ScienceObject is one of its
-            attributes.
+        It does not return anything but creates a ScienceObject instance and stores it in the night class. ScienceObject
+        is one of its attributes.
 
         Raises:
-            NotImplementedError: For mode 3.
+            NotImplementedError: For mode 2 and 3.
 
         """
         self.print_spacers("Processing night %s" % self.night.date)
@@ -607,6 +636,15 @@ class Night(object):
     """
 
     def __init__(self, date, args):
+        """Initialize Night class
+
+        The night class will store filename of science images as well as lamp images. It also stores the arguments and
+        also the wavelength solution for the night.
+
+        Args:
+            date (str): Date of the night being processed
+            args (object): argparse instance containing all the arguments the program was started with
+        """
         # source, destiny, pattern, mode, lamps
         self.all = []
         self.date = date
