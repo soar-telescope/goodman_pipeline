@@ -19,9 +19,15 @@ reduced, i.e. bias and flat corrected, for that part please use
 #### redspec.py  
  Spectra extraction and wavelength calibration
 
-## How to use it?
+## How to install it?
 
-Either clone or download this code. To get a list of the possible arguments do:
+Either clone or download this code. If you decide to clone it just do ...
+
+Or you can simply go and click _here_ for download a zip file with all the script files.
+
+## How to use it?
+ 
+To get a list of the possible arguments do:
 
 ```shell
 /path/to/this/repo/redspec.py --help
