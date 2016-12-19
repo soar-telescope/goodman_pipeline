@@ -1,8 +1,7 @@
 # Goodman High Throughput Spectrograph
-**WARNING** This code is being developed and is not ready for
-scientific use. Always check the branch **other than master**.
- 
- If you are interested in this software 
+**WARNING** This is the first release of this pipeline, although we have 
+thoroughly tested it there might still be bugs. Please let me know by an
+e-mail to storres [at] ctio noao edu.
 
 The Goodman High Throughput Spectrograph is an imaging spectrograph
  if you wish to know more about the instrument please check the 
@@ -16,8 +15,15 @@ This repository contains tools for spectroscopy, but after the data is
 reduced, i.e. bias and flat corrected, for that part please use 
 [David Sanmartim's](https://github.com/dsanmartim/goodman_ccdreduction) github repository.
 
-#### redspec.py  
- Spectra extraction and wavelength calibration
+This package have the following capabilities.
+
+- [x] Identify targets in images
+- [x] Trace the target
+- [x] Extract the target with background subtraction
+- [x] Find the wavelength Solution (Requires User Input)
+- [x] Linearize data
+- [x] Write wavelength solution to a FITS header
+- [x] Create a new file for the wavelength calibrated 1D spectrum
 
 ## How to install it?
 
@@ -56,3 +62,9 @@ Will run the following defaults:
 
 Needs python2.7 and a newer version of numpy1.12.0 otherwise there will
 be problems with numpy.linspace
+
+There is a `requirements.txt` file that you can use as follow
+
+```shell
+pip2.7 install -r requirements.txt
+```
