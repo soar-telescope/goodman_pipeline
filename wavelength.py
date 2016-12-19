@@ -1,6 +1,6 @@
 """Contains the tools to produce a wavelength solution
 
-This module gets the extracted data to produce a wavelength solution, linerize the spectrum and write the solution
+This module gets the extracted data to produce a wavelength solution, linearize the spectrum and write the solution
 to the image's header following the FITS standard.
 """
 
@@ -27,8 +27,34 @@ log = logging.getLogger('redspec.wavelength')
 
 
 class WavelengthCalibration(object):
-    # TODO - Documentation missing
+    """Wavelength Calibration Class
+
+    The WavelengthCalibration class is instantiated for each of the science images, which are treated as a "science
+    object". In this first release it can find a wavelength solution for a given comparison lamp using an interactive
+    GUI based on Matplotlib. Although it works very good, for the next release there is a plan for creating an
+    independent GUI based on QT in order to work better in different screen sizes and other topic such as showing
+    warnings, messages and help.
+
+    This class takes 1D spectrum with no wavelength calibration and returns fits files with wavelength solutions using
+    the FITS standard for linear solutions. Goodman spectra are slightly non-linear therefore they are linearized and
+    smoothed before they are returned for the user.
+
+    """
+
     def __init__(self, sci_pack, science_object, args):
+        """Wavelength Calibration Class Initialization
+
+        A WavelengthCalibration class is instantiated for each science target being processed, i.e. every science image.
+
+        Notes:
+            This class violates some conventions as for length and number of attributes is concerned. Solving this is
+            part of a prioritary plans for next release.
+
+        Args:
+            sci_pack (object): Extracted data organized in a Class
+            science_object (object): Class with information regarding the science image being processed
+            args (objects): Runtime arguments.
+        """
         # TODO - Documentation missing
         self.args = args
         self.wsolution = None
@@ -91,7 +117,9 @@ class WavelengthCalibration(object):
         """Call method for the WavelengthSolution Class
 
         It takes extracted data and produces wavelength calibrated by means of an interactive mode. The call method
-        takes care of the order and logic needed to call the different methods.
+        takes care of the order and logic needed to call the different methods. A wavelength solution can be recycled
+        for the next science object. In that case, the wavelength solution is parsed as an argument and then there is no
+        need to calculate it again.
 
         Args:
             wsolution_obj (object): Mathematical model of the wavelength solution if exist. If it doesnt is a None
