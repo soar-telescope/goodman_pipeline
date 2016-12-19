@@ -31,6 +31,20 @@ The simplest way of running this pipeline is to go to your data folder,
 already processed with [goodman_ccdreduction](https://github.com/dsanmartim/goodman_ccdreduction)
 and execute `redspec.py`
 
+```shell
+/path/to/this/repo/redspec.py
+```
+
+Will run the following defaults:
+- [ ] Observing Mode **0**: One solution applied to all night
+- [ ] Interactive Mode **True**
+- [ ] Data Path **./**
+- [ ] Destination folder for processed data **./**
+- [ ] Search Pattern **fzh.**
+- [ ] Output prefix **g**
+- [ ] Reference Files Path [/path/to/this/repo/]**refdata/**
+- [ ] Plots Enabled **False**
+- [ ] Reference Lamp **None**
 
 ## Important Notes
 
