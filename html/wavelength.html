@@ -47,121 +47,26 @@
   <div class="section" id="module-wavelength">
 <span id="wavelength-module"></span><h1>wavelength module<a class="headerlink" href="#module-wavelength" title="Permalink to this headline">¶</a></h1>
 <p>Contains the tools to produce a wavelength solution</p>
-<p>This module gets the extracted data to produce a wavelength solution, linearize the spectrum and write the solution
+<p>This module gets the extracted data to produce a wavelength solution, linerize the spectrum and write the solution
 to the image&#8217;s header following the FITS standard.</p>
 <dl class="class">
 <dt id="wavelength.WavelengthCalibration">
-<em class="property">class </em><code class="descclassname">wavelength.</code><code class="descname">WavelengthCalibration</code><span class="sig-paren">(</span><em>sci_pack</em>, <em>science_object</em>, <em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">wavelength.</code><code class="descname">WavelengthCalibration</code><span class="sig-paren">(</span><em>path</em>, <em>sci_pack</em>, <em>science_object</em>, <em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Wavelength Calibration Class</p>
-<p>The WavelengthCalibration class is instantiated for each of the science images, which are treated as a &#8220;science
-object&#8221;. In this first release it can find a wavelength solution for a given comparison lamp using an interactive
-GUI based on Matplotlib. Although it works very good, for the next release there is a plan for creating an
-independent GUI based on QT in order to work better in different screen sizes and other topic such as showing
-warnings, messages and help.</p>
-<p>This class takes 1D spectrum with no wavelength calibration and returns fits files with wavelength solutions using
-the FITS standard for linear solutions. Goodman spectra are slightly non-linear therefore they are linearized and
-smoothed before they are returned for the user.</p>
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.add_wavelength_solution">
-<code class="descname">add_wavelength_solution</code><span class="sig-paren">(</span><em>new_header</em>, <em>spectrum</em>, <em>original_filename</em>, <em>evaluation_comment=None</em>, <em>index=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.add_wavelength_solution" title="Permalink to this definition">¶</a></dt>
-<dd><p>Add wavelength solution to the new FITS header</p>
-<p>Defines FITS header keyword values that will represent the wavelength solution in the header so that the image
-can be read in any other astronomical tool. (e.g. IRAF)</p>
-<p class="rubric">Notes</p>
-<p>This method also saves the data to a new FITS file, This should be in separated methods to have more control
-on either process.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>new_header</strong> (<em>object</em>) &#8211; An Astropy header object</li>
-<li><strong>spectrum</strong> (<em>Array</em>) &#8211; A numpy array that corresponds to the processed data</li>
-<li><strong>original_filename</strong> (<em>str</em>) &#8211; Original Image file name</li>
-<li><strong>evaluation_comment</strong> (<em>str</em>) &#8211; A comment with information regarding the quality of the wavelength solution</li>
-<li><strong>index</strong> (<em>int</em>) &#8211; If in one 2D image there are more than one target the index represents the target number.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>new_header</strong> &#8211; An Astropy header object. Although not necessary since there is no further processing</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">object</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<code class="descname">add_wavelength_solution</code><span class="sig-paren">(</span><em>new_header</em>, <em>spectrum</em>, <em>original_filename</em>, <em>evaluation_comment=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.add_wavelength_solution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.automatic_wavelength_solution">
 <code class="descname">automatic_wavelength_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.automatic_wavelength_solution" title="Permalink to this definition">¶</a></dt>
-<dd><p>Automatic Wavelength Solution NotImplemented</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Raises:</th><td class="field-body"><code class="xref py py-exc docutils literal"><span class="pre">NotImplemented</span></code></td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="wavelength.WavelengthCalibration.display_help_text">
-<code class="descname">display_help_text</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.display_help_text" title="Permalink to this definition">¶</a></dt>
-<dd><p>Shows static text on the top right subplot</p>
-<p>This will print static help text on the top right subplot of the interactive window.</p>
-<p class="rubric">Notes</p>
-<p>This is really hard to format and having a proper GUI should help to have probably richer formatted text
-on the screen.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="wavelength.WavelengthCalibration.display_onscreen_message">
-<code class="descname">display_onscreen_message</code><span class="sig-paren">(</span><em>message=''</em>, <em>color='red'</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.display_onscreen_message" title="Permalink to this definition">¶</a></dt>
-<dd><p>Uses the fourth subplot to display a message</p>
-<p>Displays a warning message on the bottom right subplot of the interactive window. It is capable to break down
-the message in more than one line if necessary.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>message</strong> (<em>str</em>) &#8211; The message to be displayed</li>
-<li><strong>color</strong> (<em>str</em>) &#8211; Color name for the font&#8217;s color</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.evaluate_solution">
 <code class="descname">evaluate_solution</code><span class="sig-paren">(</span><em>plots=False</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.evaluate_solution" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate the Root Mean Square Error of the solution</p>
-<p>Once the wavelength solution is obtained it has to be evaluated. The line centers found for the raw comparison
-lamp will be converted to, according to the new solution, angstrom. Then for each line the closest reference
-line value is obtained. The difference is stored. Then this differences are cleaned by means of a sigma clipping
-method that will rule out any outlier or any line that is not well matched. Then, using the sigma clipped
-differences the Root Mean Square error is calculated.</p>
-<p>It also creates a plot in the bottom right subplot of the interactive window, showing an scatter plot plus some
-information regarding the quality of the fit.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>plots</strong> (<em>bool</em>) &#8211; Whether to create the plot or not</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>results</strong> &#8211; Contains three elements: rms_error (float), npoints (int), n_rejections (int)</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.find_more_lines">
@@ -170,36 +75,14 @@ information regarding the quality of the fit.</p>
 <p>This method is part of the interactive wavelength solution mechanism. If a wavelength solution exist it uses the
 line centers in pixels to estimate their respective wavelength and then search for the closest value in the list
 of reference lines for the elements in the comparison lamp. Then it filters the worst of them by doing sigma
-clipping. Finally it adds them to the class&#8217; attributes that contains the list of reference points.</p>
-<p>Better results are obtained if the solution is already decent. Visual inspection also improves final result.</p>
+clipping. Finally it adds them to the class&#8217; variables that contains the list of reference points.</p>
+<p>Better results are obtained if the solution is already good. Visual inspection also improves final result.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.fit_pixel_to_wavelength">
 <code class="descname">fit_pixel_to_wavelength</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.fit_pixel_to_wavelength" title="Permalink to this definition">¶</a></dt>
-<dd><p>Does the fit to find the wavelength solution</p>
-<p>Once you have four data points on each side (raw and reference or pixel and angstrom) it calculates the fit
-usign a Chebyshev model of third degree. This was chosen because it worked better compared to the rest. There is
-a slight deviation from linearity in all Goodman data, therefore a linear model could not be used, also is said
-that a Spline of third degree is &#8220;too flexible&#8221; which I also experienced and since the deviation from linearity
-is not extreme it seemed that it was not necesary to implement.</p>
-<p>This method checks that the data that will be used as input to calculate the fit have the same dimensions and
-warns the user in case is not.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>None</strong> &#8211;<dl class="docutils">
-<dt>An empty return is created to finish the execution of the method when a fit will not be</dt>
-<dd>possible</dd>
-</dl>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">None</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.get_calibration_lamp">
@@ -219,12 +102,71 @@ warns the user in case is not.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="wavelength.WavelengthCalibration.get_line_centers">
+<code class="descname">get_line_centers</code><span class="sig-paren">(</span><em>limits</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.get_line_centers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the center of the lines using limits previously found</p>
+<p>This method is very simple and could be integrated in the get_line_limits method but I&#8217;d rather have the limit
+information available for later. Basically finds the mean value of the line limits and then finds the
+correspoing pixel value, adds it up to the &#8220;centers&#8221; list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>limits</strong> (<em>list</em>) &#8211; Line limits in the list&#8217;s index domain.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>centers</strong> &#8211; Line centers in pixel values as floats.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.get_line_limits">
+<code class="descname">get_line_limits</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.get_line_limits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for identifying lines in a spectrum</p>
+<p>This is the spectral line identifying method. It calculates a pseudo-derivative of the spectrum thus determining
+peaks. For a typical spectrum a pseudo-derivative, from now on just &#8220;derivative&#8221;, will produce a series of
+positive and negative peaks, for emission lines. Since we will be using it for comparison lamps only we don&#8217;t
+have to worry about absorption lines and therefore this method only detects emission lines.
+A threshold is defined by calculating the 75 percent of the standard deviation of the derivative. There
+is no particular reason for choosing 75 percent is just the value that worked best for all the test subjects.
+Then any search for lines must be done for values above and below of the threshold and its negative
+respectively.  There are a few control mechanisms that ensures that an actual good line is being detected. For
+instance: For each line both positive and negative derivative&#8217;s peaks are stored and are called limits. In order
+to add a (first) positive limits the number of previously stored limits must be even, meaning that we are
+&#8220;opening&#8221; a new line. Correspondingly if we are adding  a (last) negative limit we have to have added previously
+a odd amount of limits meaning that we are &#8220;closing&#8221; a line. At this point there is another constraint, it
+cannot be separated by an amount larger than a defined spacing, or we would be having a very broad line and lamp
+lines are expected to be very narrow.</p>
+<p class="rubric">Notes</p>
+<p>The lines detected by this method are usually the best lines in the spectrum. There is a certain amount of
+lines missed but in very crowded regions.</p>
+<p>Very important to note that the line centers found using the data produced here are very precise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>limits</strong> &#8211; List of line limits in consecutive pairs. This is considered by the method that uses this
+list for further processing. The values are index values not pixel values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="wavelength.WavelengthCalibration.get_lines_in_lamp">
 <code class="descname">get_lines_in_lamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.get_lines_in_lamp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Identify peaks in a lamp spectrum</p>
-<p>Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission lines then it calls the recenter_lines
-method that will recenter them using a &#8220;center of mass&#8221;, because, not always the maximum value (peak)
-is the center of the line.</p>
+<p>This method goes through all the data points in a 1D spectrum recording whether there is a trend
+to increase or to decrease. It also records the length of the trend. If there was rising trend
+it will check if trend length is 3 or larger and if the point is above the median of the spectrum.
+If these criteria are met the last rising pixel value is recorded as a line candidate.</p>
+<p class="rubric">Notes</p>
+<p>This method will only work for comparison lamps.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -288,26 +230,6 @@ By obtaining this solution it can be applied to a pixel axis.</p>
 <dt id="wavelength.WavelengthCalibration.interactive_wavelength_solution">
 <code class="descname">interactive_wavelength_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.interactive_wavelength_solution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Find the wavelength solution interactively</p>
-<p>Using matplotlib graphical interface we developed an interactive method to find the wavelength solution. It is
-capable of tracing the slight deviation from linearity of the data. It uses a combination of previously
-wavelength calibrated comparison lamp and laboratory line centers. Those two are combined in a single plot,
-bottom left, to help to visually identify their counterparts in the raw data and viceversa. In the other hand,
-raw data is previously processed to find the lines present. They are stored as a list and used as the correct
-center of the line. Once you select a line, the centroid will be calculated and the closest line will be
-returned.</p>
-<p>This method generates a GUI like plot using matplolib, capable of handling keyboard and click events. The window
-consist of four plots:</p>
-<p>In the top left side will be a wide plot named raw data. This is the uncalibrated comparison lamp associated to
-the science image that is being processed.</p>
-<p>Then in the bottom left, there is the reference plot, where a previously calibrated lamp is displayed along with
-the reference line values.</p>
-<p>In the top right side there is a permanent help text with the basic functions plus a short description.</p>
-<p>And finally in the bottom right side you will find a more dynamic plot. It will show a zoomed line when you mark
-one with a click, a scatter plot when you do a fit to the recorded clicks and also will show warnings in case
-something is going wrong.</p>
-<p>For future release there is the plan to put all this method as a new class even with an indepentend QT GUI.</p>
-<p class="rubric">Notes</p>
-<p>This method uses the GTK3Agg backend, it will not work with other.</p>
 </dd></dl>
 
 <dl class="method">
@@ -333,29 +255,7 @@ respective center more precisely. The default interpolation size is 200 (two hun
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.key_pressed">
 <code class="descname">key_pressed</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.key_pressed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Key event handler</p>
-<p>There are several key events that need to be taken care of. See a brief description of each one of them below:</p>
-<p>F1 or ?: Prints a help message
-F2 or f: Fit wavelength solution model.
-F3 or a: Find new lines.
-F4: Evaluate solution
-F6 or l: Linearize data although this is done automatically after the wavelength function is fit
-d: deletes closest point
-ctrl+d: deletes all recorded clicks
-ctrl+z: Reverts the action of F3 or a.
-Middle Button Click: records data location.
-Enter: Close figure and apply solution if exists.</p>
-<p class="rubric">Notes</p>
-<p>This method must be simplified</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<em>object</em>) &#8211; Key pressed event</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="wavelength.WavelengthCalibration.line_search_method">
@@ -366,51 +266,12 @@ Enter: Close figure and apply solution if exists.</p>
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.linearize_spectrum">
 <code class="descname">linearize_spectrum</code><span class="sig-paren">(</span><em>data</em>, <em>plots=False</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.linearize_spectrum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Produces a linearized version of the spectrum</p>
-<p>Storing wavelength solutions in a FITS header is not simple at all for non-linear solutions therefore is easier
-for the final user and for the development code to have the spectrum linearized. It first finds a spline
-representation of the data, then creates a linear wavelength axis (angstrom) and finally it resamples the data
-from the spline representation to the linear wavelength axis.</p>
-<p>It also applies a median filter of kernel size three to smooth the linearized spectrum. Sometimes the splines
-produce funny things when the original data is too steep.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data</strong> (<em>Array</em>) &#8211; The non-linear spectrum</li>
-<li><strong>plots</strong> (<em>bool</em>) &#8211; Whether to show the plots or not</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>linear_data</strong> &#8211; Contains two elements: Linear wavelength axis and the smoothed linearized data itself.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.on_click">
 <code class="descname">on_click</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.on_click" title="Permalink to this definition">¶</a></dt>
-<dd><p>Handles Click events for Interactive Mode</p>
-<p>Detects where the click was done and calls the corresponding method. For now it only handles the middle button
-but that might change for future releases. There are two regions of interest as for where a click was done.
-The raw and reference data respectively. For any of such regions it will call the method that recenter the line
-and once the desired value is returned it will be appended to the list that contains all the correspondent line
-positions, raw (pixels) and reference (angstrom)</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<em>object</em>) &#8211; Click event</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="wavelength.WavelengthCalibration.pixelcenter">
@@ -421,19 +282,7 @@ positions, raw (pixels) and reference (angstrom)</p>
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.plot_raw_over_reference">
 <code class="descname">plot_raw_over_reference</code><span class="sig-paren">(</span><em>remove=False</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.plot_raw_over_reference" title="Permalink to this definition">¶</a></dt>
-<dd><p>Overplot raw data over reference lamp using current wavelength solution model</p>
-<p>Once the wavelength solution is obtained this method is called to apply the already mentioned solution to the
-raw data and then overplot it on the reference lamp plot. This is very useful to have a visual idea of how far
-or close the solution is.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>remove</strong> (<em>bool</em>) &#8211; True or False depending whether you want to remove the overplotted lamp or not</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.predicted_wavelength">
@@ -443,43 +292,7 @@ or close the solution is.</p>
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.recenter_line_by_data">
 <code class="descname">recenter_line_by_data</code><span class="sig-paren">(</span><em>data_name</em>, <em>x_data</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.recenter_line_by_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds a better center for a click-selected line</p>
-<p>This method is called by another method that handles click events. An argument is parsed that will tell
-which plot was the clicked and what is the x-value in data coordinates. Then the closest pixel center
-will be found and from there will extract a 20 pixel wide sample of the data (this could be a future improvement
-the width of the extraction should depend on the FWHM of the lines). The sample of the data is used to calculate
-a centroid (center of mass) which is a good approximation but could be influenced by data shape or if the click
-was too far (unquantified yet). That is why for the reference data, a database of laboratory line center will be
-used and for raw data the line centers are calculated earlier in the process, independently of any human input.</p>
-<p>It also will plot the sample, the centroid and the reference line center at the fourth subplot, bottom right
-corner.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data_name</strong> (<em>str</em>) &#8211; &#8216;reference&#8217; or &#8216;raw-data&#8217; is where the click was done</li>
-<li><strong>x_data</strong> (<em>float</em>) &#8211; click x-axis value in data coordinates</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>reference_line_value</strong> &#8211; The value the line center that will be used later to do the wavelength fit</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">float</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="wavelength.WavelengthCalibration.recenter_lines">
-<code class="descname">recenter_lines</code><span class="sig-paren">(</span><em>data</em>, <em>lines</em>, <em>plots=False</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.recenter_lines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the centroid of an emission line</p>
-<p>For every line center (pixel value) it will scan left first until the data stops decreasing, it assumes it
-is an emission line and then will scan right until it stops decreasing too. Defined those limits it will</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="wavelength.WavelengthCalibration.red_limit">
@@ -489,40 +302,18 @@ is an emission line and then will scan right until it stops decreasing too. Defi
 
 <dl class="method">
 <dt id="wavelength.WavelengthCalibration.update_clicks_plot">
-<code class="descname">update_clicks_plot</code><span class="sig-paren">(</span><em>action=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.update_clicks_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update the points that represent clicks on lamp plots</p>
-<p>When you mark a line a red dot marks the position of the line at the exact y location of the click, for the x
-location it will use the value obtained by means of the recentering method. There are three possible actions:
-Update the reference plot&#8217;s click, the raw data clicks or delete them all.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>action</strong> (<em>str</em>) &#8211; A string that could be &#8216;reference&#8217;, &#8216;raw_data&#8217; or &#8216;delete&#8217; depending on the action desired</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<code class="descname">update_clicks_plot</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.update_clicks_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="wavelength.WavelengthSolution">
-<em class="property">class </em><code class="descclassname">wavelength.</code><code class="descname">WavelengthSolution</code><span class="sig-paren">(</span><em>solution_type=None</em>, <em>model_name=None</em>, <em>model_order=0</em>, <em>model=None</em>, <em>ref_lamp=None</em>, <em>eval_comment=''</em>, <em>header=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthSolution" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">wavelength.</code><code class="descname">WavelengthSolution</code><span class="sig-paren">(</span><em>solution_type=None</em>, <em>model_name=None</em>, <em>model_order=0</em>, <em>model=None</em>, <em>ref_lamp=None</em>, <em>eval_comment=''</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthSolution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<dl class="method">
-<dt id="wavelength.WavelengthSolution.check_compatibility">
-<code class="descname">check_compatibility</code><span class="sig-paren">(</span><em>header=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthSolution.check_compatibility" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="method">
 <dt id="wavelength.WavelengthSolution.linear_solution_string">
 <code class="descname">linear_solution_string</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthSolution.linear_solution_string" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="staticmethod">
-<dt id="wavelength.WavelengthSolution.set_spectral_features">
-<em class="property">static </em><code class="descname">set_spectral_features</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthSolution.set_spectral_features" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
