@@ -80,10 +80,10 @@ class WavelengthCalibration(object):
         self.blue_limit = None
         self.red_limit = None
         """Interactive wavelength finding"""
-        self.reference_clicks_x = []
-        self.reference_clicks_y = []
-        self.raw_data_clicks_x = []
-        self.raw_data_clicks_y = []
+        self.reference_marks_x = []
+        self.reference_marks_y = []
+        self.raw_data_marks_x = []
+        self.raw_data_marks_y = []
         self.click_input_enabled = True
         self.reference_bb = None
         self.raw_data_bb = None
@@ -550,7 +550,7 @@ class WavelengthCalibration(object):
         In the top right side there is a permanent help text with the basic functions plus a short description.
 
         And finally in the bottom right side you will find a more dynamic plot. It will show a zoomed line when you mark
-        one with a click, a scatter plot when you do a fit to the recorded clicks and also will show warnings in case
+        one with a click, a scatter plot when you do a fit to the recorded marks and also will show warnings in case
         something is going wrong.
 
         For future release there is the plan to put all this method as a new class even with an indepentend QT GUI.
@@ -640,44 +640,26 @@ class WavelengthCalibration(object):
     def on_click(self, event):
         """Handles Click events for Interactive Mode
 
-        Detects where the click was done and calls the corresponding method. For now it only handles the middle button
-        but that might change for future releases. There are two regions of interest as for where a click was done.
-        The raw and reference data respectively. For any of such regions it will call the method that recenter the line
-        and once the desired value is returned it will be appended to the list that contains all the correspondent line
-        positions, raw (pixels) and reference (angstrom)
+        Calls the method register_mark
 
         Args:
             event (object): Click event
         """
-        self.events = True
         if event.button == 2:
-            if event.xdata is not None and event.ydata is not None:
-                figure_x, figure_y = self.i_fig.transFigure.inverted().transform((event.x, event.y))
-                if self.reference_bb.contains(figure_x, figure_y):
-                    # self.reference_clicks.append([event.xdata, event.ydata])
-                    self.reference_clicks_x.append(self.recenter_line_by_data('reference', event.xdata))
-                    self.reference_clicks_y.append(event.ydata)
-                    self.update_clicks_plot('reference')
-                elif self.raw_data_bb.contains(figure_x, figure_y):
-                    # self.raw_data_clicks.append([event.xdata, event.ydata])
-                    self.raw_data_clicks_x.append(self.recenter_line_by_data('raw-data', event.xdata))
-                    self.raw_data_clicks_y.append(event.ydata)
-                    self.update_clicks_plot('raw_data')
-                else:
-                    log.debug(figure_x, figure_y, 'Are not contained')
-            else:
-                log.error('Clicked Region is out of boundaries')
+            self.register_mark(event)
+        # else:
+            # print(event.button)
         # elif event.button == 3:
-        #     if len(self.reference_clicks_x) == len(self.raw_data_clicks_x):
+        #     if len(self.reference_marks_x) == len(self.raw_data_marks_x):
         #         self.click_input_enabled = False
         #         log.info('Leaving interactive mode')
         #     else:
-        #         if len(self.reference_clicks_x) < len(self.raw_data_clicks_x):
+        #         if len(self.reference_marks_x) < len(self.raw_data_marks_x):
         #             log.info('There is %s click missing in the Reference plot',
-        #                      len(self.raw_data_clicks_x) - len(self.reference_clicks_x))
+        #                      len(self.raw_data_marks_x) - len(self.reference_marks_x))
         #         else:
         #             log.info('There is %s click missing in the New Data plot',
-        #                      len(self.reference_clicks_x) - len(self.raw_data_clicks_x))
+        #                      len(self.reference_marks_x) - len(self.raw_data_marks_x))
 
     def key_pressed(self, event):
         """Key event handler
@@ -690,10 +672,11 @@ class WavelengthCalibration(object):
         F4: Evaluate solution
         F6 or l: Linearize data although this is done automatically after the wavelength function is fit
         d: deletes closest point
-        ctrl+d: deletes all recorded clicks
+        ctrl+d: deletes all recorded marks
         ctrl+z: Reverts the action of F3 or a.
-        Middle Button Click: records data location.
+        Middle Button Click or m: records data location.
         Enter: Close figure and apply solution if exists.
+        Shift+Enter: Close the program with sys.exit(0)
 
         Notes:
             This method must be simplified
@@ -712,7 +695,7 @@ class WavelengthCalibration(object):
             print("F6 or l: Linearize data (for testing not definitive)")
             print("d: deletes closest point")
             # print("l : resample spectrum to a linear dispersion axis")
-            print("ctrl+d: deletes all recorded clicks")
+            print("ctrl+d: deletes all recorded marks")
             print("ctrl+z: Go back to previous solution (deletes automatic added points")
             print('Middle Button Click: records data location.')
             print("Enter: Close figure and apply solution if exists.")
@@ -723,76 +706,76 @@ class WavelengthCalibration(object):
         elif event.key == 'f3' or event.key == 'a':
             if self.wsolution is not None:
                 self.find_more_lines()
-                self.update_clicks_plot('reference')
-                self.update_clicks_plot('raw_data')
+                self.update_marks_plot('reference')
+                self.update_marks_plot('raw_data')
         elif event.key == 'f4':
-            if self.wsolution is not None and len(self.raw_data_clicks_x) > 0:
+            if self.wsolution is not None and len(self.raw_data_marks_x) > 0:
                 self.evaluate_solution(plots=True)
         elif event.key == 'd':
             # TODO (simon): simplify this code.
             figure_x, figure_y = self.i_fig.transFigure.inverted().transform((event.x, event.y))
             if self.raw_data_bb.contains(figure_x, figure_y):
                 log.debug('Deleting raw point')
-                # print abs(self.raw_data_clicks_x - event.xdata)
-                closer_index = int(np.argmin(abs(self.raw_data_clicks_x - event.xdata)))
+                # print abs(self.raw_data_marks_x - event.xdata)
+                closer_index = int(np.argmin(abs(self.raw_data_marks_x - event.xdata)))
                 # print 'Index ', closer_index
-                if len(self.raw_data_clicks_x) == len(self.reference_clicks_x):
-                    self.raw_data_clicks_x.pop(closer_index)
-                    self.raw_data_clicks_y.pop(closer_index)
-                    self.reference_clicks_x.pop(closer_index)
-                    self.reference_clicks_y.pop(closer_index)
-                    self.update_clicks_plot('reference')
-                    self.update_clicks_plot('raw_data')
+                if len(self.raw_data_marks_x) == len(self.reference_marks_x):
+                    self.raw_data_marks_x.pop(closer_index)
+                    self.raw_data_marks_y.pop(closer_index)
+                    self.reference_marks_x.pop(closer_index)
+                    self.reference_marks_y.pop(closer_index)
+                    self.update_marks_plot('reference')
+                    self.update_marks_plot('raw_data')
                 else:
-                    if closer_index == len(self.raw_data_clicks_x) - 1:
-                        self.raw_data_clicks_x.pop(closer_index)
-                        self.raw_data_clicks_y.pop(closer_index)
-                        self.update_clicks_plot('raw_data')
+                    if closer_index == len(self.raw_data_marks_x) - 1:
+                        self.raw_data_marks_x.pop(closer_index)
+                        self.raw_data_marks_y.pop(closer_index)
+                        self.update_marks_plot('raw_data')
                     else:
-                        self.raw_data_clicks_x.pop(closer_index)
-                        self.raw_data_clicks_y.pop(closer_index)
-                        self.reference_clicks_x.pop(closer_index)
-                        self.reference_clicks_y.pop(closer_index)
-                        self.update_clicks_plot('reference')
-                        self.update_clicks_plot('raw_data')
+                        self.raw_data_marks_x.pop(closer_index)
+                        self.raw_data_marks_y.pop(closer_index)
+                        self.reference_marks_x.pop(closer_index)
+                        self.reference_marks_y.pop(closer_index)
+                        self.update_marks_plot('reference')
+                        self.update_marks_plot('raw_data')
 
             elif self.reference_bb.contains(figure_x, figure_y):
                 log.debug('Deleting reference point')
-                # print 'reference ', self.reference_clicks_x, self.re
-                # print self.reference_clicks_x
-                # print abs(self.reference_clicks_x - event.xdata)
-                closer_index = int(np.argmin(abs(self.reference_clicks_x - event.xdata)))
-                if len(self.raw_data_clicks_x) == len(self.reference_clicks_x):
-                    self.raw_data_clicks_x.pop(closer_index)
-                    self.raw_data_clicks_y.pop(closer_index)
-                    self.reference_clicks_x.pop(closer_index)
-                    self.reference_clicks_y.pop(closer_index)
-                    self.update_clicks_plot('reference')
-                    self.update_clicks_plot('raw_data')
+                # print 'reference ', self.reference_marks_x, self.re
+                # print self.reference_marks_x
+                # print abs(self.reference_marks_x - event.xdata)
+                closer_index = int(np.argmin(abs(self.reference_marks_x - event.xdata)))
+                if len(self.raw_data_marks_x) == len(self.reference_marks_x):
+                    self.raw_data_marks_x.pop(closer_index)
+                    self.raw_data_marks_y.pop(closer_index)
+                    self.reference_marks_x.pop(closer_index)
+                    self.reference_marks_y.pop(closer_index)
+                    self.update_marks_plot('reference')
+                    self.update_marks_plot('raw_data')
                 else:
-                    if closer_index == len(self.reference_clicks_x) - 1:
-                        self.reference_clicks_x.pop(closer_index)
-                        self.reference_clicks_y.pop(closer_index)
-                        self.update_clicks_plot('reference')
+                    if closer_index == len(self.reference_marks_x) - 1:
+                        self.reference_marks_x.pop(closer_index)
+                        self.reference_marks_y.pop(closer_index)
+                        self.update_marks_plot('reference')
                     else:
-                        self.raw_data_clicks_x.pop(closer_index)
-                        self.raw_data_clicks_y.pop(closer_index)
-                        self.reference_clicks_x.pop(closer_index)
-                        self.reference_clicks_y.pop(closer_index)
-                        self.update_clicks_plot('reference')
-                        self.update_clicks_plot('raw_data')
+                        self.raw_data_marks_x.pop(closer_index)
+                        self.raw_data_marks_y.pop(closer_index)
+                        self.reference_marks_x.pop(closer_index)
+                        self.reference_marks_y.pop(closer_index)
+                        self.update_marks_plot('reference')
+                        self.update_marks_plot('raw_data')
                     
             elif self.contextual_bb.contains(figure_x, figure_y):
-                closer_index_ref = int(np.argmin(abs(self.reference_clicks_x - event.ydata)))
-                closer_index_raw = int(np.argmin(abs(self.raw_data_clicks_x - event.xdata)))
+                closer_index_ref = int(np.argmin(abs(self.reference_marks_x - event.ydata)))
+                closer_index_raw = int(np.argmin(abs(self.raw_data_marks_x - event.xdata)))
                 # print(closer_index_raw, closer_index_ref)
-                self.raw_data_clicks_x.pop(closer_index_raw)
-                self.raw_data_clicks_y.pop(closer_index_raw)
-                self.reference_clicks_x.pop(closer_index_ref)
-                self.reference_clicks_y.pop(closer_index_ref)
-                self.update_clicks_plot('reference')
-                self.update_clicks_plot('raw_data')
-                self.update_clicks_plot('eval_plots')
+                self.raw_data_marks_x.pop(closer_index_raw)
+                self.raw_data_marks_y.pop(closer_index_raw)
+                self.reference_marks_x.pop(closer_index_ref)
+                self.reference_marks_y.pop(closer_index_ref)
+                self.update_marks_plot('reference')
+                self.update_marks_plot('raw_data')
+                self.update_marks_plot('eval_plots')
 
         elif event.key == 'f6' or event.key == 'l':
             log.info('Linearize and smoothing spectrum')
@@ -800,35 +783,35 @@ class WavelengthCalibration(object):
                 self.linearize_spectrum(self.lamp_data, plots=True)
         elif event.key == 'ctrl+z':
             log.info('Deleting automatic added points. If exist.')
-            if self.raw_data_clicks_x is not [] and self.reference_clicks_x is not []:
+            if self.raw_data_marks_x is not [] and self.reference_marks_x is not []:
                 to_remove = []
-                for i in range(len(self.raw_data_clicks_x)):
-                    # print self.raw_data_clicks[i], self.filling_value
-                    if self.raw_data_clicks_y[i] == self.filling_value:
+                for i in range(len(self.raw_data_marks_x)):
+                    # print self.raw_data_marks[i], self.filling_value
+                    if self.raw_data_marks_y[i] == self.filling_value:
                         to_remove.append(i)
                         # print to_remove
                 to_remove = np.array(sorted(to_remove, reverse=True))
                 if len(to_remove) > 0:
                     for index in to_remove:
-                        self.raw_data_clicks_x.pop(index)
-                        self.raw_data_clicks_y.pop(index)
-                        self.reference_clicks_x.pop(index)
-                        self.reference_clicks_y.pop(index)
-                    self.update_clicks_plot('reference')
-                    self.update_clicks_plot('raw_data')
+                        self.raw_data_marks_x.pop(index)
+                        self.raw_data_marks_y.pop(index)
+                        self.reference_marks_x.pop(index)
+                        self.reference_marks_y.pop(index)
+                    self.update_marks_plot('reference')
+                    self.update_marks_plot('raw_data')
                     # else:
                     # print self.raw_click_plot, self.ref_click_plot, 'mmm'
         elif event.key == 'ctrl+d':
             log.info('Deleting all recording Clicks')
-            self.display_onscreen_message(message='Delete all clicks? Answer on the terminal.')
+            self.display_onscreen_message(message='Delete all marks? Answer on the terminal.')
             # time.sleep(10)
-            answer = raw_input('Are you sure you want to delete all clicks? only typing "No" will stop it! : ')
+            answer = raw_input('Are you sure you want to delete all marks? only typing "No" will stop it! : ')
             if answer.lower() != 'no':
-                self.reference_clicks_x = []
-                self.reference_clicks_y = []
-                self.raw_data_clicks_x = []
-                self.raw_data_clicks_y = []
-                self.update_clicks_plot('delete')
+                self.reference_marks_x = []
+                self.reference_marks_y = []
+                self.raw_data_marks_x = []
+                self.raw_data_marks_y = []
+                self.update_marks_plot('delete')
                 self.plot_raw_over_reference(remove=True)
             else:
                 log.info('No click was deleted this time!.')
@@ -840,9 +823,43 @@ class WavelengthCalibration(object):
                 message = 'There is still no wavelength solution!'
                 log.info(message)
                 self.display_onscreen_message(message)
+        elif event.key == 'm':
+            self.register_mark(event)
+        elif event.key == 'shift+enter':
+            log.info('Pressed Shift + Enter. Closing the program')
+            sys.exit(0)
         else:
             print(event.key)
             pass
+
+    def register_mark(self, event):
+        """Marks a line
+
+        Detects where the click was done or m-key was pressed and calls the corresponding method. It handles the middle
+        button click and m-key being pressed. There are two regions of interest as for where a click was done.
+        The raw and reference data respectively. For any of such regions it will call the method that recenter the line
+        and once the desired value is returned it will be appended to the list that contains all the correspondent line
+        positions, raw (pixels) and reference (angstrom)
+
+        Args:
+            event (object): Click or m-key pressed event
+        """
+        if event.xdata is not None and event.ydata is not None:
+            figure_x, figure_y = self.i_fig.transFigure.inverted().transform((event.x, event.y))
+            if self.reference_bb.contains(figure_x, figure_y):
+                # self.reference_marks.append([event.xdata, event.ydata])
+                self.reference_marks_x.append(self.recenter_line_by_data('reference', event.xdata))
+                self.reference_marks_y.append(event.ydata)
+                self.update_marks_plot('reference')
+            elif self.raw_data_bb.contains(figure_x, figure_y):
+                # self.raw_data_marks.append([event.xdata, event.ydata])
+                self.raw_data_marks_x.append(self.recenter_line_by_data('raw-data', event.xdata))
+                self.raw_data_marks_y.append(event.ydata)
+                self.update_marks_plot('raw_data')
+            else:
+                log.debug(figure_x, figure_y, 'Are not contained')
+        else:
+            log.error('Clicked Region is out of boundaries')
 
     def find_more_lines(self):
         """Method to add more lines given that a wavelength solution already exists
@@ -870,19 +887,19 @@ class WavelengthCalibration(object):
             clipped_differences = sigma_clip(square_differences, sigma=2, iters=3)
             if len(new_wavelength) == len(new_physical) == len(clipped_differences):
                 for i in range(len(new_wavelength)):
-                    if clipped_differences[i] is not np.ma.masked and new_wavelength[i] not in self.reference_clicks_x:
-                        self.reference_clicks_x.append(new_wavelength[i])
-                        self.reference_clicks_y.append(self.filling_value)
-                        self.raw_data_clicks_x.append(new_physical[i])
-                        self.raw_data_clicks_y.append(self.filling_value)
+                    if clipped_differences[i] is not np.ma.masked and new_wavelength[i] not in self.reference_marks_x:
+                        self.reference_marks_x.append(new_wavelength[i])
+                        self.reference_marks_y.append(self.filling_value)
+                        self.raw_data_marks_x.append(new_physical[i])
+                        self.raw_data_marks_y.append(self.filling_value)
         return True
 
-    def update_clicks_plot(self, action=None):
-        """Update the points that represent clicks on lamp plots
+    def update_marks_plot(self, action=None):
+        """Update the points that represent marks on lamp plots
 
         When you mark a line a red dot marks the position of the line at the exact y location of the click, for the x
         location it will use the value obtained by means of the recentering method. There are three possible actions:
-        Update the reference plot's click, the raw data clicks or delete them all.
+        Update the reference plot's click, the raw data marks or delete them all.
 
         Args:
             action (str): A string that could be 'reference', 'raw_data' or 'delete' depending on the action desired
@@ -895,8 +912,8 @@ class WavelengthCalibration(object):
                     self.ax3.relim()
                 except:
                     pass
-            self.points_ref, = self.ax3.plot(self.reference_clicks_x,
-                                             self.reference_clicks_y,
+            self.points_ref, = self.ax3.plot(self.reference_marks_x,
+                                             self.reference_marks_y,
                                              linestyle='None',
                                              marker='o',
                                              color='r')
@@ -910,8 +927,8 @@ class WavelengthCalibration(object):
                     self.ax1.relim()
                 except:
                     pass
-            self.points_raw, = self.ax1.plot(self.raw_data_clicks_x,
-                                             self.raw_data_clicks_y,
+            self.points_raw, = self.ax1.plot(self.raw_data_marks_x,
+                                             self.raw_data_marks_y,
                                              linestyle='None',
                                              marker='o',
                                              color='r')
@@ -1064,20 +1081,20 @@ class WavelengthCalibration(object):
                          possible
 
         """
-        if len(self.reference_clicks_x) and len(self.raw_data_clicks_x) > 0:
-            if len(self.reference_clicks_x) < 4 or len(self.raw_data_clicks_x) < 4:
-                message = 'Not enough clicks! Minimum 4 each side.'
+        if len(self.reference_marks_x) and len(self.raw_data_marks_x) > 0:
+            if len(self.reference_marks_x) < 4 or len(self.raw_data_marks_x) < 4:
+                message = 'Not enough marks! Minimum 4 each side.'
                 self.display_onscreen_message(message)
                 return
-            if len(self.reference_clicks_x) != len(self.raw_data_clicks_x):
-                if len(self.reference_clicks_x) < len(self.raw_data_clicks_x):
-                    n = len(self.raw_data_clicks_x) - len(self.reference_clicks_x)
+            if len(self.reference_marks_x) != len(self.raw_data_marks_x):
+                if len(self.reference_marks_x) < len(self.raw_data_marks_x):
+                    n = len(self.raw_data_marks_x) - len(self.reference_marks_x)
                     if n == 1:
                         message_text = '%s Reference Click is missing!.' % n
                     else:
                         message_text = '%s Reference Clicks are missing!.' % n
                 else:
-                    n = len(self.reference_clicks_x) - len(self.raw_data_clicks_x)
+                    n = len(self.reference_marks_x) - len(self.raw_data_marks_x)
                     if n == 1:
                         message_text = '%s Raw Click is missing!.' % n
                     else:
@@ -1086,9 +1103,9 @@ class WavelengthCalibration(object):
             else:
                 pixel = []
                 angstrom = []
-                for i in range(len(self.reference_clicks_x)):
-                    pixel.append(self.raw_data_clicks_x[i])
-                    angstrom.append(self.reference_clicks_x[i])
+                for i in range(len(self.reference_marks_x)):
+                    pixel.append(self.raw_data_marks_x[i])
+                    angstrom.append(self.reference_marks_x[i])
                 wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
                 self.wsolution = wavelength_solution.ws_fit(pixel, angstrom)
                 self.evaluate_solution(plots=True)
@@ -1295,7 +1312,7 @@ class WavelengthCalibration(object):
         self.ax2.text(1, 7.5, 'd :', fontsize=13)
         self.ax2.text(1.46, 7.5, 'Delete Closest Point', fontsize=13)
         self.ax2.text(1, 7, 'Ctrl+d:', fontsize=13)
-        self.ax2.text(1.5, 7, 'Delete all recorded clicks. Requires', fontsize=13)
+        self.ax2.text(1.5, 7, 'Delete all recorded marks. Requires', fontsize=13)
         self.ax2.text(1.5, 6.5, 'confirmation on the terminal.', fontsize=13)
         self.ax2.text(1, 6, 'Ctrl+z:', fontsize=13)
         self.ax2.text(1.5, 6, 'Remove all automatic added points.', fontsize=13)

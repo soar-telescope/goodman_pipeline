@@ -636,26 +636,57 @@ class IdentifiedTarget(object):
 
 
 class SciencePack(object):
+    """Science data packaging
+
+    This class is designed to work as a packer of extracted data. The attributes are separated list for data, headers
+    lamps data and lamps header. Their only matching mechanism is their index. therefore if you have added three science
+    spectra and two comparison lamps, in order to get, say, de second one, you would have to get SciencePack.data[1]
+    SciencePack.headers[1]. The same thing for the lamps.
+    """
 
     def __init__(self):
+        """SciencePack initialization
+
+        A SciencePack instance will be initialized having four empty list, lists that will store data an headers.
+
+        Since data and headers are added in separated steps, there is no checks as for whether its been added
+        consistently. Developer should be careful with this.
+
+        Attributes:
+            self.data (list): Stores science target data
+            self.headers (list): Stores science target headers
+            self.lamps_data (list): Stores comparison lamps data
+            self.lamps_headers (list): Stores comparison lamps headers.
+
+        """
         self.data = []
         self.headers = []
         self.lamps_data = []
         self.lamps_headers = []
 
     def add_data(self, new_data):
+        """Appends science data"""
         self.data.append(new_data)
 
     def add_header(self, new_header):
+        """Appends science header"""
         self.headers.append(new_header)
 
     def add_lamp(self, new_lamp):
+        """Appends comparison lamp data"""
         self.lamps_data.append(new_lamp)
 
     def add_lamp_header(self, new_lamp_header):
+        """Appends comparison lamp header"""
         self.lamps_headers.append(new_lamp_header)
 
     def check_consistency(self):
+        """Check that all stored data is consistent
+
+        There should be the same number of _data_ and their respective _headers_, the same for _lamps\_data_ and
+        _lamps\_headers_
+
+        """
         if len(self.data) == len(self.headers):
             log.debug('Science data and headers are consistent')
         else:
