@@ -334,6 +334,10 @@ Supported Observing modes are:
             log.error('The images contain duplicated keywords')
             log.error('ValueError: %s', error)
             sys.exit(0)
+        except AttributeError as error:
+            log.error('Check that the folder is not Empty')
+            log.error('AttributeError: %s', error)
+            sys.exit(0)
         # type(self.image_collection)
 
         date = self.image_collection.date[0]

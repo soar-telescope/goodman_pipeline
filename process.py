@@ -18,14 +18,24 @@ log = logging.getLogger('redspec.process')
 class Process(object):
     """Set of tools for extracting Goodman High Throughput Spectrograph data.
 
-    This class needs a path parsed as a string and a ScienceObject object. The ScienceObject class is defined in the
-    module redspec.py and in principle the current module was made to service it. This class has been tested to work
-    very well independently given that you successfully provide the previously mentioned ScienceObject and respective
-    path to the data location.
+    This class needs a path parsed as an attribute of args (arguments object) and a ScienceObject object.
+    The ScienceObject class is defined in the module redspec.py and in principle the current module was made to service
+    it. This class has been tested to work very well independently given that you successfully provide the previously
+    mentioned ScienceObject and respective path to the data location.
 
     """
 
     def __init__(self, sci_obj, args):
+        """Initialize Process class
+
+        It needs the sci_obj (ScienceObject instance) that contain information regarding the images being processed,
+        such as, filename, science target name, etc. It also uses the arguments of the program that also are a class
+        instance. For initialization it only uses the source path, or where the files are located.
+
+        Args:
+            sci_obj (object): Instance of ScienceObject.
+            args (object): Runtime arguments.
+        """
         self.args = args
         self.science_object = sci_obj
         self.path = self.args.source
@@ -40,6 +50,20 @@ class Process(object):
         self.extracted_data = None
 
     def __call__(self, extract_lamps=True):
+        """Call method for Process Class
+
+        This method will call the other class' methods that will identify, trace and extract the data. It will also
+        modify attributes of the science_object attribute (instance of ScienceObject) and the return it along with the
+        extracted data.
+
+        Args:
+            extract_lamps (bool): Whether it is necessary to extract the lamp to find the wavelength solution. If it's
+             set to False it is assumed that a previously found wavelength solution will be applied.
+
+        Returns:
+            extracted (list): Contains two elements. self.extracted_data (object) and self.science_object (object)
+
+        """
 
         log.info('Processing Science File : %s', self.science_object.file_name)
         if extract_lamps:
@@ -60,11 +84,20 @@ class Process(object):
             self.traces = self.trace(self.targets)
             self.extracted_data = self.extract(self.traces)
 
-        return [self.extracted_data, self.science_object]
+        extracted = [self.extracted_data, self.science_object]
+        return extracted
 
     def identify_spectra(self):
-        # define data shape and samples
-        # TODO (simon): Make the software handle this problem
+        """Identify spectra in 2D (image) data
+
+        This method takes a sample of the image and averages it in the dispersion direction, then analyze the spatial
+        direction in search for peaks and count them as candidates to targets. In order to validate the target it will
+        do a Voigt profile fit and if the new center deviates too much from the original location it will be discarded.
+
+        Returns:
+            identified_targets (list): Each element being and IdentifiedTarget instance
+
+        """
         try:
             y_size, x_size = self.data.shape
         except ValueError:
@@ -77,10 +110,6 @@ class Process(object):
         sample = np.median(self.data[:, sample_loc:sample_loc + 2 * half_width], axis=1)
         sample_median = np.median(sample)
         sample_std = np.std(sample)
-
-        # plt.figure()
-        # plt.hist(sample, bins=100, log=True)
-        # plt.show()
 
         # search for spectra
         all_found = []
@@ -127,12 +156,12 @@ class Process(object):
                         # print(voigt)
                         if abs(voigt.x_0.value - spectrum) < 5:
                             identified_targets.append(IdentifiedTarget(
-                                voigt.amplitude_L.value,
-                                voigt.x_0.value,
-                                voigt.fwhm_L.value,
-                                voigt.fwhm_G.value,
-                                sample_width,
-                                sample_loc))
+                                amplitude=voigt.amplitude_L.value,
+                                mean=voigt.x_0.value,
+                                stddev=voigt.fwhm_L.value,
+                                fwhmg=voigt.fwhm_G.value,
+                                raw_width=sample_width,
+                                sample_loc=sample_loc))
                             # fitted_model = voigt
                             if self.args.plots_enabled:
                                 plt.axvspan(spectrum - i, spectrum + i, color='r', alpha=0.3, label='Spectrum width')
@@ -536,10 +565,15 @@ class Process(object):
     @staticmethod
     def add_wcs_keys(header):
         """Adds generic keyword to the header
-
         Linear wavelength solutions require a set of standard fits keywords. Later on they will be updated accordingly
-
         The main goal of putting them here is to have consistent and nicely ordered headers
+
+        Args:
+            header (object): New header without WCS entries
+
+        Returns:
+            header (object): Modified header
+
         """
         try:
             header['BANDID1'] = 'spectrum - background none, weights none, clean no'
@@ -561,14 +595,25 @@ class Process(object):
             log.debug(err)
 
 
-
-
 class IdentifiedTarget(object):
     """Allows for easy storage and manipulation of the targets found.
 
     """
 
     def __init__(self, amplitude, mean, stddev, fwhmg=0, raw_width=None, sample_loc=None):
+        """Initialization of class
+
+        This class stores all the relevant information of an identified target in an image. The idea is to make use
+        of the tools that classes provide to make it easy to handle.
+
+        Args:
+            amplitude (float): Peak value of the target's sample
+            mean (float): Voigt fit center
+            stddev (float): Full width at half maximum of Lorentzian component
+            fwhmg (float): Full width at half maximum of Gaussian component
+            raw_width (int): Width of the sample in dispersion axis.
+            sample_loc (int): Location of the sample in the dispersion direction.
+        """
         self.amplitude = amplitude
         self.mean = mean
         self.stddev = stddev
@@ -577,6 +622,11 @@ class IdentifiedTarget(object):
         self.sample_loc = sample_loc
 
     def print_all(self):
+        """Prints all the attributes of the identified target
+
+        This is mostly for debugging purposes.
+
+        """
         log.debug('Amplitude: %s', self.amplitude)
         log.debug('Mean: %s', self.mean)
         log.debug('Std Deviation: %s', self.stddev)
