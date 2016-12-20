@@ -136,7 +136,7 @@ class MainApp(object):
                     default value is ./
             -s or --search-pattern: the pattern that matches the reduced data that will be processed.
                     the location is self.pattern
-                    default value is fc_
+                    default value is fc\_
             -m or --obs-mode: is one of the predefined observing modes and the options are:
                     0: One or more lamps taken during the beginning or end of the night, i.e. single
                     calibration to all data in that night
@@ -154,8 +154,10 @@ class MainApp(object):
                         science_target_01.fits lamp_001.fits
                         science_target_02.fits lamp_001.fits
                         science_target_03.fits lamp_002.fits
+
                     the location is self.lamp_file
                     default value is lamps.txt
+
             -i or --non-interactive: Interactive Wavelength Solution. Enabled by default
             -o or --output-prefix: Prefix to use to name wavelength calibrated spectrum
             -R or --reference-files: Directory of reference files location
