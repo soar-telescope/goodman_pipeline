@@ -52,11 +52,11 @@
 </div>
 <div class="section" id="goodman-high-throughput-spectrograph">
 <h1>Goodman High Throughput Spectrograph<a class="headerlink" href="#goodman-high-throughput-spectrograph" title="Permalink to this headline">¶</a></h1>
-<p><strong>WARNING</strong> This code is being developed and is not ready for scientific
-use. Always check the branch <strong>standard</strong> which is the one where the latest version is.</p>
-<p>If you are interested in this software please contact me.</p>
-<p>The Goodman High Throughput Spectrograph is an imaging spectrograph operating in
-the SOAR Observatory, Chile. If you wish to know more about the instrument please check the <a class="reference external" href="http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph">SOAR
+<p><strong>WARNING</strong> This is the first release of this pipeline, although we have
+thoroughly tested it there might still be bugs. Please let me know by an
+e-mail to storres [at] ctio noao edu.</p>
+<p>The Goodman High Throughput Spectrograph is an imaging spectrograph if
+you wish to know more about the instrument please check the <a class="reference external" href="http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph">SOAR
 website</a></p>
 <p>To see full documentation please go to the GitHub hosted site for
 <a class="reference external" href="https://simontorres.github.io/goodman/">Goodman</a></p>
@@ -66,190 +66,58 @@ website</a></p>
 reduced, i.e. bias and flat corrected, for that part please use <a class="reference external" href="https://github.com/dsanmartim/goodman_ccdreduction">David
 Sanmartim&#8217;s</a>
 github repository.</p>
-<div class="section" id="redspec-py">
-<h3>redspec.py<a class="headerlink" href="#redspec-py" title="Permalink to this headline">¶</a></h3>
-<p>Spectra extraction and wavelength calibration</p>
+<p>This package have the following capabilities.</p>
+<ul class="simple">
+<li>[x] Identify targets in images</li>
+<li>[x] Trace the target</li>
+<li>[x] Extract the target with background subtraction</li>
+<li>[x] Find the wavelength Solution (Requires User Input)</li>
+<li>[x] Linearize data</li>
+<li>[x] Write wavelength solution to a FITS header</li>
+<li>[x] Create a new file for the wavelength calibrated 1D spectrum</li>
+</ul>
 </div>
+<div class="section" id="how-to-install-it">
+<h2>How to install it?<a class="headerlink" href="#how-to-install-it" title="Permalink to this headline">¶</a></h2>
+<p>Either clone or download this code. If you decide to clone it just do
+...</p>
+<p>Or you can simply go and click <em>here</em> for download a zip file with all
+the script files.</p>
 </div>
 <div class="section" id="how-to-use-it">
 <h2>How to use it?<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h2>
-<p>Place the files in your system&#8217;s <strong>$PATH</strong> variable and then you can
-call it from anywhere in your system</p>
+<p>To get a list of the possible arguments do:</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">this</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">redspec</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>The simplest way of running this pipeline is to go to your data folder,
+already processed with
+<a class="reference external" href="https://github.com/dsanmartim/goodman_ccdreduction">goodman_ccdreduction</a>
+and execute <code class="docutils literal"><span class="pre">redspec.py</span></code></p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">this</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">redspec</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>Will run the following defaults:</p>
+<ul class="simple">
+<li>[x] Observing Mode <strong>0</strong>: One solution applied to all night</li>
+<li>[x] Interactive Mode <strong>True</strong></li>
+<li>[x] Data Path <strong>./</strong></li>
+<li>[x] Destination folder for processed data <strong>./</strong></li>
+<li>[x] Search Pattern <strong>fzh_</strong></li>
+<li>[x] Output prefix <strong>g</strong></li>
+<li>[x] Reference Files Path <em>/path/to/this/repo/</em><strong>refdata/</strong></li>
+<li>[x] Plots Enabled <strong>False</strong></li>
+<li>[x] Reference Lamp <strong>None</strong></li>
+</ul>
 </div>
 <div class="section" id="important-notes">
 <h2>Important Notes<a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h2>
 <p>Needs python2.7 and a newer version of numpy1.12.0 otherwise there will
 be problems with numpy.linspace</p>
+<p>There is a <code class="docutils literal"><span class="pre">requirements.txt</span></code> file that you can use as follow</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">pip2</span><span class="o">.</span><span class="mi">7</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
 </div>
-</div>
-<div class="section" id="development-status">
-<h1>Development Status<a class="headerlink" href="#development-status" title="Permalink to this headline">¶</a></h1>
-<p>The pipeline is organized in three files (this might increase):</p>
-<div class="section" id="id1">
-<h2>redspec.py<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>This module basically organizes the data and sort of makes a plan for
-processing the night.</p>
-<ul class="simple">
-<li>[x] Ability to operate Blue and Red camera. (transparent for the
-user)</li>
-<li>[x] Read and Parse Arguments (uses argparse). Also checks for
-consistency.</li>
-<li>[x] Define Night Class. Reads header information from and creates a
-class that contain important <em>night</em> information.</li>
-<li>[ ] Set mode to be used at the telescope (while observing). Is not
-defined yet if this is really necessary.</li>
-<li>[ ] Organize Full Night. Edits the Night Class by adding SienceObject
-wich will be defined depending on one of the following modes.</li>
-<li>[x] Mode 0: One lamp for all targets in the night.</li>
-<li>[x] Mode 1: One or more lamps per science target.</li>
-<li>[ ] Mode 2: A text file defines what lamps will be used in what
-targets.</li>
-<li>[ ] Mode 3: No lamps, solution will be calculated from skylines.</li>
-</ul>
-<p>For every ScienceObject the module Process is called wich will do the
-actual work.</p>
-</div>
-<div class="section" id="process-py">
-<h2>process.py<a class="headerlink" href="#process-py" title="Permalink to this headline">¶</a></h2>
-<p>In order to work this needs the source&#8217;s path and a ScienceObject
-(class).</p>
-<ul class="simple">
-<li>[x] Read target data and header.</li>
-<li>[ ] For any of the modes that use comparison lamps:</li>
-<li>[x] Read lamps data and header</li>
-<li>[x] Identify single targets (one target in the slit)</li>
-<li>[ ] Identify multiple targets (most of the work done but not tested
-recently)</li>
-<li>[x] Trace spectrum.</li>
-<li>[x] Extract data.<ul>
-<li>[x] Normal Extraction</li>
-<li>[ ] Optimal extraction</li>
-</ul>
-</li>
-<li>[ ] Nothing done for the case when skylines will be used as
-wavelength calibrators.</li>
-</ul>
-<p>After the extraction of the spectrum it will be packed and then parsed
-to the next module.</p>
-</div>
-<div class="section" id="wavelengthcalibration-py">
-<h2>wavelengthCalibration.py<a class="headerlink" href="#wavelengthcalibration-py" title="Permalink to this headline">¶</a></h2>
-<p><strong>TODO</strong>: find a better name</p>
-<ul class="simple">
-<li>[x] Interpret science pack (parsed from previous module)</li>
-<li>[ ] Automatic Wavelength Calibration</li>
-<li>[x] Identify lines</li>
-<li>[x] Estimate wavelength solution from information in the header</li>
-<li>[ ] Find wavelength solution (can be tricky and will take some time)</li>
-<li>[ ] Automatic Wavelength Calibration by template (can also be tricky
-since dispersion is not linear)</li>
-<li>[x] Find wavelength solution interactively.</li>
-<li>[x] Linearize spectrum</li>
-<li>[x] Put wavelength solution in the header and write down files.</li>
-</ul>
-</div>
-</div>
-<div class="section" id="documentation-status-estimate">
-<h1>Documentation Status Estimate<a class="headerlink" href="#documentation-status-estimate" title="Permalink to this headline">¶</a></h1>
-<p>In <strong>Bold</strong> are the classes and in <em>italics</em> are their respective
-methods. The values presented here are based only on my personal
-perception and satisfaction about the status of progress The class
-percentage doesn&#8217;t take in account the completeness of</p>
-<div class="section" id="id2">
-<h2>redspec.py<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><strong>MainApp</strong> 100%</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li><strong>__init__</strong> 0%</li>
-<li><em>get_args</em> 100%</li>
-<li><em>set_night</em> 100%</li>
-<li><em>organize_full_night</em> 100%</li>
-<li><em>convert_time</em> 100%</li>
-<li><em>ra_dec_to_deg</em> 100%</li>
-<li><em>print_spacers</em> 100% - Most likely will be removed</li>
-<li><em>print_progress</em> 100% - Most likely will be removed</li>
-</ul>
-</div></blockquote>
-<ul class="simple">
-<li><strong>Night</strong> 70%</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li><strong>__init__</strong> 0%</li>
-<li><em>add_sci</em> 100%</li>
-<li><em>add_lamp</em> 100%</li>
-<li><em>add_sci_object</em> 100%</li>
-<li><em>is_telescope</em> 100%</li>
-</ul>
-</div></blockquote>
-<ul class="simple">
-<li><strong>ScienceObject</strong> 100%</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li><strong>__init__</strong> 0%</li>
-<li><em>add_lamp</em> 100%</li>
-<li><em>print_all</em> 100%</li>
-</ul>
-</div></blockquote>
-</div>
-<div class="section" id="id3">
-<h2>process.py<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><strong>Process</strong> 100%</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li><strong>__init__</strong> 0%</li>
-<li><em>identify_spectra</em> 100%</li>
-<li><em>trace</em> 100%</li>
-<li><em>mask</em> 100%</li>
-<li><em>extract</em> 100%</li>
-</ul>
-</div></blockquote>
-<ul class="simple">
-<li><strong>IdentifiedTarget</strong> 50%</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li><strong>__init__</strong> 0%</li>
-</ul>
-</div></blockquote>
-</div>
-<div class="section" id="wavelength-py">
-<h2>wavelength.py<a class="headerlink" href="#wavelength-py" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><strong>WavelengthCalibration</strong> 0%</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li><strong>__init__</strong> 0%</li>
-<li><strong>__call__</strong> 0%</li>
-<li><em>get_wsolution</em> 0%</li>
-<li><em>get_calibration_lamp</em> 0%</li>
-<li><em>get_wavelength_solution</em> 0%</li>
-<li><em>get_line_limits</em> 100%</li>
-<li><em>get_line_centers</em> 100%</li>
-<li><em>get_spectral_characteristics</em> 0%</li>
-<li><em>interpolate</em> 100%</li>
-<li><em>recenter_line_by_model</em> 0%</li>
-<li><em>recenter_line_by_data</em> 0%</li>
-<li><em>predicted_wavelength</em> 0%</li>
-<li><em>automatic_wavelength_solution</em> 0%</li>
-<li><em>pixel_axis_cross_correlate</em> 0%</li>
-<li><em>interactive_wavelength_solution</em> 0%</li>
-<li><em>on_click</em> 0%</li>
-<li><em>find_more_lines</em> 0%</li>
-<li><em>update_clicks_plot</em> 0%</li>
-<li><em>plot_raw_over_reference</em> 0%</li>
-<li><em>evaluate_solution</em> 0%</li>
-<li><em>fit_pixel_to_wavelength</em> 0%</li>
-<li><em>linearize_spectrum</em> 0%</li>
-<li><em>add_wavelength_solution</em> 0%</li>
-</ul>
-</div></blockquote>
 <p>Contents:</p>
 <div class="toctree-wrapper compound">
 </div>
@@ -274,24 +142,10 @@ percentage doesn&#8217;t take in account the completeness of</p>
   <ul>
 <li><a class="reference internal" href="#">Welcome to Goodman Spectroscopic Tools&#8217;s documentation!</a></li>
 <li><a class="reference internal" href="#goodman-high-throughput-spectrograph">Goodman High Throughput Spectrograph</a><ul>
-<li><a class="reference internal" href="#what-is-contained-in-this-package">What is contained in this package?</a><ul>
-<li><a class="reference internal" href="#redspec-py">redspec.py</a></li>
-</ul>
-</li>
+<li><a class="reference internal" href="#what-is-contained-in-this-package">What is contained in this package?</a></li>
+<li><a class="reference internal" href="#how-to-install-it">How to install it?</a></li>
 <li><a class="reference internal" href="#how-to-use-it">How to use it?</a></li>
 <li><a class="reference internal" href="#important-notes">Important Notes</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#development-status">Development Status</a><ul>
-<li><a class="reference internal" href="#id1">redspec.py</a></li>
-<li><a class="reference internal" href="#process-py">process.py</a></li>
-<li><a class="reference internal" href="#wavelengthcalibration-py">wavelengthCalibration.py</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#documentation-status-estimate">Documentation Status Estimate</a><ul>
-<li><a class="reference internal" href="#id2">redspec.py</a></li>
-<li><a class="reference internal" href="#id3">process.py</a></li>
-<li><a class="reference internal" href="#wavelength-py">wavelength.py</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
