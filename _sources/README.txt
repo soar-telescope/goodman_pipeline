@@ -20,13 +20,13 @@ github repository.
 
 This package have the following capabilities.
 
--  [x] Identify targets in images
--  [x] Trace the target
--  [x] Extract the target with background subtraction
--  [x] Find the wavelength Solution (Requires User Input)
--  [x] Linearize data
--  [x] Write wavelength solution to a FITS header
--  [x] Create a new file for the wavelength calibrated 1D spectrum
+- Identify targets in images
+- Trace the target
+- Extract the target with background subtraction
+- Find the wavelength Solution (Requires User Input)
+- Linearize data
+- Write wavelength solution to a FITS header
+- Create a new file for the wavelength calibrated 1D spectrum
 
 How to install it?
 ------------------
