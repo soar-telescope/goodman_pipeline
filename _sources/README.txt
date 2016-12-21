@@ -5,12 +5,10 @@ Goodman High Throughput Spectrograph
 thoroughly tested it there might still be bugs. Please let me know by an
 e-mail to storres [at] ctio noao edu.
 
-The Goodman High Throughput Spectrograph is an imaging spectrograph if
+The Goodman High Throughput Spectrograph is an imaging spectrograph, if
 you wish to know more about the instrument please check the `SOAR
 website <http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph>`__
 
-To see full documentation please go to the GitHub hosted site for
-`Goodman <https://simontorres.github.io/goodman/>`__
 
 What is contained in this package?
 ----------------------------------
@@ -33,11 +31,25 @@ This package have the following capabilities.
 How to install it?
 ------------------
 
-Either clone or download this code. If you decide to clone it just do
-...
+Either clone or download this code. If you decide to clone it, just do:
 
-Or you can simply go and click *here* for download a zip file with all
-the script files.
+.. code:: shell
+
+    git clone git@github.com:simontorres/goodman.git
+
+Or you can simply go and `click
+here <https://github.com/simontorres/goodman/archive/master.zip>`__ for
+download a zip file with all the script files.
+
+Requirements
+~~~~~~~~~~~~
+
+This software was developed on Python 2.7, use the ``requirements.txt``
+file to install all dependencies.
+
+.. code:: shell
+
+    sudo -H pip2.7 install -r requirements.txt
 
 How to use it?
 --------------
@@ -59,25 +71,12 @@ and execute ``redspec.py``
 
 Will run the following defaults: 
 
--  [x] Observing Mode **0**: One solution applied to all night 
--  [x] Interactive Mode **True** 
--  [x] Data Path **./** 
--  [x] Destination folder for processed data **./** 
--  [x] Search Pattern **fzh\_** 
--  [x] Output prefix **g** 
--  [x] Reference Files Path */path/to/this/repo/*\ **refdata/** 
--  [x] Plots Enabled **False** 
--  [x] Reference Lamp **None**
-
-Important Notes
----------------
-
-Needs python2.7 and a newer version of numpy1.12.0 otherwise there will
-be problems with numpy.linspace
-
-There is a ``requirements.txt`` file that you can use as follow
-
-.. code:: shell
-
-    pip2.7 install -r requirements.txt
-
+- Observing Mode **0**: One solution applied to all night 
+- Interactive Mode **True**
+- Data Path **./** 
+- Destination folder for processed data **./**
+- Search Pattern **fzh\_** 
+- Output prefix **g** 
+- Reference Files Path [/path/to/this/repo/]**refdata/** 
+- Plots Enabled **False** 
+- Reference Lamp **None**

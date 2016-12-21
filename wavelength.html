@@ -303,7 +303,7 @@ the science image that is being processed.</p>
 the reference line values.</p>
 <p>In the top right side there is a permanent help text with the basic functions plus a short description.</p>
 <p>And finally in the bottom right side you will find a more dynamic plot. It will show a zoomed line when you mark
-one with a click, a scatter plot when you do a fit to the recorded clicks and also will show warnings in case
+one with a click, a scatter plot when you do a fit to the recorded marks and also will show warnings in case
 something is going wrong.</p>
 <p>For future release there is the plan to put all this method as a new class even with an indepentend QT GUI.</p>
 <p class="rubric">Notes</p>
@@ -341,10 +341,11 @@ F3 or a: Find new lines.
 F4: Evaluate solution
 F6 or l: Linearize data although this is done automatically after the wavelength function is fit
 d: deletes closest point
-ctrl+d: deletes all recorded clicks
+ctrl+d: deletes all recorded marks
 ctrl+z: Reverts the action of F3 or a.
-Middle Button Click: records data location.
-Enter: Close figure and apply solution if exists.</p>
+Middle Button Click or m: records data location.
+Enter: Close figure and apply solution if exists.
+Shift+Enter: Close the program with sys.exit(0)</p>
 <p class="rubric">Notes</p>
 <p>This method must be simplified</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -397,11 +398,7 @@ produce funny things when the original data is too steep.</p>
 <dt id="wavelength.WavelengthCalibration.on_click">
 <code class="descname">on_click</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.on_click" title="Permalink to this definition">¶</a></dt>
 <dd><p>Handles Click events for Interactive Mode</p>
-<p>Detects where the click was done and calls the corresponding method. For now it only handles the middle button
-but that might change for future releases. There are two regions of interest as for where a click was done.
-The raw and reference data respectively. For any of such regions it will call the method that recenter the line
-and once the desired value is returned it will be appended to the list that contains all the correspondent line
-positions, raw (pixels) and reference (angstrom)</p>
+<p>Calls the method register_mark</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -488,12 +485,31 @@ is an emission line and then will scan right until it stops decreasing too. Defi
 </dd></dl>
 
 <dl class="method">
-<dt id="wavelength.WavelengthCalibration.update_clicks_plot">
-<code class="descname">update_clicks_plot</code><span class="sig-paren">(</span><em>action=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.update_clicks_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Update the points that represent clicks on lamp plots</p>
+<dt id="wavelength.WavelengthCalibration.register_mark">
+<code class="descname">register_mark</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.register_mark" title="Permalink to this definition">¶</a></dt>
+<dd><p>Marks a line</p>
+<p>Detects where the click was done or m-key was pressed and calls the corresponding method. It handles the middle
+button click and m-key being pressed. There are two regions of interest as for where a click was done.
+The raw and reference data respectively. For any of such regions it will call the method that recenter the line
+and once the desired value is returned it will be appended to the list that contains all the correspondent line
+positions, raw (pixels) and reference (angstrom)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<em>object</em>) &#8211; Click or m-key pressed event</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.update_marks_plot">
+<code class="descname">update_marks_plot</code><span class="sig-paren">(</span><em>action=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.update_marks_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the points that represent marks on lamp plots</p>
 <p>When you mark a line a red dot marks the position of the line at the exact y location of the click, for the x
 location it will use the value obtained by means of the recentering method. There are three possible actions:
-Update the reference plot&#8217;s click, the raw data clicks or delete them all.</p>
+Update the reference plot&#8217;s click, the raw data marks or delete them all.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />

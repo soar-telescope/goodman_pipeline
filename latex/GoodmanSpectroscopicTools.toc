@@ -1,0 +1,7 @@
+\select@language {english}
+\contentsline {chapter}{\numberline {1}Goodman High Throughput Spectrograph}{3}{chapter.1}
+\contentsline {section}{\numberline {1.1}What is contained in this package?}{3}{section.1.1}
+\contentsline {section}{\numberline {1.2}How to install it?}{3}{section.1.2}
+\contentsline {section}{\numberline {1.3}How to use it?}{3}{section.1.3}
+\contentsline {section}{\numberline {1.4}Important Notes}{4}{section.1.4}
+\contentsline {chapter}{\numberline {2}Indices and tables}{5}{chapter.2}

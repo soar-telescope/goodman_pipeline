@@ -49,11 +49,9 @@
 <p><strong>WARNING</strong> This is the first release of this pipeline, although we have
 thoroughly tested it there might still be bugs. Please let me know by an
 e-mail to storres [at] ctio noao edu.</p>
-<p>The Goodman High Throughput Spectrograph is an imaging spectrograph if
+<p>The Goodman High Throughput Spectrograph is an imaging spectrograph, if
 you wish to know more about the instrument please check the <a class="reference external" href="http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph">SOAR
 website</a></p>
-<p>To see full documentation please go to the GitHub hosted site for
-<a class="reference external" href="https://simontorres.github.io/goodman/">Goodman</a></p>
 <div class="section" id="what-is-contained-in-this-package">
 <h2>What is contained in this package?<a class="headerlink" href="#what-is-contained-in-this-package" title="Permalink to this headline">¶</a></h2>
 <p>This repository contains tools for spectroscopy, but after the data is
@@ -73,10 +71,21 @@ github repository.</p>
 </div>
 <div class="section" id="how-to-install-it">
 <h2>How to install it?<a class="headerlink" href="#how-to-install-it" title="Permalink to this headline">¶</a></h2>
-<p>Either clone or download this code. If you decide to clone it just do
-...</p>
-<p>Or you can simply go and click <em>here</em> for download a zip file with all
-the script files.</p>
+<p>Either clone or download this code. If you decide to clone it, just do:</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">simontorres</span><span class="o">/</span><span class="n">goodman</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>Or you can simply go and <a class="reference external" href="https://github.com/simontorres/goodman/archive/master.zip">click
+here</a> for
+download a zip file with all the script files.</p>
+<div class="section" id="requirements">
+<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
+<p>This software was developed on Python 2.7, use the <code class="docutils literal"><span class="pre">requirements.txt</span></code>
+file to install all dependencies.</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip2</span><span class="o">.</span><span class="mi">7</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+</div>
 </div>
 <div class="section" id="how-to-use-it">
 <h2>How to use it?<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h2>
@@ -93,25 +102,16 @@ and execute <code class="docutils literal"><span class="pre">redspec.py</span></
 </div>
 <p>Will run the following defaults:</p>
 <ul class="simple">
-<li>[x] Observing Mode <strong>0</strong>: One solution applied to all night</li>
-<li>[x] Interactive Mode <strong>True</strong></li>
-<li>[x] Data Path <strong>./</strong></li>
-<li>[x] Destination folder for processed data <strong>./</strong></li>
-<li>[x] Search Pattern <strong>fzh_</strong></li>
-<li>[x] Output prefix <strong>g</strong></li>
-<li>[x] Reference Files Path <em>/path/to/this/repo/</em><strong>refdata/</strong></li>
-<li>[x] Plots Enabled <strong>False</strong></li>
-<li>[x] Reference Lamp <strong>None</strong></li>
+<li>Observing Mode <strong>0</strong>: One solution applied to all night</li>
+<li>Interactive Mode <strong>True</strong></li>
+<li>Data Path <strong>./</strong></li>
+<li>Destination folder for processed data <strong>./</strong></li>
+<li>Search Pattern <strong>fzh_</strong></li>
+<li>Output prefix <strong>g</strong></li>
+<li>Reference Files Path [/path/to/this/repo/]**refdata/**</li>
+<li>Plots Enabled <strong>False</strong></li>
+<li>Reference Lamp <strong>None</strong></li>
 </ul>
-</div>
-<div class="section" id="important-notes">
-<h2>Important Notes<a class="headerlink" href="#important-notes" title="Permalink to this headline">¶</a></h2>
-<p>Needs python2.7 and a newer version of numpy1.12.0 otherwise there will
-be problems with numpy.linspace</p>
-<p>There is a <code class="docutils literal"><span class="pre">requirements.txt</span></code> file that you can use as follow</p>
-<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">pip2</span><span class="o">.</span><span class="mi">7</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
-</pre></div>
-</div>
 </div>
 </div>
 
@@ -125,9 +125,11 @@ be problems with numpy.linspace</p>
   <ul>
 <li><a class="reference internal" href="#">Goodman High Throughput Spectrograph</a><ul>
 <li><a class="reference internal" href="#what-is-contained-in-this-package">What is contained in this package?</a></li>
-<li><a class="reference internal" href="#how-to-install-it">How to install it?</a></li>
+<li><a class="reference internal" href="#how-to-install-it">How to install it?</a><ul>
+<li><a class="reference internal" href="#requirements">Requirements</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#how-to-use-it">How to use it?</a></li>
-<li><a class="reference internal" href="#important-notes">Important Notes</a></li>
 </ul>
 </li>
 </ul>

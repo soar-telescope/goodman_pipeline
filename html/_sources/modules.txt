@@ -6,7 +6,6 @@ goodman
 
    linelist
    process
-   redgoodman
    redspec
    wavelength
    wsbuilder
