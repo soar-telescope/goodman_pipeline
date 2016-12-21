@@ -337,7 +337,7 @@ Supported Observing modes are:
             log.error('ValueError: %s', error)
             sys.exit(0)
         except AttributeError as error:
-            log.error('Check that the folder is not Empty')
+            log.warning('Check that the folder is not Empty')
             log.error('AttributeError: %s', error)
             sys.exit(0)
         # type(self.image_collection)
