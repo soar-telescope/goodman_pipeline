@@ -999,7 +999,7 @@ class WavelengthCalibration(object):
                 # print 'Difference w - r ', rw_difference, rline
                 differences = np.append(differences, rw_difference)
 
-            clipping_sigma = 1.5
+            clipping_sigma = 2.
             # print(differences)
             clipped_differences = sigma_clip(differences, sigma=clipping_sigma, iters=5, cenfunc=np.ma.median)
             once_clipped_differences = sigma_clip(differences, sigma=clipping_sigma, iters=1, cenfunc=np.ma.median)

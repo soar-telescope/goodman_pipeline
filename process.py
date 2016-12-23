@@ -543,6 +543,7 @@ class Process(object):
                     plt.xlabel('Pixels (dispersion direction)')
                     plt.ylabel('Intensity (counts)')
                     plt.xlim((0, len(sci)))
+                    # plt.yscale('log')
                     plt.plot(sci, color='k', alpha=1, label='Background Subtracted')
                     plt.plot(unsubtracted, color='k', alpha=0.5, label='Unsubtracted')
                     plt.plot(subtracted_background, color='r', label='Background')
@@ -560,7 +561,7 @@ class Process(object):
             return sci_pack
         else:
             log.error("There are no traces discovered here!!.")
-            return []
+            return None
 
     @staticmethod
     def add_wcs_keys(header):

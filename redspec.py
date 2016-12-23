@@ -73,7 +73,7 @@ class MainApp(object):
             # print(science_object)
             # print(self.night.sci_targets)
             process = Process(science_object, self.args)
-            if self.args.obsmode == 0:
+            if self.args.procmode == 0:
                 if self.wavelength_solution_obj is None:
                     self.extracted_data, self.night.sci_targets[i] = process()
                     if isinstance(self.extracted_data, SciencePack):
@@ -103,9 +103,9 @@ class MainApp(object):
                         log.debug('Incompatibility of solution to new data')
                         time.sleep(3)
                         # TODO(simon): complete this part
-            elif self.args.obsmode == 1:
+            elif self.args.procmode == 1:
                 self.extracted_data, self.night.sci_targets[i] = process()
-                if self.extracted_data != []:
+                if self.extracted_data is not None:
                     wavelength_calibration = WavelengthCalibration(self.extracted_data,
                                                                    self.night.sci_targets[i],
                                                                    self.args)
@@ -113,9 +113,9 @@ class MainApp(object):
                     self.wavelength_solution_obj = wavelength_calibration()
                 else:
                     log.error('No data was extracted from this target.')
-            elif self.args.obsmode == 2:
+            elif self.args.procmode == 2:
                 raise NotImplementedError
-            elif self.args.obsmode == 3:
+            elif self.args.procmode == 3:
                 raise NotImplementedError
             # else:
                 # process = Process(self.night.source, science_object, self.args, self.night.night_wsolution)
@@ -137,7 +137,7 @@ class MainApp(object):
             -s or --search-pattern: the pattern that matches the reduced data that will be processed.
                     the location is self.pattern
                     default value is fc\_
-            -m or --obs-mode: is one of the predefined observing modes and the options are:
+            -m or --proc-mode: is one of the predefined observing modes and the options are:
                     0: One or more lamps taken during the beginning or end of the night, i.e. single
                     calibration to all data in that night
                     1: One or more lamps around every science exposure.
@@ -164,7 +164,7 @@ class MainApp(object):
             --plots-enabled: Show plots for intermediate steps. For debugging only.
 
         Raises:
-            In the case when -m or --obs-mode is set to 3 will requiere the name of file parsed with the -l or
+            In the case when -m or --proc-mode is set to 3 will requiere the name of file parsed with the -l or
             --lamp-file parameter an IOError is raised
 
         """
@@ -204,12 +204,12 @@ Supported Observing modes are:
                             dest='pattern',
                             help="Pattern for matching the goodman's reduced data.")
 
-        parser.add_argument('-m', '--obs-mode',
+        parser.add_argument('-m', '--proc-mode',
                             action='store',
                             default=0,
                             type=int,
-                            metavar='<Observing Mode>',
-                            dest='obsmode',
+                            metavar='<Processing Mode>',
+                            dest='procmode',
                             choices=[0, 1, 2, 3],
                             help='Defines the mode of matching lamps to science targets.')
 
@@ -300,7 +300,7 @@ Supported Observing modes are:
         else:
             if args.destiny[-1] != '/':
                 args.destiny += '/'
-        if args.obsmode == 2:
+        if args.procmode == 2:
             # print(args.source + args.lamp_file)
             if not os.path.isfile(args.source + args.lamp_file):
                 if args.lamp_file == 'lamps.txt':
@@ -358,7 +358,7 @@ Supported Observing modes are:
         return new_night
 
     def organize_full_night(self):
-        """Organize the data according to the Observing Mode
+        """Organize the data according to the Processing Mode
 
         There are four observing modes defined by numbers in Python's style. From 0 to 3:
 
@@ -385,24 +385,24 @@ Supported Observing modes are:
         """
         self.print_spacers("Processing night %s" % self.night.date)
 
-        if self.args.obsmode == 0:
-            self.obsmode_zero()
+        if self.args.procmode == 0:
+            self.procmode_zero()
 
-        if self.args.obsmode == 1:
-            self.obsmode_one()
+        if self.args.procmode == 1:
+            self.procmode_one()
 
-        if self.args.obsmode == 2:
-            self.obsmode_two()
+        if self.args.procmode == 2:
+            self.procmode_two()
 
-        if self.args.obsmode == 3:
-            self.obsmode_three()
+        if self.args.procmode == 3:
+            self.procmode_three()
 
         # science_object.print_all()
         # self.print_spacers(name)
         # print(self.night.sci)
         # print(self.night.lamp)
 
-    def obsmode_zero(self):
+    def procmode_zero(self):
         """Observing/Processing mode 0
 
         In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks
@@ -463,7 +463,7 @@ Supported Observing modes are:
 
         return
 
-    def obsmode_one(self):
+    def procmode_one(self):
         """Observing/Processing mode 1
 
         In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
@@ -512,7 +512,7 @@ Supported Observing modes are:
             self.night.add_sci_object(science_object)
         return
 
-    def obsmode_two(self):
+    def procmode_two(self):
         """Observing/Processing mode 2
 
         In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
@@ -532,7 +532,7 @@ Supported Observing modes are:
                 print(read_file[i])
 
     @staticmethod
-    def obsmode_three():
+    def procmode_three():
         """Observing/Processing Mode 3
 
         In mode 3 no sky lamp is used, instead the science target's spectrum will be calibrated using sky lines.
@@ -665,12 +665,12 @@ class Night(object):
         # self.args.source,
         # self.args.destiny,
         # self.args.pattern,
-        # self.args.obsmode,
+        # self.args.procmode,
         # self.args.lamp_file
         # self.source = args.source
         # self.destiny = args.destiny
         # self.pattern = args.pattern
-        # self.obsmode = args.obsmode
+        # self.procmode = args.procmode
         # self.lamps_file = args.lamps_file
         self.sci_targets = []
         self.telescope = False
