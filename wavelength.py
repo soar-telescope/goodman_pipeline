@@ -68,7 +68,8 @@ class WavelengthCalibration(object):
         self.gratings_dict = {'SYZY_400': 400,
                               'KOSI_600': 600,
                               '930': 930,
-                              'RALC_1200-BLUE': 1200}
+                              'RALC_1200-BLUE': 1200,
+                              'RALC_1200-RED': 1200}
         self.grating_frequency = None
         self.grating_angle = float(0)
         self.camera_angle = float(0)
