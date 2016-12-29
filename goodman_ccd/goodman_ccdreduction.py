@@ -114,9 +114,10 @@ class Main:
         #    download_IERS_A(show_progress=True)
 
         # Memory Limit to be used
-        # self.memlim = 16E9
+        self.memlim = 32E9
         # self.memlim = 1E7
-        self.memlim = 6E6
+        ## For computer with up to 8GB of RAM
+        # self.memlim = 6E6
 
         # Taking some args from argparse method
         self.raw_path = str(os.path.join(self.args.raw_path[0], ''))
@@ -754,5 +755,5 @@ if __name__ == '__main__':
     main = Main()
     main()
 
-else:
-    print('goodman_ccdreduction.py is not being executed as main.')
+# else:
+#    print('goodman_ccdreduction.py is not being executed as main.')
