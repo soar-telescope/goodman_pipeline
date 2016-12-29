@@ -254,7 +254,7 @@ Supported Observing modes are:
 
         parser.add_argument('-R', '--reference-files',
                             action='store',
-                            default='refdata/',
+                            default='../refdata/',
                             metavar='<Reference Dir>',
                             dest='reference_dir',
                             help="Directory of Reference files location")
