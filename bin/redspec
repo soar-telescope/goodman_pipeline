@@ -3,5 +3,5 @@
 import goodman_spec
 
 if __name__ == '__main__':
-    MAIN_APP = goodman_spec.MainApp()
-    MAIN_APP()
+    GOODMAN_SPECTROSCOPY = goodman_spec.MainApp()
+    GOODMAN_SPECTROSCOPY()
