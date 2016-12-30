@@ -217,7 +217,7 @@ Supported Observing modes are:
                             action='store',
                             default='',
                             type=str,
-                            metavar='<Lamp File>',
+                            metavar='<Reference Lamp>',
                             dest='lamp_all_night',
                             help="Name of reference lamp file for mode 0.\
                              If not present, the first one in the list will be selected")
