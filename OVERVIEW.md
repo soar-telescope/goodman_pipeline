@@ -28,7 +28,7 @@ This is a common process for all the data, be it for _imaging_ or for _spectrosc
 are the following:
 
 1. Clean Path: You **MUST NOT** use the same directory for input and output with _redccd_ or you will 
-  end up with your data removed. But don't worry that the program doesn't allow it. Although you are free 
+  end up with your data deleted. But don't worry, the program doesn't allow it. Although you are free 
   to use any other directory, the recommended way is as follows:
   ```shell
   $ redccd [options] /source/path/ /source/path/RED/
@@ -38,8 +38,12 @@ are the following:
 on its headers, therefore they need fixing otherwise the next processes will crash.
 3. Create a table with relevant information of the files present on the source directory and classify 
 them accordingly.
-4. Creates Master Flats, Bias, Night Flats.
+4. Creates Master Flats, Master Bias, process Night Flats.
 5. Reduce Arc and Science Frames.
+
+Finally it delivers reduced images with inside `/source/path/RED` with a prefix currently set
+to `fzh_` where **f** stands for _flat corrected_, **z** for _zero_ or _bias corrected_ and
+**h** for header corrected and data resized.
 
 ### Spectroscopic Reduction: _redspec_
 The spectroscopic reduction process is more complicated and can  be split in many subprocesses but here
