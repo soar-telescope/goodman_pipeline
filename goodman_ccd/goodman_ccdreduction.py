@@ -60,6 +60,7 @@ Thanks to Bruno Quint for all comments and helping.
 
 """
 
+import sys
 import os
 import glob
 import argparse
@@ -523,6 +524,20 @@ class Main:
             print('\n')
 
         if np.size(dic_flatnogrt.values()) > 0:
+            # No grating flats
+            image_filter = df[['filter', 'filter2']][(df['obstype'] == 'FLAT')]
+            image_filter1 = image_filter['filter'].unique()
+            image_filter2 = image_filter['filter2'].unique()
+            print(image_filter1)
+            print(image_filter2)
+            """Notes for develpment
+
+            This block of code combines the flats taken without a grating but does not discriminate whether they are in
+            imaging mode or spectroscopic mode. For imaging mode we need to process them separated by filters. There are
+            two filter wheels but it is not clear for me if they are dedicated to imaging or spectroscopy.
+
+            Need to find a smart way to allow processing the images per filter.
+            """
 
             for grt in dic_flatnogrt.keys():
                 flatnogrt_list = []
