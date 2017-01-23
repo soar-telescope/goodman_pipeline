@@ -525,12 +525,12 @@ class Main:
 
         if np.size(dic_flatnogrt.values()) > 0:
             # No grating flats
-            image_filter = df[['filter', 'filter2']][(df['obstype'] == 'FLAT')]
-            image_filter1 = image_filter['filter'].unique()
-            image_filter2 = image_filter['filter2'].unique()
-            print(image_filter1)
-            print(image_filter2)
-            """Notes for develpment
+            # image_filter = df[['filter', 'filter2']][(df['obstype'] == 'FLAT')]
+            # image_filter1 = image_filter['filter'].unique()
+            # image_filter2 = image_filter['filter2'].unique()
+            # print(image_filter1)
+            # print(image_filter2)
+            """Notes for development
 
             This block of code combines the flats taken without a grating but does not discriminate whether they are in
             imaging mode or spectroscopic mode. For imaging mode we need to process them separated by filters. There are
@@ -540,27 +540,46 @@ class Main:
             """
 
             for grt in dic_flatnogrt.keys():
-                flatnogrt_list = []
-                log.info('Combining and trimming flat frame taken without grating:')
-                for filename in dic_flatnogrt[grt]:
-                    log.info(filename)
-                    ccd = CCDData.read(os.path.join(image_collection.location, '') + filename, unit=u.adu)
-                    ccd = ccdproc.trim_image(ccd, fits_section=ccd.header['TRIMSEC'])
+                no_grating_ic = df[['file','filter', 'filter2']][(df['grating'] == grt) & (df['obstype'] == 'FLAT')]
+                no_grating_filters_1 = no_grating_ic['filter'].unique()
+                no_grating_filters_2 = no_grating_ic['filter2'].unique()
+                for filter_1 in no_grating_filters_1:
+                    for filter_2 in no_grating_filters_2:
+                        # print("filter ", filter_1, filter_2)
+                        no_grating_files = no_grating_ic.file[((df['filter'] == filter_1) & (df['filter2'] == filter_2))]
+                        # print(no_grating_files)
+                        flatnogrt_list = []
+                        log.info('Combining and trimming flat frame taken without grating:')
+                        for filename in no_grating_files:
+                            log.info(filename)
+                            ccd = CCDData.read(os.path.join(image_collection.location, '') + filename, unit=u.adu)
+                            ccd = ccdproc.trim_image(ccd, fits_section=ccd.header['TRIMSEC'])
 
-                    flatnogrt_list.append(ccd)
+                            flatnogrt_list.append(ccd)
 
-                # combining and trimming slit edges
-                self.master_flat_nogrt = ccdproc.combine(flatnogrt_list, method='median', mem_limit=memory_limit,
-                                                         sigma_clip=True,
-                                                         sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0)
-                if slit is True:
-                    self.master_flat_nogrt = ccdproc.trim_image(self.master_flat_nogrt[self.slit1:self.slit2, :])
+                        # combining and trimming slit edges
+                        self.master_flat_nogrt = ccdproc.combine(flatnogrt_list, method='median',
+                                                                 mem_limit=memory_limit,
+                                                                 sigma_clip=True,
+                                                                 sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0)
+                        if slit is True:
+                            self.master_flat_nogrt = ccdproc.trim_image(
+                                self.master_flat_nogrt[self.slit1:self.slit2, :])
 
-                self.master_flat_nogrt_name = 'master_flat_nogrt.fits'
-                self.master_flat_nogrt.write(self.master_flat_nogrt_name, clobber=True)
+                        filter_string = ''
+                        if filter_1 != '<NO FILTER>':
+                            filter_string += '_' + filter_1
+                        if filter_2 != '<NO FILTER>':
+                            filter_string += '_' + filter_2
+                        self.master_flat_nogrt_name = 'master_flat_nogrt%s.fits'%filter_string
+                        # print self.master_flat_nogrt_name
+                        self.master_flat_nogrt.write(self.master_flat_nogrt_name, clobber=True)
 
-                log.info('Done: master flat (taken without grating) have been created --> master_flat_nogrt.fits')
-                print('\n')
+                        log.info(
+                            'Done: master flat (taken without grating) have been created --> ' + self.master_flat_nogrt_name)
+                        print('\n')
+
+
         else:
             log.info('Flat files taken without grating not found or not necessary')
             print('\n')
@@ -678,11 +697,16 @@ class Main:
             if slit is True:
                 ccd = ccdproc.trim_image(ccd[self.slit1:self.slit2, :])
             if self.master_bias is not None:
-                ccd = ccdproc.subtract_bias(ccd, self.master_bias)
-                ccd.header['HISTORY'] = "Bias subtracted."
+                try:
+                    ccd = ccdproc.subtract_bias(ccd, self.master_bias)
+                    ccd.header['HISTORY'] = "Bias subtracted."
+                except ValueError as err:
+                    log.error("Data must be of only one kind. Please check your source data.")
+                    continue
             else:
                 ccd.header['HISTORY'] = "Bias NOT subtracted."
                 log.warning('No bias subtraction!')
+            print self.master_flat.header['filter'], self.master_flat.header['grating'], ccd.header['filter'], ccd.header['grating']
             ccd = ccdproc.flat_correct(ccd, self.master_flat)
             # OBS: cosmic ray rejection is working pretty well by defining gain = 1. It's not working
             # when we use the real gain of the image. In this case the sky level changes by a factor
