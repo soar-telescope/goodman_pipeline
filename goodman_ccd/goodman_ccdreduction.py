@@ -112,7 +112,7 @@ class Main:
 
         # ToDo Check if the file already exist before download it
         # if get_IERS_A_or_workaround() is None:
-        #    download_IERS_A(show_progress=True)
+        #     download_IERS_A(show_progress=True)
 
         # Memory Limit to be used
         self.memlim = 32E9
@@ -462,8 +462,8 @@ class Main:
 
         """
 
-        self.master_flat = []
-        self.master_flat_nogrt = []
+        self.master_flat = {}
+        self.master_flat_nogrt = {}
 
         # Creating dict. of flats. The key values are expected to be: GRATIN_ID and '<NO GRATING>'
         # if there is flat taken w/o grating
@@ -502,21 +502,24 @@ class Main:
                 # combinning and trimming slit edges
                 print('Flat list length: %s' % len(flat_list))
                 if len(flat_list) >= 1:
-                    self.master_flat = ccdproc.combine(flat_list, method='median', mem_limit=memory_limit,
+                    master_flat = ccdproc.combine(flat_list, method='median', mem_limit=memory_limit,
                                                        sigma_clip=True,
                                                        sigma_clip_low_thresh=1.0, sigma_clip_high_thresh=1.0)
+                    # self.master_flat.append(master_flat)
                 else:
                     log.info('Flat list empty')
                     return
                 if slit is True:
                     print('\n Finding slit edges... \n')
-                    self.slit1, self.slit2 = self.find_slitedge(self.master_flat)
-                    self.master_flat = ccdproc.trim_image(self.master_flat[self.slit1:self.slit2, :])
+                    self.slit1, self.slit2 = self.find_slitedge(master_flat)
+                    master_flat = ccdproc.trim_image(self.master_flat[self.slit1:self.slit2, :])
+                # self.master_flat.append(master_flat)
 
-                self.master_flat_name = 'master_flat_' + grt[5:] + '.fits'
-                self.master_flat.write(self.master_flat_name, clobber=True)
+                self.master_flat_name = self.get_flat_name(master_flat.header,get_name_only=True)
+                self.master_flat[self.master_flat_name] = master_flat
+                master_flat.write(self.master_flat_name, clobber=True)
 
-                log.info('Done: master flat has been created --> ' + 'master_flat_' + grt[5:] + '.fits')
+                log.info('Done: master flat has been created --> ' + self.master_flat_name)
                 print('\n')
 
         else:
@@ -525,20 +528,6 @@ class Main:
 
         if np.size(dic_flatnogrt.values()) > 0:
             # No grating flats
-            # image_filter = df[['filter', 'filter2']][(df['obstype'] == 'FLAT')]
-            # image_filter1 = image_filter['filter'].unique()
-            # image_filter2 = image_filter['filter2'].unique()
-            # print(image_filter1)
-            # print(image_filter2)
-            """Notes for development
-
-            This block of code combines the flats taken without a grating but does not discriminate whether they are in
-            imaging mode or spectroscopic mode. For imaging mode we need to process them separated by filters. There are
-            two filter wheels but it is not clear for me if they are dedicated to imaging or spectroscopy.
-
-            Need to find a smart way to allow processing the images per filter.
-            """
-
             for grt in dic_flatnogrt.keys():
                 no_grating_ic = df[['file','filter', 'filter2']][(df['grating'] == grt) & (df['obstype'] == 'FLAT')]
                 no_grating_filters_1 = no_grating_ic['filter'].unique()
@@ -558,25 +547,29 @@ class Main:
                             flatnogrt_list.append(ccd)
 
                         # combining and trimming slit edges
-                        self.master_flat_nogrt = ccdproc.combine(flatnogrt_list, method='median',
+                        master_flat_nogrt = ccdproc.combine(flatnogrt_list, method='median',
                                                                  mem_limit=memory_limit,
                                                                  sigma_clip=True,
                                                                  sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0)
+
                         if slit is True:
-                            self.master_flat_nogrt = ccdproc.trim_image(
+                            master_flat_nogrt = ccdproc.trim_image(
                                 self.master_flat_nogrt[self.slit1:self.slit2, :])
 
-                        filter_string = ''
-                        if filter_1 != '<NO FILTER>':
-                            filter_string += '_' + filter_1
-                        if filter_2 != '<NO FILTER>':
-                            filter_string += '_' + filter_2
-                        self.master_flat_nogrt_name = 'master_flat_nogrt%s.fits'%filter_string
+                        # self.master_flat.append(master_flat_nogrt)
+                        # filter_string = ''
+                        # if filter_1 != '<NO FILTER>':
+                        #     filter_string += '_' + filter_1
+                        # if filter_2 != '<NO FILTER>':
+                        #     filter_string += '_' + filter_2
+
+                        self.master_flat_nogrt_name = self.get_flat_name(master_flat_nogrt.header, get_name_only=True)
+                        self.master_flat[self.master_flat_nogrt_name] = master_flat_nogrt
                         # print self.master_flat_nogrt_name
-                        self.master_flat_nogrt.write(self.master_flat_nogrt_name, clobber=True)
+                        master_flat_nogrt.write(self.master_flat_nogrt_name, clobber=True)
 
                         log.info(
-                            'Done: master flat (taken without grating) have been created --> ' + self.master_flat_nogrt_name)
+                            'Done: master flat have been created --> ' + self.master_flat_nogrt_name)
                         print('\n')
 
 
@@ -613,9 +606,11 @@ class Main:
         # Now I obtained bias... subtracting bias from master flat
         # Testing if master_flats are not empty arrays
         if (not self.master_flat) is False:
-            fccd = ccdproc.subtract_bias(self.master_flat, self.master_bias)
-            fccd.header['HISTORY'] = "Trimmed. Bias subtracted. Flat corrected."
-            fccd.write(self.master_flat_name, clobber=True)
+            for master_flat_name in self.master_flat.keys():
+                master_flat = self.master_flat[master_flat_name]
+                fccd = ccdproc.subtract_bias(master_flat, self.master_bias)
+                fccd.header['HISTORY'] = "Trimmed. Bias subtracted. Flat corrected."
+                fccd.write(master_flat_name, clobber=True)
 
         if (not self.master_flat_nogrt) is False:
             ngccd = ccdproc.subtract_bias(self.master_flat_nogrt, self.master_bias)
@@ -680,9 +675,13 @@ class Main:
                 else:
                     ccd.header['HISTORY'] = "Bias NOT subtracted."
                     log.warning('No bias subtraction!')
-                ccd = ccdproc.flat_correct(ccd, self.master_flat)
-                ccd.header['HISTORY'] = "Trimmed. Flat corrected."
-                ccd.write(prefix + filename, clobber=True)
+                flat_name = self.get_flat_name(ccd.header)
+                if flat_name != False:
+                    ccd = ccdproc.flat_correct(ccd, self.master_flat[flat_name])
+                    ccd.header['HISTORY'] = "Trimmed. Flat corrected."
+                    ccd.write(prefix + filename, clobber=True)
+                else:
+                    log.info('No flat found to process ' + filename)
             log.info('Done --> Arc frames have been reduced.')
             print('\n')
         return
@@ -706,32 +705,63 @@ class Main:
             else:
                 ccd.header['HISTORY'] = "Bias NOT subtracted."
                 log.warning('No bias subtraction!')
-            print self.master_flat.header['filter'], self.master_flat.header['grating'], ccd.header['filter'], ccd.header['grating']
-            ccd = ccdproc.flat_correct(ccd, self.master_flat)
-            # OBS: cosmic ray rejection is working pretty well by defining gain = 1. It's not working
-            # when we use the real gain of the image. In this case the sky level changes by a factor
-            # equal the gain.
-            # Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
-            value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
-            if clean is True:
-                log.info('Cleaning cosmic rays... ')
-                nccd, _ = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
-                                                     gain=float(ccd.header['GAIN']),
-                                                     readnoise=float(ccd.header['RDNOISE']),
-                                                     satlevel=np.inf, sepmed=True, fsmode='median',
-                                                     psfmodel='gaussy', verbose=True)
-                log.info('Cosmic rays have been cleaned ' + prefix + filename + ' --> ' + 'c' + prefix + filename)
-                print('\n')
-                nccd = np.array(nccd, dtype=np.double) / float(ccd.header['GAIN'])
-                ccd.header['HISTORY'] = "Trimmed. Flat corrected."
-                ccd.header['HISTORY'] = "Cosmic rays rejected."
-                fits.writeto('c' + prefix + filename, nccd, ccd.header, clobber=True)
-            elif clean is False:
-                ccd.header['HISTORY'] = "Trimmed, Flat corrected."
-            ccd.write(prefix + filename, clobber=True)
+            # print self.master_flat.header['filter'], self.master_flat.header['grating'], ccd.header['filter'], ccd.header['grating']
+            print ccd.header['filter'], ccd.header['grating']
+
+            flat_name = self.get_flat_name(ccd.header)
+            if flat_name != False:
+                # print flat_name, ccd.header['GRATING']
+                ccd = ccdproc.flat_correct(ccd, self.master_flat[flat_name])
+                # OBS: cosmic ray rejection is working pretty well by defining gain = 1. It's not working
+                # when we use the real gain of the image. In this case the sky level changes by a factor
+                # equal the gain.
+                # Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
+                value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
+                if clean is True:
+                    log.info('Cleaning cosmic rays... ')
+                    nccd, _ = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
+                                                         gain=float(ccd.header['GAIN']),
+                                                         readnoise=float(ccd.header['RDNOISE']),
+                                                         satlevel=np.inf, sepmed=True, fsmode='median',
+                                                         psfmodel='gaussy', verbose=True)
+                    log.info('Cosmic rays have been cleaned ' + prefix + filename + ' --> ' + 'c' + prefix + filename)
+                    print('\n')
+                    nccd = np.array(nccd, dtype=np.double) / float(ccd.header['GAIN'])
+                    ccd.header['HISTORY'] = "Trimmed. Flat corrected."
+                    ccd.header['HISTORY'] = "Cosmic rays rejected."
+                    fits.writeto('c' + prefix + filename, nccd, ccd.header, clobber=True)
+                elif clean is False:
+                    ccd.header['HISTORY'] = "Trimmed, Flat corrected."
+                ccd.write(prefix + filename, clobber=True)
+            else:
+                log.info('No flat found to process ' + filename)
         log.info('Done: Sci/Std frames have been reduced.')
         print('\n')
         return
+
+    def get_flat_name(self, header, get_name_only=False):
+
+        name_text = ''
+        if header['grating'] == '<NO GRATING>':
+            name_text += '_nogrt'
+        else:
+            grating = header['grating'].split('_')[1]
+            name_text += '_' + grating
+        if header['filter'] != '<NO FILTER>':
+            name_text += '_' + header['filter']
+        if header['filter2'] != '<NO FILTER>':
+            name_text += '_' + header['filter2']
+
+        flat_name = 'master_flat' + name_text + '.fits'
+
+        if flat_name in self.master_flat.keys() or get_name_only:
+            log.info('Master flat Name: ' + flat_name)
+            return flat_name
+        else:
+            log.error('There is no flat suitable for use')
+            return False
+
+
 
         # def run(self):
 
