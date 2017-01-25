@@ -87,9 +87,14 @@ __email__ = "dsanmartim@ctio.noao.edu"
 __maintainer__ = "Simon Torres"
 
 
-class Main:
-    def __init__(self):
+class Main(object):
+    """Main class
 
+    """
+    def __init__(self):
+        """Initialization of class
+
+        """
         self.args = self.get_args()
 
         # Soar Geodetic Location and other definitions
@@ -260,7 +265,7 @@ class Main:
     @staticmethod
     def clean_path(path):
         """
-        Clean up FIST file in a directoy. It's not recursive
+        Remove all FITS files in a directory. It's not recursive.
         """
         if os.path.exists(path):
             for _file in glob.glob(os.path.join(path, '*.fits')):
@@ -268,7 +273,6 @@ class Main:
 
     @staticmethod
     def fix_header_and_shape(input_path, output_path, prefix, overwrite=False):
-
         """Remove/Update some  inconvenient parameters in the header of the Goodman FITS
         files. Some of these parameters contain non-printable ASCII characters. The ouptut
         files are created in the output_path. Also convert fits from 3D [1,X,Y] to 2D [X,Y].
@@ -399,20 +403,26 @@ class Main:
 
         twilight_evening = soar.twilight_evening_astronomical(Time(time_first_frame), which='nearest').isot
         twilight_morning = soar.twilight_morning_astronomical(Time(time_last_frame), which='nearest').isot
+        # print(dir(twilight_evening))
+        # print(dir(twilight_morning))
+        # sys.exit(0)
 
         return twilight_evening, twilight_morning
 
     @staticmethod
     def get_night_flats(image_collection, twilight_evening, twilight_morning):
+        """Identify flat images taken at night time
 
-        """
+        Notes:
+            This method is not being used!
 
         Args:
-            image_collection:
+            image_collection (object):
             twilight_evening:
             twilight_morning:
 
         Returns:
+            night_flat_list (list): List of flat file names.
 
         """
 
@@ -432,6 +442,10 @@ class Main:
     @staticmethod
     def get_day_flats(image_collection, twilight_evening, twilight_morning):
         """
+
+        Notes:
+            This method is not being used!
+
         image_collection: ccdproc object
         return: list of flats
         """
@@ -449,7 +463,7 @@ class Main:
         return dayflat_list
 
     def create_daymaster_flat(self, image_collection, twilight_evening, twilight_morning, slit, memory_limit):
-        """
+        """Creates Master Flat of data taken at daytime
 
         Args:
             image_collection:
@@ -572,7 +586,6 @@ class Main:
                             'Done: master flat have been created --> ' + self.master_flat_nogrt_name)
                         print('\n')
 
-
         else:
             log.info('Flat files taken without grating not found or not necessary')
             print('\n')
@@ -580,6 +593,18 @@ class Main:
         return
 
     def create_master_bias(self, image_collection, slit, memory_limit):
+        """Creates master bias
+
+        Notes:
+            It does not discriminate different ROI's
+
+        Args:
+            image_collection (object): ImageFileCollection object that contains all header information of all images.
+            slit (bool): Whether to find slit limits and trim the image.
+            memory_limit (float): Maximum amount of memory to use.
+
+        """
+        # TODO (simon): Make it able to process different ROIs
 
         bias_list = []
         log.info('Combining and trimming bias frames:')
@@ -622,6 +647,17 @@ class Main:
         return
 
     def reduce_nightflats(self, image_collection, twilight_evening, twilight_morning, slit, prefix):
+        """
+
+        Args:
+            image_collection (object): ImageFileCollection object that contains all header information of all images.
+            twilight_evening:
+            twilight_morning:
+            slit (bool): Whether to find slit limits and trim the image.
+            prefix (str): Prefix to name new file.
+
+
+        """
 
         log.info('Reducing flat frames taken during the night...')
 
@@ -687,6 +723,17 @@ class Main:
         return
 
     def reduce_sci(self, image_collection, slit, clean, prefix):
+        """
+
+        Args:
+            image_collection:
+            slit:
+            clean:
+            prefix:
+
+        Returns:
+
+        """
 
         log.info('Reducing Sci/Std frames...')
         for filename in image_collection.files_filtered(obstype='OBJECT'):
@@ -740,7 +787,15 @@ class Main:
         return
 
     def get_flat_name(self, header, get_name_only=False):
+        """
 
+        Args:
+            header:
+            get_name_only:
+
+        Returns:
+
+        """
         name_text = ''
         if header['grating'] == '<NO GRATING>':
             name_text += '_nogrt'

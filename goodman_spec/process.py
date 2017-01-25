@@ -356,6 +356,11 @@ class Process(object):
                                 limits.append(i + 1)
                             else:
                                 limits.append(i)
+                    # check that the number of limits is even
+                    if len(limits) % 2 == 1:
+                        log.error('Uneven number of limits.')
+                        log.info('Removing last limit.')
+                        limits.pop(-1)
                     # print(limits)
                     # colors = ['red', 'green', 'blue']
                     # colors_index = 0
@@ -368,6 +373,7 @@ class Process(object):
                             color = 'r'
                         else:
                             color = 'w'
+                        print(limits, limit_index)
                         plt.axvspan(limits[limit_index], limits[limit_index + 1], color=color, alpha=0.3)
                         # colors_index += 1
                         # if colors_index == 3:
