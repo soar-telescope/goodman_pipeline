@@ -1407,30 +1407,43 @@ class WavelengthSolution(object):
                 return dict
 
     def check_compatibility(self, header=None):
+        """Checks compatibility of new data
+
+        Args:
+            header (object): FITS header object from astropy.io.fits
+
+        Returns:
+            True or False
+
+        """
         if header is not None:
             new_dict = self.set_spectral_features(header)
             for key in new_dict.keys():
                 if self.spectral_dict['camera'] == 'red':
                     if key in ['grating', 'roi', 'instconf', 'wavmode'] and new_dict[key] != self.spectral_dict[key]:
                         log.debug('Keyword: %s does not Match', key.upper())
+                        log.info('%s - Solution: %s - New Data: %s', key.upper(), self.spectral_dict[key], new_dict[key])
                         return False
                     elif key in ['cam_ang',  'grt_ang'] and abs(new_dict[key] - self.spectral_dict[key]) > 1:
                         log.debug('Keyword: %s Lamp: %s Data: %s',
                                   key,
                                   self.spectral_dict[key],
                                   new_dict[key])
+                        log.info('Solution belong to a different Instrument Configuration.')
                         return False
                     else:
                         return True
                 elif self.spectral_dict['camera'] == 'blue':
                     if key in ['grating', 'ccdsum', 'serial_bin', 'parallel_bin']and new_dict[key] != self.spectral_dict[key]:
                         log.debug('Keyword: %s does not Match', key.upper())
+                        log.info('%s - Solution: %s - New Data: %s', key.upper(), self.spectral_dict[key], new_dict[key])
                         return False
                     elif key in ['cam_ang',  'grt_ang'] and abs(float(new_dict[key]) - float(self.spectral_dict[key])) > 1:
                         log.debug('Keyword: %s Lamp: %s Data: %s',
                                   key,
                                   self.spectral_dict[key],
                                   new_dict[key])
+                        log.info('Solution belong to a different Instrument Configuration.')
                         return False
                     else:
                         return True
