@@ -413,7 +413,7 @@ class Process(object):
             self.region[mask_min:mask_max] = value
             return True
         else:
-            log.warning("Region %s:%s is already masked", mask_min, mask_max)
+            log.warning("Region %d:%d is already masked", mask_min, mask_max)
             return False
 
     def extract(self, traces):
