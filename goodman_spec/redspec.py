@@ -17,12 +17,13 @@ import ccdproc as ccd
 import pandas as pd
 import argparse
 import logging
+# from astropy import log
 import warnings
 from process import Process, SciencePack
 from wavelength import WavelengthCalibration
 
 warnings.filterwarnings('ignore')
-FORMAT = '%(asctime)s:%(levelname)s:%(module)s: %(message)s'
+FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
 DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('redspec')
@@ -66,6 +67,7 @@ class MainApp(object):
             NotImplementedError: For observing modes 2 and 3
 
         """
+        #TODO (simon): Add the possibility of managing multi wavelength solutions for different capabilities
         self.organize_full_night()
         # print(len(self.night.sci_targets))
         for i in range(len(self.night.sci_targets)):
