@@ -134,10 +134,6 @@ class Main(object):
         else:
             pass
 
-        # More args from argparse
-        self.clean = self.args.clean
-        self.slit = self.args.slit
-
         # checking the reduction directory
         if not os.path.isdir(self.red_path):
             os.mkdir(self.red_path)
@@ -162,23 +158,23 @@ class Main(object):
         twi_eve, twi_mor = self.get_twilight_time(ic, self.observatory, self.longitude, self.latitude,
                                                   self.elevation, self.timezone, self.description)
         # Create master_flats
-        self.create_daymaster_flat(ic, twi_eve, twi_mor, self.slit, self.memlim)
+        self.create_daymaster_flat(ic, twi_eve, twi_mor, self.args.slit, self.memlim)
 
         # Create master bias
         if len(ic.files_filtered(obstype='BIAS')) > 0:
-            self.create_master_bias(ic, self.slit, self.memlim)
+            self.create_master_bias(ic, self.args.slit, self.memlim)
         else:
             log.info('No BIAS image detected')
             log.warning('The images will be processed but the results will not be optimal')
 
         # Reduce Night Flat frames (if they exist)
-        self.reduce_nightflats(ic, twi_eve, twi_mor, self.slit, prefix='z')
+        self.reduce_nightflats(ic, twi_eve, twi_mor, self.args.slit, prefix='z')
 
         # Reduce Arc frames
-        self.reduce_arc(ic, self.slit, prefix='fz')
+        self.reduce_arc(ic, self.args.slit, prefix='fz')
 
         # Reduce Sci frames
-        self.reduce_sci(ic, self.slit, self.clean, prefix='fz')
+        self.reduce_sci(ic, self.args.slit, self.args.clean, prefix='fz')
 
         return
 
@@ -190,8 +186,9 @@ class Main(object):
         parser.add_argument('-c', '--clean', action='store_true',
                             help="Clean cosmic rays from science data.")
 
+        # removed because is not working properly
         parser.add_argument('-s', '--slit', action='store_true',
-                            help="Find slit edge to make an additional trimming (recommended).")
+                            help="Find slit edge to make an additional trimming (Maintainer: Not recommended for now).")
 
         parser.add_argument('raw_path', metavar='raw_path', type=str, nargs=1,
                             help="Full path to raw data (e.g. /home/jamesbond/soardata/).")
@@ -207,14 +204,15 @@ class Main(object):
 
     @staticmethod
     def fit_spline3(y, order=3, nsum=5):
-        """Fit a cubib spline to an 1D-array of N pixels.
+        """Fit a cubic spline to an 1D-array of N pixels.
 
         Args:
             y (1D array like): A 1-D array of monotonically increasing real values
-            order (int) : order of t
-            nsum (ins)  : number of array elements to be avareged
+            order (int): order of t
+            nsum (int): number of array elements to be averaged
 
-        Returns: It returns a function
+        Returns:
+             f (class): It returns a function
 
         Examples:
 
@@ -228,6 +226,7 @@ class Main(object):
 
         # Fitting
         f = interp1d(x_resampled, y_resampled, kind=order, bounds_error=True)
+        print(dir(f))
 
         # Return function to be constructed with any other x array
         return f
@@ -264,8 +263,8 @@ class Main(object):
 
     @staticmethod
     def clean_path(path):
-        """
-        Remove all FITS files in a directory. It's not recursive.
+        """Remove all FITS files in a directory. It's not recursive.
+
         """
         if os.path.exists(path):
             for _file in glob.glob(os.path.join(path, '*.fits')):
@@ -273,18 +272,17 @@ class Main(object):
 
     @staticmethod
     def fix_header_and_shape(input_path, output_path, prefix, overwrite=False):
-        """Remove/Update some  inconvenient parameters in the header of the Goodman FITS
-        files. Some of these parameters contain non-printable ASCII characters. The ouptut
-        files are created in the output_path. Also convert fits from 3D [1,X,Y] to 2D [X,Y].
+        """Remove/Update some  inconvenient parameters in the header of the Goodman FITS files.
+
+        Some of these parameters contain non-printable ASCII characters. The output
+        files are created in the output_path. Also convert fits from 3D [1, X, Y] to 2D [X, Y].
 
         Args:
             input_path (str): Location of input data.
             output_path (str): Location of output data.
             prefix (str): Prefix to be added in the filename of output data
-            overwrite (bool, optional): If true it it overwrite existing data
+            overwrite (bool): If true it will overwrite existing data. Optional.
 
-        Returns:
-            Fits file with header and shape fixed.
         """
 
         for _file in sorted(glob.glob(os.path.join(input_path, '*.fits'))):
@@ -323,8 +321,7 @@ class Main(object):
                          clobber=overwrite)
             log.info('Header of ' + os.path.basename(_file) + ' has been updated --> ' + prefix
                      + os.path.basename(_file))
-        log.info('Done: All headers have been updated.')
-        print('\n')
+        log.info('Done: All headers have been updated. \n')
         return
 
     def find_slitedge(self, ccddata):
@@ -336,8 +333,10 @@ class Main(object):
         Args:
             ccddata (ccdproc.CCDData): The actual data contained in this ccdproc.CCDData object
 
-        Returns (int):
-            Pixel of slit edge 1 and slit edge 2 (bottom to top of the flat image).
+        Returns:
+            slit1 (int): Bottom limit in pixel value of slit edge.
+            slit2 (int): Top limit in pixel value of slit edge.
+
         """
         # Reading and Collapsing flat in the dispersion direction
         flat_collapsed = np.sum(ccddata, axis=1) / ccddata.shape[1]
@@ -372,27 +371,18 @@ class Main(object):
         """
 
         Args:
-            image_collection:
-            observatory:
-            longitude:
-            latitude:
-            elevation:
-            timezone:
-            description:
+            image_collection (object): ImageFileCollection object that contains all header information of all images.
+            observatory (str): Observatory name.
+            longitude (str): Geographic longitude in string format.
+            latitude (str): Geographic latitude in string format.
+            elevation (int): Geographic elevation in _meters above sea level_
+            timezone (str): Time zone.
+            description (str): Observatory description
 
         Returns:
+            twilight_evening (str): Evening twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+            twilight_morning (str): Morning twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
 
-        Old...
-
-        image_collection: ccdproc object
-        observatory: str, observatory name (e.g. 'Soar Telescope',
-        long: str, dms or deg
-        lat: str, dms or deg
-        elevation: int, meters (define through ellipsoid WGS84)
-        timezone: str, eg. 'UTC'
-        description: str, short description of the observatory
-
-        return: str, twilight evening and twilinght morning (format 'YYYY-MM-DDT00:00:00.00')
         """
         soar_loc = EarthLocation.from_geodetic(longitude, latitude, elevation * u.m, ellipsoid='WGS84')
 
@@ -417,7 +407,7 @@ class Main(object):
             This method is not being used!
 
         Args:
-            image_collection (object):
+            image_collection (object): ImageFileCollection object that contains all header information of all images.
             twilight_evening:
             twilight_morning:
 
@@ -441,10 +431,22 @@ class Main(object):
 
     @staticmethod
     def get_day_flats(image_collection, twilight_evening, twilight_morning):
-        """
+        """Get list of flat images taken in day time.
 
         Notes:
             This method is not being used!
+
+        Args:
+            image_collection (object): ImageFileCollection object that contains all header information of all images.
+            twilight_evening:
+            twilight_morning:
+
+        Returns:
+
+        """
+        """
+
+
 
         image_collection: ccdproc object
         return: list of flats
@@ -466,7 +468,7 @@ class Main(object):
         """Creates Master Flat of data taken at daytime
 
         Args:
-            image_collection:
+            image_collection (object): ImageFileCollection object that contains all header information of all images.
             twilight_evening:
             twilight_morning:
             slit:
@@ -514,7 +516,7 @@ class Main(object):
                     flat_list.append(ccd)
 
                 # combinning and trimming slit edges
-                print('Flat list length: %s' % len(flat_list))
+                log.info('Flat list length: %s' % len(flat_list))
                 if len(flat_list) >= 1:
                     master_flat = ccdproc.combine(flat_list, method='median', mem_limit=memory_limit,
                                                        sigma_clip=True,
@@ -524,12 +526,12 @@ class Main(object):
                     log.info('Flat list empty')
                     return
                 if slit is True:
-                    print('\n Finding slit edges... \n')
+                    log.info('\n Finding slit edges... \n')
                     self.slit1, self.slit2 = self.find_slitedge(master_flat)
-                    master_flat = ccdproc.trim_image(self.master_flat[self.slit1:self.slit2, :])
+                    master_flat = ccdproc.trim_image(master_flat[self.slit1:self.slit2, :])
                 # self.master_flat.append(master_flat)
 
-                self.master_flat_name = self.get_flat_name(master_flat.header,get_name_only=True)
+                self.master_flat_name = self.get_flat_name(master_flat.header, get_name_only=True)
                 self.master_flat[self.master_flat_name] = master_flat
                 master_flat.write(self.master_flat_name, clobber=True)
 
@@ -726,7 +728,7 @@ class Main(object):
         """
 
         Args:
-            image_collection:
+            image_collection (object): ImageFileCollection object that contains all header information of all images.
             slit:
             clean:
             prefix:
@@ -787,13 +789,14 @@ class Main(object):
         return
 
     def get_flat_name(self, header, get_name_only=False):
-        """
+        """Find
 
         Args:
-            header:
-            get_name_only:
+            header (object): FITS header object from astropy.io.fits
+            get_name_only (bool): In order to find the right master flat for an image using its header.
 
         Returns:
+            flat_name (str): Name of master flat in the format: 'master_flat[_grating][_filter1][_filter2].fits'
 
         """
         name_text = ''
@@ -833,22 +836,22 @@ class Main(object):
         # twi_eve, twi_mor = self.get_twilight_time(ic, self.observatory, self.longitude, self.latitude,
         #                                           self.elevation, self.timezone, self.description)
         # Create master_flats
-        # self.create_daymaster_flat(ic, twi_eve, twi_mor, self.slit, self.memlim)
+        # self.create_daymaster_flat(ic, twi_eve, twi_mor, self.args.slit, self.memlim)
 
         # Create master bias
         # if len(ic.files_filtered(obstype='BIAS')) > 0:
-        # self.create_master_bias(ic, self.slit, self.memlim)
+        # self.create_master_bias(ic, self.args.slit, self.memlim)
         # else:
         # log.info('No bias detected')
 
         # Reduce Night Flat frames (if they exist)
-        # self.reduce_nightflats(ic, twi_eve, twi_mor, self.slit, prefix='z')
+        # self.reduce_nightflats(ic, twi_eve, twi_mor, self.args.slit, prefix='z')
 
         # Reduce Arc frames
-        # self.reduce_arc(ic, self.slit, prefix='fz')
+        # self.reduce_arc(ic, self.args.slit, prefix='fz')
 
         # Reduce Sci frames
-        # self.reduce_sci(ic, self.slit, self.clean, prefix='fz')
+        # self.reduce_sci(ic, self.args.slit, self.clean, prefix='fz')
 
         # return
 
