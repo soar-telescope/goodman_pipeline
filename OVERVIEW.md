@@ -5,11 +5,11 @@
 This is a set of tools for data reduction of the Goodman High Throughput Spectrograph's data. 
 This instrument is currently in operation at Soar Telescope in northern Chile. 
 
-Although we try to make the pipeline as _flexible_ as possible but at the same time it has a high level of
-automatization is important that you follow our _Observing Guidelines_ while obtaining the data.
-Those guidelines were thought from an experienced point of view, in other words it considers what
-works best for most scientific programs. For instance, if you are doing radial velocity studies
-you will need to have, ideally, the science target _"bracketed"_ by comparison lamps or if you don't
+Although we have been trying to make the pipeline as _flexible_ as possible and although it has 
+a high level of automatization is important that you follow our _Observing Guidelines_ while 
+obtaining the data. Those guidelines consider what we believe it will work best for most 
+scientific programs. For instance, if you are doing radial velocity studies you will need 
+to have, ideally, the science target _"bracketed"_ by comparison lamps or if you don't
 care much about radial velocity precision you would apply one single wavelength solution to all the
 data obtained throughout the night.
  
@@ -27,7 +27,7 @@ an astrometric module.
 This is a common process for all the data, be it for _imaging_ or for _spectroscopy_. The steps 
 are the following:
 
-1. Clean Path: You **MUST NOT** use the same directory for input and output with _redccd_ or you will 
+1. Clean Path: You **MUST use different directory for input and output** with _redccd_ or you may 
   end up with your data deleted. But don't worry, the program doesn't allow it. Although you are free 
   to use any other directory, the recommended way is as follows:
   ```shell
@@ -46,7 +46,7 @@ to `fzh_` where **f** stands for _flat corrected_, **z** for _zero_ or _bias cor
 **h** for header corrected and data resized.
 
 ### Spectroscopic Reduction: _redspec_
-The spectroscopic reduction process is more complicated and can  be split in many subprocesses but here
+The spectroscopic reduction process is more complicated and can  be split in many subprocesses. Here
 you will only find a summary, if you want detailed information please visit the code documentation page.
 The steps are the following:
 
