@@ -67,7 +67,7 @@ class MainApp(object):
             NotImplementedError: For observing modes 2 and 3
 
         """
-        #TODO (simon): Add the possibility of managing multi wavelength solutions for different capabilities
+        # TODO (simon): Add the possibility of managing multi wavelength solutions for different capabilities
         self.organize_full_night()
         # print(len(self.night.sci_targets))
         for i in range(len(self.night.sci_targets)):
@@ -297,8 +297,8 @@ Supported Observing modes are:
             try:
                 os.path.os.makedirs(args.destiny)
                 log.info('Destination folder created: %s', args.destiny)
-            except:
-                pass
+            except OSError as err:
+                log.error(err)
         else:
             if args.destiny[-1] != '/':
                 args.destiny += '/'
@@ -433,13 +433,17 @@ Supported Observing modes are:
                                                & (self.image_collection['obstype'] == 'COMP')].index.tolist()
             # Need to define a better method for selecting the lamp
             # Now is just picking the first in the list
-            if self.args.lamp_all_night is not '':
-                lamp = self.args.lamp_all_night
-                lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
-            else:
-                lamp_index = comp_files[0]
-                lamp = self.image_collection.file.iloc[lamp_index]
-            log.debug("Lamp File: %s", lamp)
+            try:
+                if self.args.lamp_all_night is not '':
+                    lamp = self.args.lamp_all_night
+                    lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
+                else:
+                    lamp_index = comp_files[0]
+                    lamp = self.image_collection.file.iloc[lamp_index]
+                log.debug("Lamp File: %s", lamp)
+            except IndexError:
+                log.error("There are no comparison lamps available.")
+                sys.exit('Bye!')
 
             lamp_name = self.image_collection.object.iloc[lamp_index]
             lamp_grating = self.image_collection.grating.iloc[lamp_index]
@@ -455,7 +459,7 @@ Supported Observing modes are:
                 # print(comp_files)
                 # lamp_index = comp_files[0]
                 # lamp_name = self.image_collection.object.iloc[lamp_index]
-                lamp_grating = self.image_collection.grating.iloc[lamp_index]
+                # lamp_grating = self.image_collection.grating.iloc[lamp_index]
                 # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
                 # lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
                 #                                        self.image_collection.ra.iloc[lamp_index])
