@@ -60,7 +60,7 @@ Thanks to Bruno Quint for all comments and helping.
 
 """
 
-import sys
+# import sys
 import os
 import glob
 import argparse
@@ -73,7 +73,7 @@ from scipy.interpolate import interp1d
 from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
 from astroplan import Observer
-from astroplan import get_IERS_A_or_workaround, download_IERS_A
+# from astroplan import get_IERS_A_or_workaround, download_IERS_A
 
 import ccdproc
 from ccdproc import ImageFileCollection
@@ -122,7 +122,7 @@ class Main(object):
         # Memory Limit to be used
         self.memlim = 32E9
         # self.memlim = 1E7
-        ## For computer with up to 8GB of RAM
+        # For computer with up to 8GB of RAM
         # self.memlim = 6E6
 
         # Taking some args from argparse method
@@ -151,6 +151,10 @@ class Main(object):
         # Fixing header and shape of raw data
         self.fix_header_and_shape(self.raw_path, self.red_path, prefix='h_', overwrite=True)
 
+        # remove saturated data
+        if self.args.remove_saturated:
+            self.filter_saturated_flats()
+
         # Create image file collection for raw data
         ic = ImageFileCollection(self.red_path)
 
@@ -178,17 +182,32 @@ class Main(object):
 
         return
 
-    def get_args(self):
+    @staticmethod
+    def get_args():
         # Parsing Arguments ---
         parser = argparse.ArgumentParser(description="PyGoodman CCD Reduction - CCD reductions for "
                                                      "Goodman spectroscopic data")
 
-        parser.add_argument('-c', '--clean', action='store_true',
+        parser.add_argument('-c', '--clean',
+                            action='store_true',
                             help="Clean cosmic rays from science data.")
 
         # removed because is not working properly
         parser.add_argument('-s', '--slit', action='store_true',
                             help="Find slit edge to make an additional trimming (Maintainer: Not recommended for now).")
+
+        # remove saturated data
+        parser.add_argument('--remove-saturated',
+                            action='store_true',
+                            dest='remove_saturated',
+                            help="Remove images above saturation level")
+
+        parser.add_argument('--saturation',
+                            action='store',
+                            default=55000.,
+                            dest='saturation_limit',
+                            metavar='<Value>',
+                            help="Saturation limit. Default to 55.000 ADU (counts)")
 
         parser.add_argument('raw_path', metavar='raw_path', type=str, nargs=1,
                             help="Full path to raw data (e.g. /home/jamesbond/soardata/).")
@@ -324,6 +343,30 @@ class Main(object):
         log.info('Done: All headers have been updated. \n')
         return
 
+    def filter_saturated_flats(self):
+        """Remove saturated flats
+
+        This method grabs all the images of OBSTYPE equal FLAT then reads the data and gets the value of its maximum and
+        then if this maximum is larger than the threshold which by default is 55000 the image will be removed from the
+        reduction directory therefore it will not exist for further processing. Note that is not the original image the
+        the one being deleted. The threshold can be changed by parsing the argument --saturation in the command line
+        plus the new value.
+        """
+        keywords = ['obstype']
+        ic = ImageFileCollection(self.red_path, keywords)
+        ic_pandas = ic.summary.to_pandas()
+        flats = ic_pandas['file'][ic_pandas['obstype'] == 'FLAT']
+        for flat_image in flats:
+            if os.path.isfile(flat_image):
+                data = fits.getdata(flat_image)
+                data_max = np.max(data)
+                # print(data_max)
+                if float(data_max) > float(self.args.saturation_limit):
+                    os.remove(flat_image)
+                    log.warning(flat_image + ' Removed.')
+            else:
+                log.error("Image %s doesn't exist", flat_image)
+
     def find_slitedge(self, ccddata):
         """Find slit edge by inspecting signal variation in the spatial direction
         of flat frames. The spatial direction is assumed to be axis=0 (or y axis
@@ -368,7 +411,7 @@ class Main(object):
 
     @staticmethod
     def get_twilight_time(image_collection, observatory, longitude, latitude, elevation, timezone, description):
-        """
+        """Get end/start time of evening/morning twilight
 
         Args:
             image_collection (object): ImageFileCollection object that contains all header information of all images.
@@ -393,9 +436,6 @@ class Main(object):
 
         twilight_evening = soar.twilight_evening_astronomical(Time(time_first_frame), which='nearest').isot
         twilight_morning = soar.twilight_morning_astronomical(Time(time_last_frame), which='nearest').isot
-        # print(dir(twilight_evening))
-        # print(dir(twilight_morning))
-        # sys.exit(0)
 
         return twilight_evening, twilight_morning
 
@@ -442,14 +482,8 @@ class Main(object):
             twilight_morning:
 
         Returns:
+            dayflat_list (list): File names of flat taken during daytime.
 
-        """
-        """
-
-
-
-        image_collection: ccdproc object
-        return: list of flats
         """
         df = image_collection.summary.to_pandas()
 
@@ -518,9 +552,12 @@ class Main(object):
                 # combinning and trimming slit edges
                 log.info('Flat list length: %s' % len(flat_list))
                 if len(flat_list) >= 1:
-                    master_flat = ccdproc.combine(flat_list, method='median', mem_limit=memory_limit,
-                                                       sigma_clip=True,
-                                                       sigma_clip_low_thresh=1.0, sigma_clip_high_thresh=1.0)
+                    master_flat = ccdproc.combine(flat_list,
+                                                  method='median',
+                                                  mem_limit=memory_limit,
+                                                  sigma_clip=True,
+                                                  sigma_clip_low_thresh=1.0,
+                                                  sigma_clip_high_thresh=1.0)
                     # self.master_flat.append(master_flat)
                 else:
                     log.info('Flat list empty')
@@ -545,13 +582,14 @@ class Main(object):
         if np.size(dic_flatnogrt.values()) > 0:
             # No grating flats
             for grt in dic_flatnogrt.keys():
-                no_grating_ic = df[['file','filter', 'filter2']][(df['grating'] == grt) & (df['obstype'] == 'FLAT')]
+                no_grating_ic = df[['file', 'filter', 'filter2']][(df['grating'] == grt) & (df['obstype'] == 'FLAT')]
                 no_grating_filters_1 = no_grating_ic['filter'].unique()
                 no_grating_filters_2 = no_grating_ic['filter2'].unique()
                 for filter_1 in no_grating_filters_1:
                     for filter_2 in no_grating_filters_2:
                         # print("filter ", filter_1, filter_2)
-                        no_grating_files = no_grating_ic.file[((df['filter'] == filter_1) & (df['filter2'] == filter_2))]
+                        no_grating_files = no_grating_ic.file[((df['filter'] == filter_1) &
+                                                               (df['filter2'] == filter_2))]
                         # print(no_grating_files)
                         flatnogrt_list = []
                         log.info('Combining and trimming flat frame taken without grating:')
@@ -563,10 +601,12 @@ class Main(object):
                             flatnogrt_list.append(ccd)
 
                         # combining and trimming slit edges
-                        master_flat_nogrt = ccdproc.combine(flatnogrt_list, method='median',
-                                                                 mem_limit=memory_limit,
-                                                                 sigma_clip=True,
-                                                                 sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0)
+                        master_flat_nogrt = ccdproc.combine(flatnogrt_list,
+                                                            method='median',
+                                                            mem_limit=memory_limit,
+                                                            sigma_clip=True,
+                                                            sigma_clip_low_thresh=3.0,
+                                                            sigma_clip_high_thresh=3.0)
 
                         if slit is True:
                             master_flat_nogrt = ccdproc.trim_image(
@@ -714,7 +754,7 @@ class Main(object):
                     ccd.header['HISTORY'] = "Bias NOT subtracted."
                     log.warning('No bias subtraction!')
                 flat_name = self.get_flat_name(ccd.header)
-                if flat_name != False:
+                if flat_name is not False:
                     ccd = ccdproc.flat_correct(ccd, self.master_flat[flat_name])
                     ccd.header['HISTORY'] = "Trimmed. Flat corrected."
                     ccd.write(prefix + filename, clobber=True)
@@ -750,15 +790,15 @@ class Main(object):
                     ccd.header['HISTORY'] = "Bias subtracted."
                 except ValueError as err:
                     log.error("Data must be of only one kind. Please check your source data.")
+                    log.error("ValueError: " + str(err))
                     continue
             else:
                 ccd.header['HISTORY'] = "Bias NOT subtracted."
                 log.warning('No bias subtraction!')
-            # print self.master_flat.header['filter'], self.master_flat.header['grating'], ccd.header['filter'], ccd.header['grating']
-            print ccd.header['filter'], ccd.header['grating']
+            # print ccd.header['filter'], ccd.header['grating']
 
             flat_name = self.get_flat_name(ccd.header)
-            if flat_name != False:
+            if flat_name is not False:
                 # print flat_name, ccd.header['GRATING']
                 ccd = ccdproc.flat_correct(ccd, self.master_flat[flat_name])
                 # OBS: cosmic ray rejection is working pretty well by defining gain = 1. It's not working
@@ -818,8 +858,6 @@ class Main(object):
         else:
             log.error('There is no flat suitable for use')
             return False
-
-
 
         # def run(self):
 
