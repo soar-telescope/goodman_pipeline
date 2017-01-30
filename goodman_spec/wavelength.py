@@ -8,13 +8,14 @@ to the image's header following the FITS standard.
 # TODO Reformat _ Re-order imports (first "import ...", then "from ... import ..." alphabetically)
 # TODO (simon): Discuss this because there are other rules that will probably conflict with this request.
 from __future__ import print_function
+import sys
 import logging
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
+# import matplotlib.image as mpimg
 import matplotlib.ticker as mtick
 import numpy as np
 import scipy.interpolate
-import time
+# import time
 from astropy.io import fits
 from astropy.stats import sigma_clip
 from scipy import signal
@@ -248,8 +249,8 @@ class WavelengthCalibration(object):
             lines_candidates (list): A common list containing pixel values at approximate location of lines.
         """
         filtered_data = np.where(np.abs(self.lamp_data > self.lamp_data.min() + 0.05 * self.lamp_data.max()),
-                                        self.lamp_data,
-                                        0)
+                                 self.lamp_data,
+                                 None)
         peaks = signal.argrelmax(filtered_data, axis=0, order=6)[0]
         lines_center = self.recenter_lines(self.lamp_data, peaks)
 
@@ -280,6 +281,9 @@ class WavelengthCalibration(object):
         x_size = data.shape[0]
         median = np.median(data)
         for line in lines:
+            # TODO (simon): Check if this definition is valid, so far is not critical
+            left_limit = 0
+            right_limit = 1
             condition = True
             left_index = int(line)
             while condition and left_index - 2 > 0:
@@ -367,12 +371,10 @@ class WavelengthCalibration(object):
         except KeyError:
             self.binning = self.lamp_header['PARAM22']
             # serial_binning = self.lamp_header['PARAM18']
-
-
         # self.pixel_count = len(self.lamp_data)
         # Calculations
         # TODO (simon): Check whether is necessary to remove the self.slit_offset variable
-        self.alpha = self.grating_angle + 0. # self.slit_offset
+        self.alpha = self.grating_angle + 0.
         self.beta = self.camera_angle - self.grating_angle
         self.center_wavelength = 10 * (1e6 / self.grating_frequency) * (
             np.sin(self.alpha * np.pi / 180.) + np.sin(self.beta * np.pi / 180.))
@@ -454,9 +456,8 @@ class WavelengthCalibration(object):
             try:
                 self.ax4.cla()
                 self.ax4.relim()
-            except:
-                pass
-
+            except NameError as err:
+                log.error(err)
 
             self.ax4.set_title('Reference Data Clicked Line')
             self.ax4.set_xlabel('Wavelength (Angstrom)')
@@ -483,19 +484,14 @@ class WavelengthCalibration(object):
             try:
                 self.ax4.cla()
                 self.ax4.relim()
-            except:
-                pass
-                # self.ax4.cla()
-                # self.ax4.relim()
-
-                # except:
-                #     pass
+            except NameError as err:
+                log.error(err)
             self.ax4.set_title('Raw Data Clicked Line')
             self.ax4.set_xlabel('Pixel Axis')
             self.ax4.set_ylabel('Intensity (Counts)')
             self.ax4_plots = self.ax4.plot(sub_x, sub_y, color='k', label='Data')
             self.ax4_rlv = self.ax4.axvline(raw_line_value, linestyle='-', color='r', label='Line Center')
-            self.ax4_com = self.ax4.axvline(center_of_mass, linestyle='--',color='b', label='Centroid')
+            self.ax4_com = self.ax4.axvline(center_of_mass, linestyle='--', color='b', label='Centroid')
             self.ax4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
             self.ax4.legend(loc=3, framealpha=0.5)
             self.i_fig.canvas.draw()
@@ -611,7 +607,10 @@ class WavelengthCalibration(object):
         for rline in self.reference_data.get_line_list_by_name(self.lamp_name):
             self.ax3.axvline(rline, linestyle=':', color='r')
         if reference_plots_enabled:
-            self.ax3.plot(self.reference_solution[0], self.reference_solution[1], color='k', label='Reference Lamp Data')
+            self.ax3.plot(self.reference_solution[0],
+                          self.reference_solution[1],
+                          color='k',
+                          label='Reference Lamp Data')
         self.ax3.legend(loc=2)
 
         # Update y limits to have an extra 5% to top and bottom
@@ -717,8 +716,8 @@ class WavelengthCalibration(object):
             figure_x, figure_y = self.i_fig.transFigure.inverted().transform((event.x, event.y))
             if self.raw_data_bb.contains(figure_x, figure_y):
                 log.debug('Deleting raw point')
-                # print abs(self.raw_data_marks_x - event.xdata)
-                closer_index = int(np.argmin(abs(self.raw_data_marks_x - event.xdata)))
+                # print abs(self.raw_data_marks_x - event.xdata) a[:] =
+                closer_index = int(np.argmin([abs(list_val - event.xdata) for list_val in self.raw_data_marks_x]))
                 # print 'Index ', closer_index
                 if len(self.raw_data_marks_x) == len(self.reference_marks_x):
                     self.raw_data_marks_x.pop(closer_index)
@@ -745,7 +744,7 @@ class WavelengthCalibration(object):
                 # print 'reference ', self.reference_marks_x, self.re
                 # print self.reference_marks_x
                 # print abs(self.reference_marks_x - event.xdata)
-                closer_index = int(np.argmin(abs(self.reference_marks_x - event.xdata)))
+                closer_index = int(np.argmin([abs(list_val - event.xdata) for list_val in self.reference_marks_x]))
                 if len(self.raw_data_marks_x) == len(self.reference_marks_x):
                     self.raw_data_marks_x.pop(closer_index)
                     self.raw_data_marks_y.pop(closer_index)
@@ -767,8 +766,8 @@ class WavelengthCalibration(object):
                         self.update_marks_plot('raw_data')
                     
             elif self.contextual_bb.contains(figure_x, figure_y):
-                closer_index_ref = int(np.argmin(abs(self.reference_marks_x - event.ydata)))
-                closer_index_raw = int(np.argmin(abs(self.raw_data_marks_x - event.xdata)))
+                closer_index_ref = int(np.argmin([abs(list_val - event.ydata) for list_val in self.reference_marks_x]))
+                closer_index_raw = int(np.argmin([abs(list_val - event.xdata) for list_val in self.raw_data_marks_x]))
                 # print(closer_index_raw, closer_index_ref)
                 self.raw_data_marks_x.pop(closer_index_raw)
                 self.raw_data_marks_y.pop(closer_index_raw)
@@ -826,11 +825,11 @@ class WavelengthCalibration(object):
                 self.display_onscreen_message(message)
         elif event.key == 'm':
             self.register_mark(event)
-        elif event.key == 'shift+enter':
-            log.info('Pressed Shift + Enter. Closing the program')
+        elif event.key == 'ctrl+q':
+            log.info('Pressed Ctrl+q. Closing the program')
             sys.exit(0)
         else:
-            print(event.key)
+            log.debug("Key Pressed: ", event.key)
             pass
 
     def register_mark(self, event):
@@ -878,6 +877,7 @@ class WavelengthCalibration(object):
         if self.wsolution is not None:
             wlines = self.wsolution(self.lines_center)
             for i in range(len(wlines)):
+                # [abs(list_val - wlines[i]) for list_val in self.reference_data.get_line_list_by_name(self.lamp_name)]
                 closer_index = np.argmin(abs(self.reference_data.get_line_list_by_name(self.lamp_name) - wlines[i]))
                 rline = self.reference_data.get_line_list_by_name(self.lamp_name)[closer_index]
                 rw_difference = wlines[i] - rline
@@ -926,8 +926,8 @@ class WavelengthCalibration(object):
                 try:
                     self.points_raw.remove()
                     self.ax1.relim()
-                except:
-                    pass
+                except ValueError as err:
+                    log.error(err)
             self.points_raw, = self.ax1.plot(self.raw_data_marks_x,
                                              self.raw_data_marks_y,
                                              linestyle='None',
@@ -1021,13 +1021,20 @@ class WavelengthCalibration(object):
                     try:
                         self.ax4.cla()
                         self.ax4.relim()
-                    except:
-                        pass
-                self.ax4.set_title('RMS Error %.3f \n %d points (%d rejected)' % (self.rms_error, npoints, n_rejections))
+                    except NameError as err:
+                        log.error(err)
+
+                self.ax4.set_title('RMS Error %.3f \n %d points (%d rejected)' % (self.rms_error,
+                                                                                  npoints,
+                                                                                  n_rejections))
                 self.ax4.set_ylim(once_clipped_differences.min(), once_clipped_differences.max())
                 # self.ax4.set_ylim(- rms_error, 2 * rms_error)
                 self.ax4.set_xlim(np.min(self.lines_center), np.max(self.lines_center))
-                self.ax4_rlv = self.ax4.scatter(self.lines_center, differences, marker='x', color='k', label='Rejected Points')
+                self.ax4_rlv = self.ax4.scatter(self.lines_center,
+                                                differences,
+                                                marker='x',
+                                                color='k',
+                                                label='Rejected Points')
                 self.ax4_com = self.ax4.axhspan(clipped_differences.min(),
                                                 clipped_differences.max(),
                                                 color='k',
@@ -1045,7 +1052,7 @@ class WavelengthCalibration(object):
                     else:
                         increment_color = 'white'
                     message = r'$\Delta$ RMSE %+.3f' % rms_error_difference
-                    #self.display_onscreen_message(message=message, color=increment_color)
+                    # self.display_onscreen_message(message=message, color=increment_color)
                     self.ax4.text(0.05, 0.95,
                                   message,
                                   verticalalignment='top',
@@ -1140,7 +1147,7 @@ class WavelengthCalibration(object):
         if self.wsolution is not None:
             x_axis = self.wsolution(pixel_axis)
             new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
-            tck = scipy.interpolate.splrep(x_axis, data, s=0 )
+            tck = scipy.interpolate.splrep(x_axis, data, s=0)
             linearized_data = scipy.interpolate.splev(new_x_axis, tck, der=0)
             smoothed_linearized_data = signal.medfilt(linearized_data)
             if plots:
@@ -1249,7 +1256,7 @@ class WavelengthCalibration(object):
             full_message = []
             split_message = message.split(' ')
             line_length = 0
-            new_line = ''
+            # new_line = ''
             e = 0
             for i in range(len(split_message)):
                 # print(i, len(split_message))
@@ -1258,7 +1265,7 @@ class WavelengthCalibration(object):
                     new_line = ' '.join(split_message[e:i])
                     # print(new_line, len(new_line))
                     full_message.append(new_line)
-                    new_line = ''
+                    # new_line = ''
                     line_length = 0
                     e = i
                 if i == len(split_message) - 1:
@@ -1328,6 +1335,10 @@ class WavelengthCalibration(object):
 
 
 class WavelengthSolution(object):
+    """Contains all relevant information of a given wavelength solution
+
+
+    """
     def __init__(self,
                  solution_type=None,
                  model_name=None,
@@ -1372,42 +1383,60 @@ class WavelengthSolution(object):
 
     @staticmethod
     def set_spectral_features(header):
+        """Creates dictionary that defines the instrument configuration
+
+        Both Blue and Red Camera produce slightly different FITS headers being the red camera the one that provides
+        more precise and better information. This method will recognize the camera and create the dictionary accordingly
+
+        Args:
+            header:
+
+        Returns:
+
+        """
         if header is None:
             log.error('Header has not been parsed')
         else:
             try:
                 log.debug('Red Camera')
-                dict = {'camera': 'red',
-                        'grating': header['GRATING'],
-                        'roi': header['ROI'],
-                        'filter1': header['FILTER'],
-                        'filter2': header['FILTER2'],
-                        'slit': header['SLIT'],
-                        'instconf': header['INSTCONF'],
-                        'wavmode': header['WAVMODE'],
-                        'cam_ang': header['CAM_ANG'],
-                        'grt_ang': header['GRT_ANG']}
+                spectral_dict = {'camera': 'red',
+                                 'grating': header['GRATING'],
+                                 'roi': header['ROI'],
+                                 'filter1': header['FILTER'],
+                                 'filter2': header['FILTER2'],
+                                 'slit': header['SLIT'],
+                                 'instconf': header['INSTCONF'],
+                                 'wavmode': header['WAVMODE'],
+                                 'cam_ang': header['CAM_ANG'],
+                                 'grt_ang': header['GRT_ANG']}
+
                 # for key in dict.keys():
-                    # print(key, dict[key])
-                return dict
+                # print(key, dict[key])
+                return spectral_dict
             except KeyError:
                 log.debug('Blue Camera')
-                dict = {'camera': 'blue',
-                        'grating': header['GRATING'],
-                        'ccdsum': header['CCDSUM'],
-                        'filter1': header['FILTER'],
-                        'filter2': header['FILTER2'],
-                        'slit': header['SLIT'],
-                        'serial_bin': header['PARAM18'],
-                        'parallel_bin': header['PARAM22'],
-                        'cam_ang': header['CAM_ANG'],
-                        'grt_ang': header['GRT_ANG']}
+                spectral_dict = {'camera': 'blue',
+                                 'grating': header['GRATING'],
+                                 'ccdsum': header['CCDSUM'],
+                                 'filter1': header['FILTER'],
+                                 'filter2': header['FILTER2'],
+                                 'slit': header['SLIT'],
+                                 'serial_bin': header['PARAM18'],
+                                 'parallel_bin': header['PARAM22'],
+                                 'cam_ang': header['CAM_ANG'],
+                                 'grt_ang': header['GRT_ANG']}
+
                 # for key in dict.keys():
-                    # print(key, dict[key])
-                return dict
+                # print(key, dict[key])
+                return spectral_dict
 
     def check_compatibility(self, header=None):
         """Checks compatibility of new data
+
+        A wavelength solution is stored as an object (this class). As an attribute of this class there is a dictionary
+        that contains critical parameters of the spectrum with which the wavelength solution was found. In order to
+        apply the same solution to another spectrum its header has to be parsed and then the parameters are compared
+        in a hierarchic way.
 
         Args:
             header (object): FITS header object from astropy.io.fits
@@ -1431,12 +1460,15 @@ class WavelengthSolution(object):
                                   new_dict[key])
                         log.info('Solution belong to a different Instrument Configuration.')
                         return False
-                    else:
-                        return True
+                    # else:
+                    #     return True
                 elif self.spectral_dict['camera'] == 'blue':
                     if key in ['grating', 'ccdsum', 'serial_bin', 'parallel_bin']and new_dict[key] != self.spectral_dict[key]:
                         log.debug('Keyword: %s does not Match', key.upper())
-                        log.info('%s - Solution: %s - New Data: %s', key.upper(), self.spectral_dict[key], new_dict[key])
+                        log.info('%s - Solution: %s - New Data: %s',
+                                 key.upper(),
+                                 self.spectral_dict[key],
+                                 new_dict[key])
                         return False
                     elif key in ['cam_ang',  'grt_ang'] and abs(float(new_dict[key]) - float(self.spectral_dict[key])) > 1:
                         log.debug('Keyword: %s Lamp: %s Data: %s',
@@ -1445,8 +1477,8 @@ class WavelengthSolution(object):
                                   new_dict[key])
                         log.info('Solution belong to a different Instrument Configuration.')
                         return False
-                    else:
-                        return True
+                    # else:
+                    #     return True
             return True
         else:
             log.error('Header has not been parsed')
