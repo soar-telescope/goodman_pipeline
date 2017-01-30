@@ -4,25 +4,18 @@
 
 This is a set of tools for data reduction of the Goodman High Throughput Spectrograph's data. 
 This instrument is currently in operation at Soar Telescope in northern Chile. 
-b1quint-overview
+
 Although we have been trying to make the pipeline as _flexible_ as possible and although it has 
 a high level of automatization is important that you follow our _Observing Guidelines_ while 
 obtaining the data. Those guidelines consider what we believe it will work best for most 
 scientific programs. For instance, if you are doing radial velocity studies you will need 
 to have, ideally, the science target _"bracketed"_ by comparison lamps or if you don't
+care much about radial velocity precision you would apply one single wavelength solution to all the
+data obtained throughout the night.
 
 The software is developed in Python 2.7. We use conventions and tools to improve efficiency of development,
 such as. _Python Enhancement Proposal_ (PEP8, PEP256), GitHub, sphinx, etc. The goal is to have a well-written
 well-documented code so that anyone could jump in to contribute as developer. We also kept in mind scalability.
-
-Although we try to make the pipeline as _flexible_ as possible but at the same time it has a high level of
-automatization is important that you follow our _Observing Guidelines_ while obtaining the data.
-Those guidelines were thought from an experienced point of view, in other words it considers what
-works best for most scientific programs. For instance, if you are doing radial velocity studies
-you will need to have, ideally, the science target _"bracketed"_ by comparison lamps or if you don't
-development
-care much about radial velocity precision you would apply one single wavelength solution to all the
-data obtained throughout the night.
  
 ## Exactly, how it works?
 
