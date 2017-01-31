@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>goodman_ccd.flat_arcorrection &#8212; Goodman Pipelines 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for goodman_ccd.flat_arcorrection</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numpy.ma</span> <span class="k">as</span> <span class="nn">ma</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">astropy.stats</span> <span class="k">import</span> <span class="n">sigma_clip</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">matplotlib</span> <span class="k">import</span> <span class="n">gridspec</span>
+<span class="kn">from</span> <span class="nn">numpy.polynomial.chebyshev</span> <span class="k">import</span> <span class="n">chebfit</span><span class="p">,</span> <span class="n">chebval</span>
+<span class="kn">from</span> <span class="nn">numpy.polynomial.legendre</span> <span class="k">import</span> <span class="n">legfit</span><span class="p">,</span> <span class="n">legval</span>
+<span class="kn">from</span> <span class="nn">scipy.interpolate</span> <span class="k">import</span> <span class="n">interp1d</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="k">import</span> <span class="n">Pool</span>
+
+
+<div class="viewcode-block" id="fitting"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.flat_arcorrection.fitting">[docs]</a><span class="k">def</span> <span class="nf">fitting</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">function</span><span class="o">=</span><span class="s1">&#39;Legendre&#39;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">41</span><span class="p">):</span>
+    <span class="c1"># prepare for masking arrays - &#39;conventional&#39; arrays won&#39;t do it</span>
+    <span class="c1"># data = np.ma.array(data)</span>
+
+    <span class="c1"># Assuring that the output yfit has always same number of points of the input</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">yfit</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">function</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;legendre&#39;</span><span class="p">:</span>
+        <span class="n">yfit</span> <span class="o">=</span> <span class="n">chebval</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">chebfit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="n">order</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">function</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;chebychev&#39;</span><span class="p">:</span>
+        <span class="n">yfit</span> <span class="o">=</span> <span class="n">legval</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">legfit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">deg</span><span class="o">=</span><span class="n">order</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="n">function</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;spline3&#39;</span><span class="p">:</span>
+        <span class="n">nsum</span> <span class="o">=</span> <span class="mi">5</span>
+
+        <span class="n">y_resampled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">nsum</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">%</span> <span class="n">nsum</span><span class="p">,</span> <span class="n">nsum</span><span class="p">)])</span>
+        <span class="n">x_resampled</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">y_resampled</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+
+        <span class="c1"># Masking invalid elements (e.g. with nan)</span>
+        <span class="n">y_resampled</span> <span class="o">=</span> <span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">y_resampled</span><span class="p">)</span>
+
+        <span class="c1"># Fitting</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">interp1d</span><span class="p">(</span><span class="n">x_resampled</span><span class="p">,</span> <span class="n">y_resampled</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">order</span><span class="p">,</span> <span class="n">bounds_error</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+        <span class="c1"># Function with the original x array</span>
+        <span class="n">yfit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">f</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+        <span class="c1"># TODO eliminar esse plots quando a rotina estiver funcionando</span>
+        <span class="c1"># plotting Spline to see results</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Original&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x_resampled</span><span class="p">,</span> <span class="n">y_resampled</span><span class="p">,</span> <span class="s1">&#39;bo&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Resampled&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">yfit</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Fit&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c1"># Calculating chi2</span>
+    <span class="n">npar</span> <span class="o">=</span> <span class="n">order</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">sigma2</span> <span class="o">=</span> <span class="mf">1.</span> <span class="o">/</span> <span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">*</span> <span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">y</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">chi2_dof</span> <span class="o">=</span> <span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">yfit</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">sigma2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">size</span> <span class="o">-</span> <span class="n">npar</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">yfit</span><span class="p">,</span> <span class="n">chi2_dof</span></div>
+
+
+<div class="viewcode-block" id="sigma_clipping"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.flat_arcorrection.sigma_clipping">[docs]</a><span class="k">def</span> <span class="nf">sigma_clipping</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">low_rej</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">high_rej</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
+    <span class="c1"># lower = - low_rej * data.std()</span>
+    <span class="c1"># upper = + high_rej * data.std()</span>
+    <span class="c1"># Just the good data (it masks vector outside the interval -lower and upper)</span>
+    <span class="c1"># good_data = np.ma.masked_outside(data, lower, upper)</span>
+    <span class="c1"># Just the clipped data</span>
+    <span class="c1"># bad_data = np.ma.masked_inside(data, lower, upper)</span>
+
+    <span class="n">good_data</span> <span class="o">=</span> <span class="n">sigma_clip</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sigma_lower</span><span class="o">=</span><span class="n">low_rej</span><span class="p">,</span> <span class="n">sigma_upper</span><span class="o">=</span><span class="n">high_rej</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cenfunc</span><span class="o">=</span><span class="n">ma</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+    <span class="n">bad_data</span> <span class="o">=</span> <span class="n">good_data</span><span class="o">.</span><span class="n">mask</span> <span class="o">*</span> <span class="n">data</span>
+    <span class="n">bad_data</span> <span class="o">=</span> <span class="n">ma</span><span class="o">.</span><span class="n">masked_where</span><span class="p">(</span><span class="n">bad_data</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">bad_data</span><span class="p">)</span>
+
+    <span class="c1"># Creating masks</span>
+    <span class="n">good_mask</span> <span class="o">=</span> <span class="n">good_data</span> <span class="o">/</span> <span class="n">good_data</span>
+    <span class="n">bad_mask</span> <span class="o">=</span> <span class="n">bad_data</span> <span class="o">/</span> <span class="n">bad_data</span>
+
+    <span class="k">return</span> <span class="n">good_mask</span><span class="p">,</span> <span class="n">bad_mask</span></div>
+
+
+<div class="viewcode-block" id="cor_flat"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.flat_arcorrection.cor_flat">[docs]</a><span class="k">def</span> <span class="nf">cor_flat</span><span class="p">(</span><span class="n">flatname</span><span class="p">,</span> <span class="n">function</span><span class="o">=</span><span class="s1">&#39;Chebychev&#39;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">55</span><span class="p">,</span> <span class="n">clipping</span><span class="o">=</span><span class="s1">&#39;sigma_clipping&#39;</span><span class="p">,</span> <span class="n">niter</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+             <span class="n">low_rej</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">high_rej</span><span class="o">=</span><span class="mf">2.5</span><span class="p">):</span>
+    <span class="c1"># Input and trimming data</span>
+    <span class="n">ccddata</span><span class="p">,</span> <span class="n">hdr</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="n">flatname</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ignore_missing_end</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">axis0</span><span class="p">,</span> <span class="n">axis1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ccddata</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ccddata</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">ccdfit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="n">axis0</span><span class="p">,</span> <span class="n">axis1</span><span class="p">])</span>
+    <span class="c1"># ccdfit = np.zeros(axis1)</span>
+
+    <span class="c1"># Collapsing 2D image into a single vector (a big aperture of all lines)</span>
+    <span class="n">xpix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ccddata</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ccddata</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)):</span>
+    <span class="c1">#for j in np.arange(977, 1300, 1):</span>
+
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">ccddata</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]</span>
+
+        <span class="c1"># Fitting function to the spectrum of the flat before any clipping</span>
+        <span class="c1"># fit, chi2_dof = fitting(xpix, spec, function=function, order=order)</span>
+        <span class="n">chi2_vet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
+        <span class="n">fit_vet</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="n">order</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">spec</span><span class="p">)])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">fit</span><span class="p">,</span> <span class="n">chi2_dof</span> <span class="o">=</span> <span class="n">fitting</span><span class="p">(</span><span class="n">xpix</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">function</span><span class="o">=</span><span class="n">function</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">fit_vet</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">fit</span>
+            <span class="n">chi2_vet</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">chi2_dof</span>
+
+        <span class="c1"># Considering min of chi2</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">chi2_vet</span> <span class="o">==</span> <span class="nb">min</span><span class="p">(</span><span class="n">chi2_vet</span><span class="p">))))</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">fit</span> <span class="o">=</span> <span class="n">fit_vet</span><span class="p">[</span><span class="n">index</span><span class="p">,</span> <span class="p">:]</span>
+
+        <span class="n">Plot</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">Plot</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">xorder</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chi2_vet</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xorder</span><span class="p">,</span> <span class="n">chi2_vet</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Res&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="c1"># Residual</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">spec</span> <span class="o">-</span> <span class="n">fit</span>
+
+        <span class="c1"># Buffering quantities before clipping</span>
+        <span class="n">firstspec</span> <span class="o">=</span> <span class="n">spec</span>
+        <span class="n">firstresidual</span> <span class="o">=</span> <span class="n">residual</span>
+
+        <span class="n">bad_mask</span> <span class="o">=</span> <span class="n">ma</span><span class="o">.</span><span class="n">asanyarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">residual</span><span class="p">)))</span>
+
+        <span class="k">if</span> <span class="n">clipping</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;sigma_clipping&#39;</span> <span class="ow">and</span> <span class="n">niter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="n">niter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">iters</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">niter</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">good_mask</span><span class="p">,</span> <span class="n">bad_mask</span> <span class="o">=</span> <span class="n">sigma_clipping</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">low_rej</span><span class="o">=</span><span class="n">low_rej</span><span class="p">,</span> <span class="n">high_rej</span><span class="o">=</span><span class="n">high_rej</span><span class="p">)</span>
+
+                <span class="c1"># Filtering spec for good data</span>
+                <span class="n">spec</span> <span class="o">=</span> <span class="n">spec</span> <span class="o">*</span> <span class="n">good_mask</span>
+
+                <span class="c1"># Fitting after  clipping iteration</span>
+                <span class="n">fit</span><span class="p">,</span> <span class="n">chi2_dof</span> <span class="o">=</span> <span class="n">fitting</span><span class="p">(</span><span class="n">xpix</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">function</span><span class="o">=</span><span class="n">function</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">)</span>
+
+                <span class="c1"># print fit - firstfit</span>
+                <span class="n">residual</span> <span class="o">=</span> <span class="n">spec</span> <span class="o">-</span> <span class="n">fit</span>
+        <span class="nb">print</span> <span class="s1">&#39;Line: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># newrow = np.asarray(fit)</span>
+        <span class="c1"># ccdfit = np.vstack([ccdfit, newrow])</span>
+
+        <span class="n">ccdfit</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">fit</span>
+
+        <span class="c1"># Plotting things</span>
+        <span class="n">plot</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="n">plot</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+
+            <span class="n">gs</span> <span class="o">=</span> <span class="n">gridspec</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">ax0</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sharex</span><span class="o">=</span><span class="n">ax0</span><span class="p">)</span>
+
+            <span class="n">firstresidual</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">firstresidual</span> <span class="o">/</span> <span class="n">firstspec</span><span class="p">)</span>
+            <span class="n">residual</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="p">(</span><span class="n">residual</span> <span class="o">/</span> <span class="n">spec</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">clipping</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;sigma_clipping&#39;</span> <span class="ow">and</span> <span class="n">niter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ax0</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xpix</span><span class="p">,</span> <span class="n">firstspec</span> <span class="o">*</span> <span class="n">bad_mask</span><span class="p">,</span> <span class="s1">&#39;rx&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Clipped&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xpix</span><span class="p">,</span> <span class="n">firstresidual</span> <span class="o">*</span> <span class="n">bad_mask</span><span class="p">,</span> <span class="s1">&#39;rx&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="n">ax0</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xpix</span><span class="p">,</span> <span class="n">firstspec</span><span class="p">,</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Flat Spectrum&#39;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">ax0</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xpix</span><span class="p">,</span> <span class="n">fit</span><span class="p">,</span> <span class="s1">&#39;g-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">function</span><span class="o">.</span><span class="n">title</span><span class="p">())</span> <span class="o">+</span> <span class="s1">&#39; - Order &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">order</span><span class="p">))</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xpix</span><span class="p">,</span> <span class="n">residual</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;grey&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="c1"># Labelling things</span>
+            <span class="n">ax0</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="n">fancybox</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">framealpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">ax0</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Chi2 = &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">chi2_dof</span><span class="p">))</span>
+            <span class="n">ax0</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;ADU&#39;s&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Column [pixel]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;residual [%]&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+
+            <span class="n">ax0</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">xpix</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">150</span><span class="p">,</span> <span class="n">xpix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">150</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">residual</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">residual</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span> <span class="n">residual</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">residual</span><span class="o">.</span><span class="n">std</span><span class="p">())</span>
+
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="c1"># ccdfit = ccdfit[1:,:]</span>
+
+    <span class="nb">dir</span> <span class="o">=</span> <span class="s1">&#39;/home/davidsanm/PyCharmProjects/GoodmanDataReduction/2016-03-20/RED/TST/&#39;</span>
+    <span class="n">fits</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="nb">dir</span> <span class="o">+</span> <span class="s1">&#39;c_master_flat_600.fits&#39;</span><span class="p">,</span> <span class="n">ccdfit</span><span class="p">,</span> <span class="n">hdr</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="c1"># flat = &#39;/home/davidsanm/PyCharmProjects/GoodmanDataReduction/2016-03-20/RED/TST/master_flat_600.fits&#39;</span>
+    <span class="c1"># flat_nogrt = &#39;/home/davidsanm/PyCharmProjects/GoodmanDataReduction/2016-03-20/RED/master_flat_nogrt.fits&#39;</span>
+    <span class="c1"># cor_flat(flat, function=&#39;Legendre&#39;, order=41, clipping=&#39;sigma_clipping&#39;, niter=1, low_rej=2.5, high_rej=2.5)</span>
+
+    <span class="n">flat</span> <span class="o">=</span> <span class="s1">&#39;/home/davidsanm/PyCharmProjects/GoodmanDataReduction/2016-03-20/RED/TST/master_flat_600.fits&#39;</span>
+    <span class="n">function</span> <span class="o">=</span> <span class="s1">&#39;Legendre&#39;</span>
+    <span class="n">order</span> <span class="o">=</span> <span class="mi">35</span>
+    <span class="n">clipping</span> <span class="o">=</span> <span class="s1">&#39;sigma_clipping&#39;</span>
+    <span class="n">niter</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">low_rej</span> <span class="o">=</span> <span class="mf">2.5</span>
+    <span class="n">high_rej</span> <span class="o">=</span> <span class="mf">1.5</span>
+    <span class="n">input_params</span> <span class="o">=</span> <span class="n">flat</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">Pool</span><span class="p">(</span><span class="n">processes</span><span class="o">=</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">())</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">pool</span><span class="o">.</span><span class="n">map_async</span><span class="p">(</span><span class="n">cor_flat</span><span class="p">(</span><span class="n">flat</span><span class="p">))</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">1) With pool.map_async</span>
+<span class="sd">real	1m15.996s</span>
+<span class="sd">user	1m23.126s</span>
+<span class="sd">sys	1m9.093s</span>
+
+<span class="sd">2) With pool.map</span>
+
+<span class="sd">+ 5m</span>
+
+<span class="sd">3) Without multiprocessing</span>
+<span class="sd">real	4m37.276s</span>
+<span class="sd">user	8m1.631s</span>
+<span class="sd">sys	27m15.178s</span>
+
+<span class="sd">&#39;&#39;&#39;</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Simon Torres.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,46 @@
+goodman_ccd package
+===================
+
+Submodules
+----------
+
+goodman_ccd.fix_header module
+-----------------------------
+
+.. automodule:: goodman_ccd.fix_header
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+goodman_ccd.flat_arcorrection module
+------------------------------------
+
+.. automodule:: goodman_ccd.flat_arcorrection
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+goodman_ccd.goodman_ccdreduction module
+---------------------------------------
+
+.. automodule:: goodman_ccd.goodman_ccdreduction
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+goodman_ccd.trim_slitedge module
+--------------------------------
+
+.. automodule:: goodman_ccd.trim_slitedge
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: goodman_ccd
+    :members:
+    :undoc-members:
+    :show-inheritance:
