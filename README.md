@@ -44,7 +44,7 @@ This software was developed on Python 2.7, use the `requirements.txt` file to in
 sudo -H pip2.7 install -r requirements.txt
 ```
 
-Remember that if you do not have super user priviledges, you can still install all the requirements by adding 
+Remember that if you do not have super user privileges, you can still install all the requirements by adding 
 the `--users` flag. There is also an option of [installing it using different virtual environments](http://docs.python-guide.org/en/latest/dev/virtualenvs/) or even using [Anaconda](https://www.continuum.io/downloads).
 
 
