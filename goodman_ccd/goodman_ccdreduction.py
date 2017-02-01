@@ -63,6 +63,7 @@ Thanks to Bruno Quint for all comments and helping.
 
 # import sys
 import os
+import re
 import glob
 import argparse
 import numpy as np
@@ -341,7 +342,7 @@ class Main(object):
                          clobber=overwrite)
             log.info('Header of ' + os.path.basename(_file) + ' has been updated --> ' + prefix
                      + os.path.basename(_file))
-        log.info('Done: All headers have been updated. \n')
+        log.info('Done: All headers have been updated.')
         return
 
     def filter_saturated_flats(self):
@@ -830,24 +831,59 @@ class Main(object):
         return
 
     def get_flat_name(self, header, get_name_only=False):
-        """Find
+        """Reproduce the name of a suitable master flat and check if exist.
+
+        Using the header information it construct the name of the master flat. For Custom mode it also reads the
+        GRT_ANG and CAM_ANG values and calculates the center wavelength which will be included in the name after MODE
+        in nanometers.
+
+        Examples:
+            master_flat_2100_CUSTOM_650nm.fits
 
         Args:
             header (object): FITS header object from astropy.io.fits
             get_name_only (bool): In order to find the right master flat for an image using its header.
 
         Returns:
-            flat_name (str): Name of master flat in the format: 'master_flat[_grating][_filter1][_filter2].fits'
+            flat_name (str): Name of master flat in the format: 'master_flat[_grating][_mode][_filter1][_filter2].fits'
 
         """
         name_text = ''
+        grating = None
+        # Grating part of the flat name
         if header['grating'] == '<NO GRATING>':
-            name_text += '_nogrt'
+            try:
+                if header['wavmode'] != 'Imaging':
+                    name_text += '_nogrt'
+            except KeyError:
+                log.error('KeyError: Blue Camera')
         else:
             grating = header['grating'].split('_')[1]
             name_text += '_' + grating
+            # Mode for the grating part of the flat name
+            try:
+                mode = header['wavmode'].split(' ')[1]
+                name_text += '_' + mode.upper()
+            except KeyError:
+                log.error('KeyError: Blue Camera')
+            except IndexError:
+                # it means it is Custom mode
+                mode = header['wavmode']
+                if mode == 'Custom':
+                    grating_frequency = int(re.sub('[a-zA-Z-]', '', grating))
+                    alpha = float(header['grt_ang'])
+                    beta = float(header['cam_ang']) - float(header['grt_ang'])
+                    center_wavelength = (1e6 / grating_frequency) * (
+                        np.sin(alpha * np.pi / 180.) + np.sin(beta * np.pi / 180.))
+                    log.error(center_wavelength)
+                    name_text += '_' + mode.upper() + '_{:d}nm'.format(int(round(center_wavelength)))
+                else:
+                    log.error('WAVMODE: %s not supported', mode)
+
+        # First filter wheel part of the flat name
         if header['filter'] != '<NO FILTER>':
             name_text += '_' + header['filter']
+        # Second filter wheel part of the flat name
         if header['filter2'] != '<NO FILTER>':
             name_text += '_' + header['filter2']
 
