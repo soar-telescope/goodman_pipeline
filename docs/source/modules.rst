@@ -4,8 +4,5 @@ goodman
 .. toctree::
    :maxdepth: 4
 
-   linelist
-   process
-   redspec
-   wavelength
-   wsbuilder
+   goodman_ccd
+   goodman_spec

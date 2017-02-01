@@ -38,9 +38,10 @@ It can be be executed in terminal running:
 
     $ python goodman_ccdreduction.py [options] raw_path red_path
 
-More information abotu the options and how to use it can be otained by using...
+More information about the options and how to use it can be obtained by using...
 
     $ python goodman_ccdreduction.py --help
+
 or
     $ python goodman_ccdreduction.py -h
 
@@ -418,7 +419,7 @@ class Main(object):
             observatory (str): Observatory name.
             longitude (str): Geographic longitude in string format.
             latitude (str): Geographic latitude in string format.
-            elevation (int): Geographic elevation in _meters above sea level_
+            elevation (int): Geographic elevation in meters above sea level
             timezone (str): Time zone.
             description (str): Observatory description
 
