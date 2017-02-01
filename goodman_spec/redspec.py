@@ -17,12 +17,13 @@ import ccdproc as ccd
 import pandas as pd
 import argparse
 import logging
+# from astropy import log
 import warnings
 from process import Process, SciencePack
 from wavelength import WavelengthCalibration
 
 warnings.filterwarnings('ignore')
-FORMAT = '%(asctime)s:%(levelname)s:%(module)s: %(message)s'
+FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
 DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('redspec')
@@ -66,6 +67,7 @@ class MainApp(object):
             NotImplementedError: For observing modes 2 and 3
 
         """
+        # TODO (simon): Add the possibility of managing multi wavelength solutions for different capabilities
         self.organize_full_night()
         # print(len(self.night.sci_targets))
         for i in range(len(self.night.sci_targets)):
@@ -217,7 +219,7 @@ Supported Observing modes are:
                             action='store',
                             default='',
                             type=str,
-                            metavar='<Lamp File>',
+                            metavar='<Reference Lamp>',
                             dest='lamp_all_night',
                             help="Name of reference lamp file for mode 0.\
                              If not present, the first one in the list will be selected")
@@ -254,7 +256,7 @@ Supported Observing modes are:
 
         parser.add_argument('-R', '--reference-files',
                             action='store',
-                            default='refdata/',
+                            default='../refdata/',
                             metavar='<Reference Dir>',
                             dest='reference_dir',
                             help="Directory of Reference files location")
@@ -295,8 +297,8 @@ Supported Observing modes are:
             try:
                 os.path.os.makedirs(args.destiny)
                 log.info('Destination folder created: %s', args.destiny)
-            except:
-                pass
+            except OSError as err:
+                log.error(err)
         else:
             if args.destiny[-1] != '/':
                 args.destiny += '/'
@@ -431,13 +433,17 @@ Supported Observing modes are:
                                                & (self.image_collection['obstype'] == 'COMP')].index.tolist()
             # Need to define a better method for selecting the lamp
             # Now is just picking the first in the list
-            if self.args.lamp_all_night is not '':
-                lamp = self.args.lamp_all_night
-                lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
-            else:
-                lamp_index = comp_files[0]
-                lamp = self.image_collection.file.iloc[lamp_index]
-            log.debug("Lamp File: %s", lamp)
+            try:
+                if self.args.lamp_all_night is not '':
+                    lamp = self.args.lamp_all_night
+                    lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
+                else:
+                    lamp_index = comp_files[0]
+                    lamp = self.image_collection.file.iloc[lamp_index]
+                log.debug("Lamp File: %s", lamp)
+            except IndexError:
+                log.error("There are no comparison lamps available.")
+                sys.exit('Bye!')
 
             lamp_name = self.image_collection.object.iloc[lamp_index]
             lamp_grating = self.image_collection.grating.iloc[lamp_index]
@@ -453,7 +459,7 @@ Supported Observing modes are:
                 # print(comp_files)
                 # lamp_index = comp_files[0]
                 # lamp_name = self.image_collection.object.iloc[lamp_index]
-                lamp_grating = self.image_collection.grating.iloc[lamp_index]
+                # lamp_grating = self.image_collection.grating.iloc[lamp_index]
                 # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
                 # lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
                 #                                        self.image_collection.ra.iloc[lamp_index])

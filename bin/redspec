@@ -1,0 +1,8 @@
+#!/usr/bin/env python2
+
+import goodman_spec
+
+
+if __name__ == '__main__':
+    GOODMAN_SPECTROSCOPY = goodman_spec.MainApp()
+    GOODMAN_SPECTROSCOPY()

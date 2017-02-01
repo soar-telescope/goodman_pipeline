@@ -1,0 +1,10 @@
+#!/usr/bin/env python2
+
+import os
+import sys
+import goodman_ccd
+
+
+if __name__ == '__main__':
+    GOODMAN_CCD = goodman_ccd.Main()
+    GOODMAN_CCD()
