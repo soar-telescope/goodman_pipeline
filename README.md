@@ -11,11 +11,13 @@ To see full documentation please go to the GitHub hosted site for [Goodman](http
 
 ## What is contained in this package?
 
-This repository contains tools for spectroscopy, but after the data is 
-reduced, i.e. bias and flat corrected, for that part please use 
-[David Sanmartim's](https://github.com/dsanmartim/goodman_ccdreduction) github repository.
+This repository contains tools for processing Goodman's spectrograph data, from the ccd image on. 
+It is separated into two main components. The **CCD** part is done by _redccd_ originally developed by 
+[David Sanmartim's](https://github.com/dsanmartim/goodman_ccdreduction) and currently maintained by our team. It does
+the standard _ccd image reduction_, i.e. trim, bias and flat correction. Currently the ccd reduction pipeline has been
+integrated into this package so there is no need to look for it separtely. The **Spectroscopic** processing is done by
+_redspec_ and includes the following features:
 
-This package have the following capabilities.
 
 - [x] Identify targets in images
 - [x] Trace the target
@@ -24,6 +26,9 @@ This package have the following capabilities.
 - [x] Linearize data
 - [x] Write wavelength solution to a FITS header
 - [x] Create a new file for the wavelength calibrated 1D spectrum
+
+There is also a library of calibrated spectrum in FITS format. Different configurations are provided but is very easy
+to add your own.
 
 ## How to install it?
 
@@ -74,7 +79,7 @@ and execute `redspec.py`
 ```
 
 Will run the following defaults:
-- [ ] Observing Mode **0**: One solution applied to all night
+- [ ] Observing Mode **0**: One solution per configuration applied to all night
 - [ ] Interactive Mode **True**
 - [ ] Data Path **./**
 - [ ] Destination folder for processed data **./**
