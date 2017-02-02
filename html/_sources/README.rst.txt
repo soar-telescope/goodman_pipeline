@@ -9,6 +9,7 @@ The Goodman High Throughput Spectrograph is an imaging spectrograph, if
 you wish to know more about the instrument please check the `SOAR
 website <http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph>`__
 
+To see the GitHub go `here <https://github.com/simontorres/goodman>`__
 
 What is contained in this package?
 ----------------------------------
@@ -35,7 +36,7 @@ Either clone or download this code. If you decide to clone it, just do:
 
 .. code:: shell
 
-    git clone git@github.com:simontorres/goodman.git
+    git clone https://github.com/simontorres/goodman.git
 
 Or you can simply go and `click
 here <https://github.com/simontorres/goodman/archive/master.zip>`__ for

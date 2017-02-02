@@ -48,7 +48,8 @@
           <div class="body" role="main">
             
   <h1>Source code for goodman_ccd.goodman_ccdreduction</h1><div class="highlight"><pre>
-<span></span><span class="c1"># -*- coding: utf8 -*-</span>
+<span></span><span class="ch">#!/usr/bin/env python2</span>
+<span class="c1"># -*- coding: utf8 -*-</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd"># PyGoodman CCD Reduction - CCD reductions for Goodman spectroscopic data.</span>
@@ -88,9 +89,10 @@
 
 <span class="sd">    $ python goodman_ccdreduction.py [options] raw_path red_path</span>
 
-<span class="sd">More information abotu the options and how to use it can be otained by using...</span>
+<span class="sd">More information about the options and how to use it can be obtained by using...</span>
 
 <span class="sd">    $ python goodman_ccdreduction.py --help</span>
+
 <span class="sd">or</span>
 <span class="sd">    $ python goodman_ccdreduction.py -h</span>
 
@@ -112,6 +114,7 @@
 
 <span class="c1"># import sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -390,7 +393,7 @@
                          <span class="n">clobber</span><span class="o">=</span><span class="n">overwrite</span><span class="p">)</span>
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Header of &#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_file</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; has been updated --&gt; &#39;</span> <span class="o">+</span> <span class="n">prefix</span>
                      <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">_file</span><span class="p">))</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Done: All headers have been updated. </span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Done: All headers have been updated.&#39;</span><span class="p">)</span>
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="Main.filter_saturated_flats"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.goodman_ccdreduction.Main.filter_saturated_flats">[docs]</a>    <span class="k">def</span> <span class="nf">filter_saturated_flats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -468,7 +471,7 @@
 <span class="sd">            observatory (str): Observatory name.</span>
 <span class="sd">            longitude (str): Geographic longitude in string format.</span>
 <span class="sd">            latitude (str): Geographic latitude in string format.</span>
-<span class="sd">            elevation (int): Geographic elevation in _meters above sea level_</span>
+<span class="sd">            elevation (int): Geographic elevation in meters above sea level</span>
 <span class="sd">            timezone (str): Time zone.</span>
 <span class="sd">            description (str): Observatory description</span>
 
@@ -879,24 +882,59 @@
         <span class="k">return</span></div>
 
 <div class="viewcode-block" id="Main.get_flat_name"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.goodman_ccdreduction.Main.get_flat_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_flat_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">get_name_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Find</span>
+        <span class="sd">&quot;&quot;&quot;Reproduce the name of a suitable master flat and check if exist.</span>
+
+<span class="sd">        Using the header information it construct the name of the master flat. For Custom mode it also reads the</span>
+<span class="sd">        GRT_ANG and CAM_ANG values and calculates the center wavelength which will be included in the name after MODE</span>
+<span class="sd">        in nanometers.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            master_flat_2100_CUSTOM_650nm.fits</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            header (object): FITS header object from astropy.io.fits</span>
 <span class="sd">            get_name_only (bool): In order to find the right master flat for an image using its header.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            flat_name (str): Name of master flat in the format: &#39;master_flat[_grating][_filter1][_filter2].fits&#39;</span>
+<span class="sd">            flat_name (str): Name of master flat in the format: &#39;master_flat[_grating][_mode][_filter1][_filter2].fits&#39;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">name_text</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">grating</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Grating part of the flat name</span>
         <span class="k">if</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&lt;NO GRATING&gt;&#39;</span><span class="p">:</span>
-            <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_nogrt&#39;</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;wavmode&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
+                    <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_nogrt&#39;</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;KeyError: Blue Camera&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">grating</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">grating</span>
+            <span class="c1"># Mode for the grating part of the flat name</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">mode</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;wavmode&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;KeyError: Blue Camera&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="c1"># it means it is Custom mode</span>
+                <span class="n">mode</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;wavmode&#39;</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;Custom&#39;</span><span class="p">:</span>
+                    <span class="n">grating_frequency</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[a-zA-Z-]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">grating</span><span class="p">))</span>
+                    <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;grt_ang&#39;</span><span class="p">])</span>
+                    <span class="n">beta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;cam_ang&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;grt_ang&#39;</span><span class="p">])</span>
+                    <span class="n">center_wavelength</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="n">e6</span> <span class="o">/</span> <span class="n">grating_frequency</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span><span class="p">))</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">center_wavelength</span><span class="p">)</span>
+                    <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">{:d}</span><span class="s1">nm&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">center_wavelength</span><span class="p">)))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;WAVMODE: </span><span class="si">%s</span><span class="s1"> not supported&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+
+        <span class="c1"># First filter wheel part of the flat name</span>
         <span class="k">if</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;&lt;NO FILTER&gt;&#39;</span><span class="p">:</span>
             <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">]</span>
+        <span class="c1"># Second filter wheel part of the flat name</span>
         <span class="k">if</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;filter2&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;&lt;NO FILTER&gt;&#39;</span><span class="p">:</span>
             <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;filter2&#39;</span><span class="p">]</span>
 

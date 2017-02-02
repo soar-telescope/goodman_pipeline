@@ -48,7 +48,8 @@
           <div class="body" role="main">
             
   <h1>Source code for goodman_spec.redspec</h1><div class="highlight"><pre>
-<span></span><span class="ch">#!/usr/bin/python2.7</span>
+<span></span><span class="ch">#!/usr/bin/env python2</span>
+<span class="c1"># -*- coding: utf8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Pipeline for GOODMAN spectra Extraction.</span>
 
 <span class="sd">This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded, etc. that match the &lt;pattern&gt;</span>
@@ -274,7 +275,7 @@
                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of reference lamp file for mode 0.</span><span class="se">\</span>
 <span class="s2">                             If not present, the first one in the list will be selected&quot;</span><span class="p">)</span>
 
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-l&#39;</span><span class="p">,</span> <span class="s1">&#39;--lamp-file&#39;</span><span class="p">,</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-l&#39;</span><span class="p">,</span>
                             <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
                             <span class="n">default</span><span class="o">=</span><span class="s1">&#39;lamps.txt&#39;</span><span class="p">,</span>
                             <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
@@ -291,11 +292,7 @@
         <span class="c1">#                         designed to use while observing at the telescope. Catches\</span>
         <span class="c1">#                          new files arriving to the &lt;source&gt; folder. (NI!)&quot;)</span>
 
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="s1">&#39;--non-interactive&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_false&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;interactive_ws&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Interactive wavelength solution. Enabled by default.&quot;</span><span class="p">)</span>
+
 
         <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-prefix&#39;</span><span class="p">,</span>
                             <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
@@ -311,11 +308,17 @@
                             <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;reference_dir&#39;</span><span class="p">,</span>
                             <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory of Reference files location&quot;</span><span class="p">)</span>
 
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="s1">&#39;--non-interactive&#39;</span><span class="p">,</span>
+                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_false&#39;</span><span class="p">,</span>
+                            <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;interactive_ws&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Interactive wavelength solution. Enabled by default.&quot;</span><span class="p">)</span>
+
         <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plots-enabled&#39;</span><span class="p">,</span>
                             <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
                             <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                             <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;plots_enabled&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show plots of intermediate steps. For debugging only.&quot;</span><span class="p">)</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show plots of intermediate steps. Use for debugging only.&quot;</span><span class="p">)</span>
 
         <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
 

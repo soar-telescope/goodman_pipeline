@@ -51,35 +51,6 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-goodman_ccd.fix_header">
-<span id="goodman-ccd-fix-header-module"></span><h2>goodman_ccd.fix_header module<a class="headerlink" href="#module-goodman_ccd.fix_header" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="goodman_ccd.fix_header.fix_header_and_shape">
-<code class="descclassname">goodman_ccd.fix_header.</code><code class="descname">fix_header_and_shape</code><span class="sig-paren">(</span><em>input_path</em>, <em>output_path</em>, <em>prefix</em>, <em>overwrite=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/fix_header.html#fix_header_and_shape"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.fix_header.fix_header_and_shape" title="Permalink to this definition">¶</a></dt>
-<dd><p>Remove/Update some  inconvenient parameters in the header of the Goodman FITS
-files. Some of these parameters contain non-printable ASCII characters. The ouptut
-files are created in the output_path. Also convert fits from 3D [1,X,Y] to 2D [X,Y].</p>
-</dd></dl>
-
-</div>
-<div class="section" id="module-goodman_ccd.flat_arcorrection">
-<span id="goodman-ccd-flat-arcorrection-module"></span><h2>goodman_ccd.flat_arcorrection module<a class="headerlink" href="#module-goodman_ccd.flat_arcorrection" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="goodman_ccd.flat_arcorrection.cor_flat">
-<code class="descclassname">goodman_ccd.flat_arcorrection.</code><code class="descname">cor_flat</code><span class="sig-paren">(</span><em>flatname</em>, <em>function='Chebychev'</em>, <em>order=55</em>, <em>clipping='sigma_clipping'</em>, <em>niter=1</em>, <em>low_rej=5.0</em>, <em>high_rej=2.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/flat_arcorrection.html#cor_flat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.flat_arcorrection.cor_flat" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="goodman_ccd.flat_arcorrection.fitting">
-<code class="descclassname">goodman_ccd.flat_arcorrection.</code><code class="descname">fitting</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>function='Legendre'</em>, <em>order=41</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/flat_arcorrection.html#fitting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.flat_arcorrection.fitting" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="goodman_ccd.flat_arcorrection.sigma_clipping">
-<code class="descclassname">goodman_ccd.flat_arcorrection.</code><code class="descname">sigma_clipping</code><span class="sig-paren">(</span><em>data</em>, <em>low_rej=2.5</em>, <em>high_rej=2.5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/flat_arcorrection.html#sigma_clipping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.flat_arcorrection.sigma_clipping" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</div>
 <div class="section" id="module-goodman_ccd.goodman_ccdreduction">
 <span id="goodman-ccd-goodman-ccdreduction-module"></span><h2>goodman_ccd.goodman_ccdreduction module<a class="headerlink" href="#module-goodman_ccd.goodman_ccdreduction" title="Permalink to this headline">¶</a></h2>
 <p># PyGoodman CCD Reduction - CCD reductions for Goodman spectroscopic data.</p>
@@ -113,7 +84,7 @@ was applied.</p>
 <p>It can be be executed in terminal running:</p>
 <blockquote>
 <div>$ python goodman_ccdreduction.py [options] raw_path red_path</div></blockquote>
-<p>More information abotu the options and how to use it can be otained by using...</p>
+<p>More information about the options and how to use it can be obtained by using...</p>
 <blockquote>
 <div>$ python goodman_ccdreduction.py &#8211;help</div></blockquote>
 <dl class="docutils">
@@ -304,7 +275,12 @@ files are created in the output_path. Also convert fits from 3D [1, X, Y] to 2D 
 <dl class="method">
 <dt id="goodman_ccd.goodman_ccdreduction.Main.get_flat_name">
 <code class="descname">get_flat_name</code><span class="sig-paren">(</span><em>header</em>, <em>get_name_only=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/goodman_ccdreduction.html#Main.get_flat_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.goodman_ccdreduction.Main.get_flat_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find</p>
+<dd><p>Reproduce the name of a suitable master flat and check if exist.</p>
+<p>Using the header information it construct the name of the master flat. For Custom mode it also reads the
+GRT_ANG and CAM_ANG values and calculates the center wavelength which will be included in the name after MODE
+in nanometers.</p>
+<p class="rubric">Examples</p>
+<p>master_flat_2100_CUSTOM_650nm.fits</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -315,7 +291,7 @@ files are created in the output_path. Also convert fits from 3D [1, X, Y] to 2D 
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Name of master flat in the format: &#8216;master_flat[_grating][_filter1][_filter2].fits&#8217;</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Name of master flat in the format: &#8216;master_flat[_grating][_mode][_filter1][_filter2].fits&#8217;</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">flat_name (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)">str</a>)</p>
@@ -365,7 +341,7 @@ files are created in the output_path. Also convert fits from 3D [1, X, Y] to 2D 
 <li><strong>observatory</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Observatory name.</li>
 <li><strong>longitude</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Geographic longitude in string format.</li>
 <li><strong>latitude</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Geographic latitude in string format.</li>
-<li><strong>elevation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Geographic elevation in _meters above sea <a href="#id1"><span class="problematic" id="id2">level_</span></a></li>
+<li><strong>elevation</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Geographic elevation in meters above sea level</li>
 <li><strong>timezone</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Time zone.</li>
 <li><strong>description</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Observatory description</li>
 </ul>
@@ -450,9 +426,6 @@ twilight_morning (str): Morning twilight time in the format &#8216;YYYY-MM-DDTHH
 </dd></dl>
 
 </div>
-<div class="section" id="goodman-ccd-trim-slitedge-module">
-<h2>goodman_ccd.trim_slitedge module<a class="headerlink" href="#goodman-ccd-trim-slitedge-module" title="Permalink to this headline">¶</a></h2>
-</div>
 <div class="section" id="module-goodman_ccd">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-goodman_ccd" title="Permalink to this headline">¶</a></h2>
 <p>CCD Reduction Tool</p>
@@ -469,10 +442,7 @@ twilight_morning (str): Morning twilight time in the format &#8216;YYYY-MM-DDTHH
   <ul>
 <li><a class="reference internal" href="#">goodman_ccd package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-goodman_ccd.fix_header">goodman_ccd.fix_header module</a></li>
-<li><a class="reference internal" href="#module-goodman_ccd.flat_arcorrection">goodman_ccd.flat_arcorrection module</a></li>
 <li><a class="reference internal" href="#module-goodman_ccd.goodman_ccdreduction">goodman_ccd.goodman_ccdreduction module</a></li>
-<li><a class="reference internal" href="#goodman-ccd-trim-slitedge-module">goodman_ccd.trim_slitedge module</a></li>
 <li><a class="reference internal" href="#module-goodman_ccd">Module contents</a></li>
 </ul>
 </li>
