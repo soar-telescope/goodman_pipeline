@@ -35,7 +35,7 @@ to add your own.
 Either clone or download this code. If you decide to clone it, just do:
 
 ```shell
-git clone git@github.com:simontorres/goodman.git
+git clone https://github.com/simontorres/goodman.git
 ```
 
 Or you can simply go and [click here](https://github.com/simontorres/goodman/archive/master.zip)

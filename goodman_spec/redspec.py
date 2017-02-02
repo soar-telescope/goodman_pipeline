@@ -1,4 +1,5 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python2
+# -*- coding: utf8 -*-
 """Pipeline for GOODMAN spectra Extraction.
 
 This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded, etc. that match the <pattern>

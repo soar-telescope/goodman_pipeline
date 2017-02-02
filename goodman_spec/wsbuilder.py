@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 """Set of class and method to handle wavelength solutions
 
 

@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 """Contains the tools to produce a wavelength solution
 
 This module gets the extracted data to produce a wavelength solution, linearize the spectrum and write the solution
