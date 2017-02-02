@@ -15,7 +15,7 @@ This repository contains tools for processing Goodman's spectrograph data, from 
 It is separated into two main components. The **CCD** part is done by _redccd_ originally developed by 
 [David Sanmartim's](https://github.com/dsanmartim/goodman_ccdreduction) and currently maintained by our team. It does
 the standard _ccd image reduction_, i.e. trim, bias and flat correction. Currently the ccd reduction pipeline has been
-integrated into this package so there is no need to look for it separtely. The **Spectroscopic** processing is done by
+integrated into this package so there is no need to look for it separately. The **Spectroscopic** processing is done by
 _redspec_ and includes the following features:
 
 
