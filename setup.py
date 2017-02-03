@@ -5,6 +5,7 @@ setup(
     version='0.1',
     packages=['goodman_ccd', 'goodman_spec'],
     scripts=['bin/redccd', 'bin/redspec'],
+    include_package_data=True,
     url='https://github.com/simontorres/goodman',
     license='BSD 3-Clause',
     author='Simon Torres R.',
