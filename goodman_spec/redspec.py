@@ -445,8 +445,9 @@ Supported Observing modes are:
                     lamp = self.image_collection.file.iloc[lamp_index]
                 log.debug("Lamp File: %s", lamp)
             except IndexError:
-                log.error("There are no comparison lamps available.")
-                sys.exit('Bye!')
+                log.error("There is no comparison lamp available for: %s", target)
+                # sys.exit('Bye!')
+                continue
 
             lamp_name = self.image_collection.object.iloc[lamp_index]
             lamp_grating = self.image_collection.grating.iloc[lamp_index]

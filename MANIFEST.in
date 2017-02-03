@@ -15,3 +15,7 @@ goodman_spec/simulator.py
 goodman_spec/wavelength.py
 goodman_spec/wsbuilder.py
 include refdata/*.fits
+include LICENCE
+include README.md
+include OVERVIEW.md
+include requirements.txt

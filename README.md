@@ -62,6 +62,9 @@ following line on your `.bashrc` or `.bash_profile` file.
 alias python='pythonw' 
 ```
 
+#### Note on GTK backend (Ubuntu)
+sudo apt-get install libgtk-3-dev
+
 ## How to use it?
  
 To get a list of the possible arguments do:
