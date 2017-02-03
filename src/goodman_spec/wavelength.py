@@ -9,19 +9,20 @@ to the image's header following the FITS standard.
 # TODO Reformat _ Re-order imports (first "import ...", then "from ... import ..." alphabetically)
 # TODO (simon): Discuss this because there are other rules that will probably conflict with this request.
 from __future__ import print_function
-import sys
+
 import logging
+import sys
+
 import matplotlib.pyplot as plt
-# import matplotlib.image as mpimg
 import matplotlib.ticker as mtick
 import numpy as np
 import scipy.interpolate
-# import time
 from astropy.io import fits
 from astropy.stats import sigma_clip
 from scipy import signal
-from linelist import ReferenceData
+
 import wsbuilder
+from linelist import ReferenceData
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.INFO, format=FORMAT)
