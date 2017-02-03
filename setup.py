@@ -4,7 +4,7 @@ setup(
     name='goodman',
     version='0.1',
     packages=['goodman_ccd', 'goodman_spec'],
-    package_dir={'goodman_ccd': 'src/goodman_ccd', 'goodman_spec': 'src/goodman_spec'},
+    package_dir={'goodman_ccd': 'goodman_ccd', 'goodman_spec': 'goodman_spec'},
     package_data={'goodman_spec': ['refdata/*fits']},
     scripts=['bin/redccd', 'bin/redspec'],
     url='https://github.com/simontorres/goodman',

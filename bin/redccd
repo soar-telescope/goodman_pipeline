@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-from src import goodman_ccd
+import goodman_ccd
 
 if __name__ == '__main__':
     GOODMAN_CCD = goodman_ccd.Main()

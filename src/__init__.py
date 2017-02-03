@@ -1,2 +1,0 @@
-import goodman_ccd
-import goodman_spec
