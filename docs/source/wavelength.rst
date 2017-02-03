@@ -1,7 +1,7 @@
-redgoodman module
+wavelength module
 =================
 
-.. automodule:: redgoodman
+.. automodule:: wavelength
     :members:
     :undoc-members:
     :show-inheritance:

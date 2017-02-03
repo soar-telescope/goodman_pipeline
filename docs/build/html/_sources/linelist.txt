@@ -1,7 +1,7 @@
-redspec module
-==============
+linelist module
+===============
 
-.. automodule:: redspec
+.. automodule:: linelist
     :members:
     :undoc-members:
     :show-inheritance:

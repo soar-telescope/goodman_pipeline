@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 """Module that handles intermediate processess
 
 This module performs intermediate steps in the process to obtain a wavelength calibrated spectrum

@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 """ Line list per elements
 
 This contains a dictionary of elements used for comparison lamps with their main emission lines

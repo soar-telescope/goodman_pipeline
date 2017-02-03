@@ -1,7 +1,7 @@
-process module
+deleted module
 ==============
 
-.. automodule:: process
+.. automodule:: deleted
     :members:
     :undoc-members:
     :show-inheritance:

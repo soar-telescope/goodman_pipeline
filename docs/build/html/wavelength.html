@@ -1,0 +1,345 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>wavelength module &mdash; Goodman Spectroscopic Tools 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Goodman Spectroscopic Tools 0.1 documentation" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Goodman Spectroscopic Tools 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-wavelength">
+<span id="wavelength-module"></span><h1>wavelength module<a class="headerlink" href="#module-wavelength" title="Permalink to this headline">¶</a></h1>
+<p>Contains the tools to produce a wavelength solution</p>
+<p>This module gets the extracted data to produce a wavelength solution, linerize the spectrum and write the solution
+to the image&#8217;s header following the FITS standard.</p>
+<dl class="class">
+<dt id="wavelength.WavelengthCalibration">
+<em class="property">class </em><code class="descclassname">wavelength.</code><code class="descname">WavelengthCalibration</code><span class="sig-paren">(</span><em>path</em>, <em>sci_pack</em>, <em>science_object</em>, <em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.add_wavelength_solution">
+<code class="descname">add_wavelength_solution</code><span class="sig-paren">(</span><em>new_header</em>, <em>spectrum</em>, <em>original_filename</em>, <em>evaluation_comment=None</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.add_wavelength_solution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.automatic_wavelength_solution">
+<code class="descname">automatic_wavelength_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.automatic_wavelength_solution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.evaluate_solution">
+<code class="descname">evaluate_solution</code><span class="sig-paren">(</span><em>plots=False</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.evaluate_solution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.find_more_lines">
+<code class="descname">find_more_lines</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.find_more_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add more lines given that a wavelength solution already exists</p>
+<p>This method is part of the interactive wavelength solution mechanism. If a wavelength solution exist it uses the
+line centers in pixels to estimate their respective wavelength and then search for the closest value in the list
+of reference lines for the elements in the comparison lamp. Then it filters the worst of them by doing sigma
+clipping. Finally it adds them to the class&#8217; variables that contains the list of reference points.</p>
+<p>Better results are obtained if the solution is already good. Visual inspection also improves final result.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.fit_pixel_to_wavelength">
+<code class="descname">fit_pixel_to_wavelength</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.fit_pixel_to_wavelength" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.get_calibration_lamp">
+<code class="descname">get_calibration_lamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.get_calibration_lamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the name of the calibration lamp used for obtain the solution</p>
+<p>The filename of the lamp used to obtain must go to the header for documentation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>calibration_lamp</strong> &#8211; Filename of calibration lamp used to obtain wavelength solution</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.get_line_centers">
+<code class="descname">get_line_centers</code><span class="sig-paren">(</span><em>limits</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.get_line_centers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the center of the lines using limits previously found</p>
+<p>This method is very simple and could be integrated in the get_line_limits method but I&#8217;d rather have the limit
+information available for later. Basically finds the mean value of the line limits and then finds the
+correspoing pixel value, adds it up to the &#8220;centers&#8221; list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>limits</strong> (<em>list</em>) &#8211; Line limits in the list&#8217;s index domain.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>centers</strong> &#8211; Line centers in pixel values as floats.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.get_line_limits">
+<code class="descname">get_line_limits</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.get_line_limits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method for identifying lines in a spectrum</p>
+<p>This is the spectral line identifying method. It calculates a pseudo-derivative of the spectrum thus determining
+peaks. For a typical spectrum a pseudo-derivative, from now on just &#8220;derivative&#8221;, will produce a series of
+positive and negative peaks, for emission lines. Since we will be using it for comparison lamps only we don&#8217;t
+have to worry about absorption lines and therefore this method only detects emission lines.
+A threshold is defined by calculating the 75 percent of the standard deviation of the derivative. There
+is no particular reason for choosing 75 percent is just the value that worked best for all the test subjects.
+Then any search for lines must be done for values above and below of the threshold and its negative
+respectively.  There are a few control mechanisms that ensures that an actual good line is being detected. For
+instance: For each line both positive and negative derivative&#8217;s peaks are stored and are called limits. In order
+to add a (first) positive limits the number of previously stored limits must be even, meaning that we are
+&#8220;opening&#8221; a new line. Correspondingly if we are adding  a (last) negative limit we have to have added previously
+a odd amount of limits meaning that we are &#8220;closing&#8221; a line. At this point there is another constraint, it
+cannot be separated by an amount larger than a defined spacing, or we would be having a very broad line and lamp
+lines are expected to be very narrow.</p>
+<p class="rubric">Notes</p>
+<p>The lines detected by this method are usually the best lines in the spectrum. There is a certain amount of
+lines missed but in very crowded regions.</p>
+<p>Very important to note that the line centers found using the data produced here are very precise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>limits</strong> &#8211; List of line limits in consecutive pairs. This is considered by the method that uses this
+list for further processing. The values are index values not pixel values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.get_spectral_characteristics">
+<code class="descname">get_spectral_characteristics</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.get_spectral_characteristics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates some Goodman&#8217;s specific spectroscopic values.</p>
+<p>From the Header value for Grating, Grating Angle and Camera Angle it is possible to estimate what are the limits
+wavelength values and central wavelength. It was necessary to add offsets though, since the formulas provided
+are slightly off. The values are only an estimate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>spectral_characteristics</strong> &#8211;<dl class="docutils">
+<dt>Contains the following parameters:</dt>
+<dd>center: Center Wavelength
+blue: Blue limit in Angstrom
+red: Red limit in Angstrom
+alpha: Angle
+beta: Angle
+pix1: Pixel One
+pix2: Pixel Two</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.get_wsolution">
+<code class="descname">get_wsolution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.get_wsolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the mathematical model of the wavelength solution</p>
+<p>The wavelength solution is a callable mathematical function from astropy.modeling.models
+By obtaining this solution it can be applied to a pixel axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><strong>wsolution</strong> &#8211; A callable mathematical function</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">callable</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.interactive_wavelength_solution">
+<code class="descname">interactive_wavelength_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.interactive_wavelength_solution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the wavelength solution interactively</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.interpolate">
+<code class="descname">interpolate</code><span class="sig-paren">(</span><em>spectrum</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.interpolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interpolated version of the input spectrum</p>
+<p>This method creates an interpolated version of the input array, it is used mainly for a spectrum but it can
+also be used with any unidimensional array, assuming you are happy with the interpolation_size attribute
+defined for this class. The reason for doing interpolation is that it allows to find the lines and its
+respective center more precisely. The default interpolation size is 200 (two hundred) points.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>spectrum</strong> (<em>array</em>) &#8211; an uncalibrated spectrum or any unidimensional array.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Two dimensional array containing x-axis and interpolated array. The x-axis preserves original pixel values.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.key_pressed">
+<code class="descname">key_pressed</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.key_pressed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="wavelength.WavelengthCalibration.line_search_method">
+<code class="descname">line_search_method</code><em class="property"> = None</em><a class="headerlink" href="#wavelength.WavelengthCalibration.line_search_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instrument configuration and spectral characteristics</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.linearize_spectrum">
+<code class="descname">linearize_spectrum</code><span class="sig-paren">(</span><em>data</em>, <em>plots=False</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.linearize_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.on_click">
+<code class="descname">on_click</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.on_click" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="wavelength.WavelengthCalibration.pixelcenter">
+<code class="descname">pixelcenter</code><em class="property"> = None</em><a class="headerlink" href="#wavelength.WavelengthCalibration.pixelcenter" title="Permalink to this definition">¶</a></dt>
+<dd><p>this data must come parsed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.plot_raw_over_reference">
+<code class="descname">plot_raw_over_reference</code><span class="sig-paren">(</span><em>remove=False</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.plot_raw_over_reference" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.predicted_wavelength">
+<code class="descname">predicted_wavelength</code><span class="sig-paren">(</span><em>pixel</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.predicted_wavelength" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.recenter_line_by_data">
+<code class="descname">recenter_line_by_data</code><span class="sig-paren">(</span><em>data_name</em>, <em>x_data</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.recenter_line_by_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="wavelength.WavelengthCalibration.red_limit">
+<code class="descname">red_limit</code><em class="property"> = None</em><a class="headerlink" href="#wavelength.WavelengthCalibration.red_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interactive wavelength finding</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="wavelength.WavelengthCalibration.update_clicks_plot">
+<code class="descname">update_clicks_plot</code><span class="sig-paren">(</span><em>action</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthCalibration.update_clicks_plot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="wavelength.WavelengthSolution">
+<em class="property">class </em><code class="descclassname">wavelength.</code><code class="descname">WavelengthSolution</code><span class="sig-paren">(</span><em>solution_type=None</em>, <em>model_name=None</em>, <em>model_order=0</em>, <em>model=None</em>, <em>ref_lamp=None</em>, <em>eval_comment=''</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthSolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="wavelength.WavelengthSolution.linear_solution_string">
+<code class="descname">linear_solution_string</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="headerlink" href="#wavelength.WavelengthSolution.linear_solution_string" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/wavelength.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Goodman Spectroscopic Tools 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Simon Torres R..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.5.
+    </div>
+  </body>
+</html>

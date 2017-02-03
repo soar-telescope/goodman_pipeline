@@ -1,7 +1,7 @@
-process module
-==============
+linelist module
+===============
 
-.. automodule:: process
+.. automodule:: linelist
     :members:
     :undoc-members:
     :show-inheritance:

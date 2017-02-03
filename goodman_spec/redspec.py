@@ -1,4 +1,5 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python2
+# -*- coding: utf8 -*-
 """Pipeline for GOODMAN spectra Extraction.
 
 This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded, etc. that match the <pattern>
@@ -224,7 +225,7 @@ Supported Observing modes are:
                             help="Name of reference lamp file for mode 0.\
                              If not present, the first one in the list will be selected")
 
-        parser.add_argument('-l', '--lamp-file',
+        parser.add_argument('-l',
                             action='store',
                             default='lamps.txt',
                             type=str,
@@ -241,11 +242,7 @@ Supported Observing modes are:
         #                         designed to use while observing at the telescope. Catches\
         #                          new files arriving to the <source> folder. (NI!)")
 
-        parser.add_argument('-i', '--non-interactive',
-                            action='store_false',
-                            default=True,
-                            dest='interactive_ws',
-                            help="Interactive wavelength solution. Enabled by default.")
+
 
         parser.add_argument('-o', '--output-prefix',
                             action='store',
@@ -261,11 +258,17 @@ Supported Observing modes are:
                             dest='reference_dir',
                             help="Directory of Reference files location")
 
+        parser.add_argument('-i', '--non-interactive',
+                            action='store_false',
+                            default=True,
+                            dest='interactive_ws',
+                            help="Interactive wavelength solution. Enabled by default.")
+
         parser.add_argument('--plots-enabled',
                             action='store_true',
                             default=False,
                             dest='plots_enabled',
-                            help="Show plots of intermediate steps. For debugging only.")
+                            help="Show plots of intermediate steps. Use for debugging only.")
 
         args = parser.parse_args()
 

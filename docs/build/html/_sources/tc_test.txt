@@ -1,7 +1,7 @@
-redspec module
+tc_test module
 ==============
 
-.. automodule:: redspec
+.. automodule:: tc_test
     :members:
     :undoc-members:
     :show-inheritance:
