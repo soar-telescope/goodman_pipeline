@@ -242,8 +242,6 @@ Supported Observing modes are:
         #                         designed to use while observing at the telescope. Catches\
         #                          new files arriving to the <source> folder. (NI!)")
 
-
-
         parser.add_argument('-o', '--output-prefix',
                             action='store',
                             default='g',

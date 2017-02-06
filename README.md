@@ -31,15 +31,19 @@ There is also a library of calibrated spectrum in FITS format. Different configu
 to add your own.
 
 ## How to install it?
+_for installing on Ubuntu 16.04 see [this wiki](https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience)_
 
+### Get the code
+#### Clone from GitHub
 Either clone or download this code. If you decide to clone it, just do:
 
 ```shell
 git clone https://github.com/simontorres/goodman.git
 ```
 
-Or you can simply go and [click here](https://github.com/simontorres/goodman/archive/master.zip)
-for download a zip file with all the script files.
+#### Download package-only tarball
+Go to [this site](https://github.com/simontorres/goodman/tree/master/dist) and download the latest (or highest) version
+and place it wherever you want
 
 ### Requirements
 
@@ -62,23 +66,21 @@ following line on your `.bashrc` or `.bash_profile` file.
 alias python='pythonw' 
 ```
 
-#### Note on GTK backend (Ubuntu)
-sudo apt-get install libgtk-3-dev
 
 ## How to use it?
  
 To get a list of the possible arguments do:
 
 ```shell
-/path/to/this/repo/redspec.py --help
+$ redspec --help
 ```
 
 The simplest way of running this pipeline is to go to your data folder,
-already processed with [goodman_ccdreduction](https://github.com/dsanmartim/goodman_ccdreduction)
-and execute `redspec.py`
+already processed with `redccd` (originally [goodman_ccdreduction](https://github.com/dsanmartim/goodman_ccdreduction))
+and execute `redspec`
 
 ```shell
-/path/to/this/repo/redspec.py
+$ redspec
 ```
 
 Will run the following defaults:

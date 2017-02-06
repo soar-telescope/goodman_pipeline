@@ -12,7 +12,7 @@ from __future__ import print_function
 
 import logging
 import sys
-
+import re
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
@@ -253,6 +253,8 @@ class WavelengthCalibration(object):
         filtered_data = np.where(np.abs(self.lamp_data > self.lamp_data.min() + 0.05 * self.lamp_data.max()),
                                  self.lamp_data,
                                  None)
+        # TODO (simon): Find calculation in order to estimate 'order' from slit size
+        print(re.sub('[a-zA-Z" ]','', self.lamp_header['slit']))
         peaks = signal.argrelmax(filtered_data, axis=0, order=6)[0]
         lines_center = self.recenter_lines(self.lamp_data, peaks)
 
@@ -1365,23 +1367,7 @@ class WavelengthSolution(object):
         self.reference_lamp = ref_lamp
         self.evaluation_comment = eval_comment
         self.spectral_dict = self.set_spectral_features(header)
-        # self.aperture = 1  # aperture number
-        # self.beam = 1  # beam
-        # self.dtype = self.dtype_dict[solution_type]  # data type
-        # self.dispersion_start = 0  # dispersion at start
-        # self.dispersion_delta = 0  # dispersion delta average
-        # self.pixel_number = 0  # pixel number
-        # self.doppler_factor = 0  # doppler factor
-        # self.aperture_low = 0  # aperture low (pix)
-        # self.aperture_high = 0  # aperture high
-        # # funtions parameters
-        # self.weight = 1
-        # self.zeropoint = 0
-        # self.ftype = self.ftype_dict[model_name]  # function type
-        # self.forder = model_order  # function order
-        # self.pmin = 0  # minimum pixel value
-        # self.pmax = 0  # maximum pixel value
-        # self.fpar = []  # function parameters
+        self.solution_name = self.set_solution_name(header)
 
     @staticmethod
     def set_spectral_features(header):
@@ -1486,8 +1472,55 @@ class WavelengthSolution(object):
             log.error('Header has not been parsed')
             return False
 
-    def linear_solution_string(self, header):
-        pass
+    def set_solution_name(self, header):
+        name_text = ''
+        grating = None
+        # Grating part of the flat name
+        if header['grating'] == '<NO GRATING>':
+            try:
+                if header['wavmode'] != 'Imaging':
+                    name_text += '_nogrt'
+            except KeyError:
+                log.error('KeyError: Blue Camera')
+        else:
+            grating = header['grating'].split('_')[1]
+            name_text += '_' + grating
+            # Mode for the grating part of the flat name
+            try:
+                mode = header['wavmode'].split(' ')[1]
+                name_text += '_' + mode.upper()
+            except KeyError:
+                log.error('KeyError: Blue Camera')
+            except IndexError:
+                # it means it is Custom mode
+                mode = header['wavmode']
+                if mode == 'Custom':
+                    grating_frequency = int(re.sub('[a-zA-Z-]', '', grating))
+                    alpha = float(header['grt_ang'])
+                    beta = float(header['cam_ang']) - float(header['grt_ang'])
+                    center_wavelength = (1e6 / grating_frequency) * (
+                        np.sin(alpha * np.pi / 180.) + np.sin(beta * np.pi / 180.))
+                    log.error(center_wavelength)
+                    name_text += '_' + mode.upper() + '_{:d}nm'.format(int(round(center_wavelength)))
+                else:
+                    log.error('WAVMODE: %s not supported', mode)
+
+        # First filter wheel part of the flat name
+        if header['filter'] != '<NO FILTER>':
+            name_text += '_' + header['filter']
+        # Second filter wheel part of the flat name
+        if header['filter2'] != '<NO FILTER>':
+            name_text += '_' + header['filter2']
+        name_text += '_' + re.sub('[a-zA-Z" ]', '', header['slit'])
+
+        wsolution_name = 'ws' + name_text
+
+        print(wsolution_name)
+        return wsolution_name
+        # else:
+        #     log.error('There is no flat suitable for use')
+        #     return False
+
 
 
 if __name__ == '__main__':
