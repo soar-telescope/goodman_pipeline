@@ -31,7 +31,11 @@ There is also a library of calibrated spectrum in FITS format. Different configu
 to add your own.
 
 ## How to install it?
+### Specific platform instructions
 _for installing on Ubuntu 16.04 see [this wiki](https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience)_
+
+_for installing on Centos 7 see [this wiki](https://github.com/simontorres/goodman/wiki/Centos-7-Installation)_
+
 
 ### Get the code
 #### Clone from GitHub

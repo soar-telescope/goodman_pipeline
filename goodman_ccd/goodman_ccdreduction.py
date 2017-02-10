@@ -62,7 +62,7 @@ Thanks to Bruno Quint for all comments and helping.
 
 """
 
-# import sys
+import sys
 import os
 import re
 import glob
@@ -166,6 +166,7 @@ class Main(object):
                                                   self.elevation, self.timezone, self.description)
         # Create master_flats
         self.create_daymaster_flat(ic, twi_eve, twi_mor, self.args.slit, self.memlim)
+        # sys.exit(0)
 
         # Create master bias
         if len(ic.files_filtered(obstype='BIAS')) > 0:
@@ -858,6 +859,9 @@ class Main(object):
                     name_text += '_nogrt'
             except KeyError:
                 log.error('KeyError: Blue Camera')
+                # if slit is no_mask it means is imaging
+                if int(header['cam_targ']) != 0 :
+                    name_text += '_nogrt'
         else:
             grating = header['grating'].split('_')[1]
             name_text += '_' + grating
@@ -867,17 +871,15 @@ class Main(object):
                 name_text += '_' + mode.upper()
             except KeyError:
                 log.error('KeyError: Blue Camera')
+                if int(header['cam_targ']) != 0 :
+                    central_wavelength = self.get_central_wavelength(header)
+                    name_text += '_CentWav' + central_wavelength
             except IndexError:
                 # it means it is Custom mode
                 mode = header['wavmode']
                 if mode == 'Custom':
-                    grating_frequency = int(re.sub('[a-zA-Z-]', '', grating))
-                    alpha = float(header['grt_ang'])
-                    beta = float(header['cam_ang']) - float(header['grt_ang'])
-                    center_wavelength = (1e6 / grating_frequency) * (
-                        np.sin(alpha * np.pi / 180.) + np.sin(beta * np.pi / 180.))
-                    log.error(center_wavelength)
-                    name_text += '_' + mode.upper() + '_{:d}nm'.format(int(round(center_wavelength)))
+                    central_wavelength = self.get_central_wavelength(header)
+                    name_text += '_' + mode.upper() + central_wavelength
                 else:
                     log.error('WAVMODE: %s not supported', mode)
 
@@ -896,6 +898,16 @@ class Main(object):
         else:
             log.error('There is no flat suitable for use')
             return False
+
+    @staticmethod
+    def get_central_wavelength(header):
+        grating_frequency = int(re.sub('[a-zA-Z-]', '', header['grating'].split('_')[1]))
+        alpha = float(header['grt_ang'])
+        beta = float(header['cam_ang']) - float(header['grt_ang'])
+        center_wavelength = (1e6 / grating_frequency) * (np.sin(alpha * np.pi / 180.) + np.sin(beta * np.pi / 180.))
+        log.error(center_wavelength)
+        return '_{:d}nm'.format(int(round(center_wavelength)))
+
 
         # def run(self):
 

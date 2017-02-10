@@ -253,9 +253,19 @@ class WavelengthCalibration(object):
         filtered_data = np.where(np.abs(self.lamp_data > self.lamp_data.min() + 0.05 * self.lamp_data.max()),
                                  self.lamp_data,
                                  None)
-        # TODO (simon): Find calculation in order to estimate 'order' from slit size
-        print(re.sub('[a-zA-Z" ]','', self.lamp_header['slit']))
-        peaks = signal.argrelmax(filtered_data, axis=0, order=6)[0]
+
+        slit_size = re.sub('[a-zA-Z" ]', '', self.lamp_header['slit'])
+        # get serial binning value PG5_9 is for RED camera and PARAM18 is for BLUE camera
+        # serial binning is dispersion axis, the only one that matters for this purpose
+        try:
+            binning = int(self.lamp_header['PG5_9'])
+        except KeyError:
+            binning = int(self.lamp_header['PARAM18'])
+        new_order = int(round(float(slit_size) / (0.15 * binning)))
+        # print(new_order)
+        # print(round(new_order))
+        peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
+        # lines_center = peaks
         lines_center = self.recenter_lines(self.lamp_data, peaks)
 
         if self.args.plots_enabled:
@@ -270,6 +280,8 @@ class WavelengthCalibration(object):
             for line in peaks:
                 plt.axvline(line + 1, color='k', linestyle=':')
             # plt.axhline(median + stddev, color='g')
+            # for rc_line in lines_center:
+            #     plt.axvline(rc_line, color='r')
             plt.plot(self.raw_pixel_axis, self.lamp_data, color='k')
             plt.legend(loc='best')
             plt.show()
