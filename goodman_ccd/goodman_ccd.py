@@ -39,9 +39,18 @@ class MainApp(object):
                 log.info('No special reduced data path defined. Proceeding with defaults.')
                 if self.args.raw_path not in self.args.red_path:
                     self.args.red_path = re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + ['RED']))
-                    print(self.args.red_path)
+                    # print(self.args.red_path)
             if os.path.isdir(self.args.red_path):
                 # TODO (simon): warn if folder is not empty
+                if os.listdir(self.args.red_path) != []:
+                    log.warning('Reduced Data Path is not empty')
+                    if self.args.auto_clean:
+                        for _file in os.listdir(self.args.red_path):
+                            os.unlink(self.args.red_path + '/' + _file)
+                        log.info('Cleaned Reduced data directory: ' + self.args.red_path)
+                    else:
+                        log.error('Please clean the reduced data folder or use --auto-clean')
+                        break
                 self.args.red_path = os.path.abspath(self.args.red_path)
                 log.debug(os.path.abspath(self.args.red_path))
             else:
@@ -68,15 +77,7 @@ class MainApp(object):
                 process_images = ImageProcessor(self.args, self.data_container)
                 process_images()
 
-                # for group in self.data_container.data_groups:
-                #     print('\nNew group ')
-                #     print(group.file)
 
-            # # this is intended for letting a global app wether to continue with the spectroscopic part.
-            # if night_sorter.technique == 'Spectroscopy':
-            #     return True
-            # else:
-            #     return False
 
     @staticmethod
     def get_args():
@@ -103,6 +104,11 @@ class MainApp(object):
                             dest='ignore_bias',
                             help="Ignore bias correction")
 
+        parser.add_argument('--auto-clean',
+                            action='store_true',
+                            dest='auto_clean',
+                            help="Automatically clean reduced data directory")
+
         parser.add_argument('--saturation',
                             action='store',
                             default=55000.,
@@ -124,9 +130,6 @@ class MainApp(object):
                             default='./RED',
                             help="Full path to reduced data (e.g /home/jamesbond/soardata/RED/).")
 
-        # parser.add_argument('--red-camera', action='store_true', default=False, dest='red_camera',
-        #                    help='Enables Goodman Red Camera')
-
         args = parser.parse_args()
         if os.path.isdir(args.raw_path):
             args.raw_path = os.path.abspath(args.raw_path)
@@ -141,11 +144,5 @@ class MainApp(object):
 
 
 if __name__ == '__main__':
-    # path = '/data/simon/data/soar/work/20170208_eng/2017-02-08_clean'
-    # path = '/user/simon/data/soar/raw/spectroscopy_engineering_night/'
-    # path = '/data/simon/data/soar/raw/2017-02-08'
-    # path = '/user/simon/data/soar/work2'
-    # path = '/user/simon/data/soar/work/20161114_eng_2'
-    # path = '/user/simon/data/soar/work/imaging/2017-01-11'
     main_app = MainApp()
     main_app()

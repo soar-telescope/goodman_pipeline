@@ -3,5 +3,5 @@
 import goodman_ccd
 
 if __name__ == '__main__':
-    GOODMAN_CCD = goodman_ccd.Main()
+    GOODMAN_CCD = goodman_ccd.MainApp()
     GOODMAN_CCD()

@@ -72,18 +72,22 @@ class DataClassifier(object):
             wavmodes = self.objects_collection.wavmode.unique()
             if len(wavmodes) == 1 and wavmodes[0] == 'Imaging':
                 self.technique = 'Imaging'
+                log.info('Detected Imaging Data from RED Camera')
             elif 'Imaging' in wavmodes and len(wavmodes) > 1:
                 log.error('There are mixed observation techniques this night. Please classify your data')
                 self.technique = 'Unknown'
             else:
                 self.technique = 'Spectroscopy'
+                log.info('Detected Spectroscopy Data from RED Camera')
         elif self.instrument == 'Blue':
             self.remove_conflictive_keywords()
             gratings = self.objects_collection.grating.unique()
             if gratings != ['<NO GRATING>']:
                 self.technique = 'Spectroscopy'
+                log.info('Detected Spectroscopy Data from BLUE Camera')
             elif gratings == ['<NO GRATING>'] and int(np.mean(self.objects_collection.cam_targ.unique())) == 0:
                 self.technique = 'Imaging'
+                log.info('Detected Imaging Data from BLUE Camera')
             else:
                 log.error('It was not possible to determine observing technique')
                 self.technique = 'Unknown'
