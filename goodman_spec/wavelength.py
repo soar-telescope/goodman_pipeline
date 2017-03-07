@@ -68,11 +68,6 @@ class WavelengthCalibration(object):
         self.interpolation_size = 200
         self.line_search_method = 'derivative'
         """Instrument configuration and spectral characteristics"""
-        self.gratings_dict = {'SYZY_400': 400,
-                              'KOSI_600': 600,
-                              '930': 930,
-                              'RALC_1200-BLUE': 1200,
-                              'RALC_1200-RED': 1200}
         self.grating_frequency = None
         self.grating_angle = float(0)
         self.camera_angle = float(0)
@@ -261,10 +256,11 @@ class WavelengthCalibration(object):
             binning = int(self.lamp_header['PG5_9'])
         except KeyError:
             binning = int(self.lamp_header['PARAM18'])
-        new_order = int(round(float(slit_size) / (0.15 * binning)))
-        # print(new_order)
+        new_order = int(round(float(slit_size) / (0.15 * binning))) + 10
+        print('New Order: ' + '{:d}'.format(new_order))
         # print(round(new_order))
         peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
+        print(peaks)
         # lines_center = peaks
         lines_center = self.recenter_lines(self.lamp_data, peaks)
 
@@ -371,7 +367,8 @@ class WavelengthCalibration(object):
         """
         blue_correction_factor = -90
         red_correction_factor = -60
-        self.grating_frequency = self.gratings_dict[self.lamp_header['GRATING']]
+        self.grating_frequency = float(re.sub('[A-Za-z_-]', '', self.lamp_header['GRATING']))
+        # print('Grating Frequency ' + '{:d}'.format(int(self.grating_frequency)))
         self.grating_angle = float(self.lamp_header['GRT_ANG'])
         self.camera_angle = float(self.lamp_header['CAM_ANG'])
         # binning = self.lamp_header[]
