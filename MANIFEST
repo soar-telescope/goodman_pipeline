@@ -6,10 +6,11 @@ setup.py
 bin/redccd
 bin/redspec
 goodman_ccd/__init__.py
-goodman_ccd/fix_header.py
-goodman_ccd/flat_arcorrection.py
-goodman_ccd/goodman_ccdreduction.py
-goodman_ccd/trim_slitedge.py
+goodman_ccd/data_classifier.py
+goodman_ccd/goodman_ccd.py
+goodman_ccd/image_processor.py
+goodman_ccd/night_organizer.py
+goodman_ccd/wavmode_translator.py
 goodman_spec/__init__.py
 goodman_spec/linelist.py
 goodman_spec/process.py
