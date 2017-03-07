@@ -74,6 +74,19 @@ class SpectroscopicMode(object):
         # print(self.modes_data_frame)
 
     def __call__(self, header=None, grating=None, camera_targ=None, grating_targ=None, blocking_filter=None):
+        """
+
+        Args:
+            header:
+            grating:
+            camera_targ:
+            grating_targ:
+            blocking_filter:
+
+        Returns:
+
+        """
+
         if all(x is None for x in (grating, camera_targ, grating_targ, blocking_filter)) and header is not None:
             grating = str(re.sub('[A-Za-z_-]', '', header['grating']))
             camera_targ = str(header['cam_targ'])
@@ -86,6 +99,18 @@ class SpectroscopicMode(object):
             return self.get_mode(grating, camera_targ, grating_targ, blocking_filter)
 
     def get_mode(self, grating, camera_targ, grating_targ, blocking_filter):
+        """
+
+        Args:
+            grating:
+            camera_targ:
+            grating_targ:
+            blocking_filter:
+
+        Returns:
+
+        """
+
         # print(grating, camera_targ, grating_targ)
         if any(grat == grating for grat in ('1800', '2100', '2400')):
             return 'Custom' + self.get_central_wavelength(grating, grating_targ, camera_targ)
@@ -98,6 +123,17 @@ class SpectroscopicMode(object):
 
     @staticmethod
     def get_central_wavelength(grating, grt_ang, cam_ang):
+        """
+
+        Args:
+            grating:
+            grt_ang:
+            cam_ang:
+
+        Returns:
+
+        """
+
         grating_frequency = float(grating)
         alpha = float(grt_ang)
         beta = float(cam_ang) - float(grt_ang)

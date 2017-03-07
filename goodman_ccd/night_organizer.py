@@ -17,6 +17,13 @@ log = logging.getLogger('goodmanccd.nightorganizer')
 
 class NightOrganizer(object):
     def __init__(self, args, night_dict):
+        """
+
+        Args:
+            args:
+            night_dict:
+        """
+
         self.args = args
         self.path = night_dict['full_path']
         self.instrument = night_dict['instrument']
@@ -40,7 +47,13 @@ class NightOrganizer(object):
         self.day_time_data = None
         self.night_time_data = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self):
+        """
+
+        Returns:
+
+        """
+
         ifc = ImageFileCollection(self.path, self.keywords)
         self.file_collection = ifc.summary.to_pandas()
         self.all_datatypes = self.file_collection.obstype.unique()
@@ -106,6 +119,11 @@ class NightOrganizer(object):
             log.warning('There is no day time data.')
 
     def spectroscopy_night_time(self):
+        """
+
+        Returns:
+
+        """
 
         # confs stands for configurations
         confs = self.night_time_data.groupby(['grating',
@@ -126,6 +144,11 @@ class NightOrganizer(object):
             self.data_container.add_data_group(night_time_group)
 
     def imaging_night(self):
+        """
+
+        Returns:
+
+        """
         # TODO (simon): modify it to work with the day time data and nigh time data separation
         # bias data group
         afternoon_twilight, morning_twilight, sun_set, sun_rise = self.get_twilight_time()
@@ -233,6 +256,14 @@ class NightOrganizer(object):
 class Night(object):
 
     def __init__(self, path, instrument, technique):
+        """
+
+        Args:
+            path:
+            instrument:
+            technique:
+        """
+
         self.full_path = path
         self.instrument = instrument
         self.technique = technique
@@ -247,6 +278,15 @@ class Night(object):
         self.morning_twilight = None
 
     def add_bias(self, bias_group):
+        """
+
+        Args:
+            bias_group:
+
+        Returns:
+
+        """
+
         if len(bias_group) < 2:
             if self.technique == 'Imaging':
                 log.error('Imaging mode needs BIAS to work properly. Go find some.')
@@ -258,24 +298,61 @@ class Night(object):
             else:
                 self.bias.append(bias_group)
 
-
     def add_day_flats(self, day_flats):
+        """
+
+        Args:
+            day_flats:
+
+        Returns:
+
+        """
+
         if self.day_flats is None:
             self.day_flats = [day_flats]
         else:
             self.day_flats.append(day_flats)
 
     def add_data_group(self, data_group):
+        """
+
+        Args:
+            data_group:
+
+        Returns:
+
+        """
+
         if self.data_groups is None:
             self.data_groups = [data_group]
         else:
             self.data_groups.append(data_group)
 
     def set_sun_times(self, sun_set, sun_rise):
+        """
+
+        Args:
+            sun_set:
+            sun_rise:
+
+        Returns:
+
+        """
+
         self.sun_set_time = sun_set
         self.sun_rise_time = sun_rise
 
     def set_twilight_times(self, afternoon, morning):
+        """
+
+        Args:
+            afternoon:
+            morning:
+
+        Returns:
+
+        """
+
         self.afternoon_twilight = afternoon
         self.morning_twilight = morning
 

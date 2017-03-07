@@ -20,13 +20,18 @@ class DataClassifier(object):
         self.objects_collection = None
         self.technique = None
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self):
+        """
+
+        Returns:
+
+        """
         self.nights_dict = {}
-        print(self.args.raw_path)
+        log.debug('Raw path: ' + self.args.raw_path)
         self.get_instrument(self.args.raw_path)
-        print(self.instrument)
+        log.info('Instrument: ' + self.instrument + ' Camera')
         self.get_obs_technique()
-        print(self.technique)
+        log.info('Observing Technique: ' + self.technique)
         if self.instrument is not None and self.technique is not None:
             self.nights_dict[self.args.raw_path.split('/')[-1]] = {'full_path': self.args.raw_path,
                                                           'instrument': self.instrument,
@@ -34,21 +39,29 @@ class DataClassifier(object):
         else:
             log.error('Failed to determine Instrument or Technique for the night: ' + self.args.raw_path)
 
-        print('END\n')
+        # print('END\n')
         # TODO (simon): Remove this cleaning process and modify software so it is not necessary
         self.instrument = None
         self.technique = None
 
     def get_instrument(self, night_folder):
+        """
+
+        Args:
+            night_folder:
+
+        Returns:
+
+        """
         while True:
             try:
                 ifc = ImageFileCollection(night_folder)
                 self.image_collection = ifc.summary.to_pandas()
                 self.objects_collection = self.image_collection[self.image_collection.obstype == 'OBJECT']
-                print(len(self.objects_collection))
+                # print(len(self.objects_collection))
                 if len(self.objects_collection) > 0:
                     index = random.choice(self.objects_collection.index.tolist())
-                    print('Index: ' + str(index))
+                    # print('Index: ' + str(index))
                     try:
                         # print(self.objects_collection.instconf[index])
                         self.instrument = self.objects_collection.instconf[index]
@@ -68,6 +81,12 @@ class DataClassifier(object):
             break
 
     def get_obs_technique(self):
+        """
+
+        Returns:
+
+        """
+
         if self.instrument == 'Red':
             wavmodes = self.objects_collection.wavmode.unique()
             if len(wavmodes) == 1 and wavmodes[0] == 'Imaging':
@@ -94,6 +113,15 @@ class DataClassifier(object):
 
     @staticmethod
     def fix_duplicated_keywords(night_dir):
+        """
+
+        Args:
+            night_dir:
+
+        Returns:
+
+        """
+
         files = glob.glob(night_dir + '/*.fits')
         random_file = random.choice(files)
         random_header = fits.getheader(random_file)
@@ -118,6 +146,12 @@ class DataClassifier(object):
                     log.error(error)
 
     def remove_conflictive_keywords(self):
+        """
+
+        Returns:
+
+        """
+
         for blue_file in self.image_collection.file.tolist():
             full_path = re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + [blue_file]))
             try:

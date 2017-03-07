@@ -15,7 +15,7 @@ from image_processor import ImageProcessor
 
 FORMAT = '%(levelname)s: %(asctime)s: %(module)s: %(message)s'
 DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
-logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('goodmanccd')
 
 
@@ -27,7 +27,13 @@ class MainApp(object):
         self.instrument = None
         self.technique = None
     
-    def __call__(self, *args, **kwargs):
+    def __call__(self):
+        """
+
+
+        Returns:
+
+        """
         folders = glob.glob(re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + ['*'])))
         # print(re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + ['*'])))
         if any('.fits' in item for item in folders):
@@ -76,10 +82,13 @@ class MainApp(object):
                 process_images = ImageProcessor(self.args, self.data_container)
                 process_images()
 
-
-
     @staticmethod
     def get_args():
+        """
+
+        Returns:
+
+        """
         # Parsing Arguments ---
         parser = argparse.ArgumentParser(description="PyGoodman CCD Reduction - CCD reductions for "
                                                      "Goodman spectroscopic data")
