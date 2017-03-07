@@ -41,7 +41,6 @@ class MainApp(object):
                     self.args.red_path = re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + ['RED']))
                     # print(self.args.red_path)
             if os.path.isdir(self.args.red_path):
-                # TODO (simon): warn if folder is not empty
                 if os.listdir(self.args.red_path) != []:
                     log.warning('Reduced Data Path is not empty')
                     if self.args.auto_clean:

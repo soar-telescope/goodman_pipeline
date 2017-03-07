@@ -7,6 +7,7 @@ import logging
 import random
 import re
 import os
+import glob
 import datetime
 from wavmode_translator import SpectroscopicMode
 
@@ -159,28 +160,32 @@ class ImageProcessor(object):
                                       sigma_clip_high_thresh=1.0)
         master_flat.write(master_flat_name, clobber=True)
         log.info('Created Master Flat: ' + master_flat_name)
-        return master_flat
+        return master_flat, master_flat_name
         # print(master_flat_name)
 
-    def name_master_flats(self, header, group, target_name=''):
+    def name_master_flats(self, header, group, target_name='', get=False):
         master_flat_name = self.args.red_path + '/' + 'master_flat'
         sunset = datetime.datetime.strptime(self.sun_set, "%Y-%m-%dT%H:%M:%S.%f")
         sunrise = datetime.datetime.strptime(self.sun_rise, "%Y-%m-%dT%H:%M:%S.%f")
         afternoon_twilight = datetime.datetime.strptime(self.afternoon_twilight, "%Y-%m-%dT%H:%M:%S.%f")
         morning_twilight = datetime.datetime.strptime(self.morning_twilight, "%Y-%m-%dT%H:%M:%S.%f")
         date_obs = datetime.datetime.strptime(header['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f")
-        print(sunset, date_obs, afternoon_twilight)
+        # print(sunset, date_obs, afternoon_twilight)
         # print(' ')
         if target_name != '':
             target_name = '_' + target_name
-        if (date_obs < sunset) or (date_obs > sunrise):
-            dome_sky = '_dome'
-        elif (sunset < date_obs < afternoon_twilight) or (morning_twilight < date_obs < sunrise):
-            dome_sky = '_sky'
-        elif afternoon_twilight < date_obs < morning_twilight:
-            dome_sky = '_night'
+        if not get:
+            if (date_obs < sunset) or (date_obs > sunrise):
+                dome_sky = '_dome'
+            elif (sunset < date_obs < afternoon_twilight) or (morning_twilight < date_obs < sunrise):
+                dome_sky = '_sky'
+            elif afternoon_twilight < date_obs < morning_twilight:
+                dome_sky = '_night'
+            else:
+                dome_sky = '_other'
         else:
-            dome_sky = '_other'
+            dome_sky = '*'
+
         if self.technique == 'Spectroscopy':
             if group.grating.unique()[0] != '<NO GRATING>':
                 flat_grating = '_' + re.sub('[A-Za-z_-]', '', group.grating.unique()[0])
@@ -203,99 +208,132 @@ class ImageProcessor(object):
 
     def process_spectroscopy_science(self, science_group):
         target_name = ''
-        if 'FLAT' in science_group.obstype.unique():
-            if 'OBJECT' in science_group.obstype.unique():
+        obstype = science_group.obstype.unique()
+        if 'OBJECT' in  obstype or 'COMP' in obstype:
+            object_group = science_group[(science_group.obstype == 'OBJECT') | (science_group.obstype == 'COMP')]
+            if 'OBJECT' in  obstype:
                 target_name = science_group.object[science_group.obstype == 'OBJECT'].unique()[0]
-                print(target_name)
+                log.info('Processing Science Target: ' + target_name)
             else:
-                log.warning('There are no OBJECT datatype in this group')
-                print(science_group)
+                target_name = science_group.object[science_group.obstype == 'COMP'].unique()[0]
+                log.info('Processing Comparison Lamp: ' + target_name)
+
+            if 'FLAT' in obstype:
+                flat_sub_group = science_group[science_group.obstype == 'FLAT']
+                master_flat, master_flat_name = self.create_master_flats(flat_group=flat_sub_group, target_name=target_name)
+            else:
+                ccd = CCDData.read(self.args.raw_path + '/' + random.choice(object_group.file.tolist()), unit=u.adu)
+                master_flat_name = self.name_master_flats(header=ccd.header, group=object_group, get=True)
+                master_flat = self.get_best_flat(flat_name=master_flat_name)
+            for science_image in object_group.file.tolist():
+                prefix = ''
+                ccd = CCDData.read(self.args.raw_path + '/' + science_image, unit=u.adu)
+                ccd = self.image_overscan(ccd)
+                prefix += 'o_'
+                ccd = self.image_trim(ccd)
+                prefix = 't' + prefix
+                if not self.args.ignore_bias:
+                    ccd = ccdproc.subtract_bias(ccd=ccd, master=self.master_bias)
+                    prefix = 'z' + prefix
+                    ccd.header['HISTORY'] = 'Bias subtracted image'
+                ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat)
+                prefix = 'f' + prefix
+                ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
+                ccd.write(self.args.red_path + '/' + prefix + science_image)
+                log.info('Created science image: ' + self.args.red_path + '/' + prefix + science_image)
+                
+
+                # print(science_group)
+        elif 'FLAT' in obstype:
             flat_sub_group = science_group[science_group.obstype == 'FLAT']
-            master_flat = self.create_master_flats(flat_group=flat_sub_group, target_name=target_name)
+            master_flat, master_flat_name = self.create_master_flats(flat_group=flat_sub_group)
+        else:
+            log.error('There is no valid datatype in this group')
 
-        elif 'OBJECT' in science_group.obstype.unique() or 'COMP' in science_group.obstype.unique():
-            object_comp_group = science_group[((science_group.obstype == 'OBJECT') | (science_group.obstype == 'COMP'))]
-            if 'OBJECT' in science_group.obstype.unique():
-                target_name = science_group.object[science_group.obstype == 'OBJECT'].unique()[0]
 
-            print(science_group)
 
     def process_imaging_science(self, imaging_group):
         sample_file = CCDData.read(self.args.raw_path + '/' + random.choice(imaging_group.file.tolist()), unit=u.adu)
-        master_flat_name = self.name_master_flats(sample_file.header, imaging_group)
-        master_flat = CCDData.read(master_flat_name, unit=u.adu)
-        for image_file in imaging_group.file.tolist():
-            ccd = CCDData.read(self.args.raw_path + '/' + image_file, unit=u.adu)
-            ccd = self.image_trim(ccd)
-            if self.args.do_bias:
-                pass
-            ccd = ccdproc.subtract_bias(ccd, self.master_bias)
-            ccd.header['HISTORY'] = 'Bias subtracted image'
-            ccd = ccdproc.flat_correct(ccd, master_flat)
-            ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
-            ccd.write(self.args.red_path + '/' + 'fzt_' + image_file, clobber=True)
-            log.info('Created science file: ' + self.args.red_path + '/' + 'fzt_' + image_file)
-
-    def get_best_flat(self, flat_name):
-        if os.path.isfile(flat_name):
-            try:
-                ccd = CCDData.read(flat_name, unit=u.adu)
-                return ccd
-            except OSError as error:
-                log.error(error)
-                return False
+        master_flat_name = self.name_master_flats(sample_file.header, imaging_group, get=True)
+        print(master_flat_name)
+        master_flat = self.get_best_flat(flat_name=master_flat_name)
+        if master_flat is not None:
+            for image_file in imaging_group.file.tolist():
+                prefix = ''
+                ccd = CCDData.read(self.args.raw_path + '/' + image_file, unit=u.adu)
+                ccd = self.image_trim(ccd)
+                prefix = 't_'
+                if not self.args.ignore_bias:
+                    ccd = ccdproc.subtract_bias(ccd, self.master_bias)
+                    prefix = 'z' + prefix
+                    ccd.header['HISTORY'] = 'Bias subtracted image'
+                ccd = ccdproc.flat_correct(ccd, master_flat)
+                prefix = 'f' + prefix
+                ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
+                ccd.write(self.args.red_path + '/' + prefix + image_file, clobber=True)
+                log.info('Created science file: ' + self.args.red_path + '/' + 'fzt_' + image_file)
         else:
-            if 'sky.fits' in flat_name:
-                flat_name = re.sub('sky.fits', 'dome.fits', flat_name)
-            elif 'dome.fits' in flat_name:
-                flat_name = re.sub('dome.fits', 'sky.fits', flat_name)
-            try:
-                ccd = CCDData.read(flat_name, unit=u.adu)
-                return ccd
-            except OSError as error:
-                log.error(error)
-                return False
+            log.error('Can not process data without a master flat')
+
+    @staticmethod
+    def get_best_flat(self, flat_name):
+        flat_list = glob.glob(flat_name)
+        if len(flat_list) > 0:
+            if len(flat_list) == 1:
+                master_flat_name = flat_list[0]
+            else:
+                master_flat_name = flat_list[0]
+            # elif any('dome' in flat for flat in flat_list):
+            #     master_flat_name =
+
+            master_flat = CCDData.read(master_flat_name, unit=u.adu)
+            log.info('Found suitable master flat: ' + master_flat_name)
+            return master_flat
+        else:
+            log.error('There is no flat available')
+            return None
 
 if __name__ == '__main__':
-    from night_organizer import Night
-    from ccdproc import ImageFileCollection
-    keywords = ['date',
-                'slit',
-                'date-obs',
-                'obstype',
-                'object',
-                'exptime',
-                'obsra',
-                'obsdec',
-                'grating',
-                'cam_targ',
-                'grt_targ',
-                'filter',
-                'filter2']
-    path = '/data/simon/data/soar/work/image_processor_data_test/imaging/'
-    # path = '/data/simon/data/soar/work/image_processor_data_test/spectroscopy_day_flat/'
-    # path = '/data/simon/data/soar/work/image_processor_data_test/spectroscopy_night_flat/'
-    ic = ImageFileCollection(path, keywords)
-    pandas_df = ic.summary.to_pandas()
-
-    if 'imaging' in path:
-        night_object = Night(path, 'Red', 'Imaging')
-        bias_list = pandas_df[pandas_df.obstype == 'BIAS']
-        # print(bias_list)
-        night_object.add_bias(bias_list)
-        all_flats_list = pandas_df[pandas_df.obstype == 'FLAT']
-        # print(all_flats_list['filter'][pandas_df.obstype == 'FLAT'].unique())
-        for i_filter in pandas_df['filter'][pandas_df.obstype == 'FLAT'].unique():
-            flat_group = all_flats_list[all_flats_list['filter'] == i_filter]
-            night_object.add_day_flats(flat_group)
-            # print(flat_group)
-            # print(all_flats_list[all_flats_list.filter == i_filter])
-        all_objects = pandas_df[pandas_df.obstype == 'OBJECT']
-        for o_filter in pandas_df['filter'][pandas_df.obstype == 'OBJECT'].unique():
-            object_group = all_objects[all_objects['filter'] == o_filter]
-            night_object.add_data_group(object_group)
-            # print(object_group)
-
-    improc = ImageProcessor(night_object)
-    improc()
+    pass
+    # from night_organizer import Night
+    # from ccdproc import ImageFileCollection
+    # keywords = ['date',
+    #             'slit',
+    #             'date-obs',
+    #             'obstype',
+    #             'object',
+    #             'exptime',
+    #             'obsra',
+    #             'obsdec',
+    #             'grating',
+    #             'cam_targ',
+    #             'grt_targ',
+    #             'filter',
+    #             'filter2']
+    # path = '/data/simon/data/soar/work/image_processor_data_test/imaging/'
+    # # path = '/data/simon/data/soar/work/image_processor_data_test/spectroscopy_day_flat/'
+    # # path = '/data/simon/data/soar/work/image_processor_data_test/spectroscopy_night_flat/'
+    # ic = ImageFileCollection(path, keywords)
+    # pandas_df = ic.summary.to_pandas()
+    #
+    # if 'imaging' in path:
+    #     night_object = Night(path, 'Red', 'Imaging')
+    #     bias_list = pandas_df[pandas_df.obstype == 'BIAS']
+    #     # print(bias_list)
+    #     night_object.add_bias(bias_list)
+    #     all_flats_list = pandas_df[pandas_df.obstype == 'FLAT']
+    #     # print(all_flats_list['filter'][pandas_df.obstype == 'FLAT'].unique())
+    #     for i_filter in pandas_df['filter'][pandas_df.obstype == 'FLAT'].unique():
+    #         flat_group = all_flats_list[all_flats_list['filter'] == i_filter]
+    #         night_object.add_day_flats(flat_group)
+    #         # print(flat_group)
+    #         # print(all_flats_list[all_flats_list.filter == i_filter])
+    #     all_objects = pandas_df[pandas_df.obstype == 'OBJECT']
+    #     for o_filter in pandas_df['filter'][pandas_df.obstype == 'OBJECT'].unique():
+    #         object_group = all_objects[all_objects['filter'] == o_filter]
+    #         night_object.add_data_group(object_group)
+    #         # print(object_group)
+    #
+    # improc = ImageProcessor(night_object)
+    # improc()
 
