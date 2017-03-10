@@ -263,10 +263,10 @@ class WavelengthCalibration(object):
         except KeyError:
             binning = int(self.lamp_header['PARAM18'])
         new_order = int(round(float(slit_size) / (0.15 * binning))) + 10
-        print('New Order: ' + '{:d}'.format(new_order))
+        # print('New Order: ' + '{:d}'.format(new_order))
         # print(round(new_order))
         peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
-        print(peaks)
+        # print(peaks)
         if slit_size >= 5:
             lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data, lines=peaks, slit_size=slit_size, order=new_order)
         else:
@@ -371,12 +371,12 @@ class WavelengthCalibration(object):
             fit_gaussian = fitting.LevMarLSQFitter()
             fitted_gaussian = fit_gaussian(gaussian_model, x_axis, lamp_sample)
             new_line_centers.append(fitted_gaussian.mean.value)
-            if self.args.plots_enabled:
-                plt.plot(x_axis, lamp_sample)
-                plt.plot(x_axis, gaussian_model(x_axis))
-                plt.plot(x_axis, fitted_gaussian(x_axis), color='k')
-                plt.axvline(line)
-                plt.show()
+            # if self.args.plots_enabled:
+            #     plt.plot(x_axis, lamp_sample)
+            #     plt.plot(x_axis, gaussian_model(x_axis))
+            #     plt.plot(x_axis, fitted_gaussian(x_axis), color='k')
+            #     plt.axvline(line)
+            #     plt.show()
         return new_line_centers
 
 
@@ -1193,13 +1193,16 @@ class WavelengthCalibration(object):
             linear_data (list): Contains two elements: Linear wavelength axis and the smoothed linearized data itself.
 
         """
+        print('data ', data)
         pixel_axis = range(1, len(data) + 1, 1)
         if self.wsolution is not None:
             x_axis = self.wsolution(pixel_axis)
             new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
             tck = scipy.interpolate.splrep(x_axis, data, s=0)
             linearized_data = scipy.interpolate.splev(new_x_axis, tck, der=0)
+            print('l ', linearized_data)
             smoothed_linearized_data = signal.medfilt(linearized_data)
+            print('sl ', smoothed_linearized_data)
             if plots:
                 fig6 = plt.figure(6)
                 plt.xlabel('Wavelength (Angstrom)')
@@ -1284,6 +1287,11 @@ class WavelengthCalibration(object):
         # add .fits
 
         new_filename = self.args.destiny + self.args.output_prefix + original_filename.replace('.fits', '') + f_end
+        # print('spectrum[0]')
+        # print(spectrum[0])
+        # print('spectrum[1]')
+        # print(spectrum[1])
+        # print(len(spectrum))
 
         fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
         log.info('Created new file: %s', new_filename)

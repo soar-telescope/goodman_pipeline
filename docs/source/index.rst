@@ -8,7 +8,7 @@ Welcome to Goodman Pipelines's documentation!
 
 * :ref:`modindex`
 
-.. include:: README.rst
+.. include:: README2.rst
 
 .. toctree::
    :maxdepth: 3
