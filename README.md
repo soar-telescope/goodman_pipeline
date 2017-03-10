@@ -47,7 +47,7 @@ git clone https://github.com/simontorres/goodman.git
 
 #### Download package-only tarball
 Go to [this site](https://github.com/simontorres/goodman/tree/master/dist) and download the latest (or highest) version
-and place it wherever you want and the unzip it.
+and place it wherever you want and then untar it.
  
  ```shell
  tar -xvf goodman-1.0b1.tar.gz
