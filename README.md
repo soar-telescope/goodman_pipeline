@@ -47,7 +47,24 @@ git clone https://github.com/simontorres/goodman.git
 
 #### Download package-only tarball
 Go to [this site](https://github.com/simontorres/goodman/tree/master/dist) and download the latest (or highest) version
-and place it wherever you want
+and place it wherever you want and the unzip it.
+ 
+ ```shell
+ tar -xvf goodman-1.0b1.tar.gz
+ cd goodman-1.0b1
+ ls 
+ OVERVIEW.md		bin			requirements.txt
+PKG-INFO		goodman_ccd		setup.py
+README.md		goodman_spec
+ ```
+ 
+You might need to install dependencies, please refer to [Ubuntu](https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience)
+or [Centos7](https://github.com/simontorres/goodman/wiki/Centos-7-Installation) Installation guide. Once you have solved the dependencies issues (if any) do:
+
+```shell
+sudo python2.7 setup.py install
+```
+
 
 ### Requirements
 
