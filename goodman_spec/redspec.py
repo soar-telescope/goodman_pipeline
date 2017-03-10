@@ -26,7 +26,7 @@ from wavelength import WavelengthCalibration
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
 DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
-logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('redspec')
 
 __author__ = 'Simon Torres'
@@ -103,7 +103,7 @@ class MainApp(object):
                         else:
                             log.error('No data was extracted from this target.')
                     else:
-                        log.debug('Incompatibility of solution to new data')
+                        log.info('Incompatibility of solution to new data')
                         time.sleep(3)
                         # TODO(simon): complete this part
             elif self.args.procmode == 1:

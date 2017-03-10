@@ -55,6 +55,8 @@ class WavelengthFitter(object):
         """
         if self.model and self.model_fit is not None:
             try:
+                print(physical)
+                print(wavelength)
                 fitted_model = self.model_fit(self.model, physical, wavelength)
                 return fitted_model
             except TypeError as error:

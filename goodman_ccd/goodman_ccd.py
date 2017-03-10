@@ -21,6 +21,7 @@ log = logging.getLogger('goodmanccd')
 
 class MainApp(object):
     def __init__(self):
+        """This method initalizes the """
         self.args = self.get_args()
         self.data_container = None
         self.full_path = None
@@ -101,6 +102,8 @@ class MainApp(object):
         # parser.add_argument('-s', '--slit', action='store_true',
         #                     help="Find slit edge to make an additional trimming (Maintainer: Not recommended for now).")
 
+        # TODO (simon): Add argument to use calibration data from other day
+
         # remove saturated data
         parser.add_argument('--remove-saturated',
                             action='store_true',
@@ -147,8 +150,6 @@ class MainApp(object):
             parser.exit("Raw data folder doesn't exist")
 
         return args
-
-
 
 
 if __name__ == '__main__':

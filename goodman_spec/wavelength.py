@@ -19,6 +19,8 @@ import numpy as np
 import scipy.interpolate
 from astropy.io import fits
 from astropy.stats import sigma_clip
+from astropy.modeling import models, fitting
+from astropy.convolution import convolve, Gaussian1DKernel
 from scipy import signal
 
 import wsbuilder
@@ -245,8 +247,12 @@ class WavelengthCalibration(object):
         Returns:
             lines_candidates (list): A common list containing pixel values at approximate location of lines.
         """
-        filtered_data = np.where(np.abs(self.lamp_data > self.lamp_data.min() + 0.05 * self.lamp_data.max()),
-                                 self.lamp_data,
+        # import cPickle
+        # lamp_out = open('lamp.pkl', 'wb')
+        # cPickle.dump([self.lamp_data, self.lamp_header], lamp_out, protocol=cPickle.HIGHEST_PROTOCOL)
+        no_nan_lamp_data = np.nan_to_num(self.lamp_data)
+        filtered_data = np.where(np.abs(no_nan_lamp_data > no_nan_lamp_data.min() + 0.05 * no_nan_lamp_data.max()),
+                                 no_nan_lamp_data,
                                  None)
 
         slit_size = re.sub('[a-zA-Z" ]', '', self.lamp_header['slit'])
@@ -261,8 +267,12 @@ class WavelengthCalibration(object):
         # print(round(new_order))
         peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
         print(peaks)
-        # lines_center = peaks
-        lines_center = self.recenter_lines(self.lamp_data, peaks)
+        if slit_size >= 5:
+            lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data, lines=peaks, slit_size=slit_size, order=new_order)
+        else:
+            # lines_center = peaks
+            lines_center = self.recenter_lines(no_nan_lamp_data, peaks)
+
 
         if self.args.plots_enabled:
             fig = plt.figure(1)
@@ -278,7 +288,7 @@ class WavelengthCalibration(object):
             # plt.axhline(median + stddev, color='g')
             # for rc_line in lines_center:
             #     plt.axvline(rc_line, color='r')
-            plt.plot(self.raw_pixel_axis, self.lamp_data, color='k')
+            plt.plot(self.raw_pixel_axis, no_nan_lamp_data, color='k')
             plt.legend(loc='best')
             plt.show()
         return lines_center
@@ -346,6 +356,33 @@ class WavelengthCalibration(object):
                 plt.axvline(center, color='k', linestyle='.-', label='New Center')
             plt.show()
         return new_center
+
+    def recenter_broad_lines(self, lamp_data, lines, slit_size, order):
+        new_line_centers = []
+        gaussian_kernel = Gaussian1DKernel(stddev=2.)
+        lamp_data = convolve(lamp_data, gaussian_kernel)
+        for line in lines:
+            lower_index = max(0, int(line - order))
+            upper_index = min(len(lamp_data), int(line + order))
+            lamp_sample = lamp_data[lower_index:upper_index]
+            x_axis = np.linspace(lower_index, upper_index, len(lamp_sample))
+            line_max = np.max(lamp_sample)
+            gaussian_model = models.Gaussian1D(amplitude=line_max, mean=line, stddev=order)
+            fit_gaussian = fitting.LevMarLSQFitter()
+            fitted_gaussian = fit_gaussian(gaussian_model, x_axis, lamp_sample)
+            new_line_centers.append(fitted_gaussian.mean.value)
+            if self.args.plots_enabled:
+                plt.plot(x_axis, lamp_sample)
+                plt.plot(x_axis, gaussian_model(x_axis))
+                plt.plot(x_axis, fitted_gaussian(x_axis), color='k')
+                plt.axvline(line)
+                plt.show()
+        return new_line_centers
+
+
+
+
+
 
     def get_spectral_characteristics(self):
         """Calculates some Goodman's specific spectroscopic values.
@@ -1447,7 +1484,7 @@ class WavelengthSolution(object):
             for key in new_dict.keys():
                 if self.spectral_dict['camera'] == 'red':
                     if key in ['grating', 'roi', 'instconf', 'wavmode'] and new_dict[key] != self.spectral_dict[key]:
-                        log.debug('Keyword: %s does not Match', key.upper())
+                        log.info('Keyword: %s does not Match', key.upper())
                         log.info('%s - Solution: %s - New Data: %s', key.upper(), self.spectral_dict[key], new_dict[key])
                         return False
                     elif key in ['cam_ang',  'grt_ang'] and abs(new_dict[key] - self.spectral_dict[key]) > 1:
@@ -1524,7 +1561,7 @@ class WavelengthSolution(object):
 
         wsolution_name = 'ws' + name_text
 
-        print(wsolution_name)
+        log.debug(wsolution_name)
         return wsolution_name
         # else:
         #     log.error('There is no flat suitable for use')
