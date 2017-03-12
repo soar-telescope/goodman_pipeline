@@ -21,7 +21,11 @@ log = logging.getLogger('goodmanccd')
 
 class MainApp(object):
     def __init__(self):
-        """This method initalizes the """
+        """This method initalizes the MainApp class
+
+        The arguments will be obtained here and they will be available for all execution of the program.
+        Other attributes will be initilized as None.
+        """
         self.args = self.get_args()
         self.data_container = None
         self.full_path = None
@@ -29,10 +33,12 @@ class MainApp(object):
         self.technique = None
     
     def __call__(self):
-        """
+        """Call method for MainApp
 
-
-        Returns:
+        From the arguments this method finds the raw_path attribute and checks its contents for the existance of
+        files containing the '.fits' string. If not it will assume every item is a different data directory and they
+        will be treated independently. If there are '.fits' files the program will assume is a single data directory.
+        Any subdirectory will be ignored.
 
         """
         folders = glob.glob(re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + ['*'])))
@@ -85,9 +91,10 @@ class MainApp(object):
 
     @staticmethod
     def get_args():
-        """
+        """Get command line arguments.
 
         Returns:
+            args (object): Arparse object. Contains all the arguments as attributes
 
         """
         # Parsing Arguments ---
