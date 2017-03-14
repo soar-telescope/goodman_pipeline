@@ -8,6 +8,7 @@ or spectra and traces it doing some fit.
 Simon Torres 2016-06-28
 
 """
+# TODO (simon): Change all astropy.io.fits to astropy.CCDData
 from __future__ import print_function
 import sys
 import os
