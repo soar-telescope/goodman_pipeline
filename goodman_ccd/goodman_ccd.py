@@ -23,6 +23,7 @@ class MainApp(object):
     def __init__(self):
         """This method initalizes the MainApp class
 
+        The main task of this method is to call the get_args function that returns an argparse object.
         The arguments will be obtained here and they will be available for all execution of the program.
         Other attributes will be initilized as None.
         """
@@ -36,7 +37,7 @@ class MainApp(object):
         """Call method for MainApp
 
         From the arguments this method finds the raw_path attribute and checks its contents for the existance of
-        files containing the '.fits' string. If not it will assume every item is a different data directory and they
+        files containing the '.fits' string. If there is none it will assume every item is a different data directory and they
         will be treated independently. If there are '.fits' files the program will assume is a single data directory.
         Any subdirectory will be ignored.
 

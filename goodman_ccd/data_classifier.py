@@ -45,12 +45,14 @@ class DataClassifier(object):
         self.technique = None
 
     def get_instrument(self, night_folder):
-        """
+        """Identify Goodman's Camera
+
+        Goodman has two camera, a blue one and another optimized for redder wavelength. Their headers are differents
+        so this methods uses that to discover which camera the data belong to. The red camera has an specific keyword
+        that says which camera is but the blue does not.
 
         Args:
-            night_folder:
-
-        Returns:
+            night_folder (str): The full path for the raw data location
 
         """
         while True:
@@ -81,9 +83,12 @@ class DataClassifier(object):
             break
 
     def get_obs_technique(self):
-        """
+        """Identify if the data is Imaging or Spectroscopy
 
-        Returns:
+        Besides the fact there are two cameras there are two observational techniques. Imaging and Spectroscopy. The
+        red camera has an specific keyword that contains that information but the blue does not.
+
+        The result is stored as an attribute of the class.
 
         """
 
