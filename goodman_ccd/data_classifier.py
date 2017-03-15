@@ -11,8 +11,22 @@ log = logging.getLogger('goodmanccd.dataclassifier')
 
 
 class DataClassifier(object):
+    """Class Definition
+
+    Data classifier is intended to define the camera that is being used and the technique in use. This will be used
+    later to make important decisions regarding the process to be used.
+
+    """
 
     def __init__(self, args):
+        """Initialization method for the DataClassifier class
+
+        The general arguments of the program are parsed and become part of the class attributes. The rest of attributes
+        are initialized as None.
+
+        Args:
+            args (object): Argparse object
+        """
         self.args = args
         self.nights_dict = None
         self.instrument = None
@@ -21,9 +35,10 @@ class DataClassifier(object):
         self.technique = None
 
     def __call__(self):
-        """
+        """Call method for the DataClassifier class
 
-        Returns:
+        This method call specific method that define all the attributes of the class. The intention is to define the
+        instrument and technique in use.
 
         """
         self.nights_dict = {}
@@ -53,6 +68,8 @@ class DataClassifier(object):
 
         Args:
             night_folder (str): The full path for the raw data location
+
+        The result is stored as an attribute of the class.
 
         """
         while True:
@@ -118,12 +135,13 @@ class DataClassifier(object):
 
     @staticmethod
     def fix_duplicated_keywords(night_dir):
-        """
+        """Remove duplicated keywords
+
+        There are some cases when the raw data comes with duplicated keywords. The origin has not been tracked down.
+        The solution is to identify the duplicated keywords and the remove all but one from the end backwards.
 
         Args:
-            night_dir:
-
-        Returns:
+            night_dir (str): The full path for the raw data location
 
         """
 
@@ -151,9 +169,11 @@ class DataClassifier(object):
                     log.error(error)
 
     def remove_conflictive_keywords(self):
-        """
+        """Removes problematic keywords
 
-        Returns:
+        The blue camera has a set of keywords whose comments contain non-ascii characters, in particular the degree
+        symbol. Those keyords are not needed in any stage of the data reduction therefore they are removed.
+        The data will be overwritten with the keywords removed. The user will need to have backups of raw data.
 
         """
 
@@ -173,7 +193,6 @@ class DataClassifier(object):
                 fits.writeto(full_path, data, header, clobber=True)
             except KeyError as error:
                 log.debug(error)
-
 
 
 if __name__ == '__main__':
