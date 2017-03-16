@@ -37,8 +37,9 @@ class MainApp(object):
         """Call method for MainApp
 
         From the arguments this method finds the raw_path attribute and checks its contents for the existance of
-        files containing the '.fits' string. If there is none it will assume every item is a different data directory and they
-        will be treated independently. If there are '.fits' files the program will assume is a single data directory.
+        files containing the '.fits' string. If there is none it will assume every item is a different data directory
+        and they will be treated independently. If there are '.fits' files the program will assume is a single data
+        directory.
         Any subdirectory will be ignored.
 
         """
