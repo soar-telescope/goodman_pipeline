@@ -20,8 +20,8 @@ class NightOrganizer(object):
         """
 
         Args:
-            args:
-            night_dict:
+            args (object):
+            night_dict (dict):
         """
 
         self.args = args

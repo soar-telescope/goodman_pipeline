@@ -20,8 +20,8 @@ class ImageProcessor(object):
         """
 
         Args:
-            args:
-            data_container:
+            args (object): Argparse object
+            data_container (object): Contains relevant information of the night and the data itself.
         """
         self.args = args
         self.instrument = data_container.instrument
