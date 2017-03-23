@@ -13,6 +13,12 @@ from data_classifier import DataClassifier
 from night_organizer import NightOrganizer
 from image_processor import ImageProcessor
 
+__author__ = 'David Sanmartim'
+__date__ = '2016-07-15'
+__version__ = "0.1"
+__email__ = "dsanmartim@ctio.noao.edu"
+__maintainer__ = "Simon Torres"
+
 FORMAT = '%(levelname)s: %(asctime)s: %(module)s: %(message)s'
 DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
@@ -20,6 +26,7 @@ log = logging.getLogger('goodmanccd')
 
 
 class MainApp(object):
+
     def __init__(self):
         """This method initalizes the MainApp class
 
@@ -43,8 +50,7 @@ class MainApp(object):
         Any subdirectory will be ignored.
 
         """
-        folders = glob.glob(re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + ['*'])))
-        # print(re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + ['*'])))
+        folders = glob.glob(os.path.join(self.args.raw_path, '*'))
         if any('.fits' in item for item in folders):
             folders = [self.args.raw_path]
         for data_folder in folders:
@@ -53,14 +59,14 @@ class MainApp(object):
             if self.args.red_path == './RED' or len(folders) > 1:
                 log.info('No special reduced data path defined. Proceeding with defaults.')
                 if self.args.raw_path not in self.args.red_path:
-                    self.args.red_path = re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + ['RED']))
+                    self.args.red_path = os.path.join(self.args.raw_path, 'RED')
                     # print(self.args.red_path)
             if os.path.isdir(self.args.red_path):
                 if os.listdir(self.args.red_path) != []:
                     log.warning('Reduced Data Path is not empty')
                     if self.args.auto_clean:
                         for _file in os.listdir(self.args.red_path):
-                            os.unlink(self.args.red_path + '/' + _file)
+                            os.unlink(os.path.join(self.args.red_path, _file))
                         log.info('Cleaned Reduced data directory: ' + self.args.red_path)
                     else:
                         log.error('Please clean the reduced data folder or use --auto-clean')
@@ -103,9 +109,10 @@ class MainApp(object):
         parser = argparse.ArgumentParser(description="PyGoodman CCD Reduction - CCD reductions for "
                                                      "Goodman spectroscopic data")
 
-        # parser.add_argument('-c', '--clean',
-        #                     action='store_true',
-        #                     help="Clean cosmic rays from science data.")
+        parser.add_argument('-c', '--clean',
+                            action='store_true',
+                            dest='clean_cosmic',
+                            help="Clean cosmic rays from science data.")
 
         # # removed because is not working properly
         # parser.add_argument('-s', '--slit', action='store_true',
@@ -117,7 +124,7 @@ class MainApp(object):
         parser.add_argument('--remove-saturated',
                             action='store_true',
                             dest='remove_saturated',
-                            help="Remove images above saturation level")
+                            help="Remove FLAT images above saturation level")
 
         parser.add_argument('--ignore-bias',
                             action='store_true',
