@@ -57,7 +57,7 @@ class ImageProcessor(object):
                     group_obstype = sub_group.obstype.unique()
                     if len(group_obstype) == 1 and group_obstype[0] == 'BIAS':
                         log.debug('Create Master Bias')
-                        self.create_master_bias(sub_group.file.tolist())
+                        self.create_master_bias(sub_group)
                     elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
                         log.debug('Create Master FLATS')
                         self.create_master_flats(sub_group)
@@ -150,19 +150,27 @@ class ImageProcessor(object):
         ccd.header['HISTORY'] = 'Trimmed image to ' + self.trim_section
         return ccd
 
-    def create_master_bias(self, file_list):
+    def create_master_bias(self, bias_group):
         """
 
         Args:
-            file_list:
+            bias_group:
 
         Returns:
 
         """
-
+        bias_file_list = bias_group.file.tolist()
+        default_bias_name = self.args.red_path + '/' + 'master_bias.fits'
+        if len(glob.glob(self.args.red_path + '/master_bias*fits')) > 0:
+            new_bias_name = re.sub(".fits",
+                                   '_{:d}.fits'.format(len(glob.glob(self.args.red_path + '/master_bias*fits')) + 1),
+                                   default_bias_name)
+            log.info('New name for master bias: ' + new_bias_name)
+        else:
+            new_bias_name = default_bias_name
         if self.technique == 'Spectroscopy':
             master_bias_list = []
-            for image_file in file_list:
+            for image_file in bias_file_list:
                 # print(image_file)
                 log.debug(self.overscan_region)
                 ccd = CCDData.read(self.args.raw_path + '/' + image_file, unit=u.adu)
@@ -172,19 +180,19 @@ class ImageProcessor(object):
                 master_bias_list.append(to_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
                                                sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0)
-            self.master_bias.write(self.args.red_path + '/' + 'master_bias.fits', clobber=True)
-            log.info('Created master bias: ' + self.args.red_path + '/' + 'master_bias.fits')
+            self.master_bias.write(new_bias_name, clobber=True)
+            log.info('Created master bias: ' + new_bias_name)
         elif self.technique == 'Imaging':
             master_bias_list = []
-            for image_file in file_list:
+            for image_file in bias_file_list:
                 ccd = CCDData.read(self.args.raw_path + '/' + image_file, unit=u.adu)
                 log.info('Loading bias image: ' + self.args.raw_path + '/' + image_file)
                 t_ccd = self.image_trim(ccd)
                 master_bias_list.append(t_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
                                                sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0)
-            self.master_bias.write(self.args.red_path + '/' + 'master_bias.fits', clobber=True)
-            log.info('Created master bias: ' + self.args.red_path + '/' + 'master_bias.fits')
+            self.master_bias.write(new_bias_name, clobber=True)
+            log.info('Created master bias: ' + new_bias_name)
 
     def create_master_flats(self, flat_group, target_name=''):
         """
