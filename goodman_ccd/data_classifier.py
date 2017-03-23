@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 import glob
 import re
 import random
@@ -86,7 +87,7 @@ class DataClassifier(object):
                         self.instrument = self.objects_collection.instconf[index]
                     except AttributeError as error:
                         log.error(error)
-                        print(self.objects_collection.file[index])
+                        # print(self.objects_collection.file[index])
                         self.instrument = 'Blue'
                 else:
                     log.error('There is not data of type OBJECT in this folder.')
@@ -145,7 +146,7 @@ class DataClassifier(object):
 
         """
 
-        files = glob.glob(night_dir + '/*.fits')
+        files = glob.glob(os.path.join(night_dir, '*.fits'))
         random_file = random.choice(files)
         random_header = fits.getheader(random_file)
         multiple_keys = []
@@ -178,7 +179,7 @@ class DataClassifier(object):
         """
 
         for blue_file in self.image_collection.file.tolist():
-            full_path = re.sub('//', '/', '/'.join(self.args.raw_path.split('/') + [blue_file]))
+            full_path = os.path.join(self.args.raw_path, blue_file)
             try:
                 data, header = fits.getdata(full_path, header=True, ignore_missing_end=True)
                 keys_to_remove = ['PARAM0', 'PARAM61', 'PARAM62', 'PARAM63', 'NAXIS3']

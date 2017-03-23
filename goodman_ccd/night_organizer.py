@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 from ccdproc import ImageFileCollection
 import matplotlib.pyplot as plt
 import time

@@ -83,7 +83,7 @@ class ImageProcessor(object):
             if group is not None:
                 # print(self.bias[0])
                 image_list = group[0]['file'].tolist()
-                sample_image = re.sub('//', '/', self.args.raw_path + '/' + random.choice(image_list))
+                sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
                 header = fits.getheader(sample_image)
                 trim_section = header['TRIMSEC']
                 log.info('Trim Section: %s', trim_section)
@@ -101,7 +101,7 @@ class ImageProcessor(object):
             if group is not None:
                 # print(self.bias[0])
                 image_list = group[0]['file'].tolist()
-                sample_image = re.sub('//', '/', self.args.raw_path + '/' + random.choice(image_list))
+                sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
                 log.debug('Overscan Sample File ' + sample_image)
                 header = fits.getheader(sample_image)
                 if header['CCDSUM'] == '1 1':
@@ -160,10 +160,11 @@ class ImageProcessor(object):
 
         """
         bias_file_list = bias_group.file.tolist()
-        default_bias_name = self.args.red_path + '/' + 'master_bias.fits'
-        if len(glob.glob(self.args.red_path + '/master_bias*fits')) > 0:
+        default_bias_name =os.path.join(self.args.red_path, 'master_bias.fits')
+        if len(glob.glob(os.path.join(self.args.red_path, 'master_bias*fits'))) > 0:
             new_bias_name = re.sub(".fits",
-                                   '_{:d}.fits'.format(len(glob.glob(self.args.red_path + '/master_bias*fits')) + 1),
+                                   '_{:d}.fits'.format(len(glob.glob(os.path.join(self.args.red_path,
+                                                                                  'master_bias*fits'))) + 1),
                                    default_bias_name)
             log.info('New name for master bias: ' + new_bias_name)
         else:
@@ -173,8 +174,8 @@ class ImageProcessor(object):
             for image_file in bias_file_list:
                 # print(image_file)
                 log.debug(self.overscan_region)
-                ccd = CCDData.read(self.args.raw_path + '/' + image_file, unit=u.adu)
-                log.info('Loading bias image: ' + self.args.raw_path + '/' + image_file)
+                ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
+                log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
                 o_ccd = self.image_overscan(ccd)
                 to_ccd = self.image_trim(o_ccd)
                 master_bias_list.append(to_ccd)
@@ -185,8 +186,8 @@ class ImageProcessor(object):
         elif self.technique == 'Imaging':
             master_bias_list = []
             for image_file in bias_file_list:
-                ccd = CCDData.read(self.args.raw_path + '/' + image_file, unit=u.adu)
-                log.info('Loading bias image: ' + self.args.raw_path + '/' + image_file)
+                ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
+                log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
                 t_ccd = self.image_trim(ccd)
                 master_bias_list.append(t_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
@@ -210,8 +211,8 @@ class ImageProcessor(object):
         master_flat_name = None
         for f_file in flat_file_list:
             # print(f_file)
-            ccd = CCDData.read(self.args.raw_path + '/' + f_file, unit=u.adu)
-            log.info('Loading flat image: ' + self.args.raw_path + '/' + f_file)
+            ccd = CCDData.read(os.path.join(self.args.raw_path, f_file), unit=u.adu)
+            log.info('Loading flat image: ' + os.path.join(self.args.raw_path, f_file))
             if master_flat_name is None:
                 master_flat_name = self.name_master_flats(header=ccd.header, group=flat_group, target_name=target_name)
             if self.technique == 'Spectroscopy':
@@ -245,7 +246,7 @@ class ImageProcessor(object):
         Returns:
 
         """
-        master_flat_name = self.args.red_path + '/' + 'master_flat'
+        master_flat_name = os.path.join(self.args.red_path, 'master_flat')
         sunset = datetime.datetime.strptime(self.sun_set, "%Y-%m-%dT%H:%M:%S.%f")
         sunrise = datetime.datetime.strptime(self.sun_rise, "%Y-%m-%dT%H:%M:%S.%f")
         afternoon_twilight = datetime.datetime.strptime(self.afternoon_twilight, "%Y-%m-%dT%H:%M:%S.%f")
@@ -312,12 +313,12 @@ class ImageProcessor(object):
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']
                 master_flat, master_flat_name = self.create_master_flats(flat_group=flat_sub_group, target_name=target_name)
             else:
-                ccd = CCDData.read(self.args.raw_path + '/' + random.choice(object_group.file.tolist()), unit=u.adu)
+                ccd = CCDData.read(os.path.join(self.args.raw_path, random.choice(object_group.file.tolist())), unit=u.adu)
                 master_flat_name = self.name_master_flats(header=ccd.header, group=object_group, get=True)
                 master_flat = self.get_best_flat(flat_name=master_flat_name)
             for science_image in object_group.file.tolist():
                 prefix = ''
-                ccd = CCDData.read(self.args.raw_path + '/' + science_image, unit=u.adu)
+                ccd = CCDData.read(os.path.join(self.args.raw_path, science_image), unit=u.adu)
                 ccd = self.image_overscan(ccd)
                 prefix += 'o_'
                 ccd = self.image_trim(ccd)
@@ -329,8 +330,8 @@ class ImageProcessor(object):
                 ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat)
                 prefix = 'f' + prefix
                 ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
-                ccd.write(self.args.red_path + '/' + prefix + science_image)
-                log.info('Created science image: ' + self.args.red_path + '/' + prefix + science_image)
+                ccd.write(os.path.join(self.args.red_path, prefix + science_image))
+                log.info('Created science image: ' + os.path.join(self.args.red_path, prefix + science_image))
                 
 
                 # print(science_group)
@@ -350,14 +351,14 @@ class ImageProcessor(object):
 
         """
 
-        sample_file = CCDData.read(self.args.raw_path + '/' + random.choice(imaging_group.file.tolist()), unit=u.adu)
+        sample_file = CCDData.read(os.path.join(self.args.raw_path, random.choice(imaging_group.file.tolist())), unit=u.adu)
         master_flat_name = self.name_master_flats(sample_file.header, imaging_group, get=True)
         print(master_flat_name)
         master_flat = self.get_best_flat(flat_name=master_flat_name)
         if master_flat is not None:
             for image_file in imaging_group.file.tolist():
                 prefix = ''
-                ccd = CCDData.read(self.args.raw_path + '/' + image_file, unit=u.adu)
+                ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
                 ccd = self.image_trim(ccd)
                 prefix = 't_'
                 if not self.args.ignore_bias:
@@ -367,8 +368,8 @@ class ImageProcessor(object):
                 ccd = ccdproc.flat_correct(ccd, master_flat)
                 prefix = 'f' + prefix
                 ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
-                ccd.write(self.args.red_path + '/' + prefix + image_file, clobber=True)
-                log.info('Created science file: ' + self.args.red_path + '/' + 'fzt_' + image_file)
+                ccd.write(self.args.red_path, prefix + image_file, clobber=True)
+                log.info('Created science file: ' + os.path.join(self.args.red_path, prefix + image_file))
         else:
             log.error('Can not process data without a master flat')
 
