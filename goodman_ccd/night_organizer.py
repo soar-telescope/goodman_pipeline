@@ -17,11 +17,14 @@ log = logging.getLogger('goodmanccd.nightorganizer')
 
 class NightOrganizer(object):
     def __init__(self, args, night_dict):
-        """
+        """Initializes the NightOrganizer class
+
+        This class contains methods to organize the data for processing. It will identify groups of OBJECTS, FLATS or
+        COMPS (comparison lamps) whenever they exist. The product will be an object that will act as a data container.
 
         Args:
-            args (object):
-            night_dict (dict):
+            args (object): Argparse object. Contains all the runtime arguments.
+            night_dict (dict): A dictionary that contains full path, instrument and observational technique.
         """
 
         self.args = args
@@ -40,7 +43,9 @@ class NightOrganizer(object):
                          'cam_targ',
                          'grt_targ',
                          'filter',
-                         'filter2']
+                         'filter2',
+                         'gain',
+                         'rdnoise']
         self.file_collection = None
         self.all_datatypes = None
         self.data_container = Night(path=self.path, instrument=self.instrument, technique=self.technique)
@@ -48,14 +53,19 @@ class NightOrganizer(object):
         self.night_time_data = None
 
     def __call__(self):
-        """
+        """Call method
+
+        Creates a table with selected keywords that will allow to group the data in order to be classified according to
+        the observational technique used, imaging or spectroscopy.
 
         Returns:
+            data_container (object): Class used as storage unit for classified data.
 
         """
 
         ifc = ImageFileCollection(self.path, self.keywords)
         self.file_collection = ifc.summary.to_pandas()
+        self.initial_checks()
         self.all_datatypes = self.file_collection.obstype.unique()
         if self.technique == 'Spectroscopy':
             self.day_time_data, self.night_time_data = self.separate_day_night()
@@ -78,22 +88,41 @@ class NightOrganizer(object):
 
         return self.data_container
 
+    def initial_checks(self):
+        readout_confs = self.file_collection.groupby(['gain', 'rdnoise'])
+        if len(readout_confs) > 1:
+            log.warning('There are %s different readout modes in the data.', len(readout_confs))
+            log.info('Sleeping 10 seconds')
+            time.sleep(10)
+
     def spectroscopy_day_time(self):
-        """
+        """Process day time calibration data for spectroscopy.
+
+        This methods assumes that during the day only calibration data was taken, therefore
         Notes:
             cheking that bias and flats are more than 2 because otherwise will not be enough
         :return:
         """
         if len(self.day_time_data) != 0:
             # add bias
-            bias_group = self.file_collection[self.file_collection.obstype == 'BIAS']
-            if len(bias_group) > 2:
-                self.data_container.add_bias(bias_group)
+            bias_data = self.day_time_data[self.day_time_data.obstype == 'BIAS']
+
+            if len(bias_data) > 2:
+                bias_confs = bias_data.groupby(['gain',
+                                                'rdnoise',
+                                                'obsra',
+                                                'obsdec']).size().reset_index().rename(columns={0: 'count'})
+                for i in bias_confs.index:
+                    bias_group = bias_data[((bias_data['gain'] == bias_confs.iloc[i]['gain']) &
+                                            (bias_data['rdnoise'] == bias_confs.iloc[i]['rdnoise']) &
+                                            (bias_data['obsra'] == bias_confs.iloc[i]['obsra']) &
+                                            (bias_data['obsdec'] == bias_confs.iloc[i]['obsdec']))]
+                    self.data_container.add_bias(bias_group)
             else:
                 log.error('Not enough bias images.')
             # add flats
             # TODO (simon): Add multivariable filtering for spectroscopy flats
-            flat_data = self.file_collection[self.file_collection.obstype == 'FLAT']
+            flat_data = self.day_time_data[self.day_time_data.obstype == 'FLAT']
             if len(flat_data) > 2:
                 # configurations
                 confs = flat_data.groupby(['grating',
