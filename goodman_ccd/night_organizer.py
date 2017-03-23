@@ -96,12 +96,28 @@ class NightOrganizer(object):
             time.sleep(10)
 
     def spectroscopy_day_time(self):
-        """Process day time calibration data for spectroscopy.
+        """Organizes day time calibration data for spectroscopy.
 
-        This methods assumes that during the day only calibration data was taken, therefore
+        This methods assumes that during the day only calibration data was taken, therefore it will search for
+        bias and flat images only. Then each group will be divided in subgroups that correspond to different
+        configurations using information in the header.
+        Bias images are divided according to four keywords. GAIN, RDNOISE, OBSRA and OBSDEC. The last two define the
+        intended position of the telescope. Although BIAS images are not affected by telescope position the separation
+        is made for grouping purposes only, since a different set of bias will be most likely obtained at a different
+        telescope position.
+        Flat images are filtered by seven parameters, in header keywords words they are: GAIN, RDNOISE, GRATING,
+        FILTER2, CAM_TARG, GRT_TARG and SLIT. For most of the keywords is easy to understand why they where considered,
+        I would like to note though that only FILTER2 was considered because for spectroscopy, order blocking filters
+        are located only on the second filter wheel, and the first filter wheel is dedicated for imaging filters.
+        CAM_TARG and GRT_TARG are the Camera and Grating angles, those values are fixed and define the different that
+        every grating can operate and that's why is a good classifier parameter.
+
         Notes:
-            cheking that bias and flats are more than 2 because otherwise will not be enough
-        :return:
+            Bias or Flat will be only considered if there are three or more images.
+
+        Notes:
+            All bias images will be considered part of daytime data.
+
         """
         if len(self.day_time_data) != 0:
             # add bias
@@ -121,18 +137,21 @@ class NightOrganizer(object):
             else:
                 log.error('Not enough bias images.')
             # add flats
-            # TODO (simon): Add multivariable filtering for spectroscopy flats
             flat_data = self.day_time_data[self.day_time_data.obstype == 'FLAT']
             if len(flat_data) > 2:
                 # configurations
-                confs = flat_data.groupby(['grating',
+                confs = flat_data.groupby(['gain',
+                                           'rdnoise',
+                                           'grating',
                                            'filter2',
                                            'cam_targ',
                                            'grt_targ',
                                            'slit']).size().reset_index().rename(columns={0: 'count'})
                 for i in confs.index:
                     # print(confs.iloc[i]['grating'])
-                    flat_group = flat_data[((flat_data['grating'] == confs.iloc[i]['grating']) &
+                    flat_group = flat_data[((flat_data['gain'] == confs.iloc[i]['gain']) &
+                                            (flat_data['rdnoise'] == confs.iloc[i]['rdnoise']) &
+                                            (flat_data['grating'] == confs.iloc[i]['grating']) &
                                            (flat_data['filter2'] == confs.iloc[i]['filter2']) &
                                            (flat_data['cam_targ'] == confs.iloc[i]['cam_targ']) &
                                             (flat_data['grt_targ'] == confs.iloc[i]['grt_targ']) &
@@ -148,14 +167,18 @@ class NightOrganizer(object):
             log.warning('There is no day time data.')
 
     def spectroscopy_night_time(self):
-        """
+        """Organizes night time data for spectroscopy
+
+        This method identifies all combinations of nine
 
         Returns:
 
         """
 
         # confs stands for configurations
-        confs = self.night_time_data.groupby(['grating',
+        confs = self.night_time_data.groupby(['gain',
+                                              'rdnoise',
+                                              'grating',
                                               'filter2',
                                               'cam_targ',
                                               'grt_targ',
@@ -163,7 +186,9 @@ class NightOrganizer(object):
                                               'obsra',
                                               'obsdec']).size().reset_index().rename(columns={0: 'count'})
         for i in confs.index:
-            night_time_group = self.night_time_data[((self.night_time_data['grating'] == confs.iloc[i]['grating']) &
+            night_time_group = self.night_time_data[((self.night_time_data['gain'] == confs.iloc[i]['gain']) &
+                                                     (self.night_time_data['rdnoise'] == confs.iloc[i]['rdnoise']) &
+                                                     (self.night_time_data['grating'] == confs.iloc[i]['grating']) &
                                                      (self.night_time_data['filter2'] == confs.iloc[i]['filter2']) &
                                                      (self.night_time_data['cam_targ'] == confs.iloc[i]['cam_targ']) &
                                                      (self.night_time_data['grt_targ'] == confs.iloc[i]['grt_targ']) &
