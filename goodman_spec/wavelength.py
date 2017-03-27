@@ -273,7 +273,6 @@ class WavelengthCalibration(object):
             # lines_center = peaks
             lines_center = self.recenter_lines(no_nan_lamp_data, peaks)
 
-
         if self.args.plots_enabled:
             fig = plt.figure(1)
             fig.canvas.set_window_title('Lines Detected')
@@ -879,7 +878,7 @@ class WavelengthCalibration(object):
             log.info('Pressed Ctrl+q. Closing the program')
             sys.exit(0)
         else:
-            log.debug("Key Pressed: ", event.key)
+            log.debug("Key Pressed: " + event.key)
             pass
 
     def register_mark(self, event):
@@ -1193,6 +1192,8 @@ class WavelengthCalibration(object):
             linear_data (list): Contains two elements: Linear wavelength axis and the smoothed linearized data itself.
 
         """
+        for data_point in data:
+            print(data_point)
         print('data ', data)
         pixel_axis = range(1, len(data) + 1, 1)
         if self.wsolution is not None:

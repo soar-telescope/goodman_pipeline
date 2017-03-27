@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from astropy.modeling import models, fitting
 import logging
+import os
+
 
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: %(message)s'
@@ -40,8 +42,8 @@ class Process(object):
         self.args = args
         self.science_object = sci_obj
         self.path = self.args.source
-        self.data = fits.getdata(self.path + self.science_object.file_name)
-        self.header = self.add_wcs_keys(fits.getheader(self.path + self.science_object.file_name))
+        self.data = fits.getdata(os.path.join(self.path, self.science_object.file_name))
+        self.header = self.add_wcs_keys(fits.getheader(os.path.join(self.path, self.science_object.file_name)))
         self.lamps_data = []
         self.lamps_header = []
         self.close_targets = False
@@ -70,11 +72,11 @@ class Process(object):
         if extract_lamps:
             if self.science_object.lamp_count > 0:
                 for lamp_index in range(self.science_object.lamp_count):
-                    lamp_data = fits.getdata(self.path + self.science_object.lamp_file[lamp_index])
+                    lamp_data = fits.getdata(os.path.join(self.path, self.science_object.lamp_file[lamp_index]))
                     # lamp_type = self.science_object.lamp_type[lamp_index]
                     self.lamps_data.append(lamp_data)
                     lamp_header = self.add_wcs_keys(
-                        fits.getheader(self.path + self.science_object.lamp_file[lamp_index]))
+                        fits.getheader(os.path.join(self.path, self.science_object.lamp_file[lamp_index])))
                     self.lamps_header.append(lamp_header)
             else:
                 log.error('There Are no lamps available for the target: %s', self.science_object.name)

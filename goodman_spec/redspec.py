@@ -272,10 +272,11 @@ Supported Observing modes are:
         args = parser.parse_args()
 
         # there must be a more elegant way to do this
+        # TODO (simon): Do this the better way
         root_path = os.path.realpath(__file__).split('/')
         root_path[-1] = ''
         root_full_path = '/'.join(root_path)
-        reference_full_path = root_full_path + args.reference_dir
+        reference_full_path = os.path.join(root_full_path, args.reference_dir)
         if not os.path.isdir(reference_full_path):
             log.info("Reference files directory doesn't exist.")
             try:
@@ -306,7 +307,7 @@ Supported Observing modes are:
                 args.destiny += '/'
         if args.procmode == 2:
             # print(args.source + args.lamp_file)
-            if not os.path.isfile(args.source + args.lamp_file):
+            if not os.path.isfile(os.path.join(args.source, args.lamp_file)):
                 if args.lamp_file == 'lamps.txt':
                     leave = True
                     log.error("Default <lamp file> doesn't exist.")
@@ -530,7 +531,7 @@ Supported Observing modes are:
         log.info("Observation mode 2")
         log.debug("A text file defines the relation of lamps and science targets")
         log.debug(self.night.lamps_file)
-        lamps_file_full = self.night.source + self.night.lamps_file
+        lamps_file_full = os.path.join(self.night.source, self.night.lamps_file)
         log.debug(lamps_file_full)
 
         read_file = open(lamps_file_full)

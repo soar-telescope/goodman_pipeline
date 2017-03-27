@@ -15,6 +15,7 @@ The current elements present are:
 """
 import logging
 import pandas
+import os
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.DEBUG, format=FORMAT)
@@ -737,8 +738,9 @@ class ReferenceData(object):
             reference_lamp(str): Full path to reference lamps
         """
         lamp_name = lamp_name.lower()
+        # TODO (simon): Do this using ImageFileCollection
         try:
-            reference_lamp = self.args.reference_dir + self.lamps_file_list[lamp_name]
+            reference_lamp = os.path.join(self.args.reference_dir, self.lamps_file_list[lamp_name])
             return reference_lamp
         except KeyError:
             log.error('Reference lamp %s does not exist', lamp_name)
@@ -749,6 +751,7 @@ class ReferenceData(object):
 
         Builds a unidimensional spectrum to be used as a template for finding an automatic wavelength solution
         """
+        # raise DeprecationWarning
         if len(name) % 2 == 0:
             elements = [name[i:i + 2].lower() for i in range(0, len(name), 2)]
             for element in elements:

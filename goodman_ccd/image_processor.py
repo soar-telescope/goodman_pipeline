@@ -86,6 +86,7 @@ class ImageProcessor(object):
                 sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
                 header = fits.getheader(sample_image)
                 trim_section = header['TRIMSEC']
+                # trim_section = '[51:4110,1:1896]'
                 log.info('Trim Section: %s', trim_section)
                 return trim_section
 
