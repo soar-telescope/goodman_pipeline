@@ -17,6 +17,7 @@ log = logging.getLogger('goodmanccd.nightorganizer')
 
 
 class NightOrganizer(object):
+
     def __init__(self, args, night_dict):
         """Initializes the NightOrganizer class
 
@@ -26,6 +27,7 @@ class NightOrganizer(object):
         Args:
             args (object): Argparse object. Contains all the runtime arguments.
             night_dict (dict): A dictionary that contains full path, instrument and observational technique.
+
         """
 
         self.args = args
@@ -170,9 +172,12 @@ class NightOrganizer(object):
     def spectroscopy_night_time(self):
         """Organizes night time data for spectroscopy
 
-        This method identifies all combinations of nine
+        This method identifies all combinations of nine **key** keywords that can set appart different objects with
+        their respective calibration data or not. The keywords used are: GAIN, RDNOISE, GRATING, FILTER2, CAM_TARG,
+        GRT_TARG, SLIT, OBSRA and OBSDEC.
 
-        Returns:
+        This method populates the `data_container` class attribute which is an instance of the class Night.
+        A data group is an instance of a Pandas DataFrame.
 
         """
 
@@ -199,18 +204,32 @@ class NightOrganizer(object):
             self.data_container.add_data_group(night_time_group)
 
     def imaging_night(self):
+        """Organizes data for imaging
+
+        For imaging there is no discrimination regarding night data since the process is simpler. It is a three
+        stage process classifying BIAS, FLAT and OBJECT datatype. The data is packed in groups that are pandas.DataFrame
+        objects.
+
         """
 
-        Returns:
-
-        """
-        # TODO (simon): modify it to work with the day time data and nigh time data separation
         # bias data group
         afternoon_twilight, morning_twilight, sun_set, sun_rise = self.get_twilight_time()
         self.data_container.set_sun_times(sun_set, sun_rise)
         self.data_container.set_twilight_times(afternoon_twilight, morning_twilight)
         bias_group = self.file_collection[self.file_collection.obstype == 'BIAS'] # .tolist()
-        self.data_container.add_bias(bias_group)
+        if len(bias_group) > 2:
+            bias_confs = bias_group.groupby(['gain',
+                                            'rdnoise',
+                                            'obsra',
+                                            'obsdec']).size().reset_index().rename(columns={0: 'count'})
+            for i in bias_confs.index:
+                bias_group = bias_group[((bias_group['gain'] == bias_confs.iloc[i]['gain']) &
+                                        (bias_group['rdnoise'] == bias_confs.iloc[i]['rdnoise']) &
+                                        (bias_group['obsra'] == bias_confs.iloc[i]['obsra']) &
+                                        (bias_group['obsdec'] == bias_confs.iloc[i]['obsdec']))]
+                self.data_container.add_bias(bias_group)
+        else:
+            log.error('Not enough bias images.')
 
         # flats separation
         flat_data = self.file_collection[self.file_collection.obstype == 'FLAT']
@@ -238,6 +257,8 @@ class NightOrganizer(object):
         Returns:
             twilight_evening (str): Evening twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
             twilight_morning (str): Morning twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+            sun_set_time (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+            sun_rise_time (str): Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
 
         """
         # observatory(str): Observatory name.
@@ -284,7 +305,7 @@ class NightOrganizer(object):
         afternoon_twilight, morning_twilight, sun_set, sun_rise = self.get_twilight_time()
         self.data_container.set_sun_times(sun_set, sun_rise)
         self.data_container.set_twilight_times(afternoon_twilight, morning_twilight)
-        # print(afternoon_twilight, morning_twilight)
+        # print(evening_twilight, morning_twilight)
         day_time_data = self.file_collection[((self.file_collection['date-obs'] < afternoon_twilight)
                                              | (self.file_collection['obstype'] == 'BIAS'))]
         night_time_data = self.file_collection[((self.file_collection['date-obs'] > afternoon_twilight)
@@ -309,14 +330,18 @@ class NightOrganizer(object):
 
 
 class Night(object):
+    """This class is designed to be the organized data container. It doesn't store image data but list
+    of pandas.DataFrame objects. Also it stores critical variables such as sunrise and sunset times.
+
+    """
 
     def __init__(self, path, instrument, technique):
-        """
+        """Initializes all the variables for the class
 
         Args:
-            path:
-            instrument:
-            technique:
+            path (str): Full path to the directory where raw data is located
+            instrument (str): 'Red' or 'Blue' stating whether the data was taken using the Red or Blue Goodman Camera.
+            technique (str): 'Spectroscopy' or 'Imaging' stating what kind of data was taken.
         """
 
         self.full_path = path
@@ -329,16 +354,14 @@ class Night(object):
         self.data_groups = None
         self.sun_set_time = None
         self.sun_rise_time = None
-        self.afternoon_twilight = None
+        self.evening_twilight = None
         self.morning_twilight = None
 
     def add_bias(self, bias_group):
-        """
+        """Adds a bias group
 
         Args:
-            bias_group:
-
-        Returns:
+            bias_group (pandas.DataFrame): Contains a set of keyword values of grouped image metadata
 
         """
 
@@ -354,12 +377,10 @@ class Night(object):
                 self.bias.append(bias_group)
 
     def add_day_flats(self, day_flats):
-        """
+        """"Adds a daytime flat group
 
         Args:
-            day_flats:
-
-        Returns:
+            day_flats (pandas.DataFrame): Contains a set of keyword values of grouped image metadata
 
         """
 
@@ -369,12 +390,10 @@ class Night(object):
             self.day_flats.append(day_flats)
 
     def add_data_group(self, data_group):
-        """
+        """Adds a data group
 
         Args:
-            data_group:
-
-        Returns:
+            data_group (pandas.DataFrame): Contains a set of keyword values of grouped image metadata
 
         """
 
@@ -384,31 +403,27 @@ class Night(object):
             self.data_groups.append(data_group)
 
     def set_sun_times(self, sun_set, sun_rise):
-        """
+        """Sets values for sunset and sunrise
 
         Args:
-            sun_set:
-            sun_rise:
-
-        Returns:
+            sun_set (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+            sun_rise (str):Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
 
         """
 
         self.sun_set_time = sun_set
         self.sun_rise_time = sun_rise
 
-    def set_twilight_times(self, afternoon, morning):
-        """
+    def set_twilight_times(self, evening, morning):
+        """Sets values for evening and morning twilight
 
         Args:
-            afternoon:
-            morning:
-
-        Returns:
+            evening (str): Evening twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+            morning (str): Morning twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
 
         """
 
-        self.afternoon_twilight = afternoon
+        self.evening_twilight = evening
         self.morning_twilight = morning
 
 
