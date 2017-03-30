@@ -18,6 +18,7 @@ import matplotlib.ticker as mtick
 import numpy as np
 import scipy.interpolate
 from astropy.io import fits
+from ccdproc import CCDData
 from astropy.stats import sigma_clip
 from astropy.modeling import models, fitting
 from astropy.convolution import convolve, Gaussian1DKernel
@@ -378,11 +379,6 @@ class WavelengthCalibration(object):
             #     plt.show()
         return new_line_centers
 
-
-
-
-
-
     def get_spectral_characteristics(self):
         """Calculates some Goodman's specific spectroscopic values.
 
@@ -571,7 +567,32 @@ class WavelengthCalibration(object):
         # needs:
         #   - self.sci, self.header
         #   - self.lines_center
-        raise NotImplemented
+        plt.clf()
+        plt.title(self.lamp_header['OBJECT'])
+        '''Load Reference Data This must be deleted since is only useful here.'''
+        ref_file = '/data/simon/development/soar/goodman/goodman_spec/refdata/goodman_comp_1200_M5_GG455_HgArNe.fits'
+        ref_data = CCDData.read(ref_file)
+        read_ws = wsbuilder.ReadWavelengthSolution(header=ref_data.header, data=ref_data.data)
+        angstrom, intensity = read_ws()
+        plt.plot(angstrom, intensity, color='k', label='Reference')
+        '''Create A simple solution'''
+
+        pixel = range(len(self.lamp_data))
+        plt.xlim(self.spectral['blue'], self.spectral['red'])
+        auto_angs = np.linspace(self.spectral['blue'], self.spectral['red'], len(self.lamp_data))
+        # build wavelength solution with available information
+        wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
+        self.wsolution = wavelength_solution.ws_fit(pixel, auto_angs)
+        plt.plot(self.wsolution(pixel), self.lamp_data, color='m', label='First Solution')
+        '''detect lines '''
+        lamp_lines = self.wsolution(self.get_lines_in_lamp())
+        for line in lamp_lines:
+            plt.axvline(line, color='c')
+
+        plt.legend(loc='best')
+        plt.show()
+
+        raise NotImplementedError
 
     def interactive_wavelength_solution(self):
         """Find the wavelength solution interactively

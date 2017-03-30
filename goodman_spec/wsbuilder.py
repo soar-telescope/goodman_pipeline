@@ -82,7 +82,7 @@ class ReadWavelengthSolution(object):
         """call method
 
         Discriminates from header's keywords what kind of solution is present
-        and call the apropriate method for linear or non-linear solutions.
+        and call the appropriate method for linear or non-linear solutions.
 
         Returns:
             self.wave_intens (list): Returns the class attribute which is a two dimension list
