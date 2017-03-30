@@ -109,7 +109,7 @@ class MainApp(object):
         parser = argparse.ArgumentParser(description="PyGoodman CCD Reduction - CCD reductions for "
                                                      "Goodman spectroscopic data")
 
-        parser.add_argument('-c', '--clean',
+        parser.add_argument('-c', '--cosmic',
                             action='store_true',
                             dest='clean_cosmic',
                             help="Clean cosmic rays from science data.")
