@@ -3,6 +3,7 @@ from astropy.io import fits
 from astropy import units as u
 import ccdproc
 from ccdproc import CCDData
+import numpy as np
 import logging
 import random
 import re
@@ -10,6 +11,8 @@ import os
 import glob
 import datetime
 from wavmode_translator import SpectroscopicMode
+import sys
+import matplotlib.pyplot as plt
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
@@ -34,11 +37,12 @@ class ImageProcessor(object):
         self.sun_set = data_container.sun_set_time
         self.sun_rise = data_container.sun_rise_time
         self.morning_twilight = data_container.morning_twilight
-        self.afternoon_twilight = data_container.afternoon_twilight
+        self.evening_twilight = data_container.evening_twilight
         self.trim_section = self.define_trim_section()
         self.overscan_region = self.get_overscan_region()
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
+        self.out_prefix = None
 
     def __call__(self, *args, **kwargs):
         """
@@ -170,6 +174,7 @@ class ImageProcessor(object):
             log.info('New name for master bias: ' + new_bias_name)
         else:
             new_bias_name = default_bias_name
+        # TODO (simon): Review whether it is necessary to discriminate by technique
         if self.technique == 'Spectroscopy':
             master_bias_list = []
             for image_file in bias_file_list:
@@ -192,7 +197,7 @@ class ImageProcessor(object):
                 t_ccd = self.image_trim(ccd)
                 master_bias_list.append(t_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0)
+                                               sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=None)
             self.master_bias.write(new_bias_name, clobber=True)
             log.info('Created master bias: ' + new_bias_name)
 
@@ -250,10 +255,10 @@ class ImageProcessor(object):
         master_flat_name = os.path.join(self.args.red_path, 'master_flat')
         sunset = datetime.datetime.strptime(self.sun_set, "%Y-%m-%dT%H:%M:%S.%f")
         sunrise = datetime.datetime.strptime(self.sun_rise, "%Y-%m-%dT%H:%M:%S.%f")
-        afternoon_twilight = datetime.datetime.strptime(self.afternoon_twilight, "%Y-%m-%dT%H:%M:%S.%f")
+        afternoon_twilight = datetime.datetime.strptime(self.evening_twilight, "%Y-%m-%dT%H:%M:%S.%f")
         morning_twilight = datetime.datetime.strptime(self.morning_twilight, "%Y-%m-%dT%H:%M:%S.%f")
         date_obs = datetime.datetime.strptime(header['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f")
-        # print(sunset, date_obs, afternoon_twilight)
+        # print(sunset, date_obs, evening_twilight)
         # print(' ')
         if target_name != '':
             target_name = '_' + target_name
@@ -318,21 +323,26 @@ class ImageProcessor(object):
                 master_flat_name = self.name_master_flats(header=ccd.header, group=object_group, get=True)
                 master_flat = self.get_best_flat(flat_name=master_flat_name)
             for science_image in object_group.file.tolist():
-                prefix = ''
+                self.out_prefix = ''
                 ccd = CCDData.read(os.path.join(self.args.raw_path, science_image), unit=u.adu)
                 ccd = self.image_overscan(ccd)
-                prefix += 'o_'
+                self.out_prefix += 'o_'
                 ccd = self.image_trim(ccd)
-                prefix = 't' + prefix
+                self.out_prefix = 't' + self.out_prefix
                 if not self.args.ignore_bias:
                     ccd = ccdproc.subtract_bias(ccd=ccd, master=self.master_bias)
-                    prefix = 'z' + prefix
+                    self.out_prefix = 'z' + self.out_prefix
                     ccd.header['HISTORY'] = 'Bias subtracted image'
                 ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat)
-                prefix = 'f' + prefix
+                self.out_prefix = 'f' + self.out_prefix
                 ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
-                ccd.write(os.path.join(self.args.red_path, prefix + science_image))
-                log.info('Created science image: ' + os.path.join(self.args.red_path, prefix + science_image))
+                if self.args.clean_cosmic:
+                    ccd = self.cosmicray_rejection(ccd=ccd)
+                    self.out_prefix = 'c' + self.out_prefix
+                else:
+                    print('Clean Cosmic ' + str(self.args.clean_cosmic))
+                ccd.write(os.path.join(self.args.red_path, self.out_prefix + science_image))
+                log.info('Created science image: ' + os.path.join(self.args.red_path, self.out_prefix + science_image))
                 
 
                 # print(science_group)
@@ -358,21 +368,63 @@ class ImageProcessor(object):
         master_flat = self.get_best_flat(flat_name=master_flat_name)
         if master_flat is not None:
             for image_file in imaging_group.file.tolist():
-                prefix = ''
+                self.out_prefix = ''
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
                 ccd = self.image_trim(ccd)
-                prefix = 't_'
+                self.out_prefix = 't_'
                 if not self.args.ignore_bias:
                     ccd = ccdproc.subtract_bias(ccd, self.master_bias)
-                    prefix = 'z' + prefix
+                    self.out_prefix = 'z' + self.out_prefix
                     ccd.header['HISTORY'] = 'Bias subtracted image'
                 ccd = ccdproc.flat_correct(ccd, master_flat)
-                prefix = 'f' + prefix
+                self.out_prefix = 'f' + self.out_prefix
                 ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
-                ccd.write(self.args.red_path, prefix + image_file, clobber=True)
-                log.info('Created science file: ' + os.path.join(self.args.red_path, prefix + image_file))
+                if self.args.clean_cosmic:
+                    ccd = self.cosmicray_rejection(ccd=ccd)
+                    self.out_prefix = 'c' + self.out_prefix
+                else:
+                    print('Clean Cosmic ' + str(self.args.clean_cosmic))
+                ccd.write(self.args.red_path, self.out_prefix + image_file, clobber=True)
+                log.info('Created science file: ' + os.path.join(self.args.red_path, self.out_prefix + image_file))
         else:
             log.error('Can not process data without a master flat')
+
+    def cosmicray_rejection(self, ccd):
+        """Do cosmic ray rejection
+
+        Notes:
+            OBS: cosmic ray rejection is working pretty well by defining gain = 1. It's not working when we use the real
+            gain of the image. In this case the sky level changes by a factor equal the gain.
+            Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
+
+        Args:
+            ccd (object): CCDData Object
+
+        Returns:
+            ccd (object): The modified CCDData object
+
+        """
+        # TODO (simon): Validate this method
+        value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
+        log.info('Cleaning cosmic rays... ')
+        ccd = ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
+                                             gain=float(ccd.header['GAIN']),
+                                             readnoise=float(ccd.header['RDNOISE']),
+                                             satlevel=np.inf, sepmed=True, fsmode='median',
+                                             psfmodel='gaussy', verbose=True)
+        # ccd.data = np.array(ccd.data, dtype=np.double) / float(ccd.header['GAIN'])
+        # print(isinstance(nccd, CCDData))
+        print(isinstance(ccd, CCDData))
+
+
+        # difference = np.nan_to_num(ccd - nccd)
+
+        # plt.imshow(difference, clim=(0,1))
+        # plt.show()
+
+        ccd.header['HISTORY'] = "Cosmic rays rejected."
+        # sys.exit(0)
+        return ccd
 
     @staticmethod
     def get_best_flat(flat_name):
