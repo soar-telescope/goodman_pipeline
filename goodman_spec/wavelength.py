@@ -570,6 +570,7 @@ class WavelengthCalibration(object):
         plt.clf()
         plt.title(self.lamp_header['OBJECT'])
         '''Load Reference Data This must be deleted since is only useful here.'''
+        ref1 = self.reference_data.get_best_reference_lamp(header=self.lamp_header)
         ref_file = '/data/simon/development/soar/goodman/goodman_spec/refdata/goodman_comp_1200_M5_GG455_HgArNe.fits'
         ref_data = CCDData.read(ref_file)
         read_ws = wsbuilder.ReadWavelengthSolution(header=ref_data.header, data=ref_data.data)

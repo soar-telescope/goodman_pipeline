@@ -16,6 +16,7 @@ The current elements present are:
 import logging
 import pandas
 import os
+import ccdproc as ccd
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.DEBUG, format=FORMAT)
@@ -37,7 +38,8 @@ class ReferenceData(object):
             args(class): All the arguments parsed to the parent program
         """
         self.args = args
-        # self.reference_files_path = os.path.expanduser('~/') + './refdata/'
+        reference_collection = ccd.ImageFileCollection(self.args.reference_dir)
+        self.ref_lamp_collection = reference_collection.summary.to_pandas()
         self.lamps_file_list = {'cuhear': 'goodman_comp_600_BLUE_CuHeAr.fits',
                                 'hgar': 'hgar_reference_soar.fits',
                                 'hgarne': 'goodman_comp_400_M2_GG455_HgArNe.fits'}
@@ -745,6 +747,27 @@ class ReferenceData(object):
         except KeyError:
             log.error('Reference lamp %s does not exist', lamp_name)
             return None
+
+    def get_best_reference_lamp(self, header):
+        criteria = ['object', 'grating', 'slit', 'cam_targ', 'grt_targ']
+        lamp1 = self.ref_lamp_collection[self.ref_lamp_collection['object'] == header['object']]
+        if len(lamp1) > 1:
+            while len(lamp1) > 1:
+                print(lamp1.file)
+                keyword_to_filter = criteria.pop()
+                print('Filter: ' + keyword_to_filter)
+                lamp1 = lamp1[(lamp1[keyword_to_filter] == header[keyword_to_filter])]
+        else:
+            log.error('There is no reference lamp found')
+
+        lamp_name = lamp1.file.tolist()[0]
+        ref_lamp_full_path = os.path.join(self.args.reference_dir, lamp_name)
+
+        print(ref_lamp_full_path)
+        return ref_lamp_full_path
+
+
+
 
     def get_ref_spectrum_from_linelist(self, blue, red, name):
         """Experimental not working at the moment
