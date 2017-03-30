@@ -76,6 +76,8 @@ class SpectroscopicMode(object):
     def __call__(self, header=None, grating=None, camera_targ=None, grating_targ=None, blocking_filter=None):
         """
 
+        This method can be called either parsing a header alone or the rest of values separated.
+
         Args:
             header:
             grating:
@@ -143,6 +145,7 @@ class SpectroscopicMode(object):
 
 
 if __name__ == '__main__':
+    # TODO (simon): Remove these lines
     spect_mode = SpectroscopicMode()
     # spect_mode(grating='lls_1200', camera_targ='49.6', grating_targ='24.8', blocking_filter='GG455')
     ccd = CCDData.read('/user/simon/data/soar/raw/spectroscopy_engineering_night/2017-02-07/0227_quartz_400M2_GG455.fits', unit=u.adu)
