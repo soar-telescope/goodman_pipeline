@@ -672,16 +672,6 @@ class Night(object):
         self.sci = []
         self.lamp = []
         self.args = args
-        # self.args.source,
-        # self.args.destiny,
-        # self.args.pattern,
-        # self.args.procmode,
-        # self.args.lamp_file
-        # self.source = args.source
-        # self.destiny = args.destiny
-        # self.pattern = args.pattern
-        # self.procmode = args.procmode
-        # self.lamps_file = args.lamps_file
         self.sci_targets = []
         self.telescope = False
         self.night_wsolution = None
