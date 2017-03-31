@@ -18,6 +18,7 @@ import matplotlib.ticker as mtick
 import numpy as np
 import scipy.interpolate
 from astropy.io import fits
+import astropy.units as u
 from ccdproc import CCDData
 from astropy.stats import sigma_clip
 from astropy.modeling import models, fitting
@@ -26,6 +27,9 @@ from scipy import signal
 
 import wsbuilder
 from linelist import ReferenceData
+
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.INFO, format=FORMAT)
@@ -238,7 +242,7 @@ class WavelengthCalibration(object):
         else:
             log.error('Wavelength solution has not been calculated yet.')
 
-    def get_lines_in_lamp(self):
+    def get_lines_in_lamp(self, ccddata_lamp=None):
         """Identify peaks in a lamp spectrum
 
         Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission lines then it calls the recenter_lines
@@ -251,23 +255,34 @@ class WavelengthCalibration(object):
         # import cPickle
         # lamp_out = open('lamp.pkl', 'wb')
         # cPickle.dump([self.lamp_data, self.lamp_header], lamp_out, protocol=cPickle.HIGHEST_PROTOCOL)
-        no_nan_lamp_data = np.nan_to_num(self.lamp_data)
-        filtered_data = np.where(np.abs(no_nan_lamp_data > no_nan_lamp_data.min() + 0.05 * no_nan_lamp_data.max()),
+        if ccddata_lamp is None:
+            lamp_data = self.lamp_data
+            lamp_header = self.lamp_header
+            raw_pixel_axis = self.raw_pixel_axis
+        elif isinstance(ccddata_lamp, CCDData):
+            print(ccddata_lamp.data.shape)
+            lamp_data = ccddata_lamp.data
+            lamp_header = ccddata_lamp.header
+            raw_pixel_axis = range(len(lamp_data))
+        else:
+            log.error('Error receiving lamp')
+        no_nan_lamp_data = np.nan_to_num(lamp_data)
+        filtered_data = np.where(np.abs(no_nan_lamp_data > no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()),
                                  no_nan_lamp_data,
                                  None)
 
-        slit_size = re.sub('[a-zA-Z" ]', '', self.lamp_header['slit'])
+        slit_size = re.sub('[a-zA-Z" ]', '', lamp_header['slit'])
         # get serial binning value PG5_9 is for RED camera and PARAM18 is for BLUE camera
         # serial binning is dispersion axis, the only one that matters for this purpose
         try:
-            binning = int(self.lamp_header['PG5_9'])
+            binning = int(lamp_header['PG5_9'])
         except KeyError:
-            binning = int(self.lamp_header['PARAM18'])
-        new_order = int(round(float(slit_size) / (0.15 * binning))) + 10
-        # print('New Order: ' + '{:d}'.format(new_order))
+            binning = int(lamp_header['PARAM18'])
+        new_order = int(round(float(slit_size) / (0.15 * binning)))#  + 10
+        print('New Order: ' + '{:d}'.format(new_order))
         # print(round(new_order))
         peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
-        # print(peaks)
+        print(peaks)
         if slit_size >= 5:
             lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data, lines=peaks, slit_size=slit_size, order=new_order)
         else:
@@ -277,7 +292,7 @@ class WavelengthCalibration(object):
         if self.args.plots_enabled:
             fig = plt.figure(1)
             fig.canvas.set_window_title('Lines Detected')
-            plt.title('Lines detected in Lamp\n%s' % self.lamp_header['OBJECT'])
+            plt.title('Lines detected in Lamp\n%s' % lamp_header['OBJECT'])
             plt.xlabel('Pixel Axis')
             plt.ylabel('Intensity (counts)')
             # Build legends without data
@@ -288,7 +303,7 @@ class WavelengthCalibration(object):
             # plt.axhline(median + stddev, color='g')
             # for rc_line in lines_center:
             #     plt.axvline(rc_line, color='r')
-            plt.plot(self.raw_pixel_axis, no_nan_lamp_data, color='k')
+            plt.plot(raw_pixel_axis, no_nan_lamp_data, color='k')
             plt.legend(loc='best')
             plt.show()
         return lines_center
@@ -568,32 +583,101 @@ class WavelengthCalibration(object):
         #   - self.sci, self.header
         #   - self.lines_center
         plt.clf()
-        plt.title(self.lamp_header['OBJECT'])
+        # plt.title(self.lamp_header['OBJECT'])
         '''Load Reference Data This must be deleted since is only useful here.'''
-        ref1 = self.reference_data.get_best_reference_lamp(header=self.lamp_header)
-        ref_file = '/data/simon/development/soar/goodman/goodman_spec/refdata/goodman_comp_1200_M5_GG455_HgArNe.fits'
-        ref_data = CCDData.read(ref_file)
+        ref_file = self.reference_data.get_best_reference_lamp(header=self.lamp_header)
+        ref_data = CCDData.read(ref_file, unit=u.adu)
+
         read_ws = wsbuilder.ReadWavelengthSolution(header=ref_data.header, data=ref_data.data)
         angstrom, intensity = read_ws()
-        plt.plot(angstrom, intensity, color='k', label='Reference')
+        ref_pixel = self.get_lines_in_lamp(ccddata_lamp=ref_data)
+        print('REF PIXEL ', ref_pixel)
+        reference_lamp_lines = read_ws.math_model(ref_pixel)
+        # for line in reference_lamp_lines:
+        #     plt.axvline(line, color='r')
+        # plt.plot(angstrom, intensity, color='k', label='Reference')
         '''Create A simple solution'''
 
-        pixel = range(len(self.lamp_data))
-        plt.xlim(self.spectral['blue'], self.spectral['red'])
+        pixel = np.linspace(0, len(self.lamp_data), len(self.lamp_data))
+        print(len(pixel), len(self.lamp_data))
+        # plt.xlim(self.spectral['blue'], self.spectral['red'])
         auto_angs = np.linspace(self.spectral['blue'], self.spectral['red'], len(self.lamp_data))
         # build wavelength solution with available information
         wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
         self.wsolution = wavelength_solution.ws_fit(pixel, auto_angs)
-        plt.plot(self.wsolution(pixel), self.lamp_data, color='m', label='First Solution')
+        lamp_angstrom = self.wsolution(pixel)
+        # plt.plot(lamp_angstrom, self.lamp_data, color='m', label='First Solution')
         '''detect lines '''
-        lamp_lines = self.wsolution(self.get_lines_in_lamp())
-        for line in lamp_lines:
-            plt.axvline(line, color='c')
+        lamp_lines_pixel = self.get_lines_in_lamp()
+        lamp_lines = self.wsolution(lamp_lines_pixel)
+        # for line in lamp_lines:
+        #     plt.axvline(line, color='c')
 
-        plt.legend(loc='best')
+        # plt.legend(loc='best')
+        # plt.show()
+
+        # plt.plot(self.lamp_data)
+        # plt.plot(ref_data.data)
+        # plt.show()
+
+        data_index = range(0, len(self.lamp_data), len(lamp_lines))
+        print(data_index)
+
+        pixel_values = []
+        angstrom_values = []
+
+        for line_value in lamp_lines_pixel:
+            half_width = 30
+            xmin = max(0, round(line_value - half_width))
+            xmax = min(round(line_value + half_width), len(self.lamp_data))
+            ref_sample = intensity[xmin:xmax]
+            ref_wavelength = angstrom[xmin:xmax]
+            ref_max_index = np.argmax(ref_sample)
+            """record value for reference wavelength"""
+            angstrom_values.append(ref_wavelength[ref_max_index])
+            lamp_sample = self.lamp_data[xmin:xmax]
+            lamp_pixel = pixel[xmin:xmax]
+            lamp_wavelength = self.wsolution(pixel)[xmin:xmax]
+            lamp_max_index = np.argmax(lamp_sample)
+            pixel_values.append(lamp_pixel[lamp_max_index])
+            correlation_value = self.cross_correlation(ref_sample, lamp_sample)
+
+            # plt.plot(ref_wavelength, ref_sample)
+            # plt.plot(lamp_wavelength, lamp_sample)
+            # plt.plot(ref_sample)
+            # plt.plot([x + correlation_value for x in range(len(lamp_sample))], lamp_sample)
+            # plt.show()
+            # print('length ', len(ref_sample), len(lamp_sample))
+            # print(line_value)
+        self.wsolution = wavelength_solution.ws_fit(pixel_values, angstrom_values)
+        fig = plt.figure(figsize=(15, 10))
+        ax = fig.add_subplot(111)
+        ax.plot(angstrom, intensity, label='Reference', color='k')
+        # plt.plot(lamp_angstrom, self.lamp_data, label='First Solution')
+        ax.plot(self.wsolution(pixel), self.lamp_data, label='Last Solution', color='r', alpha=0.7)
+        ax.legend(loc='best')
+        ax.set_xlabel('Wavelength (Angstrom)')
+        ax.set_ylabel('Intensity (ADU)')
+        ax.set_title('Automatic Wavelength Solution Test\n'+self.lamp_header['OBJECT'] + ' ' + self.lamp_header['wavmode'])
+        fig.tight_layout()
+        pdf_pages = PdfPages('automatic-solution.pdf')
+        plt.savefig(pdf_pages, format='pdf')
+        pdf_pages.close()
         plt.show()
 
         raise NotImplementedError
+
+    def cross_correlation(self, yaxis1, yaxis2):
+        if len(yaxis1) == len(yaxis2):
+            # plt.title('Cross Correlation')
+            ccorr = signal.correlate(yaxis1, yaxis2, mode='full')
+            max_index = np.argmax(ccorr)
+            x_ccorr = np.linspace(-int(len(ccorr)/2.), int(len(ccorr)/2.), len(ccorr))
+            correlation_value = x_ccorr[max_index]
+            # plt.plot(x_ccorr, ccorr)
+            # plt.show()
+            return correlation_value
+
 
     def interactive_wavelength_solution(self):
         """Find the wavelength solution interactively
