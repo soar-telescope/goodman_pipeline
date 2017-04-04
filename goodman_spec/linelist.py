@@ -749,6 +749,8 @@ class ReferenceData(object):
             return None
 
     def get_best_reference_lamp(self, header):
+        for keyword in header:
+            print('{:8}= {:30} / {:47}'.format(keyword, header[keyword], header.comments[keyword]))
         criteria = ['object', 'grating', 'slit', 'cam_targ', 'grt_targ']
         lamp1 = self.ref_lamp_collection[self.ref_lamp_collection['object'] == header['object']]
         if len(lamp1) > 1:

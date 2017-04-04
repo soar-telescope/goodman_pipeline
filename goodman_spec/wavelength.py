@@ -625,9 +625,17 @@ class WavelengthCalibration(object):
 
         pixel_values = []
         angstrom_values = []
+        min_length =  np.min([len(intensity), len(self.lamp_data)])
+        mini_xmin = int(round(min_length/2. - min_length/4.))
+        mini_xmax = int(round(min_length/2. + min_length/4.))
+
+        global_cross_correlation = self.cross_correlation(yaxis1=intensity[mini_xmin:mini_xmax], yaxis2=self.lamp_data[mini_xmin:mini_xmax], mode='valid')
+        print(len(intensity), len(self.lamp_data))
+        print(global_cross_correlation)
+
 
         for line_value in lamp_lines_pixel:
-            half_width = 30
+            half_width = 50
             xmin = max(0, round(line_value - half_width))
             xmax = min(round(line_value + half_width), len(self.lamp_data))
             ref_sample = intensity[xmin:xmax]
@@ -644,38 +652,46 @@ class WavelengthCalibration(object):
 
             # plt.plot(ref_wavelength, ref_sample)
             # plt.plot(lamp_wavelength, lamp_sample)
-            # plt.plot(ref_sample)
-            # plt.plot([x + correlation_value for x in range(len(lamp_sample))], lamp_sample)
-            # plt.show()
+            if True:
+                plt.plot(ref_sample)
+                plt.plot([x + correlation_value for x in range(len(lamp_sample))], lamp_sample)
+                plt.show()
+
             # print('length ', len(ref_sample), len(lamp_sample))
             # print(line_value)
         self.wsolution = wavelength_solution.ws_fit(pixel_values, angstrom_values)
         fig = plt.figure(figsize=(15, 10))
         ax = fig.add_subplot(111)
         ax.plot(angstrom, intensity, label='Reference', color='k')
-        # plt.plot(lamp_angstrom, self.lamp_data, label='First Solution')
+        ax.plot(lamp_angstrom, self.lamp_data, label='First Guess', color='g', alpha=0.5)
         ax.plot(self.wsolution(pixel), self.lamp_data, label='Last Solution', color='r', alpha=0.7)
         ax.legend(loc='best')
         ax.set_xlabel('Wavelength (Angstrom)')
         ax.set_ylabel('Intensity (ADU)')
         ax.set_title('Automatic Wavelength Solution Test\n'+self.lamp_header['OBJECT'] + ' ' + self.lamp_header['wavmode'])
         fig.tight_layout()
-        pdf_pages = PdfPages('automatic-solution.pdf')
+        pdf_pages = PdfPages('automatic-solution-3.pdf')
         plt.savefig(pdf_pages, format='pdf')
         pdf_pages.close()
         plt.show()
 
         raise NotImplementedError
 
-    def cross_correlation(self, yaxis1, yaxis2):
+    def cross_correlation(self, yaxis1, yaxis2, mode='full'):
         if len(yaxis1) == len(yaxis2):
-            # plt.title('Cross Correlation')
-            ccorr = signal.correlate(yaxis1, yaxis2, mode='full')
+            gaussian_kernel = Gaussian1DKernel(stddev=2.)
+            cyaxis1 = convolve(yaxis1, gaussian_kernel)
+            cyaxis2 = convolve(yaxis2, gaussian_kernel)
+
+            ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+            # print('Corr ', ccorr)
             max_index = np.argmax(ccorr)
             x_ccorr = np.linspace(-int(len(ccorr)/2.), int(len(ccorr)/2.), len(ccorr))
             correlation_value = x_ccorr[max_index]
-            # plt.plot(x_ccorr, ccorr)
-            # plt.show()
+            if True:
+                plt.title('Cross Correlation')
+                plt.plot(x_ccorr, ccorr)
+                plt.show()
             return correlation_value
 
 
