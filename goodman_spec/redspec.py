@@ -27,7 +27,7 @@ from wavelength import WavelengthCalibration
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
 DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
-logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('redspec')
 
 __author__ = 'Simon Torres'
@@ -263,14 +263,15 @@ Supported Observing modes are:
                             dest='interactive_ws',
                             help="Interactive wavelength solution. Enabled by default.")
 
-        parser.add_argument('--plots-enabled',
+        parser.add_argument('--debug',
                             action='store_true',
-                            default=False,
-                            dest='plots_enabled',
-                            help="Show plots of intermediate steps. Use for debugging only.")
+                            dest='debug_mode',
+                            help="Debugging Mode")
 
         args = parser.parse_args()
-
+        if args.debug_mode:
+            log.info('Changing log level to DEBUG.')
+            log.setLevel(level=logging.DEBUG)
         # there must be a more elegant way to do this
         # TODO (simon): Do this the better way
         root_path = os.path.realpath(__file__).split('/')

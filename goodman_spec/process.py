@@ -166,7 +166,7 @@ class Process(object):
                                 raw_width=sample_width,
                                 sample_loc=sample_loc))
                             # fitted_model = voigt
-                            if self.args.plots_enabled:
+                            if self.args.debug_mode:
                                 plt.axvspan(spectrum - i, spectrum + i, color='r', alpha=0.3, label='Spectrum width')
                                 plt.plot(sub_sample_x_axis, voigt(sub_sample_x_axis), label='Voigt Fit')
                                 # plt.axvline(centroid, color='k')
@@ -178,7 +178,7 @@ class Process(object):
                         pass
                     break
 
-        if self.args.plots_enabled:
+        if self.args.debug_mode:
             plt.title(self.science_object.name)
             plt.axhline(sample_median, color='m', label='Median')
             plt.axhline(1.1 * sample_median, color='c', label='110% Median')
@@ -321,7 +321,7 @@ class Process(object):
                 traces.append([cheb, width, self.region])
                 self.science_object.update_no_targets(add_one=True)
 
-                if self.args.plots_enabled:
+                if self.args.debug_mode:
                     fig1 = plt.figure(1)
                     fig1.canvas.set_window_title('Trace')
                     plt.title(self.science_object.name)
@@ -544,7 +544,7 @@ class Process(object):
                         # headers.append(self.lamps_header[lamp_index])
                 #
                 # Plot background subtraction
-                if self.args.plots_enabled:
+                if self.args.debug_mode:
                     # sci_sample = sci[int(len(sci) / 2.) - 30:int(len(sci) / 2.) + 30]
                     fig = plt.figure(1)
                     fig.canvas.set_window_title('Subtraction')

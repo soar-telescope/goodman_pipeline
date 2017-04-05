@@ -157,7 +157,15 @@ class MainApp(object):
                             default='./RED',
                             help="Full path to reduced data (e.g /home/jamesbond/soardata/RED/).")
 
+        parser.add_argument('--debug',
+                            action='store_true',
+                            dest='debug_mode',
+                            help="Debugging Mode")
+
         args = parser.parse_args()
+        if args.debug_mode:
+            log.info('Changing log level to DEBUG.')
+            log.setLevel(level=logging.DEBUG)
         if os.path.isdir(args.raw_path):
             args.raw_path = os.path.abspath(args.raw_path)
             log.debug(os.path.abspath(args.raw_path))
