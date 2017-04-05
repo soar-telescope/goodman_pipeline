@@ -17,6 +17,7 @@ import logging
 import pandas
 import os
 import ccdproc as ccd
+import re
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.DEBUG, format=FORMAT)
@@ -751,22 +752,31 @@ class ReferenceData(object):
     def get_best_reference_lamp(self, header):
         for keyword in header:
             print('{:8}= {:30} / {:47}'.format(keyword, header[keyword], header.comments[keyword]))
-        criteria = ['object', 'grating', 'slit', 'cam_targ', 'grt_targ']
-        lamp1 = self.ref_lamp_collection[self.ref_lamp_collection['object'] == header['object']]
-        if len(lamp1) > 1:
-            while len(lamp1) > 1:
-                print(lamp1.file)
-                keyword_to_filter = criteria.pop()
-                print('Filter: ' + keyword_to_filter)
-                lamp1 = lamp1[(lamp1[keyword_to_filter] == header[keyword_to_filter])]
+        criteria = ['slit', 'cam_targ', 'grt_targ', 'grating','object']
+        if any(grating == re.sub('[A-Za-z_-]','',header['GRATING']) for grating in ('1800', '2100', '2400')):
+            log.warning('Grating use custom mode')
+            reference_lamp = self.get_reference_lamps_by_name(lamp_name=header['OBJECT'])
+            ref_lamp_full_path = os.path.join(self.args.reference_dir, reference_lamp)
+            log.info('Returning reference lamp by lamp name')
+            log.info('Reference Lamp: ' + reference_lamp)
+            return ref_lamp_full_path
         else:
-            log.error('There is no reference lamp found')
+            lamp1 = self.ref_lamp_collection[self.ref_lamp_collection['object'] == header['object']]
+            if len(lamp1) > 1:
+                while len(lamp1) > 1:
+                    print(lamp1.file)
+                    keyword_to_filter = criteria.pop()
+                    print('Filter: ' + keyword_to_filter)
+                    lamp1 = lamp1[(lamp1[keyword_to_filter] == header[keyword_to_filter])]
+            else:
+                log.error('There is no reference lamp found')
 
-        lamp_name = lamp1.file.tolist()[0]
-        ref_lamp_full_path = os.path.join(self.args.reference_dir, lamp_name)
+            lamp_name = lamp1.file.tolist()[0]
+            ref_lamp_full_path = os.path.join(self.args.reference_dir, lamp_name)
 
-        print(ref_lamp_full_path)
-        return ref_lamp_full_path
+            print(ref_lamp_full_path)
+            return ref_lamp_full_path
+
 
 
 
