@@ -750,36 +750,33 @@ class ReferenceData(object):
             return None
 
     def get_best_reference_lamp(self, header):
-        for keyword in header:
-            print('{:8}= {:30} / {:47}'.format(keyword, header[keyword], header.comments[keyword]))
+        """Finds a suitable template lamp from the catalog
+
+        Args:
+            header:
+
+        Returns:
+
+        """
         criteria = ['slit', 'cam_targ', 'grt_targ', 'grating','object']
-        if any(grating == re.sub('[A-Za-z_-]','',header['GRATING']) for grating in ('1800', '2100', '2400')):
-            log.warning('Grating use custom mode')
-            reference_lamp = self.get_reference_lamps_by_name(lamp_name=header['OBJECT'])
-            ref_lamp_full_path = os.path.join(self.args.reference_dir, reference_lamp)
-            log.info('Returning reference lamp by lamp name')
-            log.info('Reference Lamp: ' + reference_lamp)
-            return ref_lamp_full_path
+        lamp_pandas_data_frame = self.ref_lamp_collection[self.ref_lamp_collection['object'] == header['object']]
+        if len(lamp_pandas_data_frame) > 1:
+            while len(lamp_pandas_data_frame) > 1:
+                # print(lamp_pandas_data_frame.file)
+                keyword_to_filter = criteria.pop()
+                # print('Filter: ' + keyword_to_filter)
+                lamp_pandas_data_frame = lamp_pandas_data_frame[
+                    (lamp_pandas_data_frame[keyword_to_filter] == header[keyword_to_filter])]
+
         else:
-            lamp1 = self.ref_lamp_collection[self.ref_lamp_collection['object'] == header['object']]
-            if len(lamp1) > 1:
-                while len(lamp1) > 1:
-                    print(lamp1.file)
-                    keyword_to_filter = criteria.pop()
-                    print('Filter: ' + keyword_to_filter)
-                    lamp1 = lamp1[(lamp1[keyword_to_filter] == header[keyword_to_filter])]
-            else:
-                log.error('There is no reference lamp found')
-
-            lamp_name = lamp1.file.tolist()[0]
+            log.error('There is no reference lamp found')
+        try:
+            lamp_name = lamp_pandas_data_frame.file.tolist()[0]
             ref_lamp_full_path = os.path.join(self.args.reference_dir, lamp_name)
-
-            print(ref_lamp_full_path)
+            log.debug('Reference Lamp Full Path' + ref_lamp_full_path)
             return ref_lamp_full_path
-
-
-
-
+        except IndexError:
+            raise NotImplementedError('No lamp found in reference files.')
 
     def get_ref_spectrum_from_linelist(self, blue, red, name):
         """Experimental not working at the moment

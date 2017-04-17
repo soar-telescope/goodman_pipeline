@@ -176,7 +176,7 @@ class MainApp(object):
         parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                          description=textwrap.dedent(
                                              '''Extracts goodman spectra and does wavelength calibration.\n\n\
-Supported Observing modes are:
+Supported Processing Modes are:
     <0>: (Default) reads lamps taken at the begining or end of the night.\n\
     <1>: one or more lamps around science exposure.
     '''))

@@ -162,6 +162,12 @@ class MainApp(object):
                             dest='debug_mode',
                             help="Debugging Mode")
 
+        parser.add_argument('--interpolate-invalid',
+                            action='store_true',
+                            dest='interp_invalid',
+                            help="Do a cubic interpolation to remove NaN or INF values."
+                                 "By default it will replace them by a number.")
+
         args = parser.parse_args()
         if args.debug_mode:
             log.info('Changing log level to DEBUG.')

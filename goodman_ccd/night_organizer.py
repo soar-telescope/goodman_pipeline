@@ -202,6 +202,15 @@ class NightOrganizer(object):
                                                      (self.night_time_data['obsra'] == confs.iloc[i]['obsra']) &
                                                      (self.night_time_data['obsdec'] == confs.iloc[i]['obsdec']))]
             self.data_container.add_data_group(night_time_group)
+            # sss = night_time_group.groupby(['obstype']).size().reset_index().rename(columns={0: 'count'})
+            # if 'OBJECT' not in sss.obstype.tolist() or len(sss) < 3:
+            #     log.warning('Less than three obstype')
+            #     # for i in sss.index:
+            #     print(sss)
+            #     print(' ')
+            #     print(night_time_group)
+            #     print(' ')
+            #     time.sleep(3)
 
     def imaging_night(self):
         """Organizes data for imaging

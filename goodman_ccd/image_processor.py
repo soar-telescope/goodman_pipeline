@@ -1,8 +1,10 @@
 from __future__ import print_function
 from astropy.io import fits
 from astropy import units as u
+from astropy.convolution import convolve, convolve_fft, Gaussian2DKernel, Tophat2DKernel
 import ccdproc
 from ccdproc import CCDData
+from scipy import interpolate
 import numpy as np
 import logging
 import random
@@ -10,6 +12,7 @@ import re
 import os
 import glob
 import datetime
+import pandas
 from wavmode_translator import SpectroscopicMode
 import sys
 import matplotlib.pyplot as plt
@@ -38,6 +41,8 @@ class ImageProcessor(object):
         self.sun_rise = data_container.sun_rise_time
         self.morning_twilight = data_container.morning_twilight
         self.evening_twilight = data_container.evening_twilight
+        self.pixel_scale = 0.15 * u.arcsec
+        self.queue = None
         self.trim_section = self.define_trim_section()
         self.overscan_region = self.get_overscan_region()
         self.spec_mode = SpectroscopicMode()
@@ -73,6 +78,12 @@ class ImageProcessor(object):
                             log.info('Processing Imaging Science Data')
                             self.process_imaging_science(sub_group)
         # print('data groups ', len(self.data_groups))
+        if self.queue is not None:
+            print('QUEUE')
+            print(self.queue)
+            for sub_group in self.queue:
+                print(sub_group)
+
 
     def define_trim_section(self):
         """
@@ -89,8 +100,8 @@ class ImageProcessor(object):
                 image_list = group[0]['file'].tolist()
                 sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
                 header = fits.getheader(sample_image)
-                trim_section = header['TRIMSEC']
-                # trim_section = '[51:4110,1:1896]'
+                # trim_section = header['TRIMSEC']
+                trim_section = '[51:4110,1:1896]'
                 log.info('Trim Section: %s', trim_section)
                 return trim_section
 
@@ -137,8 +148,8 @@ class ImageProcessor(object):
 
         """
 
-        ccd = ccdproc.subtract_overscan(ccd, median=True, fits_section=self.overscan_region)
-        ccd.header['HISTORY'] = 'Applied overscan correction ' + self.overscan_region
+        ccd = ccdproc.subtract_overscan(ccd, median=True, fits_section=self.overscan_region, add_keyword=False)
+        ccd.header.add_history('Applied overscan correction ' + self.overscan_region)
         return ccd
 
     def image_trim(self, ccd):
@@ -151,8 +162,8 @@ class ImageProcessor(object):
 
         """
 
-        ccd = ccdproc.trim_image(ccd, fits_section=self.trim_section)
-        ccd.header['HISTORY'] = 'Trimmed image to ' + self.trim_section
+        ccd = ccdproc.trim_image(ccd, fits_section=self.trim_section, add_keyword=False)
+        ccd.header.add_history('Trimmed image to ' + self.trim_section)
         return ccd
 
     def create_master_bias(self, bias_group):
@@ -186,7 +197,7 @@ class ImageProcessor(object):
                 to_ccd = self.image_trim(o_ccd)
                 master_bias_list.append(to_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0)
+                                               sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=False)
             self.master_bias.write(new_bias_name, clobber=True)
             log.info('Created master bias: ' + new_bias_name)
         elif self.technique == 'Imaging':
@@ -197,7 +208,7 @@ class ImageProcessor(object):
                 t_ccd = self.image_trim(ccd)
                 master_bias_list.append(t_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=None)
+                                               sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=False)
             self.master_bias.write(new_bias_name, clobber=True)
             log.info('Created master bias: ' + new_bias_name)
 
@@ -226,7 +237,7 @@ class ImageProcessor(object):
                 ccd = self.image_trim(ccd)
             elif self.technique == 'Imaging':
                 ccd = self.image_trim(ccd)
-                ccd = ccdproc.subtract_bias(ccd, self.master_bias)
+                ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
             else:
                 log.error('Unknown observation technique: ' + self.technique)
             master_flat_list.append(ccd)
@@ -234,7 +245,8 @@ class ImageProcessor(object):
                                       method='median',
                                       sigma_clip=True,
                                       sigma_clip_low_thresh=1.0,
-                                      sigma_clip_high_thresh=1.0)
+                                      sigma_clip_high_thresh=1.0,
+                                      add_keyword=False)
         master_flat.write(master_flat_name, clobber=True)
         log.info('Created Master Flat: ' + master_flat_name)
         return master_flat, master_flat_name
@@ -306,13 +318,13 @@ class ImageProcessor(object):
 
         target_name = ''
         obstype = science_group.obstype.unique()
-        if 'OBJECT' in  obstype or 'COMP' in obstype:
+        if 'OBJECT' in obstype or 'COMP' in obstype:
             object_group = science_group[(science_group.obstype == 'OBJECT') | (science_group.obstype == 'COMP')]
-            if 'OBJECT' in  obstype:
+            if 'OBJECT' in obstype:
                 target_name = science_group.object[science_group.obstype == 'OBJECT'].unique()[0]
                 log.info('Processing Science Target: ' + target_name)
             else:
-                target_name = science_group.object[science_group.obstype == 'COMP'].unique()[0]
+                # target_name = science_group.object[science_group.obstype == 'COMP'].unique()[0]
                 log.info('Processing Comparison Lamp: ' + target_name)
 
             if 'FLAT' in obstype:
@@ -321,7 +333,23 @@ class ImageProcessor(object):
             else:
                 ccd = CCDData.read(os.path.join(self.args.raw_path, random.choice(object_group.file.tolist())), unit=u.adu)
                 master_flat_name = self.name_master_flats(header=ccd.header, group=object_group, get=True)
-                master_flat = self.get_best_flat(flat_name=master_flat_name)
+                master_flat, master_flat_name = self.get_best_flat(flat_name=master_flat_name)
+                if (master_flat is None) and (master_flat_name is None):
+                    if self.queue is None:
+                        self.queue = [science_group]
+                    else:
+                        self.queue.append(science_group)
+                        # for sgroup in self.queue:
+                        #     if isinstance(sgroup, pandas.DataFrame):
+                        #         if sgroup.equals(science_group):
+                        #             log.info('Science group already in queue')
+                        #         else:
+                        #             log.info('Appending science Group')
+                        #             self.queue.append(science_group)
+                        #     else:
+                        #         log.error('Science Group is not an instance of pandas.DataFrame')
+                    log.warning('Adding ')
+
             for science_image in object_group.file.tolist():
                 self.out_prefix = ''
                 ccd = CCDData.read(os.path.join(self.args.raw_path, science_image), unit=u.adu)
@@ -330,23 +358,52 @@ class ImageProcessor(object):
                 ccd = self.image_trim(ccd)
                 self.out_prefix = 't' + self.out_prefix
                 if not self.args.ignore_bias:
-                    ccd = ccdproc.subtract_bias(ccd=ccd, master=self.master_bias)
+                    ccd = ccdproc.subtract_bias(ccd=ccd, master=self.master_bias, add_keyword=False)
                     self.out_prefix = 'z' + self.out_prefix
-                    ccd.header['HISTORY'] = 'Bias subtracted image'
-                ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat)
-                self.out_prefix = 'f' + self.out_prefix
-                ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
+                    ccd.header.add_history('Bias subtracted image')
+                if master_flat is None or master_flat_name is None:
+                    log.warning('The file ' + science_image + ' will not be flatfielded')
+                else:
+                    ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat, add_keyword=False)
+                    self.out_prefix = 'f' + self.out_prefix
+                    ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
+                # print('Length CCD Data', ccd.data.shape)
                 if self.args.clean_cosmic:
                     ccd = self.cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
                 else:
                     print('Clean Cosmic ' + str(self.args.clean_cosmic))
+                # ccd.data = np.nan_to_num(ccd.data)
+                # print('Length CCD Data', ccd.data.shape)
+                # if self.args.interp_invalid:
+                #     ccd = self.convolve(ccd=ccd)
+                # else:
+                #     log.warning('Replacing invalid values by numbers. Use --interpolate-invalid'
+                #                 ' for a more advanced method.')
+                #     ccd.data = np.nan_to_num(ccd.data)
+                #     print(ccd.data.shape)
+                # if self.args.debug_mode:
+                #     x, y = ccd.data.shape
+                #     print('x ', x, ' y ', y)
+                #     for i in range(x):
+                #         for e in range(y):
+                #             if np.isnan(ccd.data[i, e]):
+                #                 # print(i, x, e, y)
+                #                 plt.plot(e, i, marker='o', color='r', mec='r')
+                #             elif np.isneginf(ccd.data[i, e]):
+                #                 plt.plot(e, i, marker='o', color='r', mec='r')
+                #                 # print(" ")
+                #
+                #     plt.imshow(ccd.data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
+                #     plt.show()
                 ccd.write(os.path.join(self.args.red_path, self.out_prefix + science_image))
                 log.info('Created science image: ' + os.path.join(self.args.red_path, self.out_prefix + science_image))
                 
 
                 # print(science_group)
         elif 'FLAT' in obstype:
+            self.queue.append(science_group)
+            log.warning('Only flats found in this group')
             flat_sub_group = science_group[science_group.obstype == 'FLAT']
             master_flat, master_flat_name = self.create_master_flats(flat_group=flat_sub_group)
         else:
@@ -365,7 +422,7 @@ class ImageProcessor(object):
         sample_file = CCDData.read(os.path.join(self.args.raw_path, random.choice(imaging_group.file.tolist())), unit=u.adu)
         master_flat_name = self.name_master_flats(sample_file.header, imaging_group, get=True)
         print(master_flat_name)
-        master_flat = self.get_best_flat(flat_name=master_flat_name)
+        master_flat, master_flat_name = self.get_best_flat(flat_name=master_flat_name)
         if master_flat is not None:
             for image_file in imaging_group.file.tolist():
                 self.out_prefix = ''
@@ -373,12 +430,12 @@ class ImageProcessor(object):
                 ccd = self.image_trim(ccd)
                 self.out_prefix = 't_'
                 if not self.args.ignore_bias:
-                    ccd = ccdproc.subtract_bias(ccd, self.master_bias)
+                    ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
                     self.out_prefix = 'z' + self.out_prefix
-                    ccd.header['HISTORY'] = 'Bias subtracted image'
-                ccd = ccdproc.flat_correct(ccd, master_flat)
+                    ccd.header.add_history('Bias subtracted image')
+                ccd = ccdproc.flat_correct(ccd, master_flat, add_keyword=False)
                 self.out_prefix = 'f' + self.out_prefix
-                ccd.header['HISTORY'] = 'Flat corrected ' + master_flat_name
+                ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
                 if self.args.clean_cosmic:
                     ccd = self.cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
@@ -407,23 +464,76 @@ class ImageProcessor(object):
         # TODO (simon): Validate this method
         value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
         log.info('Cleaning cosmic rays... ')
-        ccd = ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
+        ccd.data, _ = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
                                              gain=float(ccd.header['GAIN']),
                                              readnoise=float(ccd.header['RDNOISE']),
                                              satlevel=np.inf, sepmed=True, fsmode='median',
                                              psfmodel='gaussy', verbose=True)
         # ccd.data = np.array(ccd.data, dtype=np.double) / float(ccd.header['GAIN'])
-        # print(isinstance(nccd, CCDData))
-        print(isinstance(ccd, CCDData))
-
 
         # difference = np.nan_to_num(ccd - nccd)
 
         # plt.imshow(difference, clim=(0,1))
         # plt.show()
 
-        ccd.header['HISTORY'] = "Cosmic rays rejected."
-        # sys.exit(0)
+        ccd.header.add_history("Cosmic rays rejected with LACosmic")
+        log.info("Cosmic rays rejected with LACosmic")
+        return ccd
+
+    def remove_nan(self, ccd):
+        # do some kind of interpolation to removen NaN and -INF
+        # np.nan_to_num()
+        # TODO (simon): Re-write in a more comprehensive way
+        log.info('Removing NaN and INF by cubic interpolation')
+        x = np.arange(0, ccd.data.shape[1])
+        y = np.arange(0, ccd.data.shape[0])
+        # mask invalid values
+        array = np.ma.masked_invalid(ccd.data)
+        xx, yy = np.meshgrid(x, y)
+        # get only the valid values
+        x1 = xx[~array.mask]
+        y1 = yy[~array.mask]
+        newarr = array[~array.mask]
+
+        ccd.data = interpolate.griddata((x1, y1), newarr.ravel(),
+                                   (xx, yy),
+                                   method='cubic')
+
+        # print('Length CCD Data', ccd.data.shape)
+
+        plt.imshow(ccd.data, clim=(5, 150), cmap='cubehelix')
+        plt.show()
+
+        return ccd
+
+    def convolve(self, ccd):
+        binning = 1
+        if self.instrument == 'Red':
+            binning = int(ccd.header['PG5_4'])
+        elif self.instrument == 'Blue':
+            binning = int(ccd.header['PARAM22'])
+        else:
+            log.warning('No proper camera detected.')
+        seeing = float(ccd.header['SEEING']) * u.arcsec
+        print('seeing '+ str(seeing))
+        print('Pixel Scale '+ str(self.pixel_scale))
+        print('Binning '+ str(binning))
+        fwhm = seeing / (self.pixel_scale * binning)
+        # to deal with the cases when there is no seeing info
+        fwhm = abs(fwhm/2.)
+
+        gaussian_kernel = Gaussian2DKernel(stddev=1)
+        tophat_kernel = Tophat2DKernel(5)
+        new_ccd_data = convolve_fft(ccd.data, tophat_kernel, interpolate_nan=True, allow_huge=True)
+
+        fig = plt.figure()
+        a = fig.add_subplot(2, 1, 1)
+        plt.imshow(ccd.data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
+        a = fig.add_subplot(2,1,2)
+        plt.imshow(new_ccd_data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
+        plt.show()
+
+        print(fwhm)
         return ccd
 
     @staticmethod
@@ -437,6 +547,8 @@ class ImageProcessor(object):
 
         """
         flat_list = glob.glob(flat_name)
+        print(flat_name)
+        print(flat_list)
         if len(flat_list) > 0:
             if len(flat_list) == 1:
                 master_flat_name = flat_list[0]
@@ -447,52 +559,11 @@ class ImageProcessor(object):
 
             master_flat = CCDData.read(master_flat_name, unit=u.adu)
             log.info('Found suitable master flat: ' + master_flat_name)
-            return master_flat
+            return master_flat, master_flat_name
         else:
             log.error('There is no flat available')
-            return None
+            return None, None
 
 if __name__ == '__main__':
     pass
-    # from night_organizer import Night
-    # from ccdproc import ImageFileCollection
-    # keywords = ['date',
-    #             'slit',
-    #             'date-obs',
-    #             'obstype',
-    #             'object',
-    #             'exptime',
-    #             'obsra',
-    #             'obsdec',
-    #             'grating',
-    #             'cam_targ',
-    #             'grt_targ',
-    #             'filter',
-    #             'filter2']
-    # path = '/data/simon/data/soar/work/image_processor_data_test/imaging/'
-    # # path = '/data/simon/data/soar/work/image_processor_data_test/spectroscopy_day_flat/'
-    # # path = '/data/simon/data/soar/work/image_processor_data_test/spectroscopy_night_flat/'
-    # ic = ImageFileCollection(path, keywords)
-    # pandas_df = ic.summary.to_pandas()
-    #
-    # if 'imaging' in path:
-    #     night_object = Night(path, 'Red', 'Imaging')
-    #     bias_list = pandas_df[pandas_df.obstype == 'BIAS']
-    #     # print(bias_list)
-    #     night_object.add_bias(bias_list)
-    #     all_flats_list = pandas_df[pandas_df.obstype == 'FLAT']
-    #     # print(all_flats_list['filter'][pandas_df.obstype == 'FLAT'].unique())
-    #     for i_filter in pandas_df['filter'][pandas_df.obstype == 'FLAT'].unique():
-    #         flat_group = all_flats_list[all_flats_list['filter'] == i_filter]
-    #         night_object.add_day_flats(flat_group)
-    #         # print(flat_group)
-    #         # print(all_flats_list[all_flats_list.filter == i_filter])
-    #     all_objects = pandas_df[pandas_df.obstype == 'OBJECT']
-    #     for o_filter in pandas_df['filter'][pandas_df.obstype == 'OBJECT'].unique():
-    #         object_group = all_objects[all_objects['filter'] == o_filter]
-    #         night_object.add_data_group(object_group)
-    #         # print(object_group)
-    #
-    # improc = ImageProcessor(night_object)
-    # improc()
 
