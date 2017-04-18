@@ -226,10 +226,10 @@ class ImageProcessor(object):
         flat_file_list = flat_group.file.tolist()
         master_flat_list = []
         master_flat_name = None
-        for f_file in flat_file_list:
+        for flat_file in flat_file_list:
             # print(f_file)
-            ccd = CCDData.read(os.path.join(self.args.raw_path, f_file), unit=u.adu)
-            log.info('Loading flat image: ' + os.path.join(self.args.raw_path, f_file))
+            ccd = CCDData.read(os.path.join(self.args.raw_path, flat_file), unit=u.adu)
+            log.info('Loading flat image: ' + os.path.join(self.args.raw_path, flat_file))
             if master_flat_name is None:
                 master_flat_name = self.name_master_flats(header=ccd.header, group=flat_group, target_name=target_name)
             if self.technique == 'Spectroscopy':

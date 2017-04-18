@@ -23,7 +23,7 @@ import astropy.units as u
 from astropy.io import fits
 from astropy.stats import sigma_clip
 from astropy.modeling import models, fitting
-from astropy.convolution import convolve, Gaussian1DKernel
+from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 import scipy.interpolate
 from scipy import signal
 
@@ -621,9 +621,20 @@ class WavelengthCalibration(object):
         reference_lamp_wav_axis, reference_lamp_data.data = read_wsolution()
         reference_lamp_copy = reference_lamp_data.copy()
 
-        gaussian_kernel = Gaussian1DKernel(stddev=3.)
-        reference_lamp_copy.data = convolve(reference_lamp_copy.data, gaussian_kernel)
-        # ref_lamp_lines_pixel_full = self.get_lines_in_lamp(ccddata_lamp=reference_lamp_copy)
+        # if float(re.sub('[A-Za-z" ]', '',self.lamp_header['SLIT'])) > 3:
+        plt.plot(self.lamp_data, color='b')
+        plt.plot(reference_lamp_copy.data, color='k')
+        # plt.plot(test, color='r')
+        plt.show()
+        if False:
+            box_kernel = Box1DKernel(width=33)
+            test = convolve(reference_lamp_copy.data, box_kernel)
+
+        else:
+            gaussian_kernel = Gaussian1DKernel(stddev=3.)
+            reference_lamp_copy.data = convolve(reference_lamp_copy.data, gaussian_kernel)
+            # ref_lamp_lines_pixel_full = self.get_lines_in_lamp(ccddata_lamp=reference_lamp_copy)
+
 
         # Initialize wavelength builder class
         wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
@@ -641,7 +652,7 @@ class WavelengthCalibration(object):
         for i in range(len(lamp_lines_pixel)):
             line_value_pixel = lamp_lines_pixel[i]
             line_value_angst = lamp_lines_angst[i]
-            half_width = 50
+            half_width = 100
             xmin = int(max(0, round(line_value_pixel - half_width)))
             xmax = int(min(round(line_value_pixel + half_width), len(self.lamp_data)))
             # print(xmin, xmax)
@@ -651,11 +662,11 @@ class WavelengthCalibration(object):
             lamp_sample = self.lamp_data[xmin:xmax]
 
             correlation_value = self.cross_correlation(ref_sample, lamp_sample)
-            log.debug('Cross correlation_value ' +  str(correlation_value))
+            log.debug('Cross correlation value ' + str(correlation_value))
 
             """record value for reference wavelength"""
             angstrom_value_model = read_wsolution.math_model(line_value_pixel + correlation_value)
-            log.debug('Model - Original - Pixel', angstrom_value_model, line_value_angst, line_value_pixel)
+            # log.debug('Model - Original - Pixel', angstrom_value_model, line_value_angst, line_value_pixel)
             correlation_values.append(correlation_value)
             angstrom_differences.append(angstrom_value_model - line_value_angst)
             angstrom_values.append(angstrom_value_model)
@@ -700,7 +711,7 @@ class WavelengthCalibration(object):
                     angstrom_values.append(_angstrom_values[i])
             log.info('Re-fitting wavelength solution')
             self.wsolution = wavelength_solution.ws_fit(pixel_values, angstrom_values)
-
+        self.evaluate_solution()
         if self.args.debug_mode:
             fig = plt.figure(figsize=(15, 10))
             manager = plt.get_current_fig_manager()
@@ -731,27 +742,51 @@ class WavelengthCalibration(object):
             pdf_pages.close()
             plt.show()
 
-    def cross_correlation(self, yaxis1, yaxis2, mode='full'):
-        # if len(yaxis1) == len(yaxis2):
-        gaussian_kernel = Gaussian1DKernel(stddev=2.)
-        cyaxis1 = convolve(yaxis1, gaussian_kernel)
-        cyaxis2 = convolve(yaxis2, gaussian_kernel)
+    def cross_correlation(self, reference, new_array, mode='full'):
+        """Do cross correlation to two arrays
 
+        Args:
+            reference (Numpy.Array): Reference array.
+            new_array (Numpy.Array): Array to be matched.
+            mode (str): Correlation mode for `scipy.signal.correlate`.
+
+        Returns:
+            correlation_value (int): Shift value in pixels.
+
+        """
+        cyaxis2 = new_array
+        if float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) > 3:
+            box_width = float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) / 0.15
+            print('BOX WIDTH: ', box_width)
+            box_kernel = Box1DKernel(width=box_width)
+            max_before = np.max(reference)
+            cyaxis1 = convolve(reference, box_kernel)
+            max_after = np.max(cyaxis1)
+            cyaxis1 *= max_before / max_after
+
+
+        else:
+            gaussian_kernel = Gaussian1DKernel(stddev=2.)
+            cyaxis1 = convolve(reference, gaussian_kernel)
+            # cyaxis2 = convolve(new_array, gaussian_kernel)
+
+
+        plt.plot(cyaxis1, color='k', label='Reference')
+        plt.plot(cyaxis2, color='r', label='New Array')
+        plt.plot(reference, color='g')
+        plt.show()
         ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
         # print('Corr ', ccorr)
         max_index = np.argmax(ccorr)
         x_ccorr = np.linspace(-int(len(ccorr) / 2.), int(len(ccorr) / 2.), len(ccorr))
         correlation_value = x_ccorr[max_index]
-        if False:
+        if self.args.debug_mode:
             plt.title('Cross Correlation')
+            plt.xlabel('Lag Value')
+            plt.ylabel('Correlation Value')
             plt.plot(x_ccorr, ccorr)
             plt.show()
         return correlation_value
-
-        # else:
-        #     log.error('Data length does not match {} {}'.format(len(yaxis1), len(yaxis2)))
-
-
 
     def interactive_wavelength_solution(self):
         """Find the wavelength solution interactively
