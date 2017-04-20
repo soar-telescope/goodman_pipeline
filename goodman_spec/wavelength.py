@@ -9,19 +9,28 @@ to the image's header following the FITS standard.
 # TODO Reformat _ Re-order imports (first "import ...", then "from ... import ..." alphabetically)
 # TODO (simon): Discuss this because there are other rules that will probably conflict with this request.
 from __future__ import print_function
-import sys
+
 import logging
+import sys
+import os
+import re
 import matplotlib.pyplot as plt
-# import matplotlib.image as mpimg
 import matplotlib.ticker as mtick
+from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
-import scipy.interpolate
-# import time
+from ccdproc import CCDData
+import astropy.units as u
 from astropy.io import fits
 from astropy.stats import sigma_clip
+from astropy.modeling import models, fitting
+from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
+import scipy.interpolate
 from scipy import signal
-from linelist import ReferenceData
+
 import wsbuilder
+from linelist import ReferenceData
+
+
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.INFO, format=FORMAT)
@@ -67,15 +76,14 @@ class WavelengthCalibration(object):
         self.interpolation_size = 200
         self.line_search_method = 'derivative'
         """Instrument configuration and spectral characteristics"""
-        self.gratings_dict = {'SYZY_400': 400,
-                              'KOSI_600': 600,
-                              '930': 930,
-                              'RALC_1200-BLUE': 1200,
-                              'RALC_1200-RED': 1200}
+        self.pixel_size = 15 * u.micrometer
+        self.pixel_scale = 0.15 * u.arcsec
+        self.goodman_focal_length = 377.3 * u.mm
         self.grating_frequency = None
-        self.grating_angle = float(0)
-        self.camera_angle = float(0)
-        self.binning = 1
+        self.grating_angle = None
+        self.camera_angle = None
+        self.binning = None
+
         self.pixel_count = None
         self.alpha = None
         self.beta = None
@@ -138,7 +146,7 @@ class WavelengthCalibration(object):
                 for lamp_index in range(self.science_object.lamp_count):
                     self.calibration_lamp = self.science_object.lamp_file[lamp_index - 1]
                     self.lamp_data = self.science_pack.lamps_data[lamp_index]
-                    self.raw_pixel_axis = range(1, len(self.lamp_data) + 1, 1)
+                    self.raw_pixel_axis = range(len(self.lamp_data))
                     # self.raw_pixel_axis = range(len(self.lamp_data))
                     self.lamp_header = self.science_pack.lamps_headers[lamp_index]
                     self.lamp_name = self.lamp_header['OBJECT']
@@ -151,7 +159,7 @@ class WavelengthCalibration(object):
                     if self.args.interactive_ws:
                         self.interactive_wavelength_solution()
                     else:
-                        log.warning('Automatic Wavelength Solution is not fully implemented yet')
+                        log.warning('Automatic Wavelength Solution might fail to provide accurate solutions')
                         self.automatic_wavelength_solution()
                         # self.wsolution = self.wavelength_solution()
                     if self.wsolution is not None:
@@ -239,7 +247,7 @@ class WavelengthCalibration(object):
         else:
             log.error('Wavelength solution has not been calculated yet.')
 
-    def get_lines_in_lamp(self):
+    def get_lines_in_lamp(self, ccddata_lamp=None):
         """Identify peaks in a lamp spectrum
 
         Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission lines then it calls the recenter_lines
@@ -249,25 +257,60 @@ class WavelengthCalibration(object):
         Returns:
             lines_candidates (list): A common list containing pixel values at approximate location of lines.
         """
-        filtered_data = np.where(np.abs(self.lamp_data > self.lamp_data.min() + 0.05 * self.lamp_data.max()),
-                                 self.lamp_data,
+        # import cPickle
+        # lamp_out = open('lamp.pkl', 'wb')
+        # cPickle.dump([self.lamp_data, self.lamp_header], lamp_out, protocol=cPickle.HIGHEST_PROTOCOL)
+        if ccddata_lamp is None:
+            lamp_data = self.lamp_data
+            lamp_header = self.lamp_header
+            raw_pixel_axis = self.raw_pixel_axis
+        elif isinstance(ccddata_lamp, CCDData):
+            print(ccddata_lamp.data.shape)
+            lamp_data = ccddata_lamp.data
+            lamp_header = ccddata_lamp.header
+            raw_pixel_axis = range(len(lamp_data))
+        else:
+            log.error('Error receiving lamp')
+        no_nan_lamp_data = np.nan_to_num(lamp_data)
+        filtered_data = np.where(np.abs(no_nan_lamp_data > no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()),
+                                 no_nan_lamp_data,
                                  None)
-        peaks = signal.argrelmax(filtered_data, axis=0, order=6)[0]
-        lines_center = self.recenter_lines(self.lamp_data, peaks)
 
-        if self.args.plots_enabled:
+
+        _upper_limit = no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()
+        slit_size = re.sub('[a-zA-Z" ]', '', lamp_header['slit'])
+        # get serial binning value PG5_9 is for RED camera and PARAM18 is for BLUE camera
+        # serial binning is dispersion axis, the only one that matters for this purpose
+        try:
+            binning = int(lamp_header['PG5_9'])
+        except KeyError:
+            binning = int(lamp_header['PARAM18'])
+        new_order = int(round(float(slit_size) / (0.15 * binning)))
+        log.debug('New Order: ' + '{:d}'.format(new_order))
+        # print(round(new_order))
+        peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
+        if slit_size >= 5:
+            lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data, lines=peaks, slit_size=slit_size, order=new_order)
+        else:
+            # lines_center = peaks
+            lines_center = self.recenter_lines(no_nan_lamp_data, peaks)
+
+        if self.args.debug_mode:
             fig = plt.figure(1)
             fig.canvas.set_window_title('Lines Detected')
-            plt.title('Lines detected in Lamp\n%s' % self.lamp_header['OBJECT'])
+            plt.title('Lines detected in Lamp\n%s' % lamp_header['OBJECT'])
             plt.xlabel('Pixel Axis')
             plt.ylabel('Intensity (counts)')
             # Build legends without data
             plt.plot([], color='k', label='Comparison Lamp Data')
             plt.plot([], color='k', linestyle=':', label='Spectral Line Detected')
+            plt.axhline(_upper_limit, color='r')
             for line in peaks:
                 plt.axvline(line + 1, color='k', linestyle=':')
             # plt.axhline(median + stddev, color='g')
-            plt.plot(self.raw_pixel_axis, self.lamp_data, color='k')
+            # for rc_line in lines_center:
+            #     plt.axvline(rc_line, color='r')
+            plt.plot(raw_pixel_axis, no_nan_lamp_data, color='k')
             plt.legend(loc='best')
             plt.show()
         return lines_center
@@ -336,6 +379,28 @@ class WavelengthCalibration(object):
             plt.show()
         return new_center
 
+    def recenter_broad_lines(self, lamp_data, lines, slit_size, order):
+        new_line_centers = []
+        gaussian_kernel = Gaussian1DKernel(stddev=2.)
+        lamp_data = convolve(lamp_data, gaussian_kernel)
+        for line in lines:
+            lower_index = max(0, int(line - order))
+            upper_index = min(len(lamp_data), int(line + order))
+            lamp_sample = lamp_data[lower_index:upper_index]
+            x_axis = np.linspace(lower_index, upper_index, len(lamp_sample))
+            line_max = np.max(lamp_sample)
+            gaussian_model = models.Gaussian1D(amplitude=line_max, mean=line, stddev=order)
+            fit_gaussian = fitting.LevMarLSQFitter()
+            fitted_gaussian = fit_gaussian(gaussian_model, x_axis, lamp_sample)
+            new_line_centers.append(fitted_gaussian.mean.value)
+            # if self.args.debug_mode:
+            #     plt.plot(x_axis, lamp_sample)
+            #     plt.plot(x_axis, gaussian_model(x_axis))
+            #     plt.plot(x_axis, fitted_gaussian(x_axis), color='k')
+            #     plt.axvline(line)
+            #     plt.show()
+        return new_line_centers
+
     def get_spectral_characteristics(self):
         """Calculates some Goodman's specific spectroscopic values.
 
@@ -354,37 +419,42 @@ class WavelengthCalibration(object):
                                             pix2: Pixel Two
 
         """
-        blue_correction_factor = -90
-        red_correction_factor = -60
-        self.grating_frequency = self.gratings_dict[self.lamp_header['GRATING']]
-        self.grating_angle = float(self.lamp_header['GRT_ANG'])
-        self.camera_angle = float(self.lamp_header['CAM_ANG'])
-        # binning = self.lamp_header[]
-        # TODO(simon): Make sure which binning is the important, parallel or serial
-        # self.binning = 1
-        # PG5_4 parallel
+        # TODO (simon): find a definite solution for this, this only work (a little) for one configuration
+        blue_correction_factor = -50 * u.angstrom
+        red_correction_factor = -37 * u.angstrom
+        self.grating_frequency = float(re.sub('[A-Za-z_-]', '', self.lamp_header['GRATING'])) / u.mm
+        # print('Grating Frequency ' + '{:d}'.format(int(self.grating_frequency)))
+        self.grating_angle = float(self.lamp_header['GRT_ANG']) * u.deg
+        self.camera_angle = float(self.lamp_header['CAM_ANG']) * u.deg
+        """
+        PG5_4 parallel
         # PG5_9 serial
         # PARAM18 serial
         # PARAM22 parallel
+        """
         try:
-            self.binning = self.lamp_header['PG5_4']
+            self.binning = int(self.lamp_header['PG5_4'])
             # serial_binning = self.lamp_header['PG5_9']
         except KeyError:
-            self.binning = self.lamp_header['PARAM22']
+            self.binning = int(self.lamp_header['PARAM22'])
             # serial_binning = self.lamp_header['PARAM18']
-        # self.pixel_count = len(self.lamp_data)
+        self.pixel_count = len(self.lamp_data)
         # Calculations
         # TODO (simon): Check whether is necessary to remove the self.slit_offset variable
-        self.alpha = self.grating_angle + 0.
-        self.beta = self.camera_angle - self.grating_angle
-        self.center_wavelength = 10 * (1e6 / self.grating_frequency) * (
-            np.sin(self.alpha * np.pi / 180.) + np.sin(self.beta * np.pi / 180.))
-        self.blue_limit = 10 * (1e6 / self.grating_frequency) * (
-            np.sin(self.alpha * np.pi / 180.) + np.sin((self.beta - 4.656) * np.pi / 180.)) + blue_correction_factor
-        self.red_limit = 10 * (1e6 / self.grating_frequency) * (
-            np.sin(self.alpha * np.pi / 180.) + np.sin((self.beta + 4.656) * np.pi / 180.)) + red_correction_factor
-        pixel_one = self.predicted_wavelength(1)
-        pixel_two = self.predicted_wavelength(2)
+        self.alpha = self.grating_angle.to(u.rad)
+        self.beta = self.camera_angle.to(u.rad) - self.grating_angle.to(u.rad)
+        self.center_wavelength = (np.sin(self.alpha) + np.sin(self.beta)) / self.grating_frequency
+        limit_angle = np.arctan(self.pixel_count * (self.pixel_size / self.goodman_focal_length) / 2)
+        self.blue_limit = ((np.sin(self.alpha) + np.sin(self.beta - limit_angle.to(u.rad))) / self.grating_frequency).to(u.angstrom) + blue_correction_factor
+        self.red_limit = ((np.sin(self.alpha) + np.sin(self.beta + limit_angle.to(u.rad))) / self.grating_frequency).to(u.angstrom) + red_correction_factor
+        # self.center_wavelength = 10 * (1e6 / self.grating_frequency) * (
+        #     np.sin(self.alpha * np.pi / 180.) + np.sin(self.beta * np.pi / 180.))
+        # self.blue_limit = 10 * (1e6 / self.grating_frequency) * (
+        #     np.sin(self.alpha * np.pi / 180.) + np.sin((self.beta - 4.656) * np.pi / 180.)) + blue_correction_factor
+        # self.red_limit = 10 * (1e6 / self.grating_frequency) * (
+        #     np.sin(self.alpha * np.pi / 180.) + np.sin((self.beta + 4.656) * np.pi / 180.)) + red_correction_factor
+        pixel_one = 0
+        pixel_two = 0
         log.debug('Center Wavelength : %s Blue Limit : %s Red Limit : %s',
                   self.center_wavelength,
                   self.blue_limit,
@@ -413,7 +483,7 @@ class WavelengthCalibration(object):
             Two dimensional array containing x-axis and interpolated array. The x-axis preserves original pixel values.
 
         """
-        x_axis = range(1, spectrum.size + 1)
+        x_axis = range(spectrum.size)
         first_x = x_axis[0]
         last_x = x_axis[-1]
         new_x_axis = np.linspace(first_x, last_x, spectrum.size * self.interpolation_size)
@@ -514,16 +584,209 @@ class WavelengthCalibration(object):
         return wavelength
 
     def automatic_wavelength_solution(self):
-        """Automatic Wavelength Solution NotImplemented
+        """Finds a Wavelength Solution Automatically
 
-        Raises:
-            NotImplemented
+        The pipeline includes a set of comparison lamps already wavelength calibrated that will be used as templates
+        for cross-matching incoming comparison lamps taken in the same conditions (i.e. same elements, grating, mode
+        and ideally slit).
+
+        It will first find the suitable comparison lamp and if it succeeds it will load its wavelength solution
+        creating a wavelength axis. Then it will identify the lines in the lamp we want to calibrate, there is no need
+        to load this lamp since is an attribute of the class and has been already extracted. For each identified line
+        will cut sub-samples of the template reference lamp and the new lamp and then will do a cross correlation to
+        find the shift in pixels. The line's pixel value will be stored as well as the wavelength value of
+        pixel_value + cross_correlation_value using the mathematical model of the template comparison lamp. The cross
+        correlation value will also be stored and will be used as a first order filter by doing a sigma clip discarding
+        large mismatch but this is not enough since there are some cases where the cross correlation collection does not
+        have a clear distribution and sigma clip does not work so after this first order filtering it will create a
+        wavelength solution. Using the new wavelength solution a new list of the difference in Angstrom will be created
+        as the difference of the reference Angstrom value minus the Angstrom value corresponding to the line center
+        using the mathematical model of the first solution. This will be sigma clipped once more and the values left out
+        removed and finally a new solution will be calculated.
+
+
+        Returns:
+            None: In case it is not possible to find a suitable template lamp.
 
         """
-        # needs:
-        #   - self.sci, self.header
-        #   - self.lines_center
-        raise NotImplemented
+        try:
+            reference_lamp_file = self.reference_data.get_best_reference_lamp(header=self.lamp_header)
+            reference_lamp_data = CCDData.read(reference_lamp_file, unit=u.adu)
+        except NotImplementedError:
+            log.warning('This configuration is not supported in automatic mode.')
+            # TODO (simon): Evaluate if send this to interactive mode
+            return None
+
+        read_wsolution = wsbuilder.ReadWavelengthSolution(header=reference_lamp_data.header, data=reference_lamp_data.data)
+        reference_lamp_wav_axis, reference_lamp_data.data = read_wsolution()
+        reference_lamp_copy = reference_lamp_data.copy()
+
+        # if float(re.sub('[A-Za-z" ]', '',self.lamp_header['SLIT'])) > 3:
+        plt.plot(self.lamp_data, color='b')
+        plt.plot(reference_lamp_copy.data, color='k')
+        # plt.plot(test, color='r')
+        plt.show()
+        if False:
+            box_kernel = Box1DKernel(width=33)
+            test = convolve(reference_lamp_copy.data, box_kernel)
+
+        else:
+            gaussian_kernel = Gaussian1DKernel(stddev=3.)
+            reference_lamp_copy.data = convolve(reference_lamp_copy.data, gaussian_kernel)
+            # ref_lamp_lines_pixel_full = self.get_lines_in_lamp(ccddata_lamp=reference_lamp_copy)
+
+
+        # Initialize wavelength builder class
+        wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
+        # self.wsolution = wavelength_solution.ws_fit(pixel, auto_angs)
+
+        '''detect lines in comparison lamp (not reference)'''
+        lamp_lines_pixel = self.get_lines_in_lamp()
+        lamp_lines_angst = read_wsolution.math_model(lamp_lines_pixel)
+
+        pixel_values = []
+        angstrom_values = []
+        correlation_values = []
+        angstrom_differences = []
+
+        for i in range(len(lamp_lines_pixel)):
+            line_value_pixel = lamp_lines_pixel[i]
+            line_value_angst = lamp_lines_angst[i]
+            half_width = 100
+            xmin = int(max(0, round(line_value_pixel - half_width)))
+            xmax = int(min(round(line_value_pixel + half_width), len(self.lamp_data)))
+            # print(xmin, xmax)
+            # TODO (simon): Convolve to match wider lines such as those from the slit of 5 arseconds
+            ref_sample = reference_lamp_data.data[xmin:xmax]
+            ref_wavele = reference_lamp_wav_axis[xmin:xmax]
+            lamp_sample = self.lamp_data[xmin:xmax]
+
+            correlation_value = self.cross_correlation(ref_sample, lamp_sample)
+            log.debug('Cross correlation value ' + str(correlation_value))
+
+            """record value for reference wavelength"""
+            angstrom_value_model = read_wsolution.math_model(line_value_pixel + correlation_value)
+            # log.debug('Model - Original - Pixel', angstrom_value_model, line_value_angst, line_value_pixel)
+            correlation_values.append(correlation_value)
+            angstrom_differences.append(angstrom_value_model - line_value_angst)
+            angstrom_values.append(angstrom_value_model)
+            pixel_values.append(line_value_pixel)
+
+            if self.args.debug_mode:
+                plt.title('Samples after cross correlation')
+                plt.xlabel('Pixel Axis')
+                plt.ylabel('Intensity')
+                plt.plot(ref_sample, color='k', label='Reference Sample')
+                plt.plot([x + correlation_value for x in range(len(lamp_sample))], lamp_sample, label='New Lamp Sample')
+                plt.legend(loc='best')
+                plt.show()
+
+        # This is good and necessary as a first approach for some very wrong correlation results
+        clipped_values = sigma_clip(correlation_values, sigma=2, iters=1, cenfunc=np.ma.median)
+        if np.ma.is_masked(clipped_values):
+            _pixel_values = list(pixel_values)
+            _angstrom_values = list(angstrom_values)
+            pixel_values = []
+            angstrom_values = []
+            for i in range(len(clipped_values)):
+                if clipped_values[i] is not np.ma.masked:
+                    pixel_values.append(_pixel_values[i])
+                    angstrom_values.append(_angstrom_values[i])
+
+        # Create a wavelength solution
+        log.info('Creating Wavelength Solution')
+        self.wsolution = wavelength_solution.ws_fit(pixel_values, angstrom_values)
+        #  finding differences in order to improve the wavelength solution
+        wavelength_differences = [angstrom_values[i] - self.wsolution(pixel_values[i]) for i in range(len(pixel_values))]
+        clipped_differences = sigma_clip(wavelength_differences, sigma=2, iters=1, cenfunc=np.ma.median)
+        if np.ma.is_masked(clipped_differences):
+            log.debug('Cleaning pixel to angstrom match to improve wavelength solution')
+            _pixel_values = list(pixel_values)
+            _angstrom_values = list(angstrom_values)
+            pixel_values = []
+            angstrom_values = []
+            for i in range(len(clipped_differences)):
+                if clipped_differences[i] is not np.ma.masked:
+                    pixel_values.append(_pixel_values[i])
+                    angstrom_values.append(_angstrom_values[i])
+            log.info('Re-fitting wavelength solution')
+            self.wsolution = wavelength_solution.ws_fit(pixel_values, angstrom_values)
+        self.evaluate_solution()
+        if self.args.debug_mode:
+            fig = plt.figure(figsize=(15, 10))
+            manager = plt.get_current_fig_manager()
+            manager.window.maximize()
+
+            ax = fig.add_subplot(111)
+            ax.plot([], color='m', label='Pixels')
+            ax.plot([], color='c', label='Angstrom')
+            for val in pixel_values:
+                ax.axvline(self.wsolution(val), color='m')
+            for val2 in angstrom_values:
+                ax.axvline(val2, color='c', linestyle='--')
+            # print('Blue ' + str(self.spectral['blue'].value) + ' Red ' + str(self.spectral['red'].value))
+            # ax.axvline(self.spectral['blue'].value, color='b')
+            # ax.axvline(self.spectral['red'].value, color='r')
+            ax.plot(reference_lamp_wav_axis, reference_lamp_data.data, label='Reference', color='k', alpha=1)
+            ax.plot(self.wsolution(self.raw_pixel_axis), self.lamp_data, label='Last Solution', color='r', alpha=0.7)
+            # ax.plot(lamp_axis_pixel, self.lamp_data, label='Last Solution', color='r', alpha=0.7)
+            ax.legend(loc='best')
+            ax.set_xlabel('Wavelength (Angstrom)')
+            ax.set_ylabel('Intensity (ADU)')
+            ax.set_title(
+                'Automatic Wavelength Solution Test\n' + self.lamp_header['OBJECT'] + ' ' + self.lamp_header['wavmode'])
+            fig.tight_layout()
+            out_file_name = 'automatic-solution_' + self.lamp_header['OBJECT'] + '.pdf'
+            pdf_pages = PdfPages(os.path.join(self.args.destiny, out_file_name))
+            plt.savefig(pdf_pages, format='pdf')
+            pdf_pages.close()
+            plt.show()
+
+    def cross_correlation(self, reference, new_array, mode='full'):
+        """Do cross correlation to two arrays
+
+        Args:
+            reference (Numpy.Array): Reference array.
+            new_array (Numpy.Array): Array to be matched.
+            mode (str): Correlation mode for `scipy.signal.correlate`.
+
+        Returns:
+            correlation_value (int): Shift value in pixels.
+
+        """
+        cyaxis2 = new_array
+        if float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) > 3:
+            box_width = float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) / 0.15
+            print('BOX WIDTH: ', box_width)
+            box_kernel = Box1DKernel(width=box_width)
+            max_before = np.max(reference)
+            cyaxis1 = convolve(reference, box_kernel)
+            max_after = np.max(cyaxis1)
+            cyaxis1 *= max_before / max_after
+
+
+        else:
+            gaussian_kernel = Gaussian1DKernel(stddev=2.)
+            cyaxis1 = convolve(reference, gaussian_kernel)
+            # cyaxis2 = convolve(new_array, gaussian_kernel)
+
+
+        plt.plot(cyaxis1, color='k', label='Reference')
+        plt.plot(cyaxis2, color='r', label='New Array')
+        plt.plot(reference, color='g')
+        plt.show()
+        ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+        # print('Corr ', ccorr)
+        max_index = np.argmax(ccorr)
+        x_ccorr = np.linspace(-int(len(ccorr) / 2.), int(len(ccorr) / 2.), len(ccorr))
+        correlation_value = x_ccorr[max_index]
+        if self.args.debug_mode:
+            plt.title('Cross Correlation')
+            plt.xlabel('Lag Value')
+            plt.ylabel('Correlation Value')
+            plt.plot(x_ccorr, ccorr)
+            plt.show()
+        return correlation_value
 
     def interactive_wavelength_solution(self):
         """Find the wavelength solution interactively
@@ -562,7 +825,8 @@ class WavelengthCalibration(object):
 
         """
         plt.switch_backend('GTK3Agg')
-        reference_file = self.reference_data.get_reference_lamps_by_name(self.lamp_name)
+        reference_file = self.reference_data.get_best_reference_lamp(header=self.lamp_header)
+        # reference_file = self.reference_data.get_reference_lamps_by_name(self.lamp_name)
         if reference_file is not None:
             log.info('Using reference file: %s', reference_file)
             reference_plots_enabled = True
@@ -601,7 +865,7 @@ class WavelengthCalibration(object):
         self.ax3.set_title('Reference Data')
         self.ax3.set_xlabel('Wavelength (Angstrom)')
         self.ax3.set_ylabel('Intensity (counts)')
-        self.ax3.set_xlim((self.blue_limit, self.red_limit))
+        self.ax3.set_xlim((self.blue_limit.value, self.red_limit.value))
         self.ax3.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
         self.ax3.plot([], linestyle=':', color='r', label='Reference Line Values')
 
@@ -830,7 +1094,7 @@ class WavelengthCalibration(object):
             log.info('Pressed Ctrl+q. Closing the program')
             sys.exit(0)
         else:
-            log.debug("Key Pressed: ", event.key)
+            log.debug("Key Pressed: " + event.key)
             pass
 
     def register_mark(self, event):
@@ -1144,13 +1408,18 @@ class WavelengthCalibration(object):
             linear_data (list): Contains two elements: Linear wavelength axis and the smoothed linearized data itself.
 
         """
-        pixel_axis = range(1, len(data) + 1, 1)
+        # for data_point in data:
+        #     print(data_point)
+        # print('data ', data)
+        pixel_axis = range(len(data))
         if self.wsolution is not None:
             x_axis = self.wsolution(pixel_axis)
             new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
             tck = scipy.interpolate.splrep(x_axis, data, s=0)
             linearized_data = scipy.interpolate.splev(new_x_axis, tck, der=0)
+            # print('l ', linearized_data)
             smoothed_linearized_data = signal.medfilt(linearized_data)
+            # print('sl ', smoothed_linearized_data)
             if plots:
                 fig6 = plt.figure(6)
                 plt.xlabel('Wavelength (Angstrom)')
@@ -1235,6 +1504,11 @@ class WavelengthCalibration(object):
         # add .fits
 
         new_filename = self.args.destiny + self.args.output_prefix + original_filename.replace('.fits', '') + f_end
+        # print('spectrum[0]')
+        # print(spectrum[0])
+        # print('spectrum[1]')
+        # print(spectrum[1])
+        # print(len(spectrum))
 
         fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
         log.info('Created new file: %s', new_filename)
@@ -1364,23 +1638,7 @@ class WavelengthSolution(object):
         self.reference_lamp = ref_lamp
         self.evaluation_comment = eval_comment
         self.spectral_dict = self.set_spectral_features(header)
-        # self.aperture = 1  # aperture number
-        # self.beam = 1  # beam
-        # self.dtype = self.dtype_dict[solution_type]  # data type
-        # self.dispersion_start = 0  # dispersion at start
-        # self.dispersion_delta = 0  # dispersion delta average
-        # self.pixel_number = 0  # pixel number
-        # self.doppler_factor = 0  # doppler factor
-        # self.aperture_low = 0  # aperture low (pix)
-        # self.aperture_high = 0  # aperture high
-        # # funtions parameters
-        # self.weight = 1
-        # self.zeropoint = 0
-        # self.ftype = self.ftype_dict[model_name]  # function type
-        # self.forder = model_order  # function order
-        # self.pmin = 0  # minimum pixel value
-        # self.pmax = 0  # maximum pixel value
-        # self.fpar = []  # function parameters
+        self.solution_name = self.set_solution_name(header)
 
     @staticmethod
     def set_spectral_features(header):
@@ -1451,7 +1709,7 @@ class WavelengthSolution(object):
             for key in new_dict.keys():
                 if self.spectral_dict['camera'] == 'red':
                     if key in ['grating', 'roi', 'instconf', 'wavmode'] and new_dict[key] != self.spectral_dict[key]:
-                        log.debug('Keyword: %s does not Match', key.upper())
+                        log.info('Keyword: %s does not Match', key.upper())
                         log.info('%s - Solution: %s - New Data: %s', key.upper(), self.spectral_dict[key], new_dict[key])
                         return False
                     elif key in ['cam_ang',  'grt_ang'] and abs(new_dict[key] - self.spectral_dict[key]) > 1:
@@ -1485,8 +1743,55 @@ class WavelengthSolution(object):
             log.error('Header has not been parsed')
             return False
 
-    def linear_solution_string(self, header):
-        pass
+    def set_solution_name(self, header):
+        name_text = ''
+        grating = None
+        # Grating part of the flat name
+        if header['grating'] == '<NO GRATING>':
+            try:
+                if header['wavmode'] != 'Imaging':
+                    name_text += '_nogrt'
+            except KeyError:
+                log.error('KeyError: Blue Camera')
+        else:
+            grating = header['grating'].split('_')[1]
+            name_text += '_' + grating
+            # Mode for the grating part of the flat name
+            try:
+                mode = header['wavmode'].split(' ')[1]
+                name_text += '_' + mode.upper()
+            except KeyError:
+                log.error('KeyError: Blue Camera')
+            except IndexError:
+                # it means it is Custom mode
+                mode = header['wavmode']
+                if mode == 'Custom':
+                    grating_frequency = int(re.sub('[a-zA-Z-]', '', grating))
+                    alpha = float(header['grt_ang'])
+                    beta = float(header['cam_ang']) - float(header['grt_ang'])
+                    center_wavelength = (1e6 / grating_frequency) * (
+                        np.sin(alpha * np.pi / 180.) + np.sin(beta * np.pi / 180.))
+                    log.error(center_wavelength)
+                    name_text += '_' + mode.upper() + '_{:d}nm'.format(int(round(center_wavelength)))
+                else:
+                    log.error('WAVMODE: %s not supported', mode)
+
+        # First filter wheel part of the flat name
+        if header['filter'] != '<NO FILTER>':
+            name_text += '_' + header['filter']
+        # Second filter wheel part of the flat name
+        if header['filter2'] != '<NO FILTER>':
+            name_text += '_' + header['filter2']
+        name_text += '_' + re.sub('[a-zA-Z" ]', '', header['slit'])
+
+        wsolution_name = 'ws' + name_text
+
+        log.debug(wsolution_name)
+        return wsolution_name
+        # else:
+        #     log.error('There is no flat suitable for use')
+        #     return False
+
 
 
 if __name__ == '__main__':

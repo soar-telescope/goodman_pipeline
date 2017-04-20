@@ -1,4 +1,4 @@
-"""Goodman Tools
+"""Goodman Spectroscopic Tools
 
 """
 

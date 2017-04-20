@@ -8,6 +8,7 @@ or spectra and traces it doing some fit.
 Simon Torres 2016-06-28
 
 """
+# TODO (simon): Change all astropy.io.fits to astropy.CCDData.read
 from __future__ import print_function
 import sys
 import os
@@ -103,7 +104,7 @@ class MainApp(object):
                         else:
                             log.error('No data was extracted from this target.')
                     else:
-                        log.debug('Incompatibility of solution to new data')
+                        log.info('Incompatibility of solution to new data')
                         time.sleep(3)
                         # TODO(simon): complete this part
             elif self.args.procmode == 1:
@@ -175,7 +176,7 @@ class MainApp(object):
         parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                          description=textwrap.dedent(
                                              '''Extracts goodman spectra and does wavelength calibration.\n\n\
-Supported Observing modes are:
+Supported Processing Modes are:
     <0>: (Default) reads lamps taken at the begining or end of the night.\n\
     <1>: one or more lamps around science exposure.
     '''))
@@ -242,8 +243,6 @@ Supported Observing modes are:
         #                         designed to use while observing at the telescope. Catches\
         #                          new files arriving to the <source> folder. (NI!)")
 
-
-
         parser.add_argument('-o', '--output-prefix',
                             action='store',
                             default='g',
@@ -253,7 +252,7 @@ Supported Observing modes are:
 
         parser.add_argument('-R', '--reference-files',
                             action='store',
-                            default='../refdata/',
+                            default='refdata/',
                             metavar='<Reference Dir>',
                             dest='reference_dir',
                             help="Directory of Reference files location")
@@ -264,19 +263,21 @@ Supported Observing modes are:
                             dest='interactive_ws',
                             help="Interactive wavelength solution. Enabled by default.")
 
-        parser.add_argument('--plots-enabled',
+        parser.add_argument('--debug',
                             action='store_true',
-                            default=False,
-                            dest='plots_enabled',
-                            help="Show plots of intermediate steps. Use for debugging only.")
+                            dest='debug_mode',
+                            help="Debugging Mode")
 
         args = parser.parse_args()
-
+        if args.debug_mode:
+            log.info('Changing log level to DEBUG.')
+            log.setLevel(level=logging.DEBUG)
         # there must be a more elegant way to do this
+        # TODO (simon): Do this the better way
         root_path = os.path.realpath(__file__).split('/')
         root_path[-1] = ''
         root_full_path = '/'.join(root_path)
-        reference_full_path = root_full_path + args.reference_dir
+        reference_full_path = os.path.join(root_full_path, args.reference_dir)
         if not os.path.isdir(reference_full_path):
             log.info("Reference files directory doesn't exist.")
             try:
@@ -307,7 +308,7 @@ Supported Observing modes are:
                 args.destiny += '/'
         if args.procmode == 2:
             # print(args.source + args.lamp_file)
-            if not os.path.isfile(args.source + args.lamp_file):
+            if not os.path.isfile(os.path.join(args.source, args.lamp_file)):
                 if args.lamp_file == 'lamps.txt':
                     leave = True
                     log.error("Default <lamp file> doesn't exist.")
@@ -445,8 +446,9 @@ Supported Observing modes are:
                     lamp = self.image_collection.file.iloc[lamp_index]
                 log.debug("Lamp File: %s", lamp)
             except IndexError:
-                log.error("There are no comparison lamps available.")
-                sys.exit('Bye!')
+                log.error("There is no comparison lamp available for: %s", target)
+                # sys.exit('Bye!')
+                continue
 
             lamp_name = self.image_collection.object.iloc[lamp_index]
             lamp_grating = self.image_collection.grating.iloc[lamp_index]
@@ -530,7 +532,7 @@ Supported Observing modes are:
         log.info("Observation mode 2")
         log.debug("A text file defines the relation of lamps and science targets")
         log.debug(self.night.lamps_file)
-        lamps_file_full = self.night.source + self.night.lamps_file
+        lamps_file_full = os.path.join(self.night.source, self.night.lamps_file)
         log.debug(lamps_file_full)
 
         read_file = open(lamps_file_full)
@@ -671,16 +673,6 @@ class Night(object):
         self.sci = []
         self.lamp = []
         self.args = args
-        # self.args.source,
-        # self.args.destiny,
-        # self.args.pattern,
-        # self.args.procmode,
-        # self.args.lamp_file
-        # self.source = args.source
-        # self.destiny = args.destiny
-        # self.pattern = args.pattern
-        # self.procmode = args.procmode
-        # self.lamps_file = args.lamps_file
         self.sci_targets = []
         self.telescope = False
         self.night_wsolution = None

@@ -15,6 +15,9 @@ The current elements present are:
 """
 import logging
 import pandas
+import os
+import ccdproc as ccd
+import re
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.DEBUG, format=FORMAT)
@@ -36,7 +39,8 @@ class ReferenceData(object):
             args(class): All the arguments parsed to the parent program
         """
         self.args = args
-        # self.reference_files_path = os.path.expanduser('~/') + './refdata/'
+        reference_collection = ccd.ImageFileCollection(self.args.reference_dir)
+        self.ref_lamp_collection = reference_collection.summary.to_pandas()
         self.lamps_file_list = {'cuhear': 'goodman_comp_600_BLUE_CuHeAr.fits',
                                 'hgar': 'hgar_reference_soar.fits',
                                 'hgarne': 'goodman_comp_400_M2_GG455_HgArNe.fits'}
@@ -737,18 +741,49 @@ class ReferenceData(object):
             reference_lamp(str): Full path to reference lamps
         """
         lamp_name = lamp_name.lower()
+        # TODO (simon): Do this using ImageFileCollection
         try:
-            reference_lamp = self.args.reference_dir + self.lamps_file_list[lamp_name]
+            reference_lamp = os.path.join(self.args.reference_dir, self.lamps_file_list[lamp_name])
             return reference_lamp
         except KeyError:
             log.error('Reference lamp %s does not exist', lamp_name)
             return None
+
+    def get_best_reference_lamp(self, header):
+        """Finds a suitable template lamp from the catalog
+
+        Args:
+            header:
+
+        Returns:
+
+        """
+        criteria = ['slit', 'cam_targ', 'grt_targ', 'grating','object']
+        lamp_pandas_data_frame = self.ref_lamp_collection[self.ref_lamp_collection['object'] == header['object']]
+        if len(lamp_pandas_data_frame) > 1:
+            while len(lamp_pandas_data_frame) > 1:
+                # print(lamp_pandas_data_frame.file)
+                keyword_to_filter = criteria.pop()
+                # print('Filter: ' + keyword_to_filter)
+                lamp_pandas_data_frame = lamp_pandas_data_frame[
+                    (lamp_pandas_data_frame[keyword_to_filter] == header[keyword_to_filter])]
+
+        else:
+            log.error('There is no reference lamp found')
+        try:
+            lamp_name = lamp_pandas_data_frame.file.tolist()[0]
+            ref_lamp_full_path = os.path.join(self.args.reference_dir, lamp_name)
+            log.debug('Reference Lamp Full Path' + ref_lamp_full_path)
+            return ref_lamp_full_path
+        except IndexError:
+            raise NotImplementedError('No lamp found in reference files.')
 
     def get_ref_spectrum_from_linelist(self, blue, red, name):
         """Experimental not working at the moment
 
         Builds a unidimensional spectrum to be used as a template for finding an automatic wavelength solution
         """
+        # raise DeprecationWarning
         if len(name) % 2 == 0:
             elements = [name[i:i + 2].lower() for i in range(0, len(name), 2)]
             for element in elements:

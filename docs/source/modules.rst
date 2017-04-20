@@ -6,3 +6,4 @@ goodman
 
    goodman_ccd
    goodman_spec
+   setup

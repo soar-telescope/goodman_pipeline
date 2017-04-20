@@ -55,6 +55,8 @@ class WavelengthFitter(object):
         """
         if self.model and self.model_fit is not None:
             try:
+                print(physical)
+                print(wavelength)
                 fitted_model = self.model_fit(self.model, physical, wavelength)
                 return fitted_model
             except TypeError as error:
@@ -74,12 +76,13 @@ class ReadWavelengthSolution(object):
         self.wat_wcs_dict = dict()
         self.wcs_dict = dict()
         self.wave_intens = []
+        self.math_model = None
 
     def __call__(self):
         """call method
 
         Discriminates from header's keywords what kind of solution is present
-        and call the apropriate method for linear or non-linear solutions.
+        and call the appropriate method for linear or non-linear solutions.
 
         Returns:
             self.wave_intens (list): Returns the class attribute which is a two dimension list
@@ -91,7 +94,7 @@ class ReadWavelengthSolution(object):
             if ctypen == 'LINEAR':
                 log.info('Reading Linear Solution')
                 # self.wcs_dict = {'dtype': 0}
-                self.linear_solution()
+                self.math_model = self.linear_solution()
             elif ctypen == 'MULTISPE':
                 self.non_linear_solution(dim)
         return self.wave_intens
@@ -216,8 +219,8 @@ class ReadWavelengthSolution(object):
                          'crpix': crpix,
                          'cdelt': cdelt,
                          'dtype': 0}
-        function = ReadMathFunctions(self.wcs_dict)
-        solution = function.get_solution()
+        self.function = ReadMathFunctions(self.wcs_dict)
+        solution = self.function.get_solution()
         # data = fits.getdata('/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600.fits')
         # x_axis = range(1, len(self.data) + 1)
         x_axis = range(len(self.data))
