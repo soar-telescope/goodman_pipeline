@@ -588,7 +588,7 @@ class WavelengthCalibration(object):
 
         The pipeline includes a set of comparison lamps already wavelength calibrated that will be used as templates
         for cross-matching incoming comparison lamps taken in the same conditions (i.e. same elements, grating, mode
-        and ideally slit). a
+        and ideally slit).
 
         It will first find the suitable comparison lamp and if it succeeds it will load its wavelength solution
         creating a wavelength axis. Then it will identify the lines in the lamp we want to calibrate, there is no need
