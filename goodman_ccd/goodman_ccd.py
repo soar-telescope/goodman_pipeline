@@ -116,10 +116,6 @@ class MainApp(object):
                             dest='clean_cosmic',
                             help="Clean cosmic rays from science data.")
 
-        # # removed because is not working properly
-        # parser.add_argument('-s', '--slit', action='store_true',
-        #                     help="Find slit edge to make an additional trimming (Maintainer: Not recommended for now).")
-
         # TODO (simon): Add argument to use calibration data from other day
 
         parser.add_argument('--ignore-bias',
@@ -144,24 +140,41 @@ class MainApp(object):
                             metavar='raw_path',
                             default='./',
                             type=str,
-                            help="Path to raw data (e.g. /home/jamesbond/soardata/).")
+                            help="Path to raw data.")
 
         parser.add_argument('--red-path',
                             action='store',
                             metavar='red_path',
                             type=str,
                             default='./RED',
-                            help="Full path to reduced data (e.g /home/jamesbond/soardata/RED/).")
+                            help="Path to reduced data.")
 
         parser.add_argument('--debug',
                             action='store_true',
                             dest='debug_mode',
-                            help="Debugging Mode")
+                            help="Show detailed information of the process.")
 
         parser.add_argument('--log-to-file',
                             action='store_true',
                             dest='log_to_file',
-                            help="Write log to a file")
+                            help="Write log to a file.")
+
+        parser.add_argument('--flat-normalize',
+                            action='store',
+                            default='mean',
+                            type=str,
+                            metavar='<Normalization Method>',
+                            dest='flat_normalize',
+                            choices=['mean', 'simple-model', 'line-by-line'],
+                            help='Chose a method to normalize the flat for spectroscoy. Choices are: mean, simple-model, line-by-line.')
+
+        parser.add_argument('--flat-norm-order',
+                            action='store',
+                            default=15,
+                            type=int,
+                            metavar='<Order>',
+                            dest='norm_order',
+                            help='Defines the order of the model to be fitted.')
 
         # parser.add_argument('--interpolate-invalid',
         #                     action='store_true',

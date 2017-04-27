@@ -407,7 +407,7 @@ class ImageProcessor(object):
             else:
                 master_bias = self.master_bias.copy()
 
-
+            norm_master_flat = None
             for science_image in object_group.file.tolist():
                 self.out_prefix = ''
                 ccd = CCDData.read(os.path.join(self.args.raw_path, science_image), unit=u.adu)
@@ -428,40 +428,56 @@ class ImageProcessor(object):
                 if master_flat is None or master_flat_name is None:
                     log.warning('The file ' + science_image + ' will not be flatfielded')
                 else:
-                    # # model fitting way
-                    # prefix = self.out_prefix
-                    # flat_file = master_flat_name
-                    # nflat = master_flat.copy()
-                    # nccd = ccd.copy()
-                    #
-                    # model_init = models.Chebyshev1D(degree=15)
-                    # model_fitter = fitting.LevMarLSQFitter()
-                    # # fit = model_fitter(model_init, x_axis, profile)
-                    # x_size, y_size = master_flat.data.shape
-                    # x_axis = range(y_size)
-                    #
-                    #
-                    # for i in range(x_size):
-                    #     fit = model_fitter(model_init, x_axis, master_flat.data[i])
-                    #     nflat.data[i] = master_flat.data[i] / fit(x_axis)
-                    #
-                    # nflat.write(os.path.join('/'.join(flat_file.split('/')[0:-1]), 'norm_' + flat_file.split('/')[-1]),
-                    #            clobber=True)
-                    # nccd.data = nccd.data / nflat.data
-                    # prefix = 'fN' + prefix
-                    # nccd.header.add_history('Flat corrected (NORMALIZED) ' + master_flat_name.split('/')[-1])
-                    # if self.args.clean_cosmic:
-                    #     nccd = self.cosmicray_rejection(ccd=nccd)
-                    #     prefix = 'c' + prefix
-                    # else:
-                    #     print('Clean Cosmic ' + str(self.args.clean_cosmic))
-                    # nccd.write(os.path.join(self.args.red_path, prefix + science_image), clobber=True)
-                    # log.info('Created science file: ' + os.path.join(self.args.red_path, prefix + science_image))
-                    """ccdproc way"""
-                    ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat, add_keyword=False)
-                    self.out_prefix = 'f' + self.out_prefix
-                    ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
-                # print('Length CCD Data', ccd.data.shape)
+                    if self.args.flat_normalize == 'mean':
+                        ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat, add_keyword=False)
+                        self.out_prefix = 'f' + self.out_prefix
+                        ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
+                    if norm_master_flat is None:
+                        norm_master_flat = master_flat.copy()
+                        if self.args.flat_normalize == 'simple-model':
+                            # log.warning('This part of the code was left here for experimental purposes only')
+                            # log.info('This procedure takes a lot to process, you might want to see other method')
+                            model_init = models.Chebyshev1D(degree=self.args.norm_order)
+                            model_fitter = fitting.LevMarLSQFitter()
+                            x_size, y_size = master_flat.data.shape
+                            x_axis = range(y_size)
+
+                            profile = np.median(master_flat.data, axis=0)
+                            fit = model_fitter(model_init, x_axis, profile)
+
+                            for i in range(x_size):
+                                # fit = model_fitter(model_init, x_axis, master_flat.data[i])
+                                norm_master_flat.data[i] = master_flat.data[i] / fit(x_axis)
+                            # master_flat.write(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]),
+                            #            clobber=True)
+                            ccd.data = ccd.data / norm_master_flat.data
+                            self.out_prefix = 'f' + self.out_prefix
+                            ccd.header.add_history('Flat normalized simple model ' + master_flat_name.split('/')[-1])
+                        elif self.args.flat_normalize == 'line-by-line':
+                            log.warning('This part of the code was left here for experimental purposes only')
+                            log.info('This procedure takes a lot to process, you might want to see other method')
+                            model_init = models.Chebyshev1D(degree=self.args.norm_order)
+                            model_fitter = fitting.LevMarLSQFitter()
+                            # fit = model_fitter(model_init, x_axis, profile)
+                            x_size, y_size = master_flat.data.shape
+                            x_axis = range(y_size)
+
+                            for i in range(x_size):
+                                fit = model_fitter(model_init, x_axis, master_flat.data[i])
+                                norm_master_flat.data[i] = master_flat.data[i] / fit(x_axis)
+                            # master_flat.write(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]),
+                            #            clobber=True)
+                            ccd.data = ccd.data / norm_master_flat.data
+                            self.out_prefix = 'f' + self.out_prefix
+                            ccd.header.add_history('Flat normalized line by line ' + master_flat_name.split('/')[-1])
+                    else:
+                        # mf_min = np.min(norm_master_flat.data)
+                        # mf_max = np.max(norm_master_flat.data)
+                        # plt.imshow(norm_master_flat.data, clim=(1- 0.3 * mf_min, 1 + 0.3 * mf_max))
+                        # plt.show()
+                        ccd.data = ccd.data / norm_master_flat.data
+                        self.out_prefix = 'f' + self.out_prefix
+                        ccd.header.add_history('Flat normalized {:s} '.format(self.args.flat_normalize.split('-')) + master_flat_name.split('/')[-1])
                 if self.args.clean_cosmic:
                     ccd = self.cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
