@@ -2,9 +2,11 @@ from __future__ import print_function
 from astropy.io import fits
 from astropy import units as u
 from astropy.convolution import convolve, convolve_fft, Gaussian2DKernel, Tophat2DKernel
+from astropy.modeling import models, fitting
 import ccdproc
 from ccdproc import CCDData
 from scipy import interpolate
+from scipy import signal
 import numpy as np
 import logging
 import random
@@ -99,7 +101,7 @@ class ImageProcessor(object):
                 # print(self.bias[0])
                 image_list = group[0]['file'].tolist()
                 sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
-                header = fits.getheader(sample_image)
+                # header = fits.getheader(sample_image)
                 # trim_section = header['TRIMSEC']
                 trim_section = '[51:4110,1:1896]'
                 log.info('Trim Section: %s', trim_section)
@@ -152,18 +154,20 @@ class ImageProcessor(object):
         ccd.header.add_history('Applied overscan correction ' + self.overscan_region)
         return ccd
 
-    def image_trim(self, ccd):
+    @staticmethod
+    def image_trim(ccd, trim_section):
         """
 
         Args:
-            ccd:
+            ccd (object): CCDData Object
+            trim_section (str):
 
         Returns:
 
         """
 
-        ccd = ccdproc.trim_image(ccd, fits_section=self.trim_section, add_keyword=False)
-        ccd.header.add_history('Trimmed image to ' + self.trim_section)
+        ccd = ccdproc.trim_image(ccd, fits_section=trim_section, add_keyword=False)
+        ccd.header.add_history('Trimmed image to ' + trim_section)
         return ccd
 
     def create_master_bias(self, bias_group):
@@ -194,7 +198,7 @@ class ImageProcessor(object):
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
                 log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
                 o_ccd = self.image_overscan(ccd)
-                to_ccd = self.image_trim(o_ccd)
+                to_ccd = self.image_trim(o_ccd, trim_section=self.trim_section)
                 master_bias_list.append(to_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
                                                sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=False)
@@ -205,7 +209,7 @@ class ImageProcessor(object):
             for image_file in bias_file_list:
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
                 log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
-                t_ccd = self.image_trim(ccd)
+                t_ccd = self.image_trim(ccd, trim_section=self.trim_section)
                 master_bias_list.append(t_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
                                                sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=False)
@@ -234,9 +238,9 @@ class ImageProcessor(object):
                 master_flat_name = self.name_master_flats(header=ccd.header, group=flat_group, target_name=target_name)
             if self.technique == 'Spectroscopy':
                 ccd = self.image_overscan(ccd)
-                ccd = self.image_trim(ccd)
+                ccd = self.image_trim(ccd, trim_section=self.trim_section)
             elif self.technique == 'Imaging':
-                ccd = self.image_trim(ccd)
+                ccd = self.image_trim(ccd, trim_section=self.trim_section)
                 ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
             else:
                 log.error('Unknown observation technique: ' + self.technique)
@@ -306,6 +310,49 @@ class ImageProcessor(object):
         # print(master_flat_name)
         return master_flat_name
 
+    @staticmethod
+    def get_slit_trim_section(master_flat):
+        """Find the slit edges to trim all data
+
+        Args:
+            master_flat (object): CCDData instance
+
+        Returns:
+            trim_section (str): Trim section in spatial direction in the format [:,slit_lower_limit:slit_higher_limit]
+
+        """
+
+
+        x, y = master_flat.data.shape
+        middle = int(y / 2.)
+        ccd_section = master_flat.data[:, middle:middle + 200]
+        ccd_section_median = np.median(ccd_section, axis=1)
+        # spatial_axis = range(len(ccd_section_median))
+
+        spatial_half = len(ccd_section_median) / 2.
+
+        pseudo_derivative = np.array(
+            [abs(ccd_section_median[i + 1] - ccd_section_median[i]) for i in range(0, len(ccd_section_median) - 1)])
+        filtered_data = np.where(np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
+                                 pseudo_derivative,
+                                 None)
+        peaks = signal.argrelmax(filtered_data, axis=0, order=3)[0]
+
+        trim_section = None
+        if len(peaks) > 2 or peaks == []:
+            log.debug('No trim section')
+        else:
+            # print(peaks, flat_files.grating[flat_files.file == file], flat_files.slit[flat_files.file == file])
+            if len(peaks) == 2:
+                low, high = peaks
+                trim_section = '[:,{:d}:{:d}]'.format(low, high)
+            elif len(peaks) == 1:
+                if peaks[0] <= spatial_half:
+                    trim_section = '[:,{:d}:{:d}]'.format(peaks[0], len(ccd_section_median))
+                else:
+                    trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
+        return trim_section
+
     def process_spectroscopy_science(self, science_group):
         """
 
@@ -350,20 +397,69 @@ class ImageProcessor(object):
                         #         log.error('Science Group is not an instance of pandas.DataFrame')
                     log.warning('Adding ')
 
+            slit_trim = self.get_slit_trim_section(master_flat=master_flat)
+            if slit_trim is not None:
+                    master_flat = self.image_trim(ccd=master_flat, trim_section=slit_trim)
+                    master_bias = self.image_trim(ccd=self.master_bias, trim_section=slit_trim)
+            else:
+                master_bias = self.master_bias.copy()
+
+
             for science_image in object_group.file.tolist():
                 self.out_prefix = ''
                 ccd = CCDData.read(os.path.join(self.args.raw_path, science_image), unit=u.adu)
                 ccd = self.image_overscan(ccd)
                 self.out_prefix += 'o_'
-                ccd = self.image_trim(ccd)
-                self.out_prefix = 't' + self.out_prefix
+                if slit_trim is not None:
+                    # master_flat = self.image_trim(ccd=master_flat, trim_section=slit_trim)
+                    # master_bias = self.image_trim(ccd=self.master_bias, trim_section=slit_trim)
+                    # There is a double trimming of the image, this is to match the size of the other data
+                    ccd = self.image_trim(ccd=ccd, trim_section=self.trim_section)
+                    ccd = self.image_trim(ccd=ccd, trim_section=slit_trim)
+                    self.out_prefix = 'st' + self.out_prefix
+                    print(master_bias.data.shape)
+                    print(master_flat.data.shape)
+                    print(ccd.data.shape)
+                else:
+                    ccd = self.image_trim(ccd=ccd, trim_section=self.trim_section)
+                    self.out_prefix = 't' + self.out_prefix
                 if not self.args.ignore_bias:
-                    ccd = ccdproc.subtract_bias(ccd=ccd, master=self.master_bias, add_keyword=False)
+                    ccd = ccdproc.subtract_bias(ccd=ccd, master=master_bias, add_keyword=False)
                     self.out_prefix = 'z' + self.out_prefix
                     ccd.header.add_history('Bias subtracted image')
                 if master_flat is None or master_flat_name is None:
                     log.warning('The file ' + science_image + ' will not be flatfielded')
                 else:
+                    # # model fitting way
+                    # prefix = self.out_prefix
+                    # flat_file = master_flat_name
+                    # nflat = master_flat.copy()
+                    # nccd = ccd.copy()
+                    #
+                    # model_init = models.Chebyshev1D(degree=15)
+                    # model_fitter = fitting.LevMarLSQFitter()
+                    # # fit = model_fitter(model_init, x_axis, profile)
+                    # x_size, y_size = master_flat.data.shape
+                    # x_axis = range(y_size)
+                    #
+                    #
+                    # for i in range(x_size):
+                    #     fit = model_fitter(model_init, x_axis, master_flat.data[i])
+                    #     nflat.data[i] = master_flat.data[i] / fit(x_axis)
+                    #
+                    # nflat.write(os.path.join('/'.join(flat_file.split('/')[0:-1]), 'norm_' + flat_file.split('/')[-1]),
+                    #            clobber=True)
+                    # nccd.data = nccd.data / nflat.data
+                    # prefix = 'fN' + prefix
+                    # nccd.header.add_history('Flat corrected (NORMALIZED) ' + master_flat_name.split('/')[-1])
+                    # if self.args.clean_cosmic:
+                    #     nccd = self.cosmicray_rejection(ccd=nccd)
+                    #     prefix = 'c' + prefix
+                    # else:
+                    #     print('Clean Cosmic ' + str(self.args.clean_cosmic))
+                    # nccd.write(os.path.join(self.args.red_path, prefix + science_image), clobber=True)
+                    # log.info('Created science file: ' + os.path.join(self.args.red_path, prefix + science_image))
+                    """ccdproc way"""
                     ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat, add_keyword=False)
                     self.out_prefix = 'f' + self.out_prefix
                     ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
@@ -427,7 +523,7 @@ class ImageProcessor(object):
             for image_file in imaging_group.file.tolist():
                 self.out_prefix = ''
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
-                ccd = self.image_trim(ccd)
+                ccd = self.image_trim(ccd, trim_section=self.trim_section)
                 self.out_prefix = 't_'
                 if not self.args.ignore_bias:
                     ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
