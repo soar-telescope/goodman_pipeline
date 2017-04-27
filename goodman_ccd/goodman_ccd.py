@@ -121,10 +121,10 @@ class MainApp(object):
         # TODO (simon): Add argument to use calibration data from other day
 
         # remove saturated data
-        parser.add_argument('--remove-saturated',
-                            action='store_true',
-                            dest='remove_saturated',
-                            help="Remove FLAT images above saturation level")
+        # parser.add_argument('--remove-saturated',
+        #                     action='store_true',
+        #                     dest='remove_saturated',
+        #                     help="Remove FLAT images above saturation level")
 
         parser.add_argument('--ignore-bias',
                             action='store_true',

@@ -234,6 +234,9 @@ class ImageProcessor(object):
             # print(f_file)
             ccd = CCDData.read(os.path.join(self.args.raw_path, flat_file), unit=u.adu)
             log.info('Loading flat image: ' + os.path.join(self.args.raw_path, flat_file))
+            if ccd.data.max() > self.args.saturation_limit:
+                log.info('Removing saturated image {:s}. Use --saturation to change saturation level'.format(flat_file))
+                continue
             if master_flat_name is None:
                 master_flat_name = self.name_master_flats(header=ccd.header, group=flat_group, target_name=target_name)
             if self.technique == 'Spectroscopy':
