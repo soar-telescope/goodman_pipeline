@@ -14,6 +14,7 @@ import logging
 import sys
 import os
 import re
+import glob
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.backends.backend_pdf import PdfPages
@@ -216,6 +217,7 @@ class WavelengthCalibration(object):
                                                            self.sci_filename,
                                                            self.evaluation_comment,
                                                            index=new_index)
+            return wsolution_obj
 
     def get_wsolution(self):
         """Get the mathematical model of the wavelength solution
@@ -622,10 +624,10 @@ class WavelengthCalibration(object):
         reference_lamp_copy = reference_lamp_data.copy()
 
         # if float(re.sub('[A-Za-z" ]', '',self.lamp_header['SLIT'])) > 3:
-        plt.plot(self.lamp_data, color='b')
-        plt.plot(reference_lamp_copy.data, color='k')
-        # plt.plot(test, color='r')
-        plt.show()
+        # plt.plot(self.lamp_data, color='b')
+        # plt.plot(reference_lamp_copy.data, color='k')
+        # # plt.plot(test, color='r')
+        # plt.show()
         if False:
             box_kernel = Box1DKernel(width=33)
             test = convolve(reference_lamp_copy.data, box_kernel)
@@ -649,10 +651,15 @@ class WavelengthCalibration(object):
         correlation_values = []
         angstrom_differences = []
 
+        print('Length ', len(self.lamp_data))
+        print('NLines ', len(lamp_lines_pixel))
+        print('Length / NLines ', len(self.lamp_data) / float(len(lamp_lines_pixel)))
+        half_width = int((len(self.lamp_data) / float(len(lamp_lines_pixel))) / 2.)
+
         for i in range(len(lamp_lines_pixel)):
             line_value_pixel = lamp_lines_pixel[i]
             line_value_angst = lamp_lines_angst[i]
-            half_width = 100
+            # half_width = 100
             xmin = int(max(0, round(line_value_pixel - half_width)))
             xmax = int(min(round(line_value_pixel + half_width), len(self.lamp_data)))
             # print(xmin, xmax)
@@ -712,35 +719,50 @@ class WavelengthCalibration(object):
             log.info('Re-fitting wavelength solution')
             self.wsolution = wavelength_solution.ws_fit(pixel_values, angstrom_values)
         self.evaluate_solution()
-        if self.args.debug_mode:
-            fig = plt.figure(figsize=(15, 10))
+        plt.switch_backend('GTK3Agg')
+        if self.i_fig is None:
+            self.i_fig = plt.figure(figsize=(15, 10))
+            self.i_fig.canvas.set_window_title('Automatic Wavelength Solution')
+            if not self.args.debug_mode:
+                plt.ion()
+                plt.show()
             manager = plt.get_current_fig_manager()
             manager.window.maximize()
+            self.ax1 = self.i_fig.add_subplot(111)
 
-            ax = fig.add_subplot(111)
-            ax.plot([], color='m', label='Pixels')
-            ax.plot([], color='c', label='Angstrom')
-            for val in pixel_values:
-                ax.axvline(self.wsolution(val), color='m')
-            for val2 in angstrom_values:
-                ax.axvline(val2, color='c', linestyle='--')
-            # print('Blue ' + str(self.spectral['blue'].value) + ' Red ' + str(self.spectral['red'].value))
-            # ax.axvline(self.spectral['blue'].value, color='b')
-            # ax.axvline(self.spectral['red'].value, color='r')
-            ax.plot(reference_lamp_wav_axis, reference_lamp_data.data, label='Reference', color='k', alpha=1)
-            ax.plot(self.wsolution(self.raw_pixel_axis), self.lamp_data, label='Last Solution', color='r', alpha=0.7)
-            # ax.plot(lamp_axis_pixel, self.lamp_data, label='Last Solution', color='r', alpha=0.7)
-            ax.legend(loc='best')
-            ax.set_xlabel('Wavelength (Angstrom)')
-            ax.set_ylabel('Intensity (ADU)')
-            ax.set_title(
-                'Automatic Wavelength Solution Test\n' + self.lamp_header['OBJECT'] + ' ' + self.lamp_header['wavmode'])
-            fig.tight_layout()
-            out_file_name = 'automatic-solution_' + self.lamp_header['OBJECT'] + '.pdf'
-            pdf_pages = PdfPages(os.path.join(self.args.destiny, out_file_name))
-            plt.savefig(pdf_pages, format='pdf')
-            pdf_pages.close()
+        self.ax1.plot([], color='m', label='Pixels')
+        self.ax1.plot([], color='c', label='Angstrom')
+        for val in pixel_values:
+            self.ax1.axvline(self.wsolution(val), color='m')
+        for val2 in angstrom_values:
+            self.ax1.axvline(val2, color='c', linestyle='--')
+        # print('Blue ' + str(self.spectral['blue'].value) + ' Red ' + str(self.spectral['red'].value))
+        # self.ax1.axvline(self.spectral['blue'].value, color='b')
+        # self.ax1.axvline(self.spectral['red'].value, color='r')
+        self.ax1.plot(reference_lamp_wav_axis, reference_lamp_data.data, label='Reference', color='k', alpha=1)
+        self.ax1.plot(self.wsolution(self.raw_pixel_axis), self.lamp_data, label='Last Solution', color='r', alpha=0.7)
+        # self.ax1.plot(lamp_axis_pixel, self.lamp_data, label='Last Solution', color='r', alpha=0.7)
+        self.ax1.legend(loc='best')
+        self.ax1.set_xlabel('Wavelength (Angstrom)')
+        self.ax1.set_ylabel('Intensity (ADU)')
+        self.ax1.set_title('Automatic Wavelength Solution Test\n'
+                           + self.lamp_header['OBJECT']
+                           + ' ' + self.lamp_header['wavmode']
+                           + '\nRMS Error: ' + str(self.rms_error))
+        self.i_fig.tight_layout()
+        out_file_name = 'automatic-solution_' + self.lamp_header['OBJECT']
+        file_count = len(glob.glob(os.path.join(self.args.destiny, out_file_name + '*')))
+        out_file_name += '_{:04d}.pdf'.format(file_count)
+        pdf_pages = PdfPages(os.path.join(self.args.destiny, out_file_name))
+        plt.savefig(pdf_pages, format='pdf')
+        pdf_pages.close()
+        if self.args.debug_mode:
             plt.show()
+        else:
+            plt.draw()
+            plt.pause(1)
+            # plt.ion()
+        # plt.show()
 
     def cross_correlation(self, reference, new_array, mode='full'):
         """Do cross correlation to two arrays
@@ -769,12 +791,10 @@ class WavelengthCalibration(object):
             gaussian_kernel = Gaussian1DKernel(stddev=2.)
             cyaxis1 = convolve(reference, gaussian_kernel)
             # cyaxis2 = convolve(new_array, gaussian_kernel)
-
-
-        plt.plot(cyaxis1, color='k', label='Reference')
-        plt.plot(cyaxis2, color='r', label='New Array')
-        plt.plot(reference, color='g')
-        plt.show()
+        # plt.plot(cyaxis1, color='k', label='Reference')
+        # plt.plot(cyaxis2, color='r', label='New Array')
+        # plt.plot(reference, color='g')
+        # plt.show()
         ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
         # print('Corr ', ccorr)
         max_index = np.argmax(ccorr)

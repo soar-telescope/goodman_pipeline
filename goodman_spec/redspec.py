@@ -19,6 +19,7 @@ import ccdproc as ccd
 import pandas as pd
 import argparse
 import logging
+import matplotlib.pyplot as plt
 # from astropy import log
 import warnings
 from process import Process, SciencePack
@@ -72,6 +73,11 @@ class MainApp(object):
         # TODO (simon): Add the possibility of managing multi wavelength solutions for different capabilities
         self.organize_full_night()
         # print(len(self.night.sci_targets))
+        # Remove all related to this
+        sol_array = []
+        ref_array = []
+        pixel_axis = range(4096)
+
         for i in range(len(self.night.sci_targets)):
             science_object = self.night.sci_targets[i]
             # print(science_object)
@@ -115,12 +121,41 @@ class MainApp(object):
                                                                    self.args)
 
                     self.wavelength_solution_obj = wavelength_calibration()
+                    if self.wavelength_solution_obj is not None:
+                        print(self.wavelength_solution_obj.wsolution)
+                        print('Not None')
+                        sol_array.append(self.wavelength_solution_obj.wsolution(pixel_axis))
+                        ref_array.append(self.wavelength_solution_obj.reference_lamp)
+                        plt.plot(pixel_axis,  self.wavelength_solution_obj.wsolution(pixel_axis), label=self.wavelength_solution_obj.reference_lamp)
+                        plt.legend(loc='best')
+                        plt.show()
+                        # plt.draw()
+                        # plt.pause(1)
+                    else:
+                        print('Is None')
                 else:
                     log.error('No data was extracted from this target.')
             elif self.args.procmode == 2:
                 raise NotImplementedError
             elif self.args.procmode == 3:
                 raise NotImplementedError
+
+        # fig_wsol = plt.figure(10)
+        # fig_wsol.canvas.set_window_title('Comparison of Wavelength Solutions')
+        # manager = plt.get_current_fig_manager()
+        # manager.window.maximize()
+        # wsol_ax1 = fig_wsol.add_subplot(111)
+        plt.title('Comparison of WSolutions')
+        plt.xlabel('Pixel')
+        plt.ylabel('Angstrom')
+        for i in range(len(sol_array)):
+            plt.plot(pixel_axis, sol_array[i], label=ref_array[i])
+        plt.legend(loc='best')
+        plt.show()
+
+
+        # wsol_ax1.legend(loc='best')
+        # plt.show()
             # else:
                 # process = Process(self.night.source, science_object, self.args, self.night.night_wsolution)
 
