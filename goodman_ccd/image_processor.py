@@ -414,15 +414,10 @@ class ImageProcessor(object):
                 ccd = self.image_overscan(ccd)
                 self.out_prefix += 'o_'
                 if slit_trim is not None:
-                    # master_flat = self.image_trim(ccd=master_flat, trim_section=slit_trim)
-                    # master_bias = self.image_trim(ccd=self.master_bias, trim_section=slit_trim)
                     # There is a double trimming of the image, this is to match the size of the other data
                     ccd = self.image_trim(ccd=ccd, trim_section=self.trim_section)
                     ccd = self.image_trim(ccd=ccd, trim_section=slit_trim)
                     self.out_prefix = 'st' + self.out_prefix
-                    print(master_bias.data.shape)
-                    print(master_flat.data.shape)
-                    print(ccd.data.shape)
                 else:
                     ccd = self.image_trim(ccd=ccd, trim_section=self.trim_section)
                     self.out_prefix = 't' + self.out_prefix

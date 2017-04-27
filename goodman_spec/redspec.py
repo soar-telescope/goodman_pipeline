@@ -28,6 +28,7 @@ from wavelength import WavelengthCalibration
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
 DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
+LOG_FILENAME = 'goodman_spec.log'
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('redspec')
 
@@ -303,10 +304,21 @@ Supported Processing Modes are:
                             dest='debug_mode',
                             help="Debugging Mode")
 
+        parser.add_argument('--log-to-file',
+                            action='store_true',
+                            dest='log_to_file',
+                            help="Write log to a file")
+
         args = parser.parse_args()
         if args.debug_mode:
             log.info('Changing log level to DEBUG.')
             log.setLevel(level=logging.DEBUG)
+        if args.log_to_file:
+            log.info('Logging to file {:s}'.format(LOG_FILENAME))
+            file_handler = logging.FileHandler(LOG_FILENAME)
+            formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
+            file_handler.setFormatter(fmt=formatter)
+            log.addHandler(file_handler)
         # there must be a more elegant way to do this
         # TODO (simon): Do this the better way
         root_path = os.path.realpath(__file__).split('/')

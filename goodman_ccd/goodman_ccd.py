@@ -21,6 +21,7 @@ __maintainer__ = "Simon Torres"
 
 FORMAT = '%(levelname)s: %(asctime)s: %(module)s: %(message)s'
 DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
+LOG_FILENAME = 'goodman_ccd.log'
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('goodmanccd')
 
@@ -105,6 +106,7 @@ class MainApp(object):
             args (object): Arparse object. Contains all the arguments as attributes
 
         """
+        # global log
         # Parsing Arguments ---
         parser = argparse.ArgumentParser(description="PyGoodman CCD Reduction - CCD reductions for "
                                                      "Goodman spectroscopic data")
@@ -119,12 +121,6 @@ class MainApp(object):
         #                     help="Find slit edge to make an additional trimming (Maintainer: Not recommended for now).")
 
         # TODO (simon): Add argument to use calibration data from other day
-
-        # remove saturated data
-        # parser.add_argument('--remove-saturated',
-        #                     action='store_true',
-        #                     dest='remove_saturated',
-        #                     help="Remove FLAT images above saturation level")
 
         parser.add_argument('--ignore-bias',
                             action='store_true',
@@ -162,13 +158,26 @@ class MainApp(object):
                             dest='debug_mode',
                             help="Debugging Mode")
 
-        parser.add_argument('--interpolate-invalid',
+        parser.add_argument('--log-to-file',
                             action='store_true',
-                            dest='interp_invalid',
-                            help="Do a cubic interpolation to remove NaN or INF values."
-                                 "By default it will replace them by a number.")
+                            dest='log_to_file',
+                            help="Write log to a file")
+
+        # parser.add_argument('--interpolate-invalid',
+        #                     action='store_true',
+        #                     dest='interp_invalid',
+        #                     help="Do a cubic interpolation to remove NaN or INF values."
+        #                          "By default it will replace them by a number.")
 
         args = parser.parse_args()
+
+        if args.log_to_file:
+            log.info('Logging to file {:s}'.format(LOG_FILENAME))
+            file_handler = logging.FileHandler(filename=LOG_FILENAME)
+            file_handler.setLevel(level=logging.INFO)
+            formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
+            file_handler.setFormatter(fmt=formatter)
+            log.addHandler(file_handler)
         if args.debug_mode:
             log.info('Changing log level to DEBUG.')
             log.setLevel(level=logging.DEBUG)
