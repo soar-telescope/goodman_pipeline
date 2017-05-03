@@ -123,13 +123,14 @@ class MainApp(object):
 
                     self.wavelength_solution_obj = wavelength_calibration()
                     if self.wavelength_solution_obj is not None:
-                        print(self.wavelength_solution_obj.wsolution)
+                        # print(self.wavelength_solution_obj.wsolution)
                         print('Not None')
-                        sol_array.append(self.wavelength_solution_obj.wsolution(pixel_axis))
-                        ref_array.append(self.wavelength_solution_obj.reference_lamp)
-                        plt.plot(pixel_axis,  self.wavelength_solution_obj.wsolution(pixel_axis), label=self.wavelength_solution_obj.reference_lamp)
-                        plt.legend(loc='best')
-                        plt.show()
+                        pass
+                        # sol_array.append(self.wavelength_solution_obj.wsolution(pixel_axis))
+                        # ref_array.append(self.wavelength_solution_obj.reference_lamp)
+                        # plt.plot(pixel_axis,  self.wavelength_solution_obj.wsolution(pixel_axis), label=self.wavelength_solution_obj.reference_lamp)
+                        # plt.legend(loc='best')
+                        # plt.show()
                         # plt.draw()
                         # plt.pause(1)
                     else:

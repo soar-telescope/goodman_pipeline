@@ -680,13 +680,17 @@ class WavelengthCalibration(object):
             pixel_values.append(line_value_pixel)
 
             if self.args.debug_mode:
+                plt.ion()
                 plt.title('Samples after cross correlation')
                 plt.xlabel('Pixel Axis')
                 plt.ylabel('Intensity')
                 plt.plot(ref_sample, color='k', label='Reference Sample')
                 plt.plot([x + correlation_value for x in range(len(lamp_sample))], lamp_sample, label='New Lamp Sample')
                 plt.legend(loc='best')
-                plt.show()
+                plt.draw()
+                plt.pause(1)
+                plt.clf()
+                plt.ioff()
 
         # This is good and necessary as a first approach for some very wrong correlation results
         clipped_values = sigma_clip(correlation_values, sigma=2, iters=1, cenfunc=np.ma.median)
@@ -779,7 +783,7 @@ class WavelengthCalibration(object):
         cyaxis2 = new_array
         if float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) > 3:
             box_width = float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) / 0.15
-            print('BOX WIDTH: ', box_width)
+            log.debug('BOX WIDTH: {:f}'.format(box_width))
             box_kernel = Box1DKernel(width=box_width)
             max_before = np.max(reference)
             cyaxis1 = convolve(reference, box_kernel)
@@ -801,11 +805,15 @@ class WavelengthCalibration(object):
         x_ccorr = np.linspace(-int(len(ccorr) / 2.), int(len(ccorr) / 2.), len(ccorr))
         correlation_value = x_ccorr[max_index]
         if self.args.debug_mode:
+            plt.ion()
             plt.title('Cross Correlation')
             plt.xlabel('Lag Value')
             plt.ylabel('Correlation Value')
             plt.plot(x_ccorr, ccorr)
-            plt.show()
+            plt.draw()
+            plt.pause(2)
+            plt.clf()
+            plt.ioff()
         return correlation_value
 
     def interactive_wavelength_solution(self):
