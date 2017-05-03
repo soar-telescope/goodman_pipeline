@@ -26,16 +26,124 @@ logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('goodmanccd')
 
 
+def get_args(arguments=None):
+    """Get command line arguments.
+
+    Returns:
+        args (object): Arparse object. Contains all the arguments as attributes
+
+    """
+    # global log
+    # Parsing Arguments ---
+    parser = argparse.ArgumentParser(description="PyGoodman CCD Reduction - CCD reductions for "
+                                                 "Goodman spectroscopic data")
+
+    parser.add_argument('-c', '--cosmic',
+                        action='store_true',
+                        dest='clean_cosmic',
+                        help="Clean cosmic rays from science data.")
+
+    # TODO (simon): Add argument to use calibration data from other day
+
+    parser.add_argument('--ignore-bias',
+                        action='store_true',
+                        dest='ignore_bias',
+                        help="Ignore bias correction")
+
+    parser.add_argument('--auto-clean',
+                        action='store_true',
+                        dest='auto_clean',
+                        help="Automatically clean reduced data directory")
+
+    parser.add_argument('--saturation',
+                        action='store',
+                        default=55000.,
+                        dest='saturation_limit',
+                        metavar='<Value>',
+                        help="Saturation limit. Default to 55.000 ADU (counts)")
+
+    parser.add_argument('--raw-path',
+                        action='store',
+                        metavar='raw_path',
+                        default='./',
+                        type=str,
+                        help="Path to raw data.")
+
+    parser.add_argument('--red-path',
+                        action='store',
+                        metavar='red_path',
+                        type=str,
+                        default='./RED',
+                        help="Path to reduced data.")
+
+    parser.add_argument('--debug',
+                        action='store_true',
+                        dest='debug_mode',
+                        help="Show detailed information of the process.")
+
+    parser.add_argument('--log-to-file',
+                        action='store_true',
+                        dest='log_to_file',
+                        help="Write log to a file.")
+
+    parser.add_argument('--flat-normalize',
+                        action='store',
+                        default='mean',
+                        type=str,
+                        metavar='<Normalization Method>',
+                        dest='flat_normalize',
+                        choices=['mean', 'simple-model', 'line-by-line'],
+                        help='Chose a method to normalize the flat for spectroscoy. Choices are: mean, simple-model, line-by-line.')
+
+    parser.add_argument('--flat-norm-order',
+                        action='store',
+                        default=15,
+                        type=int,
+                        metavar='<Order>',
+                        dest='norm_order',
+                        help='Defines the order of the model to be fitted.')
+
+    # parser.add_argument('--interpolate-invalid',
+    #                     action='store_true',
+    #                     dest='interp_invalid',
+    #                     help="Do a cubic interpolation to remove NaN or INF values."
+    #                          "By default it will replace them by a number.")
+
+    args = parser.parse_args(args=arguments)
+
+    if args.log_to_file:
+        log.info('Logging to file {:s}'.format(LOG_FILENAME))
+        file_handler = logging.FileHandler(filename=LOG_FILENAME)
+        file_handler.setLevel(level=logging.INFO)
+        formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
+        file_handler.setFormatter(fmt=formatter)
+        log.addHandler(file_handler)
+    if args.debug_mode:
+        log.info('Changing log level to DEBUG.')
+        log.setLevel(level=logging.DEBUG)
+    if os.path.isdir(args.raw_path):
+        args.raw_path = os.path.abspath(args.raw_path)
+        log.debug(os.path.abspath(args.raw_path))
+    else:
+        parser.print_help()
+        parser.exit("Raw data folder doesn't exist")
+
+    return args
+
+
 class MainApp(object):
 
-    def __init__(self):
+    def __init__(self, args=None):
         """This method initalizes the MainApp class
 
         The main task of this method is to call the get_args function that returns an argparse object.
         The arguments will be obtained here and they will be available for all execution of the program.
         Other attributes will be initilized as None.
         """
-        self.args = self.get_args()
+        if args is None:
+            self.args = get_args()
+        else:
+            self.args = args
         self.data_container = None
         self.full_path = None
         self.instrument = None
@@ -51,6 +159,7 @@ class MainApp(object):
         Any subdirectory will be ignored.
 
         """
+
         folders = glob.glob(os.path.join(self.args.raw_path, '*'))
         if any('.fits' in item for item in folders):
             folders = [self.args.raw_path]
@@ -97,111 +206,6 @@ class MainApp(object):
                     break
                 process_images = ImageProcessor(self.args, self.data_container)
                 process_images()
-
-    @staticmethod
-    def get_args():
-        """Get command line arguments.
-
-        Returns:
-            args (object): Arparse object. Contains all the arguments as attributes
-
-        """
-        # global log
-        # Parsing Arguments ---
-        parser = argparse.ArgumentParser(description="PyGoodman CCD Reduction - CCD reductions for "
-                                                     "Goodman spectroscopic data")
-
-        parser.add_argument('-c', '--cosmic',
-                            action='store_true',
-                            dest='clean_cosmic',
-                            help="Clean cosmic rays from science data.")
-
-        # TODO (simon): Add argument to use calibration data from other day
-
-        parser.add_argument('--ignore-bias',
-                            action='store_true',
-                            dest='ignore_bias',
-                            help="Ignore bias correction")
-
-        parser.add_argument('--auto-clean',
-                            action='store_true',
-                            dest='auto_clean',
-                            help="Automatically clean reduced data directory")
-
-        parser.add_argument('--saturation',
-                            action='store',
-                            default=55000.,
-                            dest='saturation_limit',
-                            metavar='<Value>',
-                            help="Saturation limit. Default to 55.000 ADU (counts)")
-
-        parser.add_argument('--raw-path',
-                            action='store',
-                            metavar='raw_path',
-                            default='./',
-                            type=str,
-                            help="Path to raw data.")
-
-        parser.add_argument('--red-path',
-                            action='store',
-                            metavar='red_path',
-                            type=str,
-                            default='./RED',
-                            help="Path to reduced data.")
-
-        parser.add_argument('--debug',
-                            action='store_true',
-                            dest='debug_mode',
-                            help="Show detailed information of the process.")
-
-        parser.add_argument('--log-to-file',
-                            action='store_true',
-                            dest='log_to_file',
-                            help="Write log to a file.")
-
-        parser.add_argument('--flat-normalize',
-                            action='store',
-                            default='mean',
-                            type=str,
-                            metavar='<Normalization Method>',
-                            dest='flat_normalize',
-                            choices=['mean', 'simple-model', 'line-by-line'],
-                            help='Chose a method to normalize the flat for spectroscoy. Choices are: mean, simple-model, line-by-line.')
-
-        parser.add_argument('--flat-norm-order',
-                            action='store',
-                            default=15,
-                            type=int,
-                            metavar='<Order>',
-                            dest='norm_order',
-                            help='Defines the order of the model to be fitted.')
-
-        # parser.add_argument('--interpolate-invalid',
-        #                     action='store_true',
-        #                     dest='interp_invalid',
-        #                     help="Do a cubic interpolation to remove NaN or INF values."
-        #                          "By default it will replace them by a number.")
-
-        args = parser.parse_args()
-
-        if args.log_to_file:
-            log.info('Logging to file {:s}'.format(LOG_FILENAME))
-            file_handler = logging.FileHandler(filename=LOG_FILENAME)
-            file_handler.setLevel(level=logging.INFO)
-            formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
-            file_handler.setFormatter(fmt=formatter)
-            log.addHandler(file_handler)
-        if args.debug_mode:
-            log.info('Changing log level to DEBUG.')
-            log.setLevel(level=logging.DEBUG)
-        if os.path.isdir(args.raw_path):
-            args.raw_path = os.path.abspath(args.raw_path)
-            log.debug(os.path.abspath(args.raw_path))
-        else:
-            parser.print_help()
-            parser.exit("Raw data folder doesn't exist")
-
-        return args
 
 
 if __name__ == '__main__':

@@ -4,3 +4,5 @@ dev/*
 build/*
 sandbox/*
 __pycache__/*
+.ipynb_checkpoints/*
+jupyter/*

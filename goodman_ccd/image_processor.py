@@ -436,7 +436,7 @@ class ImageProcessor(object):
                         norm_master_flat = master_flat.copy()
                         if self.args.flat_normalize == 'simple-model':
                             # log.warning('This part of the code was left here for experimental purposes only')
-                            # log.info('This procedure takes a lot to process, you might want to see other method')
+                            log.info('Normalizing flat by model')
                             model_init = models.Chebyshev1D(degree=self.args.norm_order)
                             model_fitter = fitting.LevMarLSQFitter()
                             x_size, y_size = master_flat.data.shape
@@ -578,7 +578,7 @@ class ImageProcessor(object):
                                              gain=float(ccd.header['GAIN']),
                                              readnoise=float(ccd.header['RDNOISE']),
                                              satlevel=np.inf, sepmed=True, fsmode='median',
-                                             psfmodel='gaussy', verbose=True)
+                                             psfmodel='gaussy', verbose=False)
         # ccd.data = np.array(ccd.data, dtype=np.double) / float(ccd.header['GAIN'])
 
         # difference = np.nan_to_num(ccd - nccd)
