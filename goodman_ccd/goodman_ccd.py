@@ -92,8 +92,8 @@ def get_args(arguments=None):
                         type=str,
                         metavar='<Normalization Method>',
                         dest='flat_normalize',
-                        choices=['mean', 'simple-model', 'line-by-line'],
-                        help='Chose a method to normalize the flat for spectroscoy. Choices are: mean, simple-model, line-by-line.')
+                        choices=['mean', 'simple', 'full'],
+                        help='Chose a method to normalize the flat for spectroscoy. Choices are: mean, simple (model) and full (fits model to each line).')
 
     parser.add_argument('--flat-norm-order',
                         action='store',
@@ -199,7 +199,10 @@ class MainApp(object):
             # print(night_sorter.nights_dict)
             for night in night_sorter.nights_dict:
                 # print(night_sorter.nights_dict[night])
-                night_organizer = NightOrganizer(args=self.args, night_dict=night_sorter.nights_dict[night])
+                # night_organizer = NightOrganizer(args=self.args, night_dict=night_sorter.nights_dict[night])
+                # nd = Night Dictionary
+                nd = night_sorter.nights_dict[night]
+                night_organizer = NightOrganizer(full_path=nd['full_path'], instrument=nd['instrument'], technique=nd['technique'], ignore_bias=self.args.ignore_bias)
                 self.data_container = night_organizer()
                 if self.data_container is False or self.data_container is None:
                     log.error('Discarding night ' + str(night))
