@@ -18,7 +18,7 @@ log = logging.getLogger('goodmanccd.nightorganizer')
 
 class NightOrganizer(object):
 
-    def __init__(self, args, night_dict):
+    def __init__(self, full_path, instrument, technique, ignore_bias=False):
         """Initializes the NightOrganizer class
 
         This class contains methods to organize the data for processing. It will identify groups of OBJECTS, FLATS or
@@ -29,11 +29,10 @@ class NightOrganizer(object):
             night_dict (dict): A dictionary that contains full path, instrument and observational technique.
 
         """
-
-        self.args = args
-        self.path = night_dict['full_path']
-        self.instrument = night_dict['instrument']
-        self.technique = night_dict['technique']
+        self.path = full_path
+        self.instrument = instrument
+        self.technique = technique
+        self.ignore_bias = ignore_bias
         self.keywords = ['date',
                          'slit',
                          'date-obs',
@@ -77,7 +76,7 @@ class NightOrganizer(object):
                 self.spectroscopy_day_time()
             else:
                 log.warning('There is no day time data!')
-                if not self.args.ignore_bias:
+                if not self.ignore_bias:
                     log.error('BIAS are needed for optimal results')
                     log.info('Check the argument --ignore-bias')
                     sys.exit('BIAS needed')
