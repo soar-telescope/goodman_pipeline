@@ -88,7 +88,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--flat-normalize',
                         action='store',
-                        default='mean',
+                        default='simple',
                         type=str,
                         metavar='<Normalization Method>',
                         dest='flat_normalize',

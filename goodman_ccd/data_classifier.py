@@ -77,7 +77,7 @@ class DataClassifier(object):
             try:
                 ifc = ImageFileCollection(night_folder)
                 self.image_collection = ifc.summary.to_pandas()
-                self.objects_collection = self.image_collection[self.image_collection.obstype == 'OBJECT']
+                self.objects_collection = self.image_collection[self.image_collection.obstype != 'ZERO']
                 # print(len(self.objects_collection))
                 if len(self.objects_collection) > 0:
                     index = random.choice(self.objects_collection.index.tolist())
@@ -90,7 +90,7 @@ class DataClassifier(object):
                         # print(self.objects_collection.file[index])
                         self.instrument = 'Blue'
                 else:
-                    log.error('There is not data of type OBJECT in this folder.')
+                    log.error('There is no useful data in this folder.')
             except ValueError as error:
                 if 'Inconsistent data column lengths' in str(error):
                     log.error('There are duplicated keywords in the headers. Fix it first!')
@@ -124,10 +124,11 @@ class DataClassifier(object):
         elif self.instrument == 'Blue':
             self.remove_conflictive_keywords()
             gratings = self.objects_collection.grating.unique()
-            if gratings != ['<NO GRATING>']:
+            print(gratings)
+            if ['<NO GRATING>'] not in gratings:
                 self.technique = 'Spectroscopy'
                 log.info('Detected Spectroscopy Data from BLUE Camera')
-            elif gratings == ['<NO GRATING>'] and int(np.mean(self.objects_collection.cam_targ.unique())) == 0:
+            elif ['<NO GRATING>'] in gratings and int(np.mean(self.objects_collection.cam_targ.unique())) == 0:
                 self.technique = 'Imaging'
                 log.info('Detected Imaging Data from BLUE Camera')
             else:

@@ -84,7 +84,7 @@ class NightOrganizer(object):
                 self.spectroscopy_night_time()
             else:
                 log.warning('There is no night time data!')
-                return False
+                # return False
         elif self.technique == 'Imaging':
             self.imaging_night()
 
@@ -310,17 +310,19 @@ class NightOrganizer(object):
             day_time_data (object):
             night_time_data (object):
         """
+        # print(self.file_collection)
         afternoon_twilight, morning_twilight, sun_set, sun_rise = self.get_twilight_time()
         self.data_container.set_sun_times(sun_set, sun_rise)
         self.data_container.set_twilight_times(afternoon_twilight, morning_twilight)
-        # print(evening_twilight, morning_twilight)
+        # print(afternoon_twilight, morning_twilight)
         day_time_data = self.file_collection[((self.file_collection['date-obs'] < afternoon_twilight)
-                                             | (self.file_collection['obstype'] == 'BIAS'))]
+                                              | (self.file_collection['date-obs'] > morning_twilight)
+                                              | (self.file_collection['obstype'] == 'BIAS'))]
         night_time_data = self.file_collection[((self.file_collection['date-obs'] > afternoon_twilight)
                                                 & (self.file_collection['date-obs'] < morning_twilight)
                                                 & (self.file_collection['obstype'] != 'BIAS'))]
         # print(night_time_data)
-        # print(daytime_data)
+        # print(day_time_data)
         return day_time_data, night_time_data
 
     @staticmethod

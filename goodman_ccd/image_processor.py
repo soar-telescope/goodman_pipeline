@@ -86,7 +86,6 @@ class ImageProcessor(object):
             for sub_group in self.queue:
                 print(sub_group)
 
-
     def define_trim_section(self):
         """
 
@@ -103,6 +102,7 @@ class ImageProcessor(object):
                 sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
                 # header = fits.getheader(sample_image)
                 # trim_section = header['TRIMSEC']
+                # Trim section is valid for Blue and Red Camera Binning 1x1 Spectroscopic ROI
                 trim_section = '[51:4110,1:1896]'
                 log.info('Trim Section: %s', trim_section)
                 return trim_section
@@ -125,7 +125,10 @@ class ImageProcessor(object):
                 if header['CCDSUM'] == '1 1':
                     log.info('Using predefined overscan region for binning 1x1')
                     if self.technique == 'Spectroscopy':
-                        overscan_region = '[5:45,1:4096]'
+                        if self.instrument == 'Red':
+                            overscan_region = '[5:45,1:4096]'
+                        elif self.instrument == 'Blue':
+                            overscan_region = '[1:16,1:4096]'
                     elif self.technique == 'Imaging':
                         log.warning("Imaging mode doesn't have overscan region. Use bias instead.")
                         if self.bias is None:
@@ -234,20 +237,33 @@ class ImageProcessor(object):
             # print(f_file)
             ccd = CCDData.read(os.path.join(self.args.raw_path, flat_file), unit=u.adu)
             log.info('Loading flat image: ' + os.path.join(self.args.raw_path, flat_file))
-            if ccd.data.max() > self.args.saturation_limit:
-                log.info('Removing saturated image {:s}. Use --saturation to change saturation level'.format(flat_file))
-                continue
             if master_flat_name is None:
                 master_flat_name = self.name_master_flats(header=ccd.header, group=flat_group, target_name=target_name)
             if self.technique == 'Spectroscopy':
+                # plt.title('Before Overscan')
+                # plt.imshow(ccd.data, clim=(-100, 0))
+                # plt.show()
                 ccd = self.image_overscan(ccd)
+                # plt.title('After Overscan')
+                # plt.imshow(ccd.data, clim=(-100, 0))
+                # plt.show()
                 ccd = self.image_trim(ccd, trim_section=self.trim_section)
+                # plt.title('After Trimming')
+                # plt.imshow(ccd.data, clim=(-100, 0))
+                # plt.show()
             elif self.technique == 'Imaging':
                 ccd = self.image_trim(ccd, trim_section=self.trim_section)
                 ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
             else:
                 log.error('Unknown observation technique: ' + self.technique)
-            master_flat_list.append(ccd)
+            if ccd.data.max() > self.args.saturation_limit:
+                log.info('Removing saturated image {:s}. Use --saturation to change saturation level'.format(flat_file))
+                # plt.plot(ccd.data[802,:])
+                # plt.show()
+                print(ccd.data.max())
+                continue
+            else:
+                master_flat_list.append(ccd)
         master_flat = ccdproc.combine(master_flat_list,
                                       method='median',
                                       sigma_clip=True,
@@ -255,6 +271,8 @@ class ImageProcessor(object):
                                       sigma_clip_high_thresh=1.0,
                                       add_keyword=False)
         master_flat.write(master_flat_name, clobber=True)
+        # plt.imshow(master_flat.data, clim=(-100,0))
+        # plt.show()
         log.info('Created Master Flat: ' + master_flat_name)
         return master_flat, master_flat_name
         # print(master_flat_name)
@@ -340,6 +358,7 @@ class ImageProcessor(object):
                                  pseudo_derivative,
                                  None)
         peaks = signal.argrelmax(filtered_data, axis=0, order=3)[0]
+        print(peaks)
 
         trim_section = None
         if len(peaks) > 2 or peaks == []:
@@ -367,7 +386,9 @@ class ImageProcessor(object):
         """
 
         target_name = ''
+        slit_trim = None
         obstype = science_group.obstype.unique()
+        print(obstype)
         if 'OBJECT' in obstype or 'COMP' in obstype:
             object_group = science_group[(science_group.obstype == 'OBJECT') | (science_group.obstype == 'COMP')]
             if 'OBJECT' in obstype:
@@ -398,9 +419,12 @@ class ImageProcessor(object):
                         #             self.queue.append(science_group)
                         #     else:
                         #         log.error('Science Group is not an instance of pandas.DataFrame')
-                    log.warning('Adding ')
-
-            slit_trim = self.get_slit_trim_section(master_flat=master_flat)
+                    log.warning('Adding image group to Queue')
+            if master_flat is not None:
+                log.debug('Attempting to find slit trim section')
+                slit_trim = self.get_slit_trim_section(master_flat=master_flat)
+            else:
+                log.info('Master flat inexistent, cant find slit trim section')
             if slit_trim is not None:
                     master_flat = self.image_trim(ccd=master_flat, trim_section=slit_trim)
                     master_bias = self.image_trim(ccd=self.master_bias, trim_section=slit_trim)
@@ -411,16 +435,26 @@ class ImageProcessor(object):
             for science_image in object_group.file.tolist():
                 self.out_prefix = ''
                 ccd = CCDData.read(os.path.join(self.args.raw_path, science_image), unit=u.adu)
+                # plt.title('Raw')
+                # plt.imshow(ccd.data, clim=(0, 1000))
+                # plt.show()
                 ccd = self.image_overscan(ccd)
+                # plt.title('Overscanned')
+                # plt.imshow(ccd.data, clim=(0, 1000))
+                # plt.show()
                 self.out_prefix += 'o_'
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match the size of the other data
                     ccd = self.image_trim(ccd=ccd, trim_section=self.trim_section)
                     ccd = self.image_trim(ccd=ccd, trim_section=slit_trim)
                     self.out_prefix = 'st' + self.out_prefix
+
                 else:
                     ccd = self.image_trim(ccd=ccd, trim_section=self.trim_section)
                     self.out_prefix = 't' + self.out_prefix
+                # plt.title('Trimmed')
+                # plt.imshow(ccd.data)
+                # plt.show()
                 if not self.args.ignore_bias:
                     ccd = ccdproc.subtract_bias(ccd=ccd, master=master_bias, add_keyword=False)
                     self.out_prefix = 'z' + self.out_prefix
@@ -432,9 +466,12 @@ class ImageProcessor(object):
                         ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat, add_keyword=False)
                         self.out_prefix = 'f' + self.out_prefix
                         ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
-                    if norm_master_flat is None:
+                        # plt.title('Flat Mean Normalized')
+                        # plt.imshow(ccd.data)
+                        # plt.show()
+                    elif norm_master_flat is None:
                         norm_master_flat = master_flat.copy()
-                        if self.args.flat_normalize == 'simple-model':
+                        if self.args.flat_normalize == 'simple':
                             # log.warning('This part of the code was left here for experimental purposes only')
                             log.info('Normalizing flat by model')
                             model_init = models.Chebyshev1D(degree=self.args.norm_order)
@@ -444,20 +481,35 @@ class ImageProcessor(object):
 
                             profile = np.median(master_flat.data, axis=0)
                             fit = model_fitter(model_init, x_axis, profile)
-
+                            # plt.ion()
                             for i in range(x_size):
                                 # fit = model_fitter(model_init, x_axis, master_flat.data[i])
                                 norm_master_flat.data[i] = master_flat.data[i] / fit(x_axis)
-                            # master_flat.write(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]),
-                            #            clobber=True)
+                            #     plt.clf()
+                            #     plt.xlim(0,1500)
+                            #     plt.ylim(-1000, 2000)
+                            #     plt.plot(norm_master_flat.data[i], color='r')
+                            #     plt.plot(fit(x_axis), color='k')
+                            #     plt.plot(master_flat.data[i], color='b')
+                            #     plt.draw()
+                            #     plt.pause(1)
+                            # plt.ioff()
+                            norm_master_flat.write(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]), clobber=True)
+                            # plt.title('simple Normalized Flat ')
+                            # plt.imshow(norm_master_flat.data, clim=(-100,0))
+                            # plt.show()
+
                             ccd.data = ccd.data / norm_master_flat.data
                             self.out_prefix = 'f' + self.out_prefix
                             ccd.header.add_history('Flat normalized simple model ' + master_flat_name.split('/')[-1])
-                        elif self.args.flat_normalize == 'line-by-line':
+                            # plt.title('Flat simple Normalized')
+                            # plt.imshow(ccd.data, clim=(-100,900))
+                            # plt.show()
+                        elif self.args.flat_normalize == 'full':
                             log.warning('This part of the code was left here for experimental purposes only')
                             log.info('This procedure takes a lot to process, you might want to see other method')
                             model_init = models.Chebyshev1D(degree=self.args.norm_order)
-                            model_fitter = fitting.LevMarLSQFitter()
+                            model_fitter = fitting.LinearLSQFitter()
                             # fit = model_fitter(model_init, x_axis, profile)
                             x_size, y_size = master_flat.data.shape
                             x_axis = range(y_size)
@@ -465,8 +517,8 @@ class ImageProcessor(object):
                             for i in range(x_size):
                                 fit = model_fitter(model_init, x_axis, master_flat.data[i])
                                 norm_master_flat.data[i] = master_flat.data[i] / fit(x_axis)
-                            # master_flat.write(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]),
-                            #            clobber=True)
+                            log.debug(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]))
+                            norm_master_flat.write(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]), clobber=True)
                             ccd.data = ccd.data / norm_master_flat.data
                             self.out_prefix = 'f' + self.out_prefix
                             ccd.header.add_history('Flat normalized line by line ' + master_flat_name.split('/')[-1])
@@ -481,6 +533,9 @@ class ImageProcessor(object):
                 if self.args.clean_cosmic:
                     ccd = self.cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
+                    # plt.title('Cosmic')
+                    # plt.imshow(ccd.data, clim=(0, 1000))
+                    # plt.show()
                 else:
                     print('Clean Cosmic ' + str(self.args.clean_cosmic))
                 # ccd.data = np.nan_to_num(ccd.data)
@@ -572,22 +627,30 @@ class ImageProcessor(object):
 
         """
         # TODO (simon): Validate this method
-        value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
-        log.info('Cleaning cosmic rays... ')
-        ccd.data, _ = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
-                                             gain=float(ccd.header['GAIN']),
-                                             readnoise=float(ccd.header['RDNOISE']),
-                                             satlevel=np.inf, sepmed=True, fsmode='median',
-                                             psfmodel='gaussy', verbose=False)
-        # ccd.data = np.array(ccd.data, dtype=np.double) / float(ccd.header['GAIN'])
+        if ccd.header['OBSTYPE'] == 'OBJECT':
+            value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
+            log.info('Cleaning cosmic rays... ')
+            # ccd.data= ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
+            ccd.data, _mask = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
 
-        # difference = np.nan_to_num(ccd - nccd)
+                                                         gain=float(ccd.header['GAIN']),
+                                                         readnoise=float(ccd.header['RDNOISE']),
+                                                         satlevel=np.inf, sepmed=True, fsmode='median',
+                                                         psfmodel='gaussy', verbose=False)
+            # ccd.data = np.array(ccd.data, dtype=np.double) / float(ccd.header['GAIN'])
 
-        # plt.imshow(difference, clim=(0,1))
-        # plt.show()
+            # difference = np.nan_to_num(ccd - nccd)
+            # print(_mask)
+            # plt.imshow(_mask, interpolation='none')
+            # plt.show()
 
-        ccd.header.add_history("Cosmic rays rejected with LACosmic")
-        log.info("Cosmic rays rejected with LACosmic")
+            # plt.imshow(difference, clim=(0,1))
+            # plt.show()
+
+            ccd.header.add_history("Cosmic rays rejected with LACosmic")
+            log.info("Cosmic rays rejected with LACosmic")
+        else:
+            log.info('Skipping cosmic ray rejection for image of datatype: {:s}'.format(ccd.header['OBSTYPE']))
         return ccd
 
     def remove_nan(self, ccd):
