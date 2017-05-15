@@ -1,5 +1,4 @@
 from __future__ import print_function
-from astropy.io import fits
 from astropy import units as u
 from astropy.convolution import convolve, convolve_fft, Gaussian2DKernel, Tophat2DKernel
 from astropy.modeling import models, fitting
@@ -85,10 +84,11 @@ class ImageProcessor(object):
                 self.queue = pandas.concat(self.queue, axis=0).reset_index()
             else:
                 self.queue = self.queue[0]
-                print('QUEUE')
-                print(self.queue)
-                for sub_group in self.queue:
-                    print(sub_group)
+            print('QUEUE')
+            print(self.queue)
+            for sub_group in self.queue:
+                print(sub_group)
+
 
 
     def define_trim_section(self):
@@ -126,25 +126,21 @@ class ImageProcessor(object):
                 image_list = group[0]['file'].tolist()
                 sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
                 log.debug('Overscan Sample File ' + sample_image)
-                header = fits.getheader(sample_image)
-                if header['CCDSUM'] == '1 1':
-                    log.info('Using predefined overscan region for binning 1x1')
-                    if self.technique == 'Spectroscopy':
-                        if self.instrument == 'Red':
-                            overscan_region = '[5:45,1:4096]'
-                        elif self.instrument == 'Blue':
-                            overscan_region = '[1:16,1:4096]'
-                    elif self.technique == 'Imaging':
-                        log.warning("Imaging mode doesn't have overscan region. Use bias instead.")
-                        if self.bias is None:
-                            log.error('Bias are needed for Imaging mode')
-                        overscan_region = None
-                    else:
-                        overscan_region = None
-                else:
-                    log.warning('There is no predefined overscan region')
+                ccd = CCDData.read(sample_image, unit=u.adu)
+                serial_binning, paralell_bining = [int(x) for x in ccd.header['CCDSUM'].split()]
+                log.info('Using predefined overscan region for binning 1x1')
+                if self.technique == 'Spectroscopy':
+                    if self.instrument == 'Red':
+                        overscan_region = '[{:d}:{:d},1:1896]'.format(int(np.ceil(6. / serial_binning)), int(49./ serial_binning))
+                    elif self.instrument == 'Blue':
+                        overscan_region = '[1:{:d},1:1896]'.format(int(16. / serial_binning))
+                elif self.technique == 'Imaging':
+                    log.warning("Imaging mode doesn't have overscan region. Use bias instead.")
+                    if self.bias is None:
+                        log.warning('Bias are needed for Imaging mode')
                     overscan_region = None
-
+                else:
+                    overscan_region = None
                 log.info('Overscan Region: %s', overscan_region)
                 return overscan_region
 
@@ -363,7 +359,7 @@ class ImageProcessor(object):
                                  pseudo_derivative,
                                  None)
         peaks = signal.argrelmax(filtered_data, axis=0, order=3)[0]
-        print(peaks)
+        # print(peaks)
 
         trim_section = None
         if len(peaks) > 2 or peaks == []:
