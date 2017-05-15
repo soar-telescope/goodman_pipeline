@@ -7,6 +7,7 @@ from ccdproc import ImageFileCollection
 import logging
 import numpy as np
 from astropy.io import fits
+from .core import fix_duplicated_keywords
 
 log = logging.getLogger('goodmanccd.dataclassifier')
 
@@ -94,7 +95,7 @@ class DataClassifier(object):
             except ValueError as error:
                 if 'Inconsistent data column lengths' in str(error):
                     log.error('There are duplicated keywords in the headers. Fix it first!')
-                    self.fix_duplicated_keywords(night_folder)
+                    fix_duplicated_keywords(night_folder)
                     continue
                 else:
                     log.error('Unknown Error: ' + str(error))
@@ -134,41 +135,6 @@ class DataClassifier(object):
             else:
                 log.error('It was not possible to determine observing technique')
                 self.technique = 'Unknown'
-
-    @staticmethod
-    def fix_duplicated_keywords(night_dir):
-        """Remove duplicated keywords
-
-        There are some cases when the raw data comes with duplicated keywords. The origin has not been tracked down.
-        The solution is to identify the duplicated keywords and the remove all but one from the end backwards.
-
-        Args:
-            night_dir (str): The full path for the raw data location
-
-        """
-
-        files = glob.glob(os.path.join(night_dir, '*.fits'))
-        random_file = random.choice(files)
-        random_header = fits.getheader(random_file)
-        multiple_keys = []
-        for keyword in random_header.keys():
-            if keyword != '':
-                if random_header.count(keyword) > 1:
-                    if keyword not in multiple_keys:
-                        multiple_keys.append(keyword)
-        if multiple_keys != []:
-            for image_file in files:
-                try:
-                    print(image_file)
-                    hdu = fits.open(image_file)
-                    for keyword in multiple_keys:
-                        while hdu[0].header.count(keyword) > 1:
-                            hdu[0].header.remove(keyword, hdu[0].header.count(keyword) - 1)
-                    log.warning('Overwriting file with duplicated keywords removed')
-                    log.info('File %s overwritten', image_file)
-                    hdu.writeto(image_file, clobber=True)
-                except IOError as error:
-                    log.error(error)
 
     def remove_conflictive_keywords(self):
         """Removes problematic keywords

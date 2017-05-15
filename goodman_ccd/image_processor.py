@@ -81,10 +81,15 @@ class ImageProcessor(object):
                             self.process_imaging_science(sub_group)
         # print('data groups ', len(self.data_groups))
         if self.queue is not None:
-            print('QUEUE')
-            print(self.queue)
-            for sub_group in self.queue:
-                print(sub_group)
+            if len(self.queue) > 1:
+                self.queue = pandas.concat(self.queue, axis=0).reset_index()
+            else:
+                self.queue = self.queue[0]
+                print('QUEUE')
+                print(self.queue)
+                for sub_group in self.queue:
+                    print(sub_group)
+
 
     def define_trim_section(self):
         """
@@ -406,6 +411,8 @@ class ImageProcessor(object):
                 master_flat_name = self.name_master_flats(header=ccd.header, group=object_group, get=True)
                 master_flat, master_flat_name = self.get_best_flat(flat_name=master_flat_name)
                 if (master_flat is None) and (master_flat_name is None):
+                    # attempt to find a set of flats in all the data
+
                     if self.queue is None:
                         self.queue = [science_group]
                     else:

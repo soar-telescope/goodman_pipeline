@@ -12,6 +12,7 @@ from astropy.time import Time, TimeDelta
 from astroplan import Observer
 from astropy import units as u
 import logging
+from .core import convert_time, get_twilight_time, ra_dec_to_deg
 
 log = logging.getLogger('goodmanccd.nightorganizer')
 
@@ -67,6 +68,14 @@ class NightOrganizer(object):
 
         ifc = ImageFileCollection(self.path, self.keywords)
         self.file_collection = ifc.summary.to_pandas()
+        # add two columns that will contain the ra and dec in degrees
+        self.file_collection['radeg'] = ''
+        self.file_collection['decdeg'] = ''
+        for i in self.file_collection.index.tolist():
+            radeg, decdeg = ra_dec_to_deg(self.file_collection.obsra.iloc[i], self.file_collection.obsdec.iloc[i])
+            self.file_collection.radeg.iloc[i] = '{:.2f}'.format(radeg)
+            self.file_collection.decdeg.iloc[i] = '{:.2f}'.format(decdeg)
+            # now we can compare using degrees
         self.initial_checks()
         self.all_datatypes = self.file_collection.obstype.unique()
         if self.technique == 'Spectroscopy':
@@ -221,7 +230,8 @@ class NightOrganizer(object):
         """
 
         # bias data group
-        afternoon_twilight, morning_twilight, sun_set, sun_rise = self.get_twilight_time()
+        date_obs_list = self.file_collection['date-obs'].tolist()
+        afternoon_twilight, morning_twilight, sun_set, sun_rise = get_twilight_time(date_obs=date_obs_list)
         self.data_container.set_sun_times(sun_set, sun_rise)
         self.data_container.set_twilight_times(afternoon_twilight, morning_twilight)
         bias_group = self.file_collection[self.file_collection.obstype == 'BIAS'] # .tolist()
@@ -256,47 +266,47 @@ class NightOrganizer(object):
                                           (science_data['filter'] == confs.iloc[i]['filter']))]
             self.data_container.add_data_group(science_group)
 
-    def get_twilight_time(self):
-        """Get end/start time of evening/morning twilight
-
-        Notes:
-            Taken from David Sanmartim's development
-
-        Returns:
-            twilight_evening (str): Evening twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-            twilight_morning (str): Morning twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-            sun_set_time (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-            sun_rise_time (str): Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-
-        """
-        # observatory(str): Observatory name.
-        observatory = 'SOAR Telescope'
-        geodetic_location = ['-70d44m01.11s', '-30d14m16.41s', 2748]
-        # longitude (str): Geographic longitude in string format
-        longitude = geodetic_location[0]
-        # latitude (str): Geographic latitude in string format.
-        latitude = geodetic_location[1]
-        # elevation (int): Geographic elevation in meters above sea level
-        elevation = geodetic_location[2]
-        # timezone (str): Time zone.
-        timezone = 'UTC'
-        # description(str): Observatory description
-        description = 'Soar Telescope on Cerro Pachon, Chile'
-
-        soar_loc = EarthLocation.from_geodetic(longitude, latitude, elevation * u.m, ellipsoid='WGS84')
-
-        soar = Observer(name=observatory, location=soar_loc, timezone=timezone, description=description)
-
-        dateobs_list = self.file_collection['date-obs'].tolist()
-        time_first_frame, time_last_frame = Time(min(dateobs_list)), Time(max(dateobs_list))
-
-        twilight_evening = soar.twilight_evening_astronomical(Time(time_first_frame), which='nearest').isot
-        twilight_morning = soar.twilight_morning_astronomical(Time(time_last_frame), which='nearest').isot
-        sun_set_time = soar.sun_set_time(Time(time_first_frame), which='nearest').isot
-        sun_rise_time = soar.sun_rise_time(Time(time_last_frame), which='nearest').isot
-        log.debug('Sun Set ' + sun_set_time)
-        log.debug('Sun Rise ' + sun_rise_time)
-        return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
+    # def get_twilight_time(self):
+    #     """Get end/start time of evening/morning twilight
+    #
+    #     Notes:
+    #         Taken from David Sanmartim's development
+    #
+    #     Returns:
+    #         twilight_evening (str): Evening twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+    #         twilight_morning (str): Morning twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+    #         sun_set_time (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+    #         sun_rise_time (str): Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+    #
+    #     """
+    #     # observatory(str): Observatory name.
+    #     observatory = 'SOAR Telescope'
+    #     geodetic_location = ['-70d44m01.11s', '-30d14m16.41s', 2748]
+    #     # longitude (str): Geographic longitude in string format
+    #     longitude = geodetic_location[0]
+    #     # latitude (str): Geographic latitude in string format.
+    #     latitude = geodetic_location[1]
+    #     # elevation (int): Geographic elevation in meters above sea level
+    #     elevation = geodetic_location[2]
+    #     # timezone (str): Time zone.
+    #     timezone = 'UTC'
+    #     # description(str): Observatory description
+    #     description = 'Soar Telescope on Cerro Pachon, Chile'
+    #
+    #     soar_loc = EarthLocation.from_geodetic(longitude, latitude, elevation * u.m, ellipsoid='WGS84')
+    #
+    #     soar = Observer(name=observatory, location=soar_loc, timezone=timezone, description=description)
+    #
+    #     dateobs_list = self.file_collection['date-obs'].tolist()
+    #     time_first_frame, time_last_frame = Time(min(dateobs_list)), Time(max(dateobs_list))
+    #
+    #     twilight_evening = soar.twilight_evening_astronomical(Time(time_first_frame), which='nearest').isot
+    #     twilight_morning = soar.twilight_morning_astronomical(Time(time_last_frame), which='nearest').isot
+    #     sun_set_time = soar.sun_set_time(Time(time_first_frame), which='nearest').isot
+    #     sun_rise_time = soar.sun_rise_time(Time(time_last_frame), which='nearest').isot
+    #     log.debug('Sun Set ' + sun_set_time)
+    #     log.debug('Sun Rise ' + sun_rise_time)
+    #     return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
 
     def separate_day_night(self):
         """Separates day and night time data
@@ -311,7 +321,8 @@ class NightOrganizer(object):
             night_time_data (object):
         """
         # print(self.file_collection)
-        afternoon_twilight, morning_twilight, sun_set, sun_rise = self.get_twilight_time()
+        date_obs_list = self.file_collection['date-obs'].tolist()
+        afternoon_twilight, morning_twilight, sun_set, sun_rise = get_twilight_time(date_obs=date_obs_list)
         self.data_container.set_sun_times(sun_set, sun_rise)
         self.data_container.set_twilight_times(afternoon_twilight, morning_twilight)
         # print(afternoon_twilight, morning_twilight)
@@ -324,19 +335,6 @@ class NightOrganizer(object):
         # print(night_time_data)
         # print(day_time_data)
         return day_time_data, night_time_data
-
-    @staticmethod
-    def convert_time(in_time):
-        """Converts time to seconds since epoch
-
-        Args:
-            in_time (str): time obtained from header's keyword DATE-OBS
-
-        Returns:
-            time in seconds since epoch
-
-        """
-        return time.mktime(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
 
 
 class Night(object):
