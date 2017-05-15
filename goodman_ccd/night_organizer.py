@@ -137,13 +137,13 @@ class NightOrganizer(object):
             if len(bias_data) > 2:
                 bias_confs = bias_data.groupby(['gain',
                                                 'rdnoise',
-                                                'obsra',
-                                                'obsdec']).size().reset_index().rename(columns={0: 'count'})
+                                                'radeg',
+                                                'decdeg']).size().reset_index().rename(columns={0: 'count'})
                 for i in bias_confs.index:
                     bias_group = bias_data[((bias_data['gain'] == bias_confs.iloc[i]['gain']) &
                                             (bias_data['rdnoise'] == bias_confs.iloc[i]['rdnoise']) &
-                                            (bias_data['obsra'] == bias_confs.iloc[i]['obsra']) &
-                                            (bias_data['obsdec'] == bias_confs.iloc[i]['obsdec']))]
+                                            (bias_data['radeg'] == bias_confs.iloc[i]['radeg']) &
+                                            (bias_data['decdeg'] == bias_confs.iloc[i]['decdeg']))]
                     self.data_container.add_bias(bias_group)
             else:
                 log.error('Not enough bias images.')
@@ -197,8 +197,8 @@ class NightOrganizer(object):
                                               'cam_targ',
                                               'grt_targ',
                                               'slit',
-                                              'obsra',
-                                              'obsdec']).size().reset_index().rename(columns={0: 'count'})
+                                              'radeg',
+                                              'decdeg']).size().reset_index().rename(columns={0: 'count'})
         for i in confs.index:
             night_time_group = self.night_time_data[((self.night_time_data['gain'] == confs.iloc[i]['gain']) &
                                                      (self.night_time_data['rdnoise'] == confs.iloc[i]['rdnoise']) &
@@ -207,8 +207,8 @@ class NightOrganizer(object):
                                                      (self.night_time_data['cam_targ'] == confs.iloc[i]['cam_targ']) &
                                                      (self.night_time_data['grt_targ'] == confs.iloc[i]['grt_targ']) &
                                                      (self.night_time_data['slit'] == confs.iloc[i]['slit']) &
-                                                     (self.night_time_data['obsra'] == confs.iloc[i]['obsra']) &
-                                                     (self.night_time_data['obsdec'] == confs.iloc[i]['obsdec']))]
+                                                     (self.night_time_data['radeg'] == confs.iloc[i]['radeg']) &
+                                                     (self.night_time_data['decdeg'] == confs.iloc[i]['decdeg']))]
             self.data_container.add_data_group(night_time_group)
             # sss = night_time_group.groupby(['obstype']).size().reset_index().rename(columns={0: 'count'})
             # if 'OBJECT' not in sss.obstype.tolist() or len(sss) < 3:
@@ -238,13 +238,13 @@ class NightOrganizer(object):
         if len(bias_group) > 2:
             bias_confs = bias_group.groupby(['gain',
                                             'rdnoise',
-                                            'obsra',
-                                            'obsdec']).size().reset_index().rename(columns={0: 'count'})
+                                            'radeg',
+                                            'decdeg']).size().reset_index().rename(columns={0: 'count'})
             for i in bias_confs.index:
                 bias_group = bias_group[((bias_group['gain'] == bias_confs.iloc[i]['gain']) &
                                         (bias_group['rdnoise'] == bias_confs.iloc[i]['rdnoise']) &
-                                        (bias_group['obsra'] == bias_confs.iloc[i]['obsra']) &
-                                        (bias_group['obsdec'] == bias_confs.iloc[i]['obsdec']))]
+                                        (bias_group['radeg'] == bias_confs.iloc[i]['radeg']) &
+                                        (bias_group['decdeg'] == bias_confs.iloc[i]['decdeg']))]
                 self.data_container.add_bias(bias_group)
         else:
             log.error('Not enough bias images.')
