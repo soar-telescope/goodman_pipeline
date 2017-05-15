@@ -144,7 +144,8 @@ class ImageProcessor(object):
                 log.info('Overscan Region: %s', overscan_region)
                 return overscan_region
 
-    def image_overscan(self, ccd):
+    @staticmethod
+    def image_overscan(ccd, overscan_region):
         """
 
         Args:
@@ -154,8 +155,8 @@ class ImageProcessor(object):
 
         """
 
-        ccd = ccdproc.subtract_overscan(ccd, median=True, fits_section=self.overscan_region, add_keyword=False)
-        ccd.header.add_history('Applied overscan correction ' + self.overscan_region)
+        ccd = ccdproc.subtract_overscan(ccd, median=True, fits_section=overscan_region, add_keyword=False)
+        ccd.header.add_history('Applied overscan correction ' + overscan_region)
         return ccd
 
     @staticmethod
@@ -201,7 +202,7 @@ class ImageProcessor(object):
                 log.debug(self.overscan_region)
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
                 log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
-                o_ccd = self.image_overscan(ccd)
+                o_ccd = self.image_overscan(ccd, overscan_region=self.overscan_region)
                 to_ccd = self.image_trim(o_ccd, trim_section=self.trim_section)
                 master_bias_list.append(to_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
@@ -244,7 +245,7 @@ class ImageProcessor(object):
                 # plt.title('Before Overscan')
                 # plt.imshow(ccd.data, clim=(-100, 0))
                 # plt.show()
-                ccd = self.image_overscan(ccd)
+                ccd = self.image_overscan(ccd, overscan_region=self.overscan_region)
                 # plt.title('After Overscan')
                 # plt.imshow(ccd.data, clim=(-100, 0))
                 # plt.show()
@@ -441,7 +442,7 @@ class ImageProcessor(object):
                 # plt.title('Raw')
                 # plt.imshow(ccd.data, clim=(0, 1000))
                 # plt.show()
-                ccd = self.image_overscan(ccd)
+                ccd = self.image_overscan(ccd, overscan_region=self.overscan_region)
                 # plt.title('Overscanned')
                 # plt.imshow(ccd.data, clim=(0, 1000))
                 # plt.show()

@@ -125,7 +125,7 @@ class DataClassifier(object):
         elif self.instrument == 'Blue':
             self.remove_conflictive_keywords()
             gratings = self.objects_collection.grating.unique()
-            print(gratings)
+            # print(gratings)
             if ['<NO GRATING>'] not in gratings:
                 self.technique = 'Spectroscopy'
                 log.info('Detected Spectroscopy Data from BLUE Camera')
