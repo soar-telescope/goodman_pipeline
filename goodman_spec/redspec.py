@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 import warnings
 from process import Process, SciencePack
 from wavelength import WavelengthCalibration
+from goodman_ccd.core import print_spacers, ra_dec_to_deg
 
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
@@ -437,7 +438,7 @@ Supported Processing Modes are:
             NotImplementedError: For mode 2 and 3.
 
         """
-        self.print_spacers("Processing night %s" % self.night.date)
+        print_spacers("Processing night %s" % self.night.date)
 
         if self.args.procmode == 0:
             self.procmode_zero()
@@ -477,7 +478,7 @@ Supported Processing Modes are:
             grating = self.image_collection.grating.iloc[index]
             # print('Grating', grating)
             obs_time = self.image_collection['date-obs'][index]
-            right_ascension, declination = self.ra_dec_to_deg(self.image_collection.ra.iloc[index],
+            right_ascension, declination = ra_dec_to_deg(self.image_collection.ra.iloc[index],
                                                               self.image_collection.dec.iloc[index])
             science_object = ScienceObject(name, target, obs_time, right_ascension, declination, grating)
 
@@ -501,7 +502,7 @@ Supported Processing Modes are:
             lamp_name = self.image_collection.object.iloc[lamp_index]
             lamp_grating = self.image_collection.grating.iloc[lamp_index]
             # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
-            lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+            lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
                                                    self.image_collection.ra.iloc[lamp_index])
 
             if lamp_grating == grating:
@@ -514,7 +515,7 @@ Supported Processing Modes are:
                 # lamp_name = self.image_collection.object.iloc[lamp_index]
                 # lamp_grating = self.image_collection.grating.iloc[lamp_index]
                 # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
-                # lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+                # lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
                 #                                        self.image_collection.ra.iloc[lamp_index])
                 # science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
             # science_object.print_all()
@@ -538,7 +539,7 @@ Supported Processing Modes are:
             obs_time = self.image_collection['date-obs'][index]
             exptime = self.image_collection.exptime.iloc[index]
             grating = self.image_collection.grating.iloc[index]
-            right_ascension, declination = self.ra_dec_to_deg(self.image_collection.ra.iloc[index],
+            right_ascension, declination = ra_dec_to_deg(self.image_collection.ra.iloc[index],
                                                               self.image_collection.dec.iloc[index])
             # Reformat some data of the target for comparison
             target_time = self.convert_time(obs_time)
@@ -551,7 +552,7 @@ Supported Processing Modes are:
                 lamp_time = self.convert_time(self.image_collection['date-obs'][lamp_index])
                 lamp_exptime = self.image_collection.exptime.iloc[lamp_index]
                 lamp_grating = self.image_collection.grating.iloc[lamp_index]
-                lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+                lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
                                                        self.image_collection.dec.iloc[lamp_index])
                 # print(lamp, lamp_name, lamp_ra, lamp_dec)
                 if lamp_grating == grating:

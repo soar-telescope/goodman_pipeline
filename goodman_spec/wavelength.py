@@ -83,7 +83,8 @@ class WavelengthCalibration(object):
         self.grating_frequency = None
         self.grating_angle = None
         self.camera_angle = None
-        self.binning = None
+        self.serial_binning = None
+        self.parallel_binning = None
 
         self.pixel_count = None
         self.alpha = None
@@ -283,11 +284,10 @@ class WavelengthCalibration(object):
         slit_size = re.sub('[a-zA-Z" ]', '', lamp_header['slit'])
         # get serial binning value PG5_9 is for RED camera and PARAM18 is for BLUE camera
         # serial binning is dispersion axis, the only one that matters for this purpose
-        try:
-            binning = int(lamp_header['PG5_9'])
-        except KeyError:
-            binning = int(lamp_header['PARAM18'])
-        new_order = int(round(float(slit_size) / (0.15 * binning)))
+
+        serial_binning, parallel_binning = [int(x) for x in lamp_header['CCDSUM'].split()]
+
+        new_order = int(round(float(slit_size) / (0.15 * serial_binning)))
         log.debug('New Order: ' + '{:d}'.format(new_order))
         # print(round(new_order))
         peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
@@ -428,18 +428,9 @@ class WavelengthCalibration(object):
         # print('Grating Frequency ' + '{:d}'.format(int(self.grating_frequency)))
         self.grating_angle = float(self.lamp_header['GRT_ANG']) * u.deg
         self.camera_angle = float(self.lamp_header['CAM_ANG']) * u.deg
-        """
-        PG5_4 parallel
-        # PG5_9 serial
-        # PARAM18 serial
-        # PARAM22 parallel
-        """
-        try:
-            self.binning = int(self.lamp_header['PG5_4'])
-            # serial_binning = self.lamp_header['PG5_9']
-        except KeyError:
-            self.binning = int(self.lamp_header['PARAM22'])
-            # serial_binning = self.lamp_header['PARAM18']
+
+        self.serial_binning, self.parallel_binning = [int(x) for x in self.lamp_header['CCDSUM'].split()]
+
         self.pixel_count = len(self.lamp_data)
         # Calculations
         # TODO (simon): Check whether is necessary to remove the self.slit_offset variable
@@ -578,7 +569,7 @@ class WavelengthCalibration(object):
         alpha = self.alpha
         beta = self.beta
         # pixel_count = self.pixel_count
-        binning = self.binning
+        binning = self.serial_binning
         grating_frequency = self.grating_frequency
         wavelength = 10 * (1e6 / grating_frequency) * (np.sin(alpha * np.pi / 180.)
                                                        + np.sin((beta * np.pi / 180.)
