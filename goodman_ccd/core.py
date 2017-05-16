@@ -20,6 +20,7 @@ log = logging.getLogger('goodmanccd.core')
 
 def convert_time(in_time):
     """Converts time to seconds since epoch
+
     Args:
         in_time (str): time obtained from header's keyword DATE-OBS
 
@@ -27,7 +28,6 @@ def convert_time(in_time):
         time in seconds since epoch
 
     """
-
     return time.mktime(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
 
 
@@ -41,21 +41,21 @@ def fix_duplicated_keywords(night_dir):
         night_dir (str): The full path for the raw data location
 
     """
-
     files = glob.glob(os.path.join(night_dir, '*.fits'))
+    # Pick a random file to find duplicated keywords
     random_file = random.choice(files)
     ccd = CCDData.read(random_file)
-    random_header = ccd.header
+    header = ccd.header
+    # Put the duplicated keywords in a list
     multiple_keys = []
-    for keyword in random_header.keys():
+    for keyword in header.keys():
         if keyword != '':
-            if random_header.count(keyword) > 1:
+            if header.count(keyword) > 1:
                 if keyword not in multiple_keys:
                     multiple_keys.append(keyword)
     if multiple_keys != []:
         for image_file in files:
             try:
-                print(image_file)
                 ccd = CCDData.read(image_file)
                 for keyword in multiple_keys:
                     while ccd.header.count(keyword) > 1:
@@ -71,11 +71,12 @@ def ra_dec_to_deg(right_ascension, declination):
     """Converts right ascension and declination to degrees
 
     Args:
-        right_ascension (str): right ascension
-        declination (str): declination
+        right_ascension (str): Right ascension in the format hh:mm:ss.sss
+        declination (str): Declination in the format dd:mm:ss.sss
 
     Returns:
-        right ascension and declination in degrees
+        right_ascension_deg (float): Right ascension in degrees
+        declination_deg (float): Declination in degrees
 
     """
     right_ascension = right_ascension.split(":")
@@ -85,7 +86,6 @@ def ra_dec_to_deg(right_ascension, declination):
                            + (float(right_ascension[1])
                               + (float(right_ascension[2]) / 60.)) / 60.) * (360. / 24.)
     # DECLINATION conversion
-    # print(declination)
     # sign = float(declination[0]) / abs(float(declination[0]))
     if float(declination[0]) == abs(float(declination[0])):
         sign = 1
@@ -105,10 +105,10 @@ def print_spacers(message):
     The only functionality of this is aesthetic.
 
     Args:
-        message (str): a message to be printed
+        message (str): A message to be printed
 
     Returns:
-        a True boolean
+        True (bool): A True value
 
     """
 
@@ -194,34 +194,36 @@ def get_twilight_time(date_obs):
 
 
 def image_overscan(ccd, overscan_region, add_keyword=False):
-    """
+    """Apply overscan to data
 
     Args:
-        ccd (object):
-        overscan_region (str):
-        add_keyword (bool)
+        ccd (object): A ccdproc.CCDData instance
+        overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]' where x is the spectral axis and
+        y is the spatial axis.
+        add_keyword (bool): Tells ccdproc whether to add a keyword or not. Default False.
 
     Returns:
+        ccd (object): Overscan corrected ccdproc.CCDData instance
 
     """
-
     ccd = ccdproc.subtract_overscan(ccd, median=True, fits_section=overscan_region, add_keyword=add_keyword)
     ccd.header.add_history('Applied overscan correction ' + overscan_region)
     return ccd
 
 
 def image_trim(ccd, trim_section, add_keyword=False):
-    """
+    """Trim image to a given section
 
     Args:
-        ccd (object): CCDData Object
-        trim_section (str):
-        add_keyword (bool):
+        ccd (object): A ccdproc.CCDData instance
+        trim_section (str): The trimming section in the format '[x1:x2,y1:y2]' where x is the spectral axis and
+        y is the spatial axis.
+        add_keyword (bool): Tells ccdproc whether to add a keyword or not. Default False.
 
     Returns:
+        ccd (object): Trimmed ccdproc.CCDData instance
 
     """
-
     ccd = ccdproc.trim_image(ccd, fits_section=trim_section, add_keyword=add_keyword)
     ccd.header.add_history('Trimmed image to ' + trim_section)
     return ccd
@@ -230,23 +232,27 @@ def image_trim(ccd, trim_section, add_keyword=False):
 def get_slit_trim_section(master_flat):
     """Find the slit edges to trim all data
 
+    Using a master flat, ideally good signal to noise ratio, this function will identify the edges of the slit
+    projected into the detector. Having this data will allow to reduce the overall processing time and also reduce
+    the introduction of artifacts due to non-illuminated regions in the detectors, such as NaNs -INF +INF, etc.
+
     Args:
-        master_flat (object): CCDData instance
+        master_flat (object): A ccdproc.CCDData instance
 
     Returns:
         slit_trim_section (str): Trim section in spatial direction in the format [:,slit_lower_limit:slit_higher_limit]
 
     """
-
-
     x, y = master_flat.data.shape
+    # Using the middle point to make calculations, usually flats have good illumination already at the middle.
     middle = int(y / 2.)
     ccd_section = master_flat.data[:, middle:middle + 200]
     ccd_section_median = np.median(ccd_section, axis=1)
     # spatial_axis = range(len(ccd_section_median))
 
+    # Spatial half will be used later to constrain the detection of the first edge before the first half.
     spatial_half = len(ccd_section_median) / 2.
-
+    # pseudo-derivative to help finding the edges.
     pseudo_derivative = np.array(
         [abs(ccd_section_median[i + 1] - ccd_section_median[i]) for i in range(0, len(ccd_section_median) - 1)])
     filtered_data = np.where(np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
@@ -261,9 +267,11 @@ def get_slit_trim_section(master_flat):
     else:
         # print(peaks, flat_files.grating[flat_files.file == file], flat_files.slit[flat_files.file == file])
         if len(peaks) == 2:
+            # This is the ideal case, when the two edges of the slit are found.
             low, high = peaks
             slit_trim_section = '[:,{:d}:{:d}]'.format(low, high)
         elif len(peaks) == 1:
+            # when only one peak is found it will choose the largest region from the spatial axis center to one edge.
             if peaks[0] <= spatial_half:
                 slit_trim_section = '[:,{:d}:{:d}]'.format(peaks[0], len(ccd_section_median))
             else:
@@ -292,21 +300,10 @@ def cosmicray_rejection(ccd):
         log.info('Cleaning cosmic rays... ')
         # ccd.data= ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
         ccd.data, _mask = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
-
                                                      gain=float(ccd.header['GAIN']),
                                                      readnoise=float(ccd.header['RDNOISE']),
                                                      satlevel=np.inf, sepmed=True, fsmode='median',
                                                      psfmodel='gaussy', verbose=False)
-        # ccd.data = np.array(ccd.data, dtype=np.double) / float(ccd.header['GAIN'])
-
-        # difference = np.nan_to_num(ccd - nccd)
-        # print(_mask)
-        # plt.imshow(_mask, interpolation='none')
-        # plt.show()
-
-        # plt.imshow(difference, clim=(0,1))
-        # plt.show()
-
         ccd.header.add_history("Cosmic rays rejected with LACosmic")
         log.info("Cosmic rays rejected with LACosmic")
     else:
@@ -315,12 +312,19 @@ def cosmicray_rejection(ccd):
 
 
 def get_best_flat(flat_name):
-    """
+    """Look for matching master flat
+
+    Given a basename for masterflats this function will find the name of the files that matches the basename and then
+    will choose the first. Ideally this should go further as to check signal, time gap, etc.
+    After it identifies the file it will load it using ccdproc.CCDData and return it along the filename.
+    In case if fails it will return None instead of master_flat and another None instead of master_flat_name.
 
     Args:
-        flat_name:
+        flat_name (str): Full path of masterflat basename. Ends in '*.fits'.
 
     Returns:
+        master_flat (object): A ccdproc.CCDData instance
+        master_flat_name (str): Full path to the chosen masterflat.
 
     """
     flat_list = glob.glob(flat_name)
