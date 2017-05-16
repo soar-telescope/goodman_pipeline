@@ -17,6 +17,7 @@ import pandas
 from wavmode_translator import SpectroscopicMode
 import sys
 import matplotlib.pyplot as plt
+from .core import image_overscan, image_trim, get_slit_trim_section, cosmicray_rejection
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
@@ -144,37 +145,6 @@ class ImageProcessor(object):
                 log.info('Overscan Region: %s', overscan_region)
                 return overscan_region
 
-    @staticmethod
-    def image_overscan(ccd, overscan_region):
-        """
-
-        Args:
-            ccd:
-
-        Returns:
-
-        """
-
-        ccd = ccdproc.subtract_overscan(ccd, median=True, fits_section=overscan_region, add_keyword=False)
-        ccd.header.add_history('Applied overscan correction ' + overscan_region)
-        return ccd
-
-    @staticmethod
-    def image_trim(ccd, trim_section):
-        """
-
-        Args:
-            ccd (object): CCDData Object
-            trim_section (str):
-
-        Returns:
-
-        """
-
-        ccd = ccdproc.trim_image(ccd, fits_section=trim_section, add_keyword=False)
-        ccd.header.add_history('Trimmed image to ' + trim_section)
-        return ccd
-
     def create_master_bias(self, bias_group):
         """
 
@@ -202,8 +172,8 @@ class ImageProcessor(object):
                 log.debug(self.overscan_region)
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
                 log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
-                o_ccd = self.image_overscan(ccd, overscan_region=self.overscan_region)
-                to_ccd = self.image_trim(o_ccd, trim_section=self.trim_section)
+                o_ccd = image_overscan(ccd, overscan_region=self.overscan_region)
+                to_ccd = image_trim(o_ccd, trim_section=self.trim_section)
                 master_bias_list.append(to_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
                                                sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=False)
@@ -214,7 +184,7 @@ class ImageProcessor(object):
             for image_file in bias_file_list:
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
                 log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
-                t_ccd = self.image_trim(ccd, trim_section=self.trim_section)
+                t_ccd = image_trim(ccd, trim_section=self.trim_section)
                 master_bias_list.append(t_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
                                                sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=False)
@@ -245,16 +215,16 @@ class ImageProcessor(object):
                 # plt.title('Before Overscan')
                 # plt.imshow(ccd.data, clim=(-100, 0))
                 # plt.show()
-                ccd = self.image_overscan(ccd, overscan_region=self.overscan_region)
+                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
                 # plt.title('After Overscan')
                 # plt.imshow(ccd.data, clim=(-100, 0))
                 # plt.show()
-                ccd = self.image_trim(ccd, trim_section=self.trim_section)
+                ccd = image_trim(ccd, trim_section=self.trim_section)
                 # plt.title('After Trimming')
                 # plt.imshow(ccd.data, clim=(-100, 0))
                 # plt.show()
             elif self.technique == 'Imaging':
-                ccd = self.image_trim(ccd, trim_section=self.trim_section)
+                ccd = image_trim(ccd, trim_section=self.trim_section)
                 ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
             else:
                 log.error('Unknown observation technique: ' + self.technique)
@@ -333,50 +303,6 @@ class ImageProcessor(object):
         # print(master_flat_name)
         return master_flat_name
 
-    @staticmethod
-    def get_slit_trim_section(master_flat):
-        """Find the slit edges to trim all data
-
-        Args:
-            master_flat (object): CCDData instance
-
-        Returns:
-            trim_section (str): Trim section in spatial direction in the format [:,slit_lower_limit:slit_higher_limit]
-
-        """
-
-
-        x, y = master_flat.data.shape
-        middle = int(y / 2.)
-        ccd_section = master_flat.data[:, middle:middle + 200]
-        ccd_section_median = np.median(ccd_section, axis=1)
-        # spatial_axis = range(len(ccd_section_median))
-
-        spatial_half = len(ccd_section_median) / 2.
-
-        pseudo_derivative = np.array(
-            [abs(ccd_section_median[i + 1] - ccd_section_median[i]) for i in range(0, len(ccd_section_median) - 1)])
-        filtered_data = np.where(np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
-                                 pseudo_derivative,
-                                 None)
-        peaks = signal.argrelmax(filtered_data, axis=0, order=3)[0]
-        # print(peaks)
-
-        trim_section = None
-        if len(peaks) > 2 or peaks == []:
-            log.debug('No trim section')
-        else:
-            # print(peaks, flat_files.grating[flat_files.file == file], flat_files.slit[flat_files.file == file])
-            if len(peaks) == 2:
-                low, high = peaks
-                trim_section = '[:,{:d}:{:d}]'.format(low, high)
-            elif len(peaks) == 1:
-                if peaks[0] <= spatial_half:
-                    trim_section = '[:,{:d}:{:d}]'.format(peaks[0], len(ccd_section_median))
-                else:
-                    trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
-        return trim_section
-
     def process_spectroscopy_science(self, science_group):
         """
 
@@ -426,12 +352,12 @@ class ImageProcessor(object):
                     log.warning('Adding image group to Queue')
             if master_flat is not None:
                 log.debug('Attempting to find slit trim section')
-                slit_trim = self.get_slit_trim_section(master_flat=master_flat)
+                slit_trim = get_slit_trim_section(master_flat=master_flat)
             else:
                 log.info('Master flat inexistent, cant find slit trim section')
             if slit_trim is not None:
-                    master_flat = self.image_trim(ccd=master_flat, trim_section=slit_trim)
-                    master_bias = self.image_trim(ccd=self.master_bias, trim_section=slit_trim)
+                    master_flat = image_trim(ccd=master_flat, trim_section=slit_trim)
+                    master_bias = image_trim(ccd=self.master_bias, trim_section=slit_trim)
             else:
                 master_bias = self.master_bias.copy()
 
@@ -442,19 +368,19 @@ class ImageProcessor(object):
                 # plt.title('Raw')
                 # plt.imshow(ccd.data, clim=(0, 1000))
                 # plt.show()
-                ccd = self.image_overscan(ccd, overscan_region=self.overscan_region)
+                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
                 # plt.title('Overscanned')
                 # plt.imshow(ccd.data, clim=(0, 1000))
                 # plt.show()
                 self.out_prefix += 'o_'
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match the size of the other data
-                    ccd = self.image_trim(ccd=ccd, trim_section=self.trim_section)
-                    ccd = self.image_trim(ccd=ccd, trim_section=slit_trim)
+                    ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
+                    ccd = image_trim(ccd=ccd, trim_section=slit_trim)
                     self.out_prefix = 'st' + self.out_prefix
 
                 else:
-                    ccd = self.image_trim(ccd=ccd, trim_section=self.trim_section)
+                    ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
                     self.out_prefix = 't' + self.out_prefix
                 # plt.title('Trimmed')
                 # plt.imshow(ccd.data)
@@ -535,7 +461,7 @@ class ImageProcessor(object):
                         self.out_prefix = 'f' + self.out_prefix
                         ccd.header.add_history('Flat normalized {:s} '.format(self.args.flat_normalize.split('-')) + master_flat_name.split('/')[-1])
                 if self.args.clean_cosmic:
-                    ccd = self.cosmicray_rejection(ccd=ccd)
+                    ccd = cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
                     # plt.title('Cosmic')
                     # plt.imshow(ccd.data, clim=(0, 1000))
@@ -596,7 +522,7 @@ class ImageProcessor(object):
             for image_file in imaging_group.file.tolist():
                 self.out_prefix = ''
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
-                ccd = self.image_trim(ccd, trim_section=self.trim_section)
+                ccd = image_trim(ccd, trim_section=self.trim_section)
                 self.out_prefix = 't_'
                 if not self.args.ignore_bias:
                     ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
@@ -615,50 +541,8 @@ class ImageProcessor(object):
         else:
             log.error('Can not process data without a master flat')
 
-    def cosmicray_rejection(self, ccd):
-        """Do cosmic ray rejection
-
-        Notes:
-            OBS: cosmic ray rejection is working pretty well by defining gain = 1. It's not working when we use the real
-            gain of the image. In this case the sky level changes by a factor equal the gain.
-            Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
-
-        Args:
-            ccd (object): CCDData Object
-
-        Returns:
-            ccd (object): The modified CCDData object
-
-        """
-        # TODO (simon): Validate this method
-        if ccd.header['OBSTYPE'] == 'OBJECT':
-            value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
-            log.info('Cleaning cosmic rays... ')
-            # ccd.data= ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
-            ccd.data, _mask = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
-
-                                                         gain=float(ccd.header['GAIN']),
-                                                         readnoise=float(ccd.header['RDNOISE']),
-                                                         satlevel=np.inf, sepmed=True, fsmode='median',
-                                                         psfmodel='gaussy', verbose=False)
-            # ccd.data = np.array(ccd.data, dtype=np.double) / float(ccd.header['GAIN'])
-
-            # difference = np.nan_to_num(ccd - nccd)
-            # print(_mask)
-            # plt.imshow(_mask, interpolation='none')
-            # plt.show()
-
-            # plt.imshow(difference, clim=(0,1))
-            # plt.show()
-
-            ccd.header.add_history("Cosmic rays rejected with LACosmic")
-            log.info("Cosmic rays rejected with LACosmic")
-        else:
-            log.info('Skipping cosmic ray rejection for image of datatype: {:s}'.format(ccd.header['OBSTYPE']))
-        return ccd
-
     def remove_nan(self, ccd):
-        # do some kind of interpolation to removen NaN and -INF
+        # do some kind of interpolation to remove NaN and -INF
         # np.nan_to_num()
         # TODO (simon): Re-write in a more comprehensive way
         log.info('Removing NaN and INF by cubic interpolation')
@@ -712,34 +596,6 @@ class ImageProcessor(object):
 
         print(fwhm)
         return ccd
-
-    @staticmethod
-    def get_best_flat(flat_name):
-        """
-
-        Args:
-            flat_name:
-
-        Returns:
-
-        """
-        flat_list = glob.glob(flat_name)
-        print(flat_name)
-        print(flat_list)
-        if len(flat_list) > 0:
-            if len(flat_list) == 1:
-                master_flat_name = flat_list[0]
-            else:
-                master_flat_name = flat_list[0]
-            # elif any('dome' in flat for flat in flat_list):
-            #     master_flat_name =
-
-            master_flat = CCDData.read(master_flat_name, unit=u.adu)
-            log.info('Found suitable master flat: ' + master_flat_name)
-            return master_flat, master_flat_name
-        else:
-            log.error('There is no flat available')
-            return None, None
 
 if __name__ == '__main__':
     pass

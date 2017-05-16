@@ -6,11 +6,14 @@ import time
 import glob
 import random
 import logging
+import ccdproc
 from ccdproc import CCDData
 from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
 from astroplan import Observer
 from astropy import units as u
+import numpy as np
+from scipy import signal
 
 log = logging.getLogger('goodmanccd.core')
 
@@ -188,3 +191,152 @@ def get_twilight_time(date_obs):
     log.debug('Sun Set ' + sun_set_time)
     log.debug('Sun Rise ' + sun_rise_time)
     return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
+
+
+def image_overscan(ccd, overscan_region, add_keyword=False):
+    """
+
+    Args:
+        ccd (object):
+        overscan_region (str):
+        add_keyword (bool)
+
+    Returns:
+
+    """
+
+    ccd = ccdproc.subtract_overscan(ccd, median=True, fits_section=overscan_region, add_keyword=add_keyword)
+    ccd.header.add_history('Applied overscan correction ' + overscan_region)
+    return ccd
+
+
+def image_trim(ccd, trim_section, add_keyword=False):
+    """
+
+    Args:
+        ccd (object): CCDData Object
+        trim_section (str):
+        add_keyword (bool):
+
+    Returns:
+
+    """
+
+    ccd = ccdproc.trim_image(ccd, fits_section=trim_section, add_keyword=add_keyword)
+    ccd.header.add_history('Trimmed image to ' + trim_section)
+    return ccd
+
+
+def get_slit_trim_section(master_flat):
+    """Find the slit edges to trim all data
+
+    Args:
+        master_flat (object): CCDData instance
+
+    Returns:
+        slit_trim_section (str): Trim section in spatial direction in the format [:,slit_lower_limit:slit_higher_limit]
+
+    """
+
+
+    x, y = master_flat.data.shape
+    middle = int(y / 2.)
+    ccd_section = master_flat.data[:, middle:middle + 200]
+    ccd_section_median = np.median(ccd_section, axis=1)
+    # spatial_axis = range(len(ccd_section_median))
+
+    spatial_half = len(ccd_section_median) / 2.
+
+    pseudo_derivative = np.array(
+        [abs(ccd_section_median[i + 1] - ccd_section_median[i]) for i in range(0, len(ccd_section_median) - 1)])
+    filtered_data = np.where(np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
+                             pseudo_derivative,
+                             None)
+    peaks = signal.argrelmax(filtered_data, axis=0, order=3)[0]
+    # print(peaks)
+
+    slit_trim_section = None
+    if len(peaks) > 2 or peaks == []:
+        log.debug('No trim section')
+    else:
+        # print(peaks, flat_files.grating[flat_files.file == file], flat_files.slit[flat_files.file == file])
+        if len(peaks) == 2:
+            low, high = peaks
+            slit_trim_section = '[:,{:d}:{:d}]'.format(low, high)
+        elif len(peaks) == 1:
+            if peaks[0] <= spatial_half:
+                slit_trim_section = '[:,{:d}:{:d}]'.format(peaks[0], len(ccd_section_median))
+            else:
+                slit_trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
+    return slit_trim_section
+
+
+def cosmicray_rejection(ccd):
+    """Do cosmic ray rejection
+
+      Notes:
+          OBS: cosmic ray rejection is working pretty well by defining gain = 1. It's not working when we use the real
+          gain of the image. In this case the sky level changes by a factor equal the gain.
+          Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
+
+      Args:
+          ccd (object): CCDData Object
+
+      Returns:
+          ccd (object): The modified CCDData object
+
+      """
+    # TODO (simon): Validate this method
+    if ccd.header['OBSTYPE'] == 'OBJECT':
+        value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
+        log.info('Cleaning cosmic rays... ')
+        # ccd.data= ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
+        ccd.data, _mask = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
+
+                                                     gain=float(ccd.header['GAIN']),
+                                                     readnoise=float(ccd.header['RDNOISE']),
+                                                     satlevel=np.inf, sepmed=True, fsmode='median',
+                                                     psfmodel='gaussy', verbose=False)
+        # ccd.data = np.array(ccd.data, dtype=np.double) / float(ccd.header['GAIN'])
+
+        # difference = np.nan_to_num(ccd - nccd)
+        # print(_mask)
+        # plt.imshow(_mask, interpolation='none')
+        # plt.show()
+
+        # plt.imshow(difference, clim=(0,1))
+        # plt.show()
+
+        ccd.header.add_history("Cosmic rays rejected with LACosmic")
+        log.info("Cosmic rays rejected with LACosmic")
+    else:
+        log.info('Skipping cosmic ray rejection for image of datatype: {:s}'.format(ccd.header['OBSTYPE']))
+    return ccd
+
+
+def get_best_flat(flat_name):
+    """
+
+    Args:
+        flat_name:
+
+    Returns:
+
+    """
+    flat_list = glob.glob(flat_name)
+    print(flat_name)
+    print(flat_list)
+    if len(flat_list) > 0:
+        if len(flat_list) == 1:
+            master_flat_name = flat_list[0]
+        else:
+            master_flat_name = flat_list[0]
+        # elif any('dome' in flat for flat in flat_list):
+        #     master_flat_name =
+
+        master_flat = CCDData.read(master_flat_name, unit=u.adu)
+        log.info('Found suitable master flat: ' + master_flat_name)
+        return master_flat, master_flat_name
+    else:
+        log.error('There is no flat available')
+        return None, None
