@@ -1,4 +1,5 @@
-from __future__ import print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import os
 from ccdproc import ImageFileCollection
 import matplotlib.pyplot as plt
@@ -9,9 +10,9 @@ import re
 import glob
 import logging
 import argparse
-from data_classifier import DataClassifier
-from night_organizer import NightOrganizer
-from image_processor import ImageProcessor
+from .data_classifier import DataClassifier
+from .night_organizer import NightOrganizer
+from .image_processor import ImageProcessor
 
 __author__ = 'David Sanmartim'
 __date__ = '2016-07-15'

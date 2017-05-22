@@ -8,8 +8,8 @@ to the image's header following the FITS standard.
 # TODO Reformat file - It is confusing at the moment
 # TODO Reformat _ Re-order imports (first "import ...", then "from ... import ..." alphabetically)
 # TODO (simon): Discuss this because there are other rules that will probably conflict with this request.
-from __future__ import print_function
-
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import logging
 import sys
 import os
@@ -27,9 +27,8 @@ from astropy.modeling import models, fitting
 from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 import scipy.interpolate
 from scipy import signal
-
-import wsbuilder
-from linelist import ReferenceData
+from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
+from .linelist import ReferenceData
 
 
 
@@ -610,7 +609,7 @@ class WavelengthCalibration(object):
             # TODO (simon): Evaluate if send this to interactive mode
             return None
 
-        read_wsolution = wsbuilder.ReadWavelengthSolution(header=reference_lamp_data.header, data=reference_lamp_data.data)
+        read_wsolution = ReadWavelengthSolution(header=reference_lamp_data.header, data=reference_lamp_data.data)
         reference_lamp_wav_axis, reference_lamp_data.data = read_wsolution()
         reference_lamp_copy = reference_lamp_data.copy()
 
@@ -630,7 +629,7 @@ class WavelengthCalibration(object):
 
 
         # Initialize wavelength builder class
-        wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
+        wavelength_solution = WavelengthFitter(model='chebyshev', degree=3)
         # self.wsolution = wavelength_solution.ws_fit(pixel, auto_angs)
 
         '''detect lines in comparison lamp (not reference)'''
@@ -851,7 +850,7 @@ class WavelengthCalibration(object):
             reference_plots_enabled = True
             ref_data = fits.getdata(reference_file)
             ref_header = fits.getheader(reference_file)
-            fits_ws_reader = wsbuilder.ReadWavelengthSolution(ref_header, ref_data)
+            fits_ws_reader = ReadWavelengthSolution(ref_header, ref_data)
             self.reference_solution = fits_ws_reader()
         else:
             reference_plots_enabled = False
@@ -1398,7 +1397,7 @@ class WavelengthCalibration(object):
                 for i in range(len(self.reference_marks_x)):
                     pixel.append(self.raw_data_marks_x[i])
                     angstrom.append(self.reference_marks_x[i])
-                wavelength_solution = wsbuilder.WavelengthFitter(model='chebyshev', degree=3)
+                wavelength_solution = WavelengthFitter(model='chebyshev', degree=3)
                 self.wsolution = wavelength_solution.ws_fit(pixel, angstrom)
                 self.evaluate_solution(plots=True)
 

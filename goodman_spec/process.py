@@ -4,6 +4,8 @@
 This module performs intermediate steps in the process to obtain a wavelength calibrated spectrum
 the __call__ method returns a list contained uni-dimensional data extracted and the modified instance of ScienceObject
 """
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 from astropy.io import fits
 import matplotlib.pyplot as plt
 import numpy as np

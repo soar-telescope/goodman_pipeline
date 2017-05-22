@@ -9,7 +9,8 @@ Simon Torres 2016-06-28
 
 """
 # TODO (simon): Change all astropy.io.fits to astropy.CCDData.read
-from __future__ import print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import sys
 import os
 import numpy as np
@@ -22,8 +23,8 @@ import logging
 import matplotlib.pyplot as plt
 # from astropy import log
 import warnings
-from process import Process, SciencePack
-from wavelength import WavelengthCalibration
+from .process import Process, SciencePack
+from .wavelength import WavelengthCalibration
 from goodman_ccd.core import print_spacers, ra_dec_to_deg
 
 warnings.filterwarnings('ignore')

@@ -1,4 +1,5 @@
-from __future__ import print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 from astropy import units as u
 from astropy.convolution import convolve, convolve_fft, Gaussian2DKernel, Tophat2DKernel
 from astropy.modeling import models, fitting
@@ -14,7 +15,7 @@ import os
 import glob
 import datetime
 import pandas
-from wavmode_translator import SpectroscopicMode
+from .wavmode_translator import SpectroscopicMode
 import sys
 import matplotlib.pyplot as plt
 from .core import image_overscan, image_trim, get_slit_trim_section, cosmicray_rejection
@@ -90,8 +91,6 @@ class ImageProcessor(object):
             for sub_group in self.queue:
                 print(sub_group)
 
-
-
     def define_trim_section(self):
         """
 
@@ -114,27 +113,46 @@ class ImageProcessor(object):
                 return trim_section
 
     def get_overscan_region(self):
-        """
+        """Get the right overscan region for spectroscopy
+
+        It works for the following ROI:
+            Spectroscopic 1x1
+            Spectroscopic 2x2
+            Spectroscopic 3x3
+
+        The limits where measured on a Spectroscopic 1x1 image and then divided by the binning size. This was checked
+        that it actually works as expected.
 
         Returns:
+            overscan_region (str): Region for overscan in the format '[min:max,:]' where min is the starting point and
+            max is the end point of the overscan region.
 
         """
-
-        log.warning('Determining Overscan Region. Assuming you have only one kind of data in this folder')
+        log.warning('Determining Overscan Region. Assuming you have only one kind of binning in the data.')
         for group in [self.bias, self.day_flats, self.dome_flats, self.sky_flats, self.data_groups]:
             if group is not None:
-                # print(self.bias[0])
+                # 'group' is a list
                 image_list = group[0]['file'].tolist()
                 sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
                 log.debug('Overscan Sample File ' + sample_image)
                 ccd = CCDData.read(sample_image, unit=u.adu)
-                serial_binning, paralell_bining = [int(x) for x in ccd.header['CCDSUM'].split()]
-                log.info('Using predefined overscan region for binning 1x1')
+                # Take the binnings
+                serial_binning, parallel_binning = [int(x) for x in ccd.header['CCDSUM'].split()]
+
                 if self.technique == 'Spectroscopy':
+                    log.info('Overscan regions has been tested for ROI Spectroscopic 1x1, 2x2 and 3x3')
                     if self.instrument == 'Red':
-                        overscan_region = '[{:d}:{:d},1:1896]'.format(int(np.ceil(6. / serial_binning)), int(49./ serial_binning))
+                        # for red camera it is necessary to eliminate the first rows/columns (depends on the point of
+                        # view) because they come with an abnormal high signal. Usually the first 5 pixels.
+                        # In order to find the corresponding value for the subsequent binnings divide by the binning
+                        # size.
+                        # The numbers 6 and 49 where obtained from visual inspection
+                        overscan_region = '[{:d}:{:d},:]'.format(int(np.ceil(6. / serial_binning)),
+                                                                 int(49. / serial_binning))
                     elif self.instrument == 'Blue':
-                        overscan_region = '[1:{:d},1:1896]'.format(int(16. / serial_binning))
+                        # 16 is the length of the overscan region with no binning.
+                        overscan_region = '[1:{:d},:]'.format(int(16. / serial_binning))
+
                 elif self.technique == 'Imaging':
                     log.warning("Imaging mode doesn't have overscan region. Use bias instead.")
                     if self.bias is None:
