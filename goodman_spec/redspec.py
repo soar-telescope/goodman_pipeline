@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import warnings
 from .process import Process, SciencePack
 from .wavelength import WavelengthCalibration
-from goodman_ccd.core import print_spacers, ra_dec_to_deg
+from goodman_ccd.core import (print_spacers, ra_dec_to_deg, convert_time)
 
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
@@ -543,14 +543,14 @@ Supported Processing Modes are:
             right_ascension, declination = ra_dec_to_deg(self.image_collection.ra.iloc[index],
                                                               self.image_collection.dec.iloc[index])
             # Reformat some data of the target for comparison
-            target_time = self.convert_time(obs_time)
+            target_time = convert_time(obs_time)
             # Define ScienceObject object
             science_object = ScienceObject(name, target, obs_time, right_ascension, declination, grating)
             # Loop trough lamps to find a match for target
             for lamp in self.night.lamp:
                 lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
                 lamp_name = self.image_collection.object.iloc[lamp_index]
-                lamp_time = self.convert_time(self.image_collection['date-obs'][lamp_index])
+                lamp_time = convert_time(self.image_collection['date-obs'][lamp_index])
                 lamp_exptime = self.image_collection.exptime.iloc[lamp_index]
                 lamp_grating = self.image_collection.grating.iloc[lamp_index]
                 lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
