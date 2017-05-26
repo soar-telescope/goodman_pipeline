@@ -165,13 +165,27 @@ class MainApp(object):
         if any('.fits' in item for item in folders):
             folders = [self.args.raw_path]
         for data_folder in folders:
+            if not os.path.isdir(data_folder):
+                continue
+
+            try:
+                night_sorter = DataClassifier(self.args)
+                night_sorter()
+                self.instrument = night_sorter.instrument
+                self.technique = night_sorter.technique
+            except AttributeError:
+                log.error('Empty or Invalid data directory')
+                continue
+
             # check start
             self.args.raw_path = data_folder
             if self.args.red_path == './RED' or len(folders) > 1:
-                log.info('No special reduced data path defined. Proceeding with defaults.')
+                log.info(
+                    'No special reduced data path defined. Proceeding with defaults.')
                 if self.args.raw_path not in self.args.red_path:
                     self.args.red_path = os.path.join(self.args.raw_path, 'RED')
                     # print(self.args.red_path)
+
             if os.path.isdir(self.args.red_path):
                 if os.listdir(self.args.red_path) != []:
                     log.warning('Reduced Data Path is not empty')
@@ -193,10 +207,7 @@ class MainApp(object):
                 except OSError as error:
                     log.error(error)
             # check ends
-            night_sorter = DataClassifier(self.args)
-            night_sorter()
-            self.instrument = night_sorter.instrument
-            self.technique = night_sorter.technique
+
             # print(night_sorter.nights_dict)
             for night in night_sorter.nights_dict:
                 # print(night_sorter.nights_dict[night])
