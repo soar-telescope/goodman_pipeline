@@ -34,8 +34,9 @@ def convert_time(in_time):
 def fix_duplicated_keywords(night_dir):
     """Remove duplicated keywords
 
-    There are some cases when the raw data comes with duplicated keywords. The origin has not been tracked down.
-    The solution is to identify the duplicated keywords and the remove all but one from the end backwards.
+    There are some cases when the raw data comes with duplicated keywords.
+    The origin has not been tracked down. The solution is to identify the
+    duplicated keywords and the remove all but one from the end backwards.
 
     Args:
         night_dir (str): The full path for the raw data location
@@ -59,7 +60,8 @@ def fix_duplicated_keywords(night_dir):
                 ccd = CCDData.read(image_file)
                 for keyword in multiple_keys:
                     while ccd.header.count(keyword) > 1:
-                        ccd.header.remove(keyword, ccd.header.count(keyword) - 1)
+                        ccd.header.remove(keyword,
+                                          ccd.header.count(keyword) - 1)
                 log.warning('Overwriting file with duplicated keywords removed')
                 log.info('File %s overwritten', image_file)
                 ccd.write(image_file, clobber=True)
@@ -100,8 +102,9 @@ def ra_dec_to_deg(right_ascension, declination):
 def print_spacers(message):
     """Miscelaneous function to print uniform spacers
 
-    Prints a spacer of 80 columns with  and 3 rows height. The first and last rows contains the symbol "="
-    repeated 80 times. The middle row contains the message centered and the extremes has one single "=" symbol.
+    Prints a spacer of 80 columns with  and 3 rows height. The first and last
+    rows contains the symbol "=" repeated 80 times. The middle row contains the
+    message centered and the extremes has one single "=" symbol.
     The only functionality of this is aesthetic.
 
     Args:
@@ -130,7 +133,8 @@ def print_spacers(message):
 def print_progress(current, total):
     """Prints the percentage of a progress
 
-    It works for FOR loops, requires to know the full length of the loop. Prints to the standard output.
+    It works for FOR loops, requires to know the full length of the loop.
+    Prints to the standard output.
 
     Args:
         current (int): Current value in the range of the loop.
@@ -178,16 +182,26 @@ def get_twilight_time(date_obs):
     # description(str): Observatory description
     description = 'Soar Telescope on Cerro Pachon, Chile'
 
-    soar_loc = EarthLocation.from_geodetic(longitude, latitude, elevation * u.m, ellipsoid='WGS84')
+    soar_loc = EarthLocation.from_geodetic(longitude,
+                                           latitude,
+                                           elevation * u.m,
+                                           ellipsoid='WGS84')
 
-    soar = Observer(name=observatory, location=soar_loc, timezone=timezone, description=description)
+    soar = Observer(name=observatory,
+                    location=soar_loc,
+                    timezone=timezone,
+                    description=description)
 
     time_first_frame, time_last_frame = Time(min(date_obs)), Time(max(date_obs))
 
-    twilight_evening = soar.twilight_evening_astronomical(Time(time_first_frame), which='nearest').isot
-    twilight_morning = soar.twilight_morning_astronomical(Time(time_last_frame), which='nearest').isot
-    sun_set_time = soar.sun_set_time(Time(time_first_frame), which='nearest').isot
-    sun_rise_time = soar.sun_rise_time(Time(time_last_frame), which='nearest').isot
+    twilight_evening = soar.twilight_evening_astronomical(Time(time_first_frame),
+                                                          which='nearest').isot
+    twilight_morning = soar.twilight_morning_astronomical(Time(time_last_frame),
+                                                          which='nearest').isot
+    sun_set_time = soar.sun_set_time(Time(time_first_frame),
+                                     which='nearest').isot
+    sun_rise_time = soar.sun_rise_time(Time(time_last_frame),
+                                       which='nearest').isot
     log.debug('Sun Set ' + sun_set_time)
     log.debug('Sun Rise ' + sun_rise_time)
     return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
@@ -198,15 +212,19 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
 
     Args:
         ccd (object): A ccdproc.CCDData instance
-        overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]' where x is the spectral axis and
-        y is the spatial axis.
-        add_keyword (bool): Tells ccdproc whether to add a keyword or not. Default False.
+        overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]'
+        where x is the spectral axis and y is the spatial axis.
+        add_keyword (bool): Tells ccdproc whether to add a keyword or not.
+        Default False.
 
     Returns:
         ccd (object): Overscan corrected ccdproc.CCDData instance
 
     """
-    ccd = ccdproc.subtract_overscan(ccd, median=True, fits_section=overscan_region, add_keyword=add_keyword)
+    ccd = ccdproc.subtract_overscan(ccd=ccd,
+                                    median=True,
+                                    fits_section=overscan_region,
+                                    add_keyword=add_keyword)
     ccd.header.add_history('Applied overscan correction ' + overscan_region)
     return ccd
 
@@ -216,15 +234,18 @@ def image_trim(ccd, trim_section, add_keyword=False):
 
     Args:
         ccd (object): A ccdproc.CCDData instance
-        trim_section (str): The trimming section in the format '[x1:x2,y1:y2]' where x is the spectral axis and
-        y is the spatial axis.
-        add_keyword (bool): Tells ccdproc whether to add a keyword or not. Default False.
+        trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
+        where x is the spectral axis and y is the spatial axis.
+        add_keyword (bool): Tells ccdproc whether to add a keyword or not.
+        Default False.
 
     Returns:
         ccd (object): Trimmed ccdproc.CCDData instance
 
     """
-    ccd = ccdproc.trim_image(ccd, fits_section=trim_section, add_keyword=add_keyword)
+    ccd = ccdproc.trim_image(ccd=ccd,
+                             fits_section=trim_section,
+                             add_keyword=add_keyword)
     ccd.header.add_history('Trimmed image to ' + trim_section)
     return ccd
 
@@ -232,25 +253,30 @@ def image_trim(ccd, trim_section, add_keyword=False):
 def get_slit_trim_section(master_flat):
     """Find the slit edges to trim all data
 
-    Using a master flat, ideally good signal to noise ratio, this function will identify the edges of the slit
-    projected into the detector. Having this data will allow to reduce the overall processing time and also reduce
-    the introduction of artifacts due to non-illuminated regions in the detectors, such as NaNs -INF +INF, etc.
+    Using a master flat, ideally good signal to noise ratio, this function will
+    identify the edges of the slit projected into the detector. Having this data
+    will allow to reduce the overall processing time and also reduce the
+    introduction of artifacts due to non-illuminated regions in the detectors,
+    such as NaNs -INF +INF, etc.
 
     Args:
         master_flat (object): A ccdproc.CCDData instance
 
     Returns:
-        slit_trim_section (str): Trim section in spatial direction in the format [:,slit_lower_limit:slit_higher_limit]
+        slit_trim_section (str): Trim section in spatial direction in the format
+        [:,slit_lower_limit:slit_higher_limit]
 
     """
     x, y = master_flat.data.shape
-    # Using the middle point to make calculations, usually flats have good illumination already at the middle.
+    # Using the middle point to make calculations, usually flats have good
+    # illumination already at the middle.
     middle = int(y / 2.)
     ccd_section = master_flat.data[:, middle:middle + 200]
     ccd_section_median = np.median(ccd_section, axis=1)
     # spatial_axis = range(len(ccd_section_median))
 
-    # Spatial half will be used later to constrain the detection of the first edge before the first half.
+    # Spatial half will be used later to constrain the detection of the first
+    # edge before the first half.
     spatial_half = len(ccd_section_median) / 2.
     # pseudo-derivative to help finding the edges.
     pseudo_derivative = np.array(
@@ -279,7 +305,7 @@ def get_slit_trim_section(master_flat):
     return slit_trim_section
 
 
-def cosmicray_rejection(ccd):
+def cosmicray_rejection(ccd, mask_only=False):
     """Do cosmic ray rejection
 
       Notes:
@@ -289,6 +315,8 @@ def cosmicray_rejection(ccd):
 
       Args:
           ccd (object): CCDData Object
+          mask_only (bool): In some cases you may want to obtain the cosmic
+          rays mask only
 
       Returns:
           ccd (object): The modified CCDData object
@@ -299,16 +327,21 @@ def cosmicray_rejection(ccd):
         value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
         log.info('Cleaning cosmic rays... ')
         # ccd.data= ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
-        ccd.data, _mask = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
+        ccd.data, mask = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
                                                      gain=float(ccd.header['GAIN']),
                                                      readnoise=float(ccd.header['RDNOISE']),
                                                      satlevel=np.inf, sepmed=True, fsmode='median',
                                                      psfmodel='gaussy', verbose=False)
         ccd.header.add_history("Cosmic rays rejected with LACosmic")
         log.info("Cosmic rays rejected with LACosmic")
+        if mask_only:
+            return mask
+        else:
+            return ccd
     else:
         log.info('Skipping cosmic ray rejection for image of datatype: {:s}'.format(ccd.header['OBSTYPE']))
-    return ccd
+        return ccd
+
 
 
 def get_best_flat(flat_name):
