@@ -380,6 +380,15 @@ def get_best_flat(flat_name):
 
 
 def print_default_args(args):
+    """Print default values of arguments.
+
+    This is mostly helpful for debug but people not familiar with the software
+    might find it useful as well
+
+    Args:
+        args (object): An argparse instance
+
+    """
     arg_name = {'auto_clean': '--auto-clean',
                 'clean_cosmic': '-c, --cosmic',
                 'debug_mode': '--debug',
