@@ -25,7 +25,8 @@ import matplotlib.pyplot as plt
 import warnings
 from .process import Process, SciencePack
 from .wavelength import WavelengthCalibration
-from goodman_ccd.core import (print_spacers, ra_dec_to_deg, convert_time)
+from goodman_ccd.core import (print_spacers, ra_dec_to_deg, convert_time,
+                              print_default_args)
 
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
@@ -39,6 +40,192 @@ __date__ = '2016-06-28'
 __version__ = "0.1"
 __email__ = "storres@ctio.noao.edu"
 __status__ = "Development"
+
+
+
+def get_args():
+    """Handles the argparse library and returns the arguments
+
+    Returns:
+        An object that contains all the variables parsed through the argument system
+        The possible arguments to be returned are:
+
+        -p or --data-path: has to be the source directory, where the data (images) is.
+                the location is **self.source**
+                default value is ./
+        -d or --proc-path: is the destination where all new files/data will be placed.
+                the location is self.destiny
+                default value is ./
+        -s or --search-pattern: the pattern that matches the reduced data that will be processed.
+                the location is self.pattern
+                default value is fc\_
+        -m or --proc-mode: is one of the predefined observing modes and the options are:
+                0: One or more lamps taken during the beginning or end of the night, i.e. single
+                calibration to all data in that night
+                1: One or more lamps around every science exposure.
+                default value is 0
+        -r or --reference-lamp: Name of reference lamp file for mode 0. If not present, the first one in the list
+                will be selected
+        -l or --lamp-file: Name of the ASCII file that contains the relation between science files and lamp
+                files. An example is depicted below. Note that the lamps can be repeated.
+                    #example of how the file should look
+                    science_target_01.fits lamp_001.fits
+                    science_target_02.fits lamp_001.fits
+                    science_target_03.fits lamp_002.fits
+
+                the location is self.lamp_file
+                default value is lamps.txt
+
+        -i or --non-interactive: Interactive Wavelength Solution. Enabled by default
+        -o or --output-prefix: Prefix to use to name wavelength calibrated spectrum
+        -R or --reference-files: Directory of reference files location
+        --plots-enabled: Show plots for intermediate steps. For debugging only.
+
+    """
+    leave = False
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     description=textwrap.dedent(
+                                         '''Extracts goodman spectra and does wavelength calibration.\n\n\
+Supported Processing Modes are:
+<0>: (Default) reads lamps taken at the begining or end of the night.\n\
+<1>: one or more lamps around science exposure.
+'''))
+# \n\
+# <2>: ASCII file describing which science target uses which lamp.\n\
+# <3>: No lamps. Uses the sky lines
+
+    parser.add_argument('-p', '--data-path',
+                        action='store',
+                        default='./',
+                        type=str,
+                        metavar='<Source Path>',
+                        dest='source',
+                        help='Path for location of raw data. Default <./>')
+
+    parser.add_argument('-d', '--proc-path',
+                        action='store',
+                        default='./',
+                        type=str,
+                        metavar='<Destination Path>',
+                        dest='destiny',
+                        help='Path for destination of processed data. Default <./>')
+
+    parser.add_argument('-s', '--search-pattern',
+                        action='store',
+                        default='fzh_',
+                        type=str,
+                        metavar='<Search Pattern>',
+                        dest='pattern',
+                        help="Pattern for matching the goodman's reduced data.")
+
+    parser.add_argument('-m', '--proc-mode',
+                        action='store',
+                        default=0,
+                        type=int,
+                        metavar='<Processing Mode>',
+                        dest='procmode',
+                        choices=[0, 1],
+                        help='Defines the mode of matching lamps to science targets.')
+
+    parser.add_argument('-r', '--reference-lamp',
+                        action='store',
+                        default='',
+                        type=str,
+                        metavar='<Reference Lamp>',
+                        dest='lamp_all_night',
+                        help="Name of reference lamp file for mode 0.\
+                         If not present, the first one in the list will be selected")
+
+    parser.add_argument('-l', '--lamp-file',
+                        action='store',
+                        default='lamps.txt',
+                        type=str,
+                        metavar='<Lamp File>',
+                        dest='lamp_file',
+                        help="Name of an ASCII file describing which science target\
+                            uses which lamp. default <lamp.txt>")
+
+    parser.add_argument('-o', '--output-prefix',
+                        action='store',
+                        default='g',
+                        metavar='<Out Prefix>',
+                        dest='output_prefix',
+                        help="Prefix to add to calibrated spectrum.")
+
+    parser.add_argument('-R', '--reference-files',
+                        action='store',
+                        default='refdata/',
+                        metavar='<Reference Dir>',
+                        dest='reference_dir',
+                        help="Directory of Reference files location")
+
+    parser.add_argument('-i', '--non-interactive',
+                        action='store_false',
+                        default=True,
+                        dest='interactive_ws',
+                        help="Interactive wavelength solution. Enabled by default.")
+
+    parser.add_argument('--debug',
+                        action='store_true',
+                        dest='debug_mode',
+                        help="Debugging Mode")
+
+    parser.add_argument('--log-to-file',
+                        action='store_true',
+                        dest='log_to_file',
+                        help="Write log to a file")
+
+    args = parser.parse_args()
+    if args.debug_mode:
+        log.info('Changing log level to DEBUG.')
+        log.setLevel(level=logging.DEBUG)
+    if args.log_to_file:
+        log.info('Logging to file {:s}'.format(LOG_FILENAME))
+        file_handler = logging.FileHandler(LOG_FILENAME)
+        formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
+        file_handler.setFormatter(fmt=formatter)
+        log.addHandler(file_handler)
+
+    # get full path for reference files directory
+    ref_full_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 args.reference_dir)
+    if not os.path.isdir(ref_full_path):
+        log.info("Reference files directory doesn't exist.")
+        try:
+            os.path.os.makedirs(ref_full_path)
+            log.info('Reference Files Directory is: %s', ref_full_path)
+            args.reference_dir = ref_full_path
+        except OSError as err:
+            log.error(err)
+    else:
+        args.reference_dir = ref_full_path
+
+    if not os.path.isdir(args.source):
+        leave = True
+        log.error("Source Directory doesn't exist.")
+
+    if not os.path.isdir(args.destiny):
+        leave = True
+        log.error("Destination folder doesn't exist.")
+        try:
+            os.path.os.makedirs(args.destiny)
+            log.info('Destination folder created: %s', args.destiny)
+        except OSError as err:
+            log.error(err)
+
+    # if args.procmode == 2:
+    #     # print(args.source + args.lamp_file)
+    #     if not os.path.isfile(os.path.join(args.source, args.lamp_file)):
+    #         if args.lamp_file == 'lamps.txt':
+    #             leave = True
+    #             log.error("Default <lamp file> doesn't exist.")
+    #             log.error("Please define a <lamp file> using the flags -l or --lamp-file")
+    #             log.error("or make sure you entered the right observing mode.")
+    if leave:
+        parser.print_help()
+        parser.exit("Leaving the Program.")
+    print_default_args(args)
+    return args
 
 
 class MainApp(object):
@@ -56,8 +243,8 @@ class MainApp(object):
         information of the observed night being processed.
 
         """
+        self.args = get_args()
         self.image_collection = pd.DataFrame
-        self.args = self.get_args()
         self.night = self.set_night()
         self.extracted_data = None
         self.wsolution = None
@@ -162,213 +349,6 @@ class MainApp(object):
         # plt.show()
             # else:
                 # process = Process(self.night.source, science_object, self.args, self.night.night_wsolution)
-
-    @staticmethod
-    def get_args():
-        """Handles the argparse library and returns the arguments
-
-        Returns:
-            An object that contains all the variables parsed through the argument system
-            The possible arguments to be returned are:
-
-            -p or --data-path: has to be the source directory, where the data (images) is.
-                    the location is **self.source**
-                    default value is ./
-            -d or --proc-path: is the destination where all new files/data will be placed.
-                    the location is self.destiny
-                    default value is ./
-            -s or --search-pattern: the pattern that matches the reduced data that will be processed.
-                    the location is self.pattern
-                    default value is fc\_
-            -m or --proc-mode: is one of the predefined observing modes and the options are:
-                    0: One or more lamps taken during the beginning or end of the night, i.e. single
-                    calibration to all data in that night
-                    1: One or more lamps around every science exposure.
-                    2: An ASCII file will be read. This file contains a matching of science target files
-                    to respective calibration lamp file that will be used for calibration.
-                    3: No lamp used, use sky-lines instead.
-                    the location is self.mode
-                    default value is 0
-            -r or --reference-lamp: Name of reference lamp file for mode 0. If not present, the first one in the list
-                    will be selected
-            -l or --lamp-file: Name of the ASCII file that contains the relation between science files and lamp
-                    files. An example is depicted below. Note that the lamps can be repeated.
-                        #example of how the file should look
-                        science_target_01.fits lamp_001.fits
-                        science_target_02.fits lamp_001.fits
-                        science_target_03.fits lamp_002.fits
-
-                    the location is self.lamp_file
-                    default value is lamps.txt
-
-            -i or --non-interactive: Interactive Wavelength Solution. Enabled by default
-            -o or --output-prefix: Prefix to use to name wavelength calibrated spectrum
-            -R or --reference-files: Directory of reference files location
-            --plots-enabled: Show plots for intermediate steps. For debugging only.
-
-        Raises:
-            In the case when -m or --proc-mode is set to 3 will requiere the name of file parsed with the -l or
-            --lamp-file parameter an IOError is raised
-
-        """
-        leave = False
-        parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                         description=textwrap.dedent(
-                                             '''Extracts goodman spectra and does wavelength calibration.\n\n\
-Supported Processing Modes are:
-    <0>: (Default) reads lamps taken at the begining or end of the night.\n\
-    <1>: one or more lamps around science exposure.
-    '''))
-    # \n\
-    # <2>: ASCII file describing which science target uses which lamp.\n\
-    # <3>: No lamps. Uses the sky lines
-
-        parser.add_argument('-p', '--data-path',
-                            action='store',
-                            default='./',
-                            type=str,
-                            metavar='<Source Path>',
-                            dest='source',
-                            help='Path for location of raw data. Default <./>')
-
-        parser.add_argument('-d', '--proc-path',
-                            action='store',
-                            default='./',
-                            type=str,
-                            metavar='<Destination Path>',
-                            dest='destiny',
-                            help='Path for destination of processed data. Default <./>')
-
-        parser.add_argument('-s', '--search-pattern',
-                            action='store',
-                            default='fzh_',
-                            type=str,
-                            metavar='<Search Pattern>',
-                            dest='pattern',
-                            help="Pattern for matching the goodman's reduced data.")
-
-        parser.add_argument('-m', '--proc-mode',
-                            action='store',
-                            default=0,
-                            type=int,
-                            metavar='<Processing Mode>',
-                            dest='procmode',
-                            choices=[0, 1, 2, 3],
-                            help='Defines the mode of matching lamps to science targets.')
-
-        parser.add_argument('-r', '--reference-lamp',
-                            action='store',
-                            default='',
-                            type=str,
-                            metavar='<Reference Lamp>',
-                            dest='lamp_all_night',
-                            help="Name of reference lamp file for mode 0.\
-                             If not present, the first one in the list will be selected")
-
-        parser.add_argument('-l',
-                            action='store',
-                            default='lamps.txt',
-                            type=str,
-                            metavar='<Lamp File>',
-                            dest='lamp_file',
-                            help="Name of an ASCII file describing which science target\
-                                uses which lamp. default <lamp.txt>")
-
-        # parser.add_argument('-t', '--telescope',
-        #                     action='store_true',
-        #                     default=False,
-        #                     dest='telescope',
-        #                     help="Enables the <Telescope> mode i.e. it run sequentially,\
-        #                         designed to use while observing at the telescope. Catches\
-        #                          new files arriving to the <source> folder. (NI!)")
-
-        parser.add_argument('-o', '--output-prefix',
-                            action='store',
-                            default='g',
-                            metavar='<Out Prefix>',
-                            dest='output_prefix',
-                            help="Prefix to add to calibrated spectrum.")
-
-        parser.add_argument('-R', '--reference-files',
-                            action='store',
-                            default='refdata/',
-                            metavar='<Reference Dir>',
-                            dest='reference_dir',
-                            help="Directory of Reference files location")
-
-        parser.add_argument('-i', '--non-interactive',
-                            action='store_false',
-                            default=True,
-                            dest='interactive_ws',
-                            help="Interactive wavelength solution. Enabled by default.")
-
-        parser.add_argument('--debug',
-                            action='store_true',
-                            dest='debug_mode',
-                            help="Debugging Mode")
-
-        parser.add_argument('--log-to-file',
-                            action='store_true',
-                            dest='log_to_file',
-                            help="Write log to a file")
-
-        args = parser.parse_args()
-        if args.debug_mode:
-            log.info('Changing log level to DEBUG.')
-            log.setLevel(level=logging.DEBUG)
-        if args.log_to_file:
-            log.info('Logging to file {:s}'.format(LOG_FILENAME))
-            file_handler = logging.FileHandler(LOG_FILENAME)
-            formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
-            file_handler.setFormatter(fmt=formatter)
-            log.addHandler(file_handler)
-        # there must be a more elegant way to do this
-        # TODO (simon): Do this the better way
-        root_path = os.path.realpath(__file__).split('/')
-        root_path[-1] = ''
-        root_full_path = '/'.join(root_path)
-        reference_full_path = os.path.join(root_full_path, args.reference_dir)
-        if not os.path.isdir(reference_full_path):
-            log.info("Reference files directory doesn't exist.")
-            try:
-                os.path.os.makedirs(reference_full_path)
-                log.info('Reference Files Directory is: %s', reference_full_path)
-                args.reference_dir = reference_full_path
-            except OSError as err:
-                log.error(err)
-        else:
-            args.reference_dir = reference_full_path
-
-        if not os.path.isdir(args.source):
-            leave = True
-            log.error("Source Directory doesn't exist.")
-        else:
-            if args.source[-1] != '/':
-                args.source += '/'
-        if not os.path.isdir(args.destiny):
-            leave = True
-            log.error("Destination folder doesn't exist.")
-            try:
-                os.path.os.makedirs(args.destiny)
-                log.info('Destination folder created: %s', args.destiny)
-            except OSError as err:
-                log.error(err)
-        else:
-            if args.destiny[-1] != '/':
-                args.destiny += '/'
-        if args.procmode == 2:
-            # print(args.source + args.lamp_file)
-            if not os.path.isfile(os.path.join(args.source, args.lamp_file)):
-                if args.lamp_file == 'lamps.txt':
-                    leave = True
-                    log.error("Default <lamp file> doesn't exist.")
-                    log.error("Please define a <lamp file> using the flags -l or --lamp-file")
-                    log.error("or make sure you entered the right observing mode.")
-        if leave:
-            parser.print_help()
-            parser.exit("Leaving the Program.")
-
-        return args
 
     def set_night(self):
         """Defines and initialize the 'night' class
