@@ -377,3 +377,28 @@ def get_best_flat(flat_name):
     else:
         log.error('There is no flat available')
         return None, None
+
+
+def print_default_args(args):
+    arg_name = {'auto_clean': '--auto-clean',
+                'clean_cosmic': '-c, --cosmic',
+                'debug_mode': '--debug',
+                'flat_normalize': '--flat-normalize',
+                'ignore_bias': '--ignore-bias',
+                'log_to_file': '--log-to-file',
+                'norm_order': '--flat-norm-order',
+                'raw_path': '--raw-path',
+                'red_path': '--red-path',
+                'saturation_limit': '--saturation',
+                'destiny': '-d --proc-path',
+                'interactive_ws': '-i --non-interactive',
+                'lamp_all_night': '-r --reference-lamp',
+                'lamp_file': '-l --lamp-file',
+                'output_prefix': '-o --output-prefix',
+                'pattern': '-s --search-pattern',
+                'procmode': '-m --proc-mode',
+                'reference_dir': '-R --reference-files',
+                'source': '-p --data-path'}
+    for key in args.__dict__:
+        log.info('Default value for {:s} is {:s}'.format(arg_name[key],
+                                       str(args.__getattribute__(key))))

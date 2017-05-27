@@ -13,6 +13,7 @@ import argparse
 from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
+from .core import print_default_args
 
 __author__ = 'David Sanmartim'
 __date__ = '2016-07-15'
@@ -36,7 +37,8 @@ def get_args(arguments=None):
     """
     # global log
     # Parsing Arguments ---
-    parser = argparse.ArgumentParser(description="PyGoodman CCD Reduction - CCD reductions for "
+    parser = argparse.ArgumentParser(description="Goodman CCD Reduction - CCD"
+                                                 "reductions for "
                                                  "Goodman spectroscopic data")
 
     parser.add_argument('-c', '--cosmic',
@@ -128,7 +130,7 @@ def get_args(arguments=None):
     else:
         parser.print_help()
         parser.exit("Raw data folder doesn't exist")
-
+    print_default_args(args)
     return args
 
 
