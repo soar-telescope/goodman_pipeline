@@ -145,20 +145,22 @@ class DataClassifier(object):
         The data will be overwritten with the keywords removed. The user will need to have backups of raw data.
 
         """
-
+        log.info('Removing conflictive keywords in Blue Camera Headers')
+        log.warning('Files will be overwritten')
         for blue_file in self.image_collection.file.tolist():
             full_path = os.path.join(self.args.raw_path, blue_file)
+            log.debug('Processing file {:s}'.format(blue_file))
             try:
                 data, header = fits.getdata(full_path, header=True, ignore_missing_end=True)
                 keys_to_remove = ['PARAM0', 'PARAM61', 'PARAM62', 'PARAM63', 'NAXIS3']
                 if data.ndim == 3:
                     header['NAXIS'] = 2
                     data = data[0]
-                    log.info('Modified file to be 2D instead of 3D (problematic)')
+                    log.debug('Modified file to be 2D instead of 3D (problematic)')
                 for keyword in keys_to_remove:
                     header.remove(keyword)
-                    log.info('Removed conflictive keyword ' + keyword)
-                log.info('Updated headers')
+                    log.debug('Removed conflictive keyword ' + keyword)
+                log.debug('Updated headers')
                 fits.writeto(full_path, data, header, clobber=True)
             except KeyError as error:
                 log.debug(error)

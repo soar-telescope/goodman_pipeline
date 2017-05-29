@@ -42,6 +42,8 @@ def fix_duplicated_keywords(night_dir):
         night_dir (str): The full path for the raw data location
 
     """
+    log.info('Finding duplicated keywords')
+    log.warning('Files will be overwritten')
     files = glob.glob(os.path.join(night_dir, '*.fits'))
     # Pick a random file to find duplicated keywords
     random_file = random.choice(files)
@@ -55,7 +57,10 @@ def fix_duplicated_keywords(night_dir):
                 if keyword not in multiple_keys:
                     multiple_keys.append(keyword)
     if multiple_keys != []:
+        log.info('Found {:d} duplicated keyword{:s}'.format(len(multiple_keys),
+                                                            's' if len(multiple_keys) > 1 else ''))
         for image_file in files:
+            log.debug('Processing Image File: {:s}'.format(image_file))
             try:
                 ccd = CCDData.read(image_file)
                 for keyword in multiple_keys:
@@ -63,7 +68,7 @@ def fix_duplicated_keywords(night_dir):
                         ccd.header.remove(keyword,
                                           ccd.header.count(keyword) - 1)
                 log.warning('Overwriting file with duplicated keywords removed')
-                log.info('File %s overwritten', image_file)
+                log.debug('File %s overwritten', image_file)
                 ccd.write(image_file, clobber=True)
             except IOError as error:
                 log.error(error)
