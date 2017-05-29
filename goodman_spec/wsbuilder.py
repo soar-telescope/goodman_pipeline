@@ -56,8 +56,8 @@ class WavelengthFitter(object):
         """
         if self.model and self.model_fit is not None:
             try:
-                print(physical)
-                print(wavelength)
+                # print(physical)
+                # print(wavelength)
                 fitted_model = self.model_fit(self.model, physical, wavelength)
                 return fitted_model
             except TypeError as error:
@@ -117,7 +117,7 @@ class ReadWavelengthSolution(object):
         if ctypen == 'MULTISPE':
             wat_head = header['WAT%s*' % dimension]
             if len(wat_head) == 1:
-                print('Get units')
+                log.debug('Get units')
                 wat_array = wat_head[0].split(' ')
                 for pair in wat_array:
                     split_pair = pair.split('=')
@@ -132,12 +132,12 @@ class ReadWavelengthSolution(object):
                     for i in range(0, len(wat_array), 2):
                         # if wat_array[i] not in self.wcs_dict.keys():
                         self.wat_wcs_dict[wat_array[i]] = wat_array[i + 1]
-                        print(wat_array[i], wat_array[i + 1])
+                        # print(wat_array[i], wat_array[i + 1])
 
         for key in self.wat_wcs_dict.keys():
             log.debug("%s -%s- %s", dimension, key, self.wat_wcs_dict[key])
         if 'spec1' in self.wat_wcs_dict.keys():
-            print(self.wat_wcs_dict['spec1'])
+            # print(self.wat_wcs_dict['spec1'])
             spec = self.wat_wcs_dict['spec1'].split()
             aperture = int(spec[0])
             beam = int(spec[1])
@@ -203,7 +203,7 @@ class ReadWavelengthSolution(object):
             for line in wav1:
                 plt.axvline(line, color='r')
             plt.show()
-            print(spec)
+            # print(spec)
 
     def linear_solution(self):
         """Linear solution reader

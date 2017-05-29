@@ -112,7 +112,7 @@ Supported Processing Modes are:
 
     parser.add_argument('-s', '--search-pattern',
                         action='store',
-                        default='fzh_',
+                        default='cfzsto_',
                         type=str,
                         metavar='<Search Pattern>',
                         dest='pattern',
@@ -142,8 +142,8 @@ Supported Processing Modes are:
                         type=str,
                         metavar='<Lamp File>',
                         dest='lamp_file',
-                        help="Name of an ASCII file describing which science target\
-                            uses which lamp. default <lamp.txt>")
+                        help="Name of an ASCII file describing which science"
+                             "target uses which lamp. default <lamp.txt>")
 
     parser.add_argument('-o', '--output-prefix',
                         action='store',
@@ -159,11 +159,11 @@ Supported Processing Modes are:
                         dest='reference_dir',
                         help="Directory of Reference files location")
 
-    parser.add_argument('-i', '--non-interactive',
-                        action='store_false',
-                        default=True,
+    parser.add_argument('-i', '-interactive',
+                        action='store_true',
                         dest='interactive_ws',
-                        help="Interactive wavelength solution. Enabled by default.")
+                        help="Interactive wavelength solution."
+                             "Disbled by default.")
 
     parser.add_argument('--debug',
                         action='store_true',
@@ -311,19 +311,18 @@ class MainApp(object):
                                                                    self.args)
 
                     self.wavelength_solution_obj = wavelength_calibration()
-                    if self.wavelength_solution_obj is not None:
-                        # print(self.wavelength_solution_obj.wsolution)
-                        print('Not None')
-                        pass
-                        # sol_array.append(self.wavelength_solution_obj.wsolution(pixel_axis))
-                        # ref_array.append(self.wavelength_solution_obj.reference_lamp)
-                        # plt.plot(pixel_axis,  self.wavelength_solution_obj.wsolution(pixel_axis), label=self.wavelength_solution_obj.reference_lamp)
-                        # plt.legend(loc='best')
-                        # plt.show()
-                        # plt.draw()
-                        # plt.pause(1)
-                    else:
-                        print('Is None')
+                    # if self.wavelength_solution_obj is not None:
+                    #     # print(self.wavelength_solution_obj.wsolution)
+                    #     log.debug('Wavelength Solution exists')
+                    #     # sol_array.append(self.wavelength_solution_obj.wsolution(pixel_axis))
+                    #     # ref_array.append(self.wavelength_solution_obj.reference_lamp)
+                    #     # plt.plot(pixel_axis,  self.wavelength_solution_obj.wsolution(pixel_axis), label=self.wavelength_solution_obj.reference_lamp)
+                    #     # plt.legend(loc='best')
+                    #     # plt.show()
+                    #     # plt.draw()
+                    #     # plt.pause(1)
+                    # else:
+                    #     log.debug('Wavelength Solution does not exists')
                 else:
                     log.error('No data was extracted from this target.')
             elif self.args.procmode == 2:
@@ -336,13 +335,13 @@ class MainApp(object):
         # manager = plt.get_current_fig_manager()
         # manager.window.maximize()
         # wsol_ax1 = fig_wsol.add_subplot(111)
-        plt.title('Comparison of WSolutions')
-        plt.xlabel('Pixel')
-        plt.ylabel('Angstrom')
-        for i in range(len(sol_array)):
-            plt.plot(pixel_axis, sol_array[i], label=ref_array[i])
-        plt.legend(loc='best')
-        plt.show()
+        # plt.title('Comparison of WSolutions')
+        # plt.xlabel('Pixel')
+        # plt.ylabel('Angstrom')
+        # for i in range(len(sol_array)):
+        #     plt.plot(pixel_axis, sol_array[i], label=ref_array[i])
+        # plt.legend(loc='best')
+        # plt.show()
 
 
         # wsol_ax1.legend(loc='best')

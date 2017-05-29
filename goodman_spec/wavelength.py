@@ -641,9 +641,9 @@ class WavelengthCalibration(object):
         correlation_values = []
         angstrom_differences = []
 
-        print('Length ', len(self.lamp_data))
-        print('NLines ', len(lamp_lines_pixel))
-        print('Length / NLines ', len(self.lamp_data) / float(len(lamp_lines_pixel)))
+        log.debug('Length ', len(self.lamp_data))
+        log.debug('NLines ', len(lamp_lines_pixel))
+        log.debug('Length / NLines ', len(self.lamp_data) / float(len(lamp_lines_pixel)))
         half_width = int((len(self.lamp_data) / float(len(lamp_lines_pixel))) / 2.)
 
         for i in range(len(lamp_lines_pixel)):
