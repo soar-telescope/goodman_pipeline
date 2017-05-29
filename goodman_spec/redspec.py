@@ -231,16 +231,18 @@ Supported Processing Modes are:
 class MainApp(object):
     """Defines and intialize all important variables for processing the data
 
-    The MainApp class controls the way the night is organize to its further processing. It also sets the appropriate
-    parameters that will allow for a smooth working in all the other modules.
+    The MainApp class controls the way the night is organize to its further
+    processing. It also sets the appropriate parameters that will allow for a
+    smooth working in all the other modules.
 
     """
     def __init__(self):
         """Initalization of important parameters
 
-        Initializes the list of images using ccdproc.ImageFileCollection and pandas the get the arguments that define
-        the working of the pipeline using arpargse and instantiate a Night class, an object that will store relevant
-        information of the observed night being processed.
+        Initializes the list of images using ccdproc.ImageFileCollection and
+        pandas the get the arguments that define the working of the pipeline
+        using arpargse and instantiate a Night class, an object that will store
+        relevant information of the observed night being processed.
 
         """
         self.args = get_args()
@@ -254,13 +256,15 @@ class MainApp(object):
     def __call__(self):
         """Call method for the MainApp class
 
-        This is equivalent to a main() function where all the logic and controls are implemented.
+        This is equivalent to a main() function where all the logic and controls
+        are implemented.
 
         Raises:
             NotImplementedError: For observing modes 2 and 3
 
         """
-        # TODO (simon): Add the possibility of managing multi wavelength solutions for different capabilities
+        # TODO (simon): Add the possibility of managing multi wavelength
+        # solutions for different capabilities
         self.organize_full_night()
         # print(len(self.night.sci_targets))
         # Remove all related to this
@@ -352,18 +356,28 @@ class MainApp(object):
     def set_night(self):
         """Defines and initialize the 'night' class
 
-        Uses information parsed by arguments to construct a table with the values of the keys specified within the
-        code itself. A night object stores specific values regarding the night that is going to be processed. If the
-        program is not going to be used while observing at the telescope it creates two lists of images, one for
-        science and another for lamp files. Although the telescope mode is not fully developed yet, in case of it being
-        selected it will return the night object without the list of images.
+        Uses information parsed by arguments to construct a table with the
+        values of the keys specified within the code itself. A night object
+        stores specific values regarding the night that is going to be
+        processed. If the program is not going to be used while observing at the
+        telescope it creates two lists of images, one for science and another
+        for lamp files. Although the telescope mode is not fully developed yet,
+        in case of it being selected it will return the night object without the
+        list of images.
 
         Returns:
-            new_night (class): A class that stores critical data of the night that will be processed and can be
-            parsed to other methods.
+            new_night (class): A class that stores critical data of the night
+            that will be processed and can be parsed to other methods.
 
         """
-        keys = ['date', 'date-obs', 'obstype', 'object', 'exptime', 'ra', 'dec', 'grating']
+        keys = ['date',
+                'date-obs',
+                'obstype',
+                'object',
+                'exptime',
+                'ra',
+                'dec',
+                'grating']
         try:
             image_collection = ccd.ImageFileCollection(self.args.source, keys)
             self.image_collection = image_collection.summary.to_pandas()
@@ -440,14 +454,17 @@ class MainApp(object):
     def procmode_zero(self):
         """Observing/Processing mode 0
 
-        In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks
-        up the first calibration lamp and uses it to find the wavelength calibration it doesn't discriminate if the lamp
-        has good quality.
+        In mode 0 one lamp is used to calibrate all the science targets of the
+        night. As of September 2016 it picks up the first calibration lamp and
+        uses it to find the wavelength calibration it doesn't discriminate if
+        the lamp has good quality.
 
         Notes:
-            Although you can parse one lamp as a whole night lamp it is not recommended since there might be
-            different gratings which would rise the need to give one lamp per grating and in this case it better
-            to let the software choose the first in the list and assume there will be no bad lamps.
+            Although you can parse one lamp as a whole night lamp it is not
+            recommended since there might be different gratings which would rise
+            the need to give one lamp per grating and in this case it better to
+            let the software choose the first in the list and assume there will
+            be no bad lamps.
         """
         log.info("Observation mode 0")
         log.debug("One lamp for all targets.")
@@ -506,9 +523,11 @@ class MainApp(object):
     def procmode_one(self):
         """Observing/Processing mode 1
 
-        In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
-        in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure
-        time itself. For the sky distance calculation a flat sky is assumed.
+        In mode 1 one or more lamps are linked with a science target by matching
+        them using two parameters. Distance in the sky equal or lower than 1e-3
+        degrees and a time difference of 300 seconds this is without the
+        exposure time itself. For the sky distance calculation a flat sky is
+        assumed.
         """
         log.info("Observation mode 1")
         log.debug("One or more lamps around the target")
@@ -555,8 +574,9 @@ class MainApp(object):
     def procmode_two(self):
         """Observing/Processing mode 2
 
-        In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
-        used by using a octothorp or hash (#) followed by one space. Not implemented yet.
+        In mode 2 a text file is defined which correlates the science target
+        with one or more lamps. Comments can be used by using a octothorp or
+        hash (#) followed by one space. Not implemented yet.
         """
         log.info("Observation mode 2")
         log.debug("A text file defines the relation of lamps and science targets")
@@ -575,7 +595,8 @@ class MainApp(object):
     def procmode_three():
         """Observing/Processing Mode 3
 
-        In mode 3 no sky lamp is used, instead the science target's spectrum will be calibrated using sky lines.
+        In mode 3 no sky lamp is used, instead the science target's spectrum
+        will be calibrated using sky lines.
         """
         log.info("Observation mode 3")
         log.debug("No Lamps. Use sky lines")
@@ -593,12 +614,14 @@ class Night(object):
     def __init__(self, date, args):
         """Initialize Night class
 
-        The night class will store filename of science images as well as lamp images. It also stores the arguments and
-        also the wavelength solution for the night.
+        The night class will store filename of science images as well as lamp
+        images. It also stores the arguments and also the wavelength solution
+        for the night.
 
         Args:
             date (str): Date of the night being processed
-            args (object): argparse instance containing all the arguments the program was started with
+            args (object): argparse instance containing all the arguments the
+            program was started with
         """
         # source, destiny, pattern, mode, lamps
         self.all = []
@@ -714,8 +737,9 @@ class ScienceObject(object):
     def update_no_targets(self, new_value=None, add_one=False):
         """Update number of spectra in an image
 
-        An spectral image may contain multiple science target's spectra this method is set to update its number
-        as a class attribute. There are two ways it can work. Add one to the existing number or set a new one.
+        An spectral image may contain multiple science target's spectra this
+        method is set to update its number as a class attribute. There are two
+        ways it can work. Add one to the existing number or set a new one.
 
         Args:
             new_value (int): New value for number of targets

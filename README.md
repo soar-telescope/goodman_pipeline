@@ -157,19 +157,32 @@ And for `redspec`:
 You should always run `redccd` first and then `redspec`. There are certain
 defaults values 
 
+### redccd Defaults
 
 ```shell
-$ redspec
+    --cosmic              False
+    --ignore-bias         False
+    --auto-clean          False
+    --debug               False
+    --log-to-file         False
+    --saturation          55000
+    --raw-path            ./
+    --red-path            ./RED/
+    --flat-normalize      simple
+    --flat-norm-order     15
 ```
+### redspec Defaults
 
-Will run the following defaults:
-- [ ] Observing Mode **0**: One solution per configuration applied to all night
-- [ ] Interactive Mode **True**
-- [ ] Data Path **./**
-- [ ] Destination folder for processed data **./**
-- [ ] Search Pattern **fzh_**
-- [ ] Output prefix **g**
-- [ ] Reference Files Path [/path/to/this/repo/]**refdata/**
-- [ ] Plots Enabled **False**
-- [ ] Reference Lamp **None**
-
+```shell
+    --data-path         ./
+    --proc-path         ./
+    --search-pattern    cfzsto
+    --proc-mode         0
+    --reference-lamp    (empty string)
+    --lamp-file         lamps.txt
+    --output-prefix     g
+    --reference-files   refdata
+    --interactive       False
+    --debug             False
+    --log-to-file       False
+```
