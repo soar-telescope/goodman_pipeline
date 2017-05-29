@@ -309,8 +309,9 @@ def cosmicray_rejection(ccd, mask_only=False):
     """Do cosmic ray rejection
 
       Notes:
-          OBS: cosmic ray rejection is working pretty well by defining gain = 1. It's not working when we use the real
-          gain of the image. In this case the sky level changes by a factor equal the gain.
+          OBS: cosmic ray rejection is working pretty well by defining gain = 1.
+          It's not working when we use the real gain of the image. In this case
+          the sky level changes by a factor equal the gain.
           Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
 
       Args:
@@ -347,10 +348,13 @@ def cosmicray_rejection(ccd, mask_only=False):
 def get_best_flat(flat_name):
     """Look for matching master flat
 
-    Given a basename for masterflats this function will find the name of the files that matches the basename and then
-    will choose the first. Ideally this should go further as to check signal, time gap, etc.
-    After it identifies the file it will load it using ccdproc.CCDData and return it along the filename.
-    In case if fails it will return None instead of master_flat and another None instead of master_flat_name.
+    Given a basename for masterflats this function will find the name of the
+    files that matches the base name and then will choose the first. Ideally
+    this should go further as to check signal, time gap, etc.
+    After it identifies the file it will load it using ccdproc.CCDData and
+    return it along the filename.
+    In case if fails it will return None instead of master_flat and another
+    None instead of master_flat_name.
 
     Args:
         flat_name (str): Full path of masterflat basename. Ends in '*.fits'.
@@ -361,8 +365,8 @@ def get_best_flat(flat_name):
 
     """
     flat_list = glob.glob(flat_name)
-    print(flat_name)
-    print(flat_list)
+    log.debug('Flat base name ', flat_name)
+    log.debug('Matching master flats found: {:d}'.format(len(flat_list)))
     if len(flat_list) > 0:
         if len(flat_list) == 1:
             master_flat_name = flat_list[0]

@@ -18,7 +18,8 @@ import pandas
 from .wavmode_translator import SpectroscopicMode
 import sys
 import matplotlib.pyplot as plt
-from .core import image_overscan, image_trim, get_slit_trim_section, cosmicray_rejection
+from .core import (image_overscan, image_trim, get_slit_trim_section,
+                   cosmicray_rejection, get_best_flat)
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
@@ -254,18 +255,24 @@ class ImageProcessor(object):
                 continue
             else:
                 master_flat_list.append(ccd)
-        master_flat = ccdproc.combine(master_flat_list,
-                                      method='median',
-                                      sigma_clip=True,
-                                      sigma_clip_low_thresh=1.0,
-                                      sigma_clip_high_thresh=1.0,
-                                      add_keyword=False)
-        master_flat.write(master_flat_name, clobber=True)
-        # plt.imshow(master_flat.data, clim=(-100,0))
-        # plt.show()
-        log.info('Created Master Flat: ' + master_flat_name)
-        return master_flat, master_flat_name
-        # print(master_flat_name)
+        if master_flat_list != []:
+            master_flat = ccdproc.combine(master_flat_list,
+                                          method='median',
+                                          sigma_clip=True,
+                                          sigma_clip_low_thresh=1.0,
+                                          sigma_clip_high_thresh=1.0,
+                                          add_keyword=False)
+            master_flat.write(master_flat_name, clobber=True)
+            # plt.imshow(master_flat.data, clim=(-100,0))
+            # plt.show()
+            log.info('Created Master Flat: ' + master_flat_name)
+            return master_flat, master_flat_name
+            # print(master_flat_name)
+        else:
+            log.error('Empty flat list. Probably they exceed the '
+                      'saturation limit.')
+            return None, None
+
 
     def name_master_flats(self, header, group, target_name='', get=False):
         """
@@ -334,7 +341,7 @@ class ImageProcessor(object):
         target_name = ''
         slit_trim = None
         obstype = science_group.obstype.unique()
-        print(obstype)
+        # print(obstype)
         if 'OBJECT' in obstype or 'COMP' in obstype:
             object_group = science_group[(science_group.obstype == 'OBJECT') | (science_group.obstype == 'COMP')]
             if 'OBJECT' in obstype:
@@ -350,7 +357,7 @@ class ImageProcessor(object):
             else:
                 ccd = CCDData.read(os.path.join(self.args.raw_path, random.choice(object_group.file.tolist())), unit=u.adu)
                 master_flat_name = self.name_master_flats(header=ccd.header, group=object_group, get=True)
-                master_flat, master_flat_name = self.get_best_flat(flat_name=master_flat_name)
+                master_flat, master_flat_name = get_best_flat(flat_name=master_flat_name)
                 if (master_flat is None) and (master_flat_name is None):
                     # attempt to find a set of flats in all the data
 
@@ -535,7 +542,7 @@ class ImageProcessor(object):
         sample_file = CCDData.read(os.path.join(self.args.raw_path, random.choice(imaging_group.file.tolist())), unit=u.adu)
         master_flat_name = self.name_master_flats(sample_file.header, imaging_group, get=True)
         print(master_flat_name)
-        master_flat, master_flat_name = self.get_best_flat(flat_name=master_flat_name)
+        master_flat, master_flat_name = get_best_flat(flat_name=master_flat_name)
         if master_flat is not None:
             for image_file in imaging_group.file.tolist():
                 self.out_prefix = ''
