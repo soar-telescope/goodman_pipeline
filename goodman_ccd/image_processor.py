@@ -485,7 +485,7 @@ class ImageProcessor(object):
                     # plt.imshow(ccd.data, clim=(0, 1000))
                     # plt.show()
                 else:
-                    print('Clean Cosmic ' + str(self.args.clean_cosmic))
+                    log.warning('Clean Cosmic ' + str(self.args.clean_cosmic))
                 # ccd.data = np.nan_to_num(ccd.data)
                 # print('Length CCD Data', ccd.data.shape)
                 # if self.args.interp_invalid:
