@@ -1,13 +1,10 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from astropy import units as u
-from astropy.convolution import convolve, convolve_fft, Gaussian2DKernel, Tophat2DKernel
-from astropy.modeling import models, fitting
+
 import ccdproc
-from ccdproc import CCDData
-from scipy import interpolate
-from scipy import signal
 import numpy as np
+import matplotlib.pyplot as plt
+import astropy.units as u
 import logging
 import random
 import re
@@ -17,9 +14,23 @@ import datetime
 import pandas
 from .wavmode_translator import SpectroscopicMode
 import sys
-import matplotlib.pyplot as plt
-from .core import (image_overscan, image_trim, get_slit_trim_section,
-                   cosmicray_rejection, get_best_flat)
+from ccdproc import CCDData
+from scipy import interpolate
+from scipy import signal
+
+from astropy.convolution import (convolve,
+                                 convolve_fft,
+                                 Gaussian2DKernel,
+                                 Tophat2DKernel)
+
+from astropy.modeling import (models,
+                              fitting)
+
+from .core import (image_overscan,
+                   image_trim,
+                   get_slit_trim_section,
+                   cosmicray_rejection,
+                   get_best_flat)
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
@@ -64,7 +75,11 @@ class ImageProcessor(object):
 
         """
 
-        for group in [self.bias, self.day_flats, self.dome_flats, self.sky_flats, self.data_groups]:
+        for group in [self.bias,
+                      self.day_flats,
+                      self.dome_flats,
+                      self.sky_flats,
+                      self.data_groups]:
             if group is not None:
                 for sub_group in group:
                     group_obstype = sub_group.obstype.unique()
@@ -100,15 +115,22 @@ class ImageProcessor(object):
         """
 
         # TODO (simon): Consider binning and possibly ROIs for trim section
-        log.warning('Determining trim section. Assuming you have only one kind of data in this folder')
-        for group in [self.bias, self.day_flats, self.dome_flats, self.sky_flats, self.data_groups]:
+        log.warning('Determining trim section. Assuming you have only one kind'
+                    'of data in this folder')
+        for group in [self.bias,
+                      self.day_flats,
+                      self.dome_flats,
+                      self.sky_flats,
+                      self.data_groups]:
             if group is not None:
                 # print(self.bias[0])
                 image_list = group[0]['file'].tolist()
-                sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
+                sample_image = os.path.join(self.args.raw_path,
+                                            random.choice(image_list))
                 # header = fits.getheader(sample_image)
                 # trim_section = header['TRIMSEC']
-                # Trim section is valid for Blue and Red Camera Binning 1x1 Spectroscopic ROI
+                # Trim section is valid for Blue and Red Camera Binning 1x1 and
+                # Spectroscopic ROI
                 trim_section = '[51:4110,1:1896]'
                 log.info('Trim Section: %s', trim_section)
                 return trim_section
@@ -121,41 +143,89 @@ class ImageProcessor(object):
             Spectroscopic 2x2
             Spectroscopic 3x3
 
-        The limits where measured on a Spectroscopic 1x1 image and then divided by the binning size. This was checked
+        The limits where measured on a Spectroscopic 1x1 image and then divided
+        by the binning size. This was checked
         that it actually works as expected.
 
+        Notes
+        1 based
+        IRAF V3 convention oppsoite to Python (poner en returns)
+
         Returns:
-            overscan_region (str): Region for overscan in the format '[min:max,:]' where min is the starting point and
-            max is the end point of the overscan region.
+            overscan_region (str): Region for overscan in the format
+            '[min:max,:]' where min is the starting point and max is the end
+            point of the overscan region.
 
         """
-        log.warning('Determining Overscan Region. Assuming you have only one kind of binning in the data.')
-        for group in [self.bias, self.day_flats, self.dome_flats, self.sky_flats, self.data_groups]:
+        # TODO (simon): elaborate Notes on docstrings
+        log.warning('Determining Overscan Region. Assuming you have only one '
+                    'kind of binning in the data.')
+        for group in [self.bias,
+                      self.day_flats,
+                      self.dome_flats,
+                      self.sky_flats,
+                      self.data_groups]:
             if group is not None:
                 # 'group' is a list
                 image_list = group[0]['file'].tolist()
-                sample_image = os.path.join(self.args.raw_path, random.choice(image_list))
+                sample_image = os.path.join(self.args.raw_path,
+                                            random.choice(image_list))
                 log.debug('Overscan Sample File ' + sample_image)
                 ccd = CCDData.read(sample_image, unit=u.adu)
+
+                # Image height - spatial direction
+                h = ccd.data.shape[0]
+
+                # Image width - spectral direction
+                w = ccd.data.shape[1]
+
                 # Take the binnings
-                serial_binning, parallel_binning = [int(x) for x in ccd.header['CCDSUM'].split()]
+                serial_binning, parallel_binning = \
+                    [int(x) for x in ccd.header['CCDSUM'].split()]
 
                 if self.technique == 'Spectroscopy':
-                    log.info('Overscan regions has been tested for ROI Spectroscopic 1x1, 2x2 and 3x3')
+                    log.info('Overscan regions has been tested for ROI '
+                             'Spectroscopic 1x1, 2x2 and 3x3')
+
+                    # define l r b and t to avoid local variable might be
+                    # defined before assignment warning
+                    l, r, b, t = 0
                     if self.instrument == 'Red':
-                        # for red camera it is necessary to eliminate the first rows/columns (depends on the point of
-                        # view) because they come with an abnormal high signal. Usually the first 5 pixels.
-                        # In order to find the corresponding value for the subsequent binnings divide by the binning
-                        # size.
-                        # The numbers 6 and 49 where obtained from visual inspection
-                        overscan_region = '[{:d}:{:d},:]'.format(int(np.ceil(6. / serial_binning)),
-                                                                 int(49. / serial_binning))
+                        # for red camera it is necessary to eliminate the first
+                        # rows/columns (depends on the point of view) because
+                        # they come with an abnormal high signal. Usually the
+                        # first 5 pixels. In order to find the corresponding
+                        # value for the subsequent binnings divide by the
+                        # binning size.
+                        # The numbers 6 and 49 where obtained from visual
+                        # inspection
+
+                        # left
+                        l = int(np.ceil(6. / serial_binning))
+                        # right
+                        r = int(49. / serial_binning)
+                        # bottom
+                        b = 1
+                        # top
+                        t = h
                     elif self.instrument == 'Blue':
-                        # 16 is the length of the overscan region with no binning.
-                        overscan_region = '[1:{:d},:]'.format(int(16. / serial_binning))
+                        # 16 is the length of the overscan region with no
+                        # binning.
+
+                        # left
+                        l = 1
+                        # right
+                        r = int(16. / serial_binning)
+                        # bottom
+                        b = 1
+                        # top
+                        t = h
+
+                    overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
 
                 elif self.technique == 'Imaging':
-                    log.warning("Imaging mode doesn't have overscan region. Use bias instead.")
+                    log.warning("Imaging mode doesn't have overscan region."
+                                "Use bias instead.")
                     if self.bias is None:
                         log.warning('Bias are needed for Imaging mode')
                     overscan_region = None
@@ -175,40 +245,62 @@ class ImageProcessor(object):
         """
         bias_file_list = bias_group.file.tolist()
         default_bias_name =os.path.join(self.args.red_path, 'master_bias.fits')
-        if len(glob.glob(os.path.join(self.args.red_path, 'master_bias*fits'))) > 0:
-            new_bias_name = re.sub(".fits",
-                                   '_{:d}.fits'.format(len(glob.glob(os.path.join(self.args.red_path,
-                                                                                  'master_bias*fits'))) + 1),
+        search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
+        n_bias = len(glob.glob(search_bias_name))
+        if n_bias > 0:
+            new_bias_name = re.sub('.fits',
+                                   '_{:d}.fits'.format(n_bias + 1),
                                    default_bias_name)
+
             log.info('New name for master bias: ' + new_bias_name)
         else:
             new_bias_name = default_bias_name
-        # TODO (simon): Review whether it is necessary to discriminate by technique
+        # TODO (simon): Review whether it is necessary to discriminate by
+        # TODO technique
         if self.technique == 'Spectroscopy':
             master_bias_list = []
             log.info('Creating master bias')
             for image_file in bias_file_list:
                 # print(image_file)
-                log.debug(self.overscan_region)
-                ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
-                log.debug('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
-                o_ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                to_ccd = image_trim(o_ccd, trim_section=self.trim_section)
-                master_bias_list.append(to_ccd)
-            self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=False)
+                image_full_path = os.path.join(self.args.raw_path, image_file)
+                log.debug('Overscan Region: {:s}'.format(self.overscan_region))
+                ccd = CCDData.read(image_full_path, unit=u.adu)
+                log.debug('Loading bias image: ' + image_full_path)
+                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
+                ccd = image_trim(ccd, trim_section=self.trim_section)
+                master_bias_list.append(ccd)
+
+            # combine bias for spectroscopy
+            self.master_bias = ccdproc.combine(master_bias_list,
+                                               method='median',
+                                               sigma_clip=True,
+                                               sigma_clip_low_thresh=3.0,
+                                               sigma_clip_high_thresh=3.0,
+                                               add_keyword=False)
+
+            # write master bias to file
             self.master_bias.write(new_bias_name, clobber=True)
             log.info('Created master bias: ' + new_bias_name)
+
         elif self.technique == 'Imaging':
             master_bias_list = []
             log.info('Creating master bias')
             for image_file in bias_file_list:
-                ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
-                log.debug('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
-                t_ccd = image_trim(ccd, trim_section=self.trim_section)
-                master_bias_list.append(t_ccd)
-            self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0, sigma_clip_high_thresh=3.0, add_keyword=False)
+                image_full_path = os.path.join(self.args.raw_path, image_file)
+                ccd = CCDData.read(image_full_path, unit=u.adu)
+                log.debug('Loading bias image: {:s}'.format(image_full_path))
+                ccd = image_trim(ccd, trim_section=self.trim_section)
+                master_bias_list.append(ccd)
+
+            # combine bias for imaging
+            self.master_bias = ccdproc.combine(master_bias_list,
+                                               method='median',
+                                               sigma_clip=True,
+                                               sigma_clip_low_thresh=3.0,
+                                               sigma_clip_high_thresh=3.0,
+                                               add_keyword=False)
+
+            # write master bias to file
             self.master_bias.write(new_bias_name, clobber=True)
             log.info('Created master bias: ' + new_bias_name)
 
@@ -229,10 +321,13 @@ class ImageProcessor(object):
         log.info('Creating Master Flat')
         for flat_file in flat_file_list:
             # print(f_file)
-            ccd = CCDData.read(os.path.join(self.args.raw_path, flat_file), unit=u.adu)
-            log.debug('Loading flat image: ' + os.path.join(self.args.raw_path, flat_file))
+            image_full_path = os.path.join(self.args.raw_path, flat_file)
+            ccd = CCDData.read(image_full_path, unit=u.adu)
+            log.debug('Loading flat image: ' + image_full_path)
             if master_flat_name is None:
-                master_flat_name = self.name_master_flats(header=ccd.header, group=flat_group, target_name=target_name)
+                master_flat_name = self.name_master_flats(header=ccd.header,
+                                                          group=flat_group,
+                                                          target_name=target_name)
             if self.technique == 'Spectroscopy':
                 # plt.title('Before Overscan')
                 # plt.imshow(ccd.data, clim=(-100, 0))
@@ -247,11 +342,14 @@ class ImageProcessor(object):
                 # plt.show()
             elif self.technique == 'Imaging':
                 ccd = image_trim(ccd, trim_section=self.trim_section)
-                ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
+                ccd = ccdproc.subtract_bias(ccd,
+                                            self.master_bias,
+                                            add_keyword=False)
             else:
                 log.error('Unknown observation technique: ' + self.technique)
             if ccd.data.max() > self.args.saturation_limit:
-                log.warning('Removing saturated image {:s}. Use --saturation to change saturation level'.format(flat_file))
+                log.warning('Removing saturated image {:s}. Use --saturation '
+                            'to change saturation level'.format(flat_file))
                 # plt.plot(ccd.data[802,:])
                 # plt.show()
                 print(ccd.data.max())
@@ -290,19 +388,30 @@ class ImageProcessor(object):
 
         """
         master_flat_name = os.path.join(self.args.red_path, 'master_flat')
-        sunset = datetime.datetime.strptime(self.sun_set, "%Y-%m-%dT%H:%M:%S.%f")
-        sunrise = datetime.datetime.strptime(self.sun_rise, "%Y-%m-%dT%H:%M:%S.%f")
-        afternoon_twilight = datetime.datetime.strptime(self.evening_twilight, "%Y-%m-%dT%H:%M:%S.%f")
-        morning_twilight = datetime.datetime.strptime(self.morning_twilight, "%Y-%m-%dT%H:%M:%S.%f")
-        date_obs = datetime.datetime.strptime(header['DATE-OBS'], "%Y-%m-%dT%H:%M:%S.%f")
+        sunset = datetime.datetime.strptime(self.sun_set,
+                                            "%Y-%m-%dT%H:%M:%S.%f")
+
+        sunrise = datetime.datetime.strptime(self.sun_rise,
+                                             "%Y-%m-%dT%H:%M:%S.%f")
+
+        afternoon_twilight = datetime.datetime.strptime(self.evening_twilight,
+                                                        "%Y-%m-%dT%H:%M:%S.%f")
+
+        morning_twilight = datetime.datetime.strptime(self.morning_twilight,
+                                                      "%Y-%m-%dT%H:%M:%S.%f")
+
+        date_obs = datetime.datetime.strptime(header['DATE-OBS'],
+                                              "%Y-%m-%dT%H:%M:%S.%f")
         # print(sunset, date_obs, evening_twilight)
         # print(' ')
         if target_name != '':
             target_name = '_' + target_name
         if not get:
+            # TODO (simon): There must be a pythonic way to do this
             if (date_obs < sunset) or (date_obs > sunrise):
                 dome_sky = '_dome'
-            elif (sunset < date_obs < afternoon_twilight) or (morning_twilight < date_obs < sunrise):
+            elif (sunset < date_obs < afternoon_twilight) or\
+                    (morning_twilight < date_obs < sunrise):
                 dome_sky = '_sky'
             elif afternoon_twilight < date_obs < morning_twilight:
                 dome_sky = '_night'
@@ -313,18 +422,35 @@ class ImageProcessor(object):
 
         if self.technique == 'Spectroscopy':
             if group.grating.unique()[0] != '<NO GRATING>':
-                flat_grating = '_' + re.sub('[A-Za-z_-]', '', group.grating.unique()[0])
+                flat_grating = '_' + re.sub('[A-Za-z_-]',
+                                            '',
+                                            group.grating.unique()[0])
+
+                # self.spec_mode is an instance of SpectroscopicMode
                 wavmode = self.spec_mode(header=header)
             else:
                 flat_grating = '_no_grating'
                 wavmode = ''
-            flat_slit = re.sub('[A-Za-z" ]', '', group.slit.unique()[0])
+
+            flat_slit = re.sub('[A-Za-z" ]',
+                               '',
+                               group.slit.unique()[0])
+
             filter2 = group['filter2'].unique()[0]
             if filter2 == '<NO FILTER>':
                 filter2 = ''
             else:
                 filter2 = '_' + filter2
-            master_flat_name += target_name + flat_grating + wavmode + filter2 + '_' + flat_slit + dome_sky + '.fits'
+
+            master_flat_name += target_name +\
+                                flat_grating +\
+                                wavmode +\
+                                filter2 +\
+                                '_' +\
+                                flat_slit +\
+                                dome_sky +\
+                                '.fits'
+
         elif self.technique == 'Imaging':
             flat_filter = re.sub('-', '_', group['filter'].unique()[0])
             master_flat_name += '_' + flat_filter + dome_sky + '.fits'
@@ -346,9 +472,12 @@ class ImageProcessor(object):
         obstype = science_group.obstype.unique()
         # print(obstype)
         if 'OBJECT' in obstype or 'COMP' in obstype:
-            object_group = science_group[(science_group.obstype == 'OBJECT') | (science_group.obstype == 'COMP')]
+            object_group = science_group[(science_group.obstype == 'OBJECT') |
+                                         (science_group.obstype == 'COMP')]
             if 'OBJECT' in obstype:
-                target_name = science_group.object[science_group.obstype == 'OBJECT'].unique()[0]
+                target_name = science_group.object[science_group.obstype ==
+                                                   'OBJECT'].unique()[0]
+
                 log.info('Processing Science Target: ' + target_name)
             else:
                 # target_name = science_group.object[science_group.obstype == 'COMP'].unique()[0]
@@ -356,11 +485,31 @@ class ImageProcessor(object):
 
             if 'FLAT' in obstype:
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']
-                master_flat, master_flat_name = self.create_master_flats(flat_group=flat_sub_group, target_name=target_name)
+
+                master_flat, master_flat_name =\
+                    self.create_master_flats(flat_group=flat_sub_group,
+                                             target_name=target_name)
             else:
-                ccd = CCDData.read(os.path.join(self.args.raw_path, random.choice(object_group.file.tolist())), unit=u.adu)
-                master_flat_name = self.name_master_flats(header=ccd.header, group=object_group, get=True)
-                master_flat, master_flat_name = get_best_flat(flat_name=master_flat_name)
+                object_list = object_group.file.tolist()
+
+                # grab a random image from the list
+                random_image = random.choice(object_list)
+
+                # define random image full path
+                random_image_full = os.path.join(self.args.raw_path,
+                                                 random_image)
+
+                # read the random chosen file
+                ccd = CCDData.read(random_image_full, unit=u.adu)
+
+                # define the master flat name
+                master_flat_name = self.name_master_flats(header=ccd.header,
+                                                          group=object_group,
+                                                          get=True)
+
+                # load the best flat based on the name previously defined
+                master_flat, master_flat_name =\
+                    get_best_flat(flat_name=master_flat_name)
                 if (master_flat is None) and (master_flat_name is None):
                     # attempt to find a set of flats in all the data
 
@@ -376,7 +525,8 @@ class ImageProcessor(object):
                         #             log.info('Appending science Group')
                         #             self.queue.append(science_group)
                         #     else:
-                        #         log.error('Science Group is not an instance of pandas.DataFrame')
+                        #         log.error('Science Group is not an instance of
+                        # pandas.DataFrame')
                     log.warning('Adding image group to Queue')
             if master_flat is not None:
                 log.debug('Attempting to find slit trim section')
@@ -384,15 +534,25 @@ class ImageProcessor(object):
             else:
                 log.info('Master flat inexistent, cant find slit trim section')
             if slit_trim is not None:
-                    master_flat = image_trim(ccd=master_flat, trim_section=slit_trim)
-                    master_bias = image_trim(ccd=self.master_bias, trim_section=slit_trim)
+
+                master_flat = image_trim(ccd=master_flat,
+                                         trim_section=slit_trim)
+
+                master_bias = image_trim(ccd=self.master_bias,
+                                         trim_section=slit_trim)
             else:
                 master_bias = self.master_bias.copy()
 
             norm_master_flat = None
             for science_image in object_group.file.tolist():
                 self.out_prefix = ''
-                ccd = CCDData.read(os.path.join(self.args.raw_path, science_image), unit=u.adu)
+
+                # define image full path
+                image_full_path = os.path.join(self.args.raw_path,
+                                               science_image)
+
+                # load image
+                ccd = CCDData.read(image_full_path, unit=u.adu)
                 # plt.title('Raw')
                 # plt.imshow(ccd.data, clim=(0, 1000))
                 # plt.show()
@@ -402,7 +562,8 @@ class ImageProcessor(object):
                 # plt.show()
                 self.out_prefix += 'o_'
                 if slit_trim is not None:
-                    # There is a double trimming of the image, this is to match the size of the other data
+                    # There is a double trimming of the image, this is to match
+                    # the size of the other data
                     ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
                     ccd = image_trim(ccd=ccd, trim_section=slit_trim)
                     self.out_prefix = 'st' + self.out_prefix
@@ -414,23 +575,33 @@ class ImageProcessor(object):
                 # plt.imshow(ccd.data)
                 # plt.show()
                 if not self.args.ignore_bias:
-                    ccd = ccdproc.subtract_bias(ccd=ccd, master=master_bias, add_keyword=False)
+                    # TODO (simon): Add check that bias is compatible
+
+                    ccd = ccdproc.subtract_bias(ccd=ccd,
+                                                master=master_bias,
+                                                add_keyword=False)
+
                     self.out_prefix = 'z' + self.out_prefix
                     ccd.header.add_history('Bias subtracted image')
                 if master_flat is None or master_flat_name is None:
-                    log.warning('The file ' + science_image + ' will not be flatfielded')
+                    log.warning('The file {:s} will not be'
+                                'flatfielded'.format(science_image))
                 else:
                     if self.args.flat_normalize == 'mean':
-                        ccd = ccdproc.flat_correct(ccd=ccd, flat=master_flat, add_keyword=False)
+                        ccd = ccdproc.flat_correct(ccd=ccd,
+                                                   flat=master_flat,
+                                                   add_keyword=False)
                         self.out_prefix = 'f' + self.out_prefix
-                        ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
+
+                        flat_image_name = master_flat_name.split('/')[-1]
+                        ccd.header.add_history('Flat corrected '
+                                               '{:s}'.format(flat_image_name))
                         # plt.title('Flat Mean Normalized')
                         # plt.imshow(ccd.data)
                         # plt.show()
                     elif norm_master_flat is None:
                         norm_master_flat = master_flat.copy()
                         if self.args.flat_normalize == 'simple':
-                            # log.warning('This part of the code was left here for experimental purposes only')
                             log.info('Normalizing flat by model')
                             model_init = models.Chebyshev1D(degree=self.args.norm_order)
                             model_fitter = fitting.LevMarLSQFitter()

@@ -96,7 +96,9 @@ def get_args(arguments=None):
                         metavar='<Normalization Method>',
                         dest='flat_normalize',
                         choices=['mean', 'simple', 'full'],
-                        help='Chose a method to normalize the flat for spectroscoy. Choices are: mean, simple (model) and full (fits model to each line).')
+                        help='Chose a method to normalize the flat for'
+                             'spectroscoy. Choices are: mean, simple (model)'
+                             'and full (fits model to each line).')
 
     parser.add_argument('--flat-norm-order',
                         action='store',
