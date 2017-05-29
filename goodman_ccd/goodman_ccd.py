@@ -216,7 +216,10 @@ class MainApp(object):
                 # night_organizer = NightOrganizer(args=self.args, night_dict=night_sorter.nights_dict[night])
                 # nd = Night Dictionary
                 nd = night_sorter.nights_dict[night]
-                night_organizer = NightOrganizer(full_path=nd['full_path'], instrument=nd['instrument'], technique=nd['technique'], ignore_bias=self.args.ignore_bias)
+                night_organizer = NightOrganizer(full_path=nd['full_path'],
+                                                 instrument=nd['instrument'],
+                                                 technique=nd['technique'],
+                                                 ignore_bias=self.args.ignore_bias)
                 self.data_container = night_organizer()
                 if self.data_container is False or self.data_container is None:
                     log.error('Discarding night ' + str(night))
