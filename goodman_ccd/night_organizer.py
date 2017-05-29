@@ -70,6 +70,7 @@ class NightOrganizer(object):
         ifc = ImageFileCollection(self.path, self.keywords)
         self.file_collection = ifc.summary.to_pandas()
         # add two columns that will contain the ra and dec in degrees
+        # TODO (simon): This part creates a warning originated from Pandas. Fixit
         self.file_collection['radeg'] = ''
         self.file_collection['decdeg'] = ''
         for i in self.file_collection.index.tolist():
