@@ -186,11 +186,12 @@ class ImageProcessor(object):
         # TODO (simon): Review whether it is necessary to discriminate by technique
         if self.technique == 'Spectroscopy':
             master_bias_list = []
+            log.info('Creating master bias')
             for image_file in bias_file_list:
                 # print(image_file)
                 log.debug(self.overscan_region)
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
-                log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
+                log.debug('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
                 o_ccd = image_overscan(ccd, overscan_region=self.overscan_region)
                 to_ccd = image_trim(o_ccd, trim_section=self.trim_section)
                 master_bias_list.append(to_ccd)
@@ -200,9 +201,10 @@ class ImageProcessor(object):
             log.info('Created master bias: ' + new_bias_name)
         elif self.technique == 'Imaging':
             master_bias_list = []
+            log.info('Creating master bias')
             for image_file in bias_file_list:
                 ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
-                log.info('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
+                log.debug('Loading bias image: ' + os.path.join(self.args.raw_path, image_file))
                 t_ccd = image_trim(ccd, trim_section=self.trim_section)
                 master_bias_list.append(t_ccd)
             self.master_bias = ccdproc.combine(master_bias_list, method='median', sigma_clip=True,
@@ -224,10 +226,11 @@ class ImageProcessor(object):
         flat_file_list = flat_group.file.tolist()
         master_flat_list = []
         master_flat_name = None
+        log.info('Creating Master Flat')
         for flat_file in flat_file_list:
             # print(f_file)
             ccd = CCDData.read(os.path.join(self.args.raw_path, flat_file), unit=u.adu)
-            log.info('Loading flat image: ' + os.path.join(self.args.raw_path, flat_file))
+            log.debug('Loading flat image: ' + os.path.join(self.args.raw_path, flat_file))
             if master_flat_name is None:
                 master_flat_name = self.name_master_flats(header=ccd.header, group=flat_group, target_name=target_name)
             if self.technique == 'Spectroscopy':
@@ -248,7 +251,7 @@ class ImageProcessor(object):
             else:
                 log.error('Unknown observation technique: ' + self.technique)
             if ccd.data.max() > self.args.saturation_limit:
-                log.info('Removing saturated image {:s}. Use --saturation to change saturation level'.format(flat_file))
+                log.warning('Removing saturated image {:s}. Use --saturation to change saturation level'.format(flat_file))
                 # plt.plot(ccd.data[802,:])
                 # plt.show()
                 print(ccd.data.max())
