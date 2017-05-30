@@ -30,7 +30,8 @@ from .core import (image_overscan,
                    image_trim,
                    get_slit_trim_section,
                    cosmicray_rejection,
-                   get_best_flat)
+                   get_best_flat,
+                   normalize_master_flat)
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
@@ -189,7 +190,7 @@ class ImageProcessor(object):
 
                     # define l r b and t to avoid local variable might be
                     # defined before assignment warning
-                    l, r, b, t = 0
+                    l, r, b, t = [None] * 4
                     if self.instrument == 'Red':
                         # for red camera it is necessary to eliminate the first
                         # rows/columns (depends on the point of view) because
@@ -466,6 +467,8 @@ class ImageProcessor(object):
         Returns:
 
         """
+        # TODO (simon): The code here is too crowded.
+        # TODO cont. Create other functions as necessary
 
         target_name = ''
         slit_trim = None
@@ -587,78 +590,21 @@ class ImageProcessor(object):
                     log.warning('The file {:s} will not be'
                                 'flatfielded'.format(science_image))
                 else:
-                    if self.args.flat_normalize == 'mean':
-                        ccd = ccdproc.flat_correct(ccd=ccd,
-                                                   flat=master_flat,
-                                                   add_keyword=False)
-                        self.out_prefix = 'f' + self.out_prefix
+                    if norm_master_flat is None:
+                        norm_master_flat = normalize_master_flat(master=master_flat,
+                                                                 name=master_flat_name,
+                                                                 method=self.args.flat_normalize,
+                                                                 order=self.args.norm_order)
 
-                        flat_image_name = master_flat_name.split('/')[-1]
-                        ccd.header.add_history('Flat corrected '
-                                               '{:s}'.format(flat_image_name))
-                        # plt.title('Flat Mean Normalized')
-                        # plt.imshow(ccd.data)
-                        # plt.show()
-                    elif norm_master_flat is None:
-                        norm_master_flat = master_flat.copy()
-                        if self.args.flat_normalize == 'simple':
-                            log.info('Normalizing flat by model')
-                            model_init = models.Chebyshev1D(degree=self.args.norm_order)
-                            model_fitter = fitting.LevMarLSQFitter()
-                            x_size, y_size = master_flat.data.shape
-                            x_axis = range(y_size)
+                    ccd = ccdproc.flat_correct(ccd=ccd,
+                                               flat=norm_master_flat,
+                                               add_keyword=False)
 
-                            profile = np.median(master_flat.data, axis=0)
-                            fit = model_fitter(model_init, x_axis, profile)
-                            # plt.ion()
-                            for i in range(x_size):
-                                # fit = model_fitter(model_init, x_axis, master_flat.data[i])
-                                norm_master_flat.data[i] = master_flat.data[i] / fit(x_axis)
-                            #     plt.clf()
-                            #     plt.xlim(0,1500)
-                            #     plt.ylim(-1000, 2000)
-                            #     plt.plot(norm_master_flat.data[i], color='r')
-                            #     plt.plot(fit(x_axis), color='k')
-                            #     plt.plot(master_flat.data[i], color='b')
-                            #     plt.draw()
-                            #     plt.pause(1)
-                            # plt.ioff()
-                            norm_master_flat.write(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]), clobber=True)
-                            # plt.title('simple Normalized Flat ')
-                            # plt.imshow(norm_master_flat.data, clim=(-100,0))
-                            # plt.show()
+                    self.out_prefix = 'f' + self.out_prefix
 
-                            ccd.data = ccd.data / norm_master_flat.data
-                            self.out_prefix = 'f' + self.out_prefix
-                            ccd.header.add_history('Flat normalized simple model ' + master_flat_name.split('/')[-1])
-                            # plt.title('Flat simple Normalized')
-                            # plt.imshow(ccd.data, clim=(-100,900))
-                            # plt.show()
-                        elif self.args.flat_normalize == 'full':
-                            log.warning('This part of the code was left here for experimental purposes only')
-                            log.info('This procedure takes a lot to process, you might want to see other method')
-                            model_init = models.Chebyshev1D(degree=self.args.norm_order)
-                            model_fitter = fitting.LinearLSQFitter()
-                            # fit = model_fitter(model_init, x_axis, profile)
-                            x_size, y_size = master_flat.data.shape
-                            x_axis = range(y_size)
+                    ccd.header.add_history('master flat norm_'
+                                           '{:s}'.format(master_flat_name))
 
-                            for i in range(x_size):
-                                fit = model_fitter(model_init, x_axis, master_flat.data[i])
-                                norm_master_flat.data[i] = master_flat.data[i] / fit(x_axis)
-                            log.debug(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]))
-                            norm_master_flat.write(os.path.join('/'.join(master_flat_name.split('/')[0:-1]), 'norm_' + master_flat_name.split('/')[-1]), clobber=True)
-                            ccd.data = ccd.data / norm_master_flat.data
-                            self.out_prefix = 'f' + self.out_prefix
-                            ccd.header.add_history('Flat normalized line by line ' + master_flat_name.split('/')[-1])
-                    else:
-                        # mf_min = np.min(norm_master_flat.data)
-                        # mf_max = np.max(norm_master_flat.data)
-                        # plt.imshow(norm_master_flat.data, clim=(1- 0.3 * mf_min, 1 + 0.3 * mf_max))
-                        # plt.show()
-                        ccd.data = ccd.data / norm_master_flat.data
-                        self.out_prefix = 'f' + self.out_prefix
-                        ccd.header.add_history('Flat normalized {:s} '.format(self.args.flat_normalize.split('-')) + master_flat_name.split('/')[-1])
                 if self.args.clean_cosmic:
                     ccd = cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
@@ -741,6 +687,7 @@ class ImageProcessor(object):
             log.error('Can not process data without a master flat')
 
     def remove_nan(self, ccd):
+        # This methods should be deprecated
         # do some kind of interpolation to remove NaN and -INF
         # np.nan_to_num()
         # TODO (simon): Re-write in a more comprehensive way
@@ -766,35 +713,35 @@ class ImageProcessor(object):
 
         return ccd
 
-    def convolve(self, ccd):
-        binning = 1
-        if self.instrument == 'Red':
-            binning = int(ccd.header['PG5_4'])
-        elif self.instrument == 'Blue':
-            binning = int(ccd.header['PARAM22'])
-        else:
-            log.warning('No proper camera detected.')
-        seeing = float(ccd.header['SEEING']) * u.arcsec
-        print('seeing '+ str(seeing))
-        print('Pixel Scale '+ str(self.pixel_scale))
-        print('Binning '+ str(binning))
-        fwhm = seeing / (self.pixel_scale * binning)
-        # to deal with the cases when there is no seeing info
-        fwhm = abs(fwhm/2.)
-
-        gaussian_kernel = Gaussian2DKernel(stddev=1)
-        tophat_kernel = Tophat2DKernel(5)
-        new_ccd_data = convolve_fft(ccd.data, tophat_kernel, interpolate_nan=True, allow_huge=True)
-
-        fig = plt.figure()
-        a = fig.add_subplot(2, 1, 1)
-        plt.imshow(ccd.data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
-        a = fig.add_subplot(2,1,2)
-        plt.imshow(new_ccd_data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
-        plt.show()
-
-        print(fwhm)
-        return ccd
+    # def convolve(self, ccd, instrument=None, pixel_scale=None):
+    #     binning = 1
+    #     if self.instrument == 'Red':
+    #         binning = int(ccd.header['PG5_4'])
+    #     elif self.instrument == 'Blue':
+    #         binning = int(ccd.header['PARAM22'])
+    #     else:
+    #         log.warning('No proper camera detected.')
+    #     seeing = float(ccd.header['SEEING']) * u.arcsec
+    #     print('seeing '+ str(seeing))
+    #     print('Pixel Scale '+ str(self.pixel_scale))
+    #     print('Binning '+ str(binning))
+    #     fwhm = seeing / (self.pixel_scale * binning)
+    #     # to deal with the cases when there is no seeing info
+    #     fwhm = abs(fwhm/2.)
+    #
+    #     gaussian_kernel = Gaussian2DKernel(stddev=1)
+    #     tophat_kernel = Tophat2DKernel(5)
+    #     new_ccd_data = convolve_fft(ccd.data, tophat_kernel, interpolate_nan=True, allow_huge=True)
+    #
+    #     fig = plt.figure()
+    #     a = fig.add_subplot(2, 1, 1)
+    #     plt.imshow(ccd.data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
+    #     a = fig.add_subplot(2,1,2)
+    #     plt.imshow(new_ccd_data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
+    #     plt.show()
+    #
+    #     print(fwhm)
+    #     return ccd
 
 if __name__ == '__main__':
     pass

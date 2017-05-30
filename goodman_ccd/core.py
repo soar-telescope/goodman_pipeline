@@ -12,6 +12,7 @@ from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
 from astroplan import Observer
 from astropy import units as u
+from astropy.modeling import (models, fitting, Model)
 import numpy as np
 from scipy import signal
 
@@ -420,3 +421,84 @@ def print_default_args(args):
     for key in args.__dict__:
         log.info('Default value for {:s} is {:s}'.format(arg_name[key],
                                        str(args.__getattribute__(key))))
+
+
+def normalize_master_flat(master, name, method='simple', order=15):
+    """ Master flat normalization method
+
+    This function normalize a master flat in three possible ways:
+     _mean_: simply divide the data by its mean
+
+     _simple_: Calculates the median along the spatial axis in order to obtain
+     the dispersion profile. Then fits a Chebyshev1D model and apply this to all
+     the data.
+
+     _full_: This is for experimental purposes only because it takes a lot of
+     time to process. It will fit a model to each line along the dispersion axis
+     and then divide it by the fitted model. I do not recommend this method
+     unless you have a good reason as well as a powerful computer.
+
+    Args:
+        master (object): Master flat. Has to be a ccdproc.CCDData instance
+        name (str): Full path of master flat prior to normalization
+        method (str): Normalization method, 'mean', 'simple' or 'full'
+        order (int): Order of the polinomial to be fitted.
+
+    Returns:
+        master (object):  The normalized master flat. ccdproc.CCDData instance
+
+    """
+    assert isinstance(master, CCDData)
+
+    # define new name, base path and full new name
+    new_name = 'norm_' + name.split('/')[-1]
+    path = '/'.join(name.split('/')[0:-1])
+    norm_name = os.path.join(path, new_name)
+
+    if method == 'mean':
+        log.info('Normalizing by mean')
+        master.data /= master.data.mean()
+
+        master.header.add_history('Flat Normalized by Mean')
+
+    elif method == 'simple' or method == 'full':
+        log.info('Normalizing flat by {:s} model'.format(method))
+
+        # Initialize Fitting models and fitter
+        model_init = models.Chebyshev1D(degree=order)
+        model_fitter = fitting.LevMarLSQFitter()
+
+        # get data shape
+        x_size, y_size = master.data.shape
+        x_axis = range(y_size)
+
+        if method == 'simple':
+            # get profile along dispersion axis to fit a model to use for
+            # normalization
+            profile = np.median(master.data, axis=0)
+
+            # do the actual fit
+            fit = model_fitter(model_init, x_axis, profile)
+
+            # convert fit into an array
+            fit_array = fit(x_axis)
+
+            # pythonic way to divide an array by a vector
+            master.data = master.data / fit_array[None, :]
+
+            master.header.add_history('Flat Normalized by simple model')
+
+        elif method == 'full':
+            log.warning('This part of the code was left here for experimental '
+                        'purposes only')
+            log.info('This procedure takes a lot to process, you might want to'
+                     'see other method such as simple or mean.')
+            for i in range(x_size):
+                fit = model_fitter(model_init, x_axis, master.data[i])
+                master.data[i] = master.data[i] / fit(x_axis)
+            master.header.add_history('Flat Normalized by full model')
+
+    # write normalized flat to a file
+    master.write(norm_name, clobber=True)
+
+    return master
