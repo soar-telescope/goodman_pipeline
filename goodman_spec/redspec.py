@@ -20,6 +20,8 @@ import ccdproc as ccd
 import pandas as pd
 import argparse
 import logging
+import matplotlib
+matplotlib.use('GTK3Agg')
 import matplotlib.pyplot as plt
 # from astropy import log
 import warnings

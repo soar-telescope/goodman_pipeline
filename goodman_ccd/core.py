@@ -410,7 +410,7 @@ def print_default_args(args):
                 'red_path': '--red-path',
                 'saturation_limit': '--saturation',
                 'destiny': '-d --proc-path',
-                'interactive_ws': '-i --non-interactive',
+                'interactive_ws': '-i --interactive',
                 'lamp_all_night': '-r --reference-lamp',
                 'lamp_file': '-l --lamp-file',
                 'output_prefix': '-o --output-prefix',
