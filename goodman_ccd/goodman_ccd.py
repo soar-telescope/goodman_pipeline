@@ -172,17 +172,21 @@ class MainApp(object):
             if not os.path.isdir(data_folder):
                 continue
 
+            self.args.raw_path = data_folder
+
             try:
                 night_sorter = DataClassifier(self.args)
                 night_sorter()
                 self.instrument = night_sorter.instrument
                 self.technique = night_sorter.technique
-            except AttributeError:
-                log.error('Empty or Invalid data directory')
+            except AttributeError as error:
+                print(error)
+                log.error('Empty or Invalid data directory:'
+                          '{:s}'.format(data_folder))
                 continue
 
-            # check start
-            self.args.raw_path = data_folder
+            # # check start
+            # self.args.raw_path = data_folder
             if self.args.red_path == './RED' or len(folders) > 1:
                 log.info(
                     'No special reduced data path defined. Proceeding with defaults.')
