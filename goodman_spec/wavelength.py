@@ -15,6 +15,7 @@ import sys
 import os
 import re
 import glob
+# import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.backends.backend_pdf import PdfPages
@@ -141,7 +142,7 @@ class WavelengthCalibration(object):
                                           will return a None element.
 
         """
-        log.info('Processing Science Target: %s', self.science_pack.headers[0]['OBJECT'])
+        log.info('Processing Science Target: {:s}'.format(self.science_pack.headers[0]['OBJECT']))
         if wsolution_obj is None:
             if self.science_object.lamp_count > 0:
                 for lamp_index in range(self.science_object.lamp_count):
@@ -151,7 +152,7 @@ class WavelengthCalibration(object):
                     # self.raw_pixel_axis = range(len(self.lamp_data))
                     self.lamp_header = self.science_pack.lamps_headers[lamp_index]
                     self.lamp_name = self.lamp_header['OBJECT']
-                    log.info('Processing Comparison Lamp: %s', self.lamp_name)
+                    log.info('Processing Comparison Lamp: {:s}'.format(self.lamp_name))
                     self.data1 = self.interpolate(self.lamp_data)
                     # self.lines_limits = self.get_line_limits()
                     # self.lines_center = self.get_line_centers(self.lines_limits)
@@ -169,7 +170,7 @@ class WavelengthCalibration(object):
                                                                         self.linear_lamp,
                                                                         self.science_object.lamp_file[lamp_index - 1])
                         for target_index in range(self.science_object.no_targets):
-                            log.debug('Processing target %s', target_index + 1)
+                            log.debug('Processing target {:d}'.format(target_index + 1))
                             new_data = self.science_pack.data[target_index]
                             new_header = self.science_pack.headers[target_index]
                             if self.science_object.no_targets > 1:
@@ -204,7 +205,7 @@ class WavelengthCalibration(object):
             # print('Evaluation Comment', self.evaluation_comment)
             # repeat for all sci
             for target_index in range(self.science_object.no_targets):
-                log.debug('Processing target %s', target_index + 1)
+                log.debug('Processing target {:d}'.format(target_index + 1))
                 new_data = self.science_pack.data[target_index]
                 new_header = self.science_pack.headers[target_index]
                 if self.science_object.no_targets > 1:
@@ -287,7 +288,7 @@ class WavelengthCalibration(object):
         serial_binning, parallel_binning = [int(x) for x in lamp_header['CCDSUM'].split()]
 
         new_order = int(round(float(slit_size) / (0.15 * serial_binning)))
-        log.debug('New Order: ' + '{:d}'.format(new_order))
+        log.debug('New Order:  {:d}'.format(new_order))
         # print(round(new_order))
         peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
         if slit_size >= 5:
@@ -299,7 +300,7 @@ class WavelengthCalibration(object):
         if self.args.debug_mode:
             fig = plt.figure(1)
             fig.canvas.set_window_title('Lines Detected')
-            plt.title('Lines detected in Lamp\n%s' % lamp_header['OBJECT'])
+            plt.title('Lines detected in Lamp\n{:s}'.format(lamp_header['OBJECT']))
             plt.xlabel('Pixel Axis')
             plt.ylabel('Intensity (counts)')
             # Build legends without data
@@ -447,10 +448,11 @@ class WavelengthCalibration(object):
         #     np.sin(self.alpha * np.pi / 180.) + np.sin((self.beta + 4.656) * np.pi / 180.)) + red_correction_factor
         pixel_one = 0
         pixel_two = 0
-        log.debug('Center Wavelength : %s Blue Limit : %s Red Limit : %s',
-                  self.center_wavelength,
-                  self.blue_limit,
-                  self.red_limit)
+        log.debug('Center Wavelength : {:.3f} Blue Limit : '
+                  '{:.3f} Red Limit : {:.3f} '.format(self.center_wavelength,
+                                                      self.blue_limit,
+                                                      self.red_limit))
+        
         spectral_characteristics = {'center': self.center_wavelength,
                                     'blue': self.blue_limit,
                                     'red': self.red_limit,
@@ -641,9 +643,9 @@ class WavelengthCalibration(object):
         correlation_values = []
         angstrom_differences = []
 
-        log.debug('Length ', len(self.lamp_data))
-        log.debug('NLines ', len(lamp_lines_pixel))
-        log.debug('Length / NLines ', len(self.lamp_data) / float(len(lamp_lines_pixel)))
+        log.debug('Length {:d}'.format(len(self.lamp_data)))
+        log.debug('NLines {:d}'.format(len(lamp_lines_pixel)))
+        log.debug('Length / NLines {:.3f}'.format(len(self.lamp_data) / float(len(lamp_lines_pixel))))
         half_width = int((len(self.lamp_data) / float(len(lamp_lines_pixel))) / 2.)
 
         for i in range(len(lamp_lines_pixel)):
@@ -659,7 +661,7 @@ class WavelengthCalibration(object):
             lamp_sample = self.lamp_data[xmin:xmax]
 
             correlation_value = self.cross_correlation(ref_sample, lamp_sample)
-            log.debug('Cross correlation value ' + str(correlation_value))
+            log.debug('Cross correlation value {:s}'.format(str(correlation_value)))
 
             """record value for reference wavelength"""
             angstrom_value_model = read_wsolution.math_model(line_value_pixel + correlation_value)
@@ -846,7 +848,7 @@ class WavelengthCalibration(object):
         reference_file = self.reference_data.get_best_reference_lamp(header=self.lamp_header)
         # reference_file = self.reference_data.get_reference_lamps_by_name(self.lamp_name)
         if reference_file is not None:
-            log.info('Using reference file: %s', reference_file)
+            log.info('Using reference file: {:s}'.format(reference_file))
             reference_plots_enabled = True
             ref_data = fits.getdata(reference_file)
             ref_header = fits.getheader(reference_file)
@@ -860,11 +862,11 @@ class WavelengthCalibration(object):
         self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = plt.subplots(2,
                                                                                 2,
                                                                                 gridspec_kw={'width_ratios': [4, 1]})
-        self.i_fig.canvas.set_window_title('Science Target: %s' % self.science_object.name)
+        self.i_fig.canvas.set_window_title('Science Target: {:s}'.format(self.science_object.name))
         manager = plt.get_current_fig_manager()
         manager.window.maximize()
 
-        self.ax1.set_title('Raw Data - %s' % self.lamp_name)
+        self.ax1.set_title('Raw Data - {:s}'.format(self.lamp_name))
         self.ax1.set_xlabel('Pixels')
         self.ax1.set_ylabel('Intensity (counts)')
         self.ax1.plot([], linestyle='--', color='r', label='Detected Lines')
@@ -938,10 +940,10 @@ class WavelengthCalibration(object):
         #         log.info('Leaving interactive mode')
         #     else:
         #         if len(self.reference_marks_x) < len(self.raw_data_marks_x):
-        #             log.info('There is %s click missing in the Reference plot',
+        #             log.info('There is {:s} click missing in the Reference plot',
         #                      len(self.raw_data_marks_x) - len(self.reference_marks_x))
         #         else:
-        #             log.info('There is %s click missing in the New Data plot',
+        #             log.info('There is {:s} click missing in the New Data plot',
         #                      len(self.reference_marks_x) - len(self.raw_data_marks_x))
 
     def key_pressed(self, event):
@@ -1112,7 +1114,7 @@ class WavelengthCalibration(object):
             log.info('Pressed Ctrl+q. Closing the program')
             sys.exit(0)
         else:
-            log.debug("Key Pressed: " + event.key)
+            log.debug("Key Pressed: {:s}".format(event.key))
             pass
 
     def register_mark(self, event):
@@ -1140,7 +1142,7 @@ class WavelengthCalibration(object):
                 self.raw_data_marks_y.append(event.ydata)
                 self.update_marks_plot('raw_data')
             else:
-                log.debug(figure_x, figure_y, 'Are not contained')
+                log.debug('{:f} {:f} Are not contained'.format(figure_x, figure_y))
         else:
             log.error('Clicked Region is out of boundaries')
 
@@ -1298,7 +1300,7 @@ class WavelengthCalibration(object):
             if self.rms_error is not None:
                 old_rms_error = float(self.rms_error)
             self.rms_error = np.sqrt(np.sum(square_differences) / len(square_differences))
-            log.info('RMS Error : %s', self.rms_error)
+            log.info('RMS Error : {:.3f}'.format(self.rms_error))
             if plots:
                 if self.ax4_plots is not None or self.ax4_com is not None or self.ax4_rlv is not None:
                     try:
@@ -1307,9 +1309,12 @@ class WavelengthCalibration(object):
                     except NameError as err:
                         log.error(err)
 
-                self.ax4.set_title('RMS Error %.3f \n %d points (%d rejected)' % (self.rms_error,
-                                                                                  npoints,
-                                                                                  n_rejections))
+                self.ax4.set_title('RMS Error {:.3f} \n'
+                                   '{:d} points ({:d} '
+                                   'rejected)'.format(self.rms_error,
+                                                      npoints,
+                                                      n_rejections))
+                
                 self.ax4.set_ylim(once_clipped_differences.min(), once_clipped_differences.max())
                 # self.ax4.set_ylim(- rms_error, 2 * rms_error)
                 self.ax4.set_xlim(np.min(self.lines_center), np.max(self.lines_center))
@@ -1323,7 +1328,7 @@ class WavelengthCalibration(object):
                                                 color='k',
                                                 alpha=0.4,
                                                 edgecolor=None,
-                                                label='%s Sigma' % clipping_sigma)
+                                                label='{:f} Sigma'.format(clipping_sigma))
                 self.ax4_plots = self.ax4.scatter(self.lines_center, clipped_differences, label='Differences')
                 if self.rms_error is not None and old_rms_error is not None:
                     # increment_color = 'white'
@@ -1334,7 +1339,7 @@ class WavelengthCalibration(object):
                         increment_color = 'green'
                     else:
                         increment_color = 'white'
-                    message = r'$\Delta$ RMSE %+.3f' % rms_error_difference
+                    message = r'$\Delta$ RMSE {:+.3f}'.format(rms_error_difference)
                     # self.display_onscreen_message(message=message, color=increment_color)
                     self.ax4.text(0.05, 0.95,
                                   message,
@@ -1381,15 +1386,15 @@ class WavelengthCalibration(object):
                 if len(self.reference_marks_x) < len(self.raw_data_marks_x):
                     n = len(self.raw_data_marks_x) - len(self.reference_marks_x)
                     if n == 1:
-                        message_text = '%s Reference Click is missing!.' % n
+                        message_text = '{:d} Reference Click is missing!.'.format(n)
                     else:
-                        message_text = '%s Reference Clicks are missing!.' % n
+                        message_text = '{:d} Reference Clicks are missing!.'.format(n)
                 else:
                     n = len(self.reference_marks_x) - len(self.raw_data_marks_x)
                     if n == 1:
-                        message_text = '%s Raw Click is missing!.' % n
+                        message_text = '{:d} Raw Click is missing!.'.format(n)
                     else:
-                        message_text = '%s Raw Clicks are missing!.' % n
+                        message_text = '{:d} Raw Clicks are missing!.'.format(n)
                 self.display_onscreen_message(message_text)
             else:
                 pixel = []
@@ -1485,9 +1490,12 @@ class WavelengthCalibration(object):
         """
         if evaluation_comment is None:
             rms_error, n_points, n_rejections = self.evaluate_solution()
-            self.evaluation_comment = 'Lamp Solution RMSE = %s Npoints = %s, NRej = %s' % (rms_error,
-                                                                                           n_points,
-                                                                                           n_rejections)
+            self.evaluation_comment = 'Lamp Solution RMSE = {:.3f} ' \
+                                      'Npoints = {:d}, ' \
+                                      'NRej = {:d}'.format(rms_error,
+                                                           n_points,
+                                                           n_rejections)
+
             new_header['HISTORY'] = self.evaluation_comment
         else:
             new_header['HISTORY'] = evaluation_comment
@@ -1508,13 +1516,13 @@ class WavelengthCalibration(object):
         new_header['WAT0_001'] = 'system=equispec'
         new_header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
         new_header['DC-FLAG'] = 0
-        new_header['DCLOG1'] = 'REFSPEC1 = %s' % self.calibration_lamp
+        new_header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
 
         # print(new_header['APNUM*'])
         if index is None:
             f_end = '.fits'
         else:
-            f_end = '_%s.fits' % index
+            f_end = '_{:d}.fits'.format(index)
         # idea
         #  remove .fits from original_filename
         # define a base original name
@@ -1529,7 +1537,7 @@ class WavelengthCalibration(object):
         # print(len(spectrum))
 
         fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
-        log.info('Created new file: %s', new_filename)
+        log.info('Created new file: {:s}'.format(new_filename))
         # print new_header
         return new_header
 
@@ -1727,11 +1735,11 @@ class WavelengthSolution(object):
             for key in new_dict.keys():
                 if self.spectral_dict['camera'] == 'red':
                     if key in ['grating', 'roi', 'instconf', 'wavmode'] and new_dict[key] != self.spectral_dict[key]:
-                        log.info('Keyword: %s does not Match', key.upper())
-                        log.info('%s - Solution: %s - New Data: %s', key.upper(), self.spectral_dict[key], new_dict[key])
+                        log.info('Keyword: {:s} does not Match', key.upper())
+                        log.info('{:s} - Solution: {:s} - New Data: {:s}', key.upper(), self.spectral_dict[key], new_dict[key])
                         return False
                     elif key in ['cam_ang',  'grt_ang'] and abs(new_dict[key] - self.spectral_dict[key]) > 1:
-                        log.debug('Keyword: %s Lamp: %s Data: %s',
+                        log.debug('Keyword: {:s} Lamp: {:s} Data: {:s}',
                                   key,
                                   self.spectral_dict[key],
                                   new_dict[key])
@@ -1741,14 +1749,14 @@ class WavelengthSolution(object):
                     #     return True
                 elif self.spectral_dict['camera'] == 'blue':
                     if key in ['grating', 'ccdsum', 'serial_bin', 'parallel_bin']and new_dict[key] != self.spectral_dict[key]:
-                        log.debug('Keyword: %s does not Match', key.upper())
-                        log.info('%s - Solution: %s - New Data: %s',
+                        log.debug('Keyword: {:s} does not Match', key.upper())
+                        log.info('{:s} - Solution: {:s} - New Data: {:s}',
                                  key.upper(),
                                  self.spectral_dict[key],
                                  new_dict[key])
                         return False
                     elif key in ['cam_ang',  'grt_ang'] and abs(float(new_dict[key]) - float(self.spectral_dict[key])) > 1:
-                        log.debug('Keyword: %s Lamp: %s Data: %s',
+                        log.debug('Keyword: {:s} Lamp: {:s} Data: {:s}',
                                   key,
                                   self.spectral_dict[key],
                                   new_dict[key])
@@ -1792,7 +1800,7 @@ class WavelengthSolution(object):
                     log.error(center_wavelength)
                     name_text += '_' + mode.upper() + '_{:d}nm'.format(int(round(center_wavelength)))
                 else:
-                    log.error('WAVMODE: %s not supported', mode)
+                    log.error('WAVMODE: {:s} not supported', mode)
 
         # First filter wheel part of the flat name
         if header['filter'] != '<NO FILTER>':
