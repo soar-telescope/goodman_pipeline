@@ -314,8 +314,8 @@ class NightOrganizer(object):
         """Separates day and night time data
 
         Notes:
-            For day time separation it only considers the afternoon twilight since some observers will get data even
-            past the morning twilight
+            For day time separation it only considers the afternoon twilight
+            since some observers will get data even past the morning twilight.
             All bias data goes into day time data.
 
         Returns:
@@ -340,8 +340,9 @@ class NightOrganizer(object):
 
 
 class Night(object):
-    """This class is designed to be the organized data container. It doesn't store image data but list
-    of pandas.DataFrame objects. Also it stores critical variables such as sunrise and sunset times.
+    """This class is designed to be the organized data container. It doesn't
+    store image data but list of pandas.DataFrame objects. Also it stores
+    critical variables such as sunrise and sunset times.
 
     """
 
@@ -350,8 +351,10 @@ class Night(object):
 
         Args:
             path (str): Full path to the directory where raw data is located
-            instrument (str): 'Red' or 'Blue' stating whether the data was taken using the Red or Blue Goodman Camera.
-            technique (str): 'Spectroscopy' or 'Imaging' stating what kind of data was taken.
+            instrument (str): 'Red' or 'Blue' stating whether the data was taken
+            using the Red or Blue Goodman Camera.
+            technique (str): 'Spectroscopy' or 'Imaging' stating what kind of
+            data was taken.
         """
 
         self.full_path = path
