@@ -59,7 +59,7 @@ class ImageProcessor(object):
         self.evening_twilight = data_container.evening_twilight
         self.pixel_scale = 0.15 * u.arcsec
         self.queue = None
-        self.trim_section = self.define_trim_section()
+        self.trim_section = self.define_trim_section(technique=self.technique)
         self.overscan_region = self.get_overscan_region()
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
@@ -108,13 +108,15 @@ class ImageProcessor(object):
             for sub_group in self.queue:
                 print(sub_group)
 
-    def define_trim_section(self):
+    def define_trim_section(self, technique=None):
         """
 
         Returns:
 
         """
 
+        assert technique is not None
+        trim_section = None
         # TODO (simon): Consider binning and possibly ROIs for trim section
         log.warning('Determining trim section. Assuming you have only one kind'
                     'of data in this folder')
@@ -128,11 +130,33 @@ class ImageProcessor(object):
                 image_list = group[0]['file'].tolist()
                 sample_image = os.path.join(self.args.raw_path,
                                             random.choice(image_list))
-                # header = fits.getheader(sample_image)
-                # trim_section = header['TRIMSEC']
+                ccd = CCDData.read(sample_image, unit=u.adu)
+
+                serial_binning, \
+                parallel_binning = [int(x) for x
+                                    in ccd.header['CCDSUM'].split()]
+
                 # Trim section is valid for Blue and Red Camera Binning 1x1 and
                 # Spectroscopic ROI
-                trim_section = '[51:4110,1:1896]'
+                if technique == 'Spectroscopy':
+
+                    # left
+                    l = int(np.ceil(51. / serial_binning))
+
+                    # right
+                    r = int(4110 / serial_binning)
+
+                    # bottom
+                    b = 1
+
+                    #top
+                    t = int(1896 / parallel_binning)
+                    # TODO (simon): Need testing
+                    trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
+
+                elif technique == 'Imaging':
+                    trim_section = ccd.header['TRIMSEC']
+
                 log.info('Trim Section: %s', trim_section)
                 return trim_section
 
@@ -225,7 +249,7 @@ class ImageProcessor(object):
                     overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
 
                 elif self.technique == 'Imaging':
-                    log.warning("Imaging mode doesn't have overscan region."
+                    log.warning("Imaging mode doesn't have overscan region. "
                                 "Use bias instead.")
                     if self.bias is None:
                         log.warning('Bias are needed for Imaging mode')
@@ -353,7 +377,7 @@ class ImageProcessor(object):
                             'to change saturation level'.format(flat_file))
                 # plt.plot(ccd.data[802,:])
                 # plt.show()
-                print(ccd.data.max())
+                # print(ccd.data.max())
                 continue
             else:
                 master_flat_list.append(ccd)
@@ -556,14 +580,11 @@ class ImageProcessor(object):
 
                 # load image
                 ccd = CCDData.read(image_full_path, unit=u.adu)
-                # plt.title('Raw')
-                # plt.imshow(ccd.data, clim=(0, 1000))
-                # plt.show()
+
+                # apply overscan
                 ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                # plt.title('Overscanned')
-                # plt.imshow(ccd.data, clim=(0, 1000))
-                # plt.show()
                 self.out_prefix += 'o_'
+
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match
                     # the size of the other data
@@ -574,9 +595,7 @@ class ImageProcessor(object):
                 else:
                     ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
                     self.out_prefix = 't' + self.out_prefix
-                # plt.title('Trimmed')
-                # plt.imshow(ccd.data)
-                # plt.show()
+
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
 
@@ -613,29 +632,7 @@ class ImageProcessor(object):
                     # plt.show()
                 else:
                     log.warning('Clean Cosmic ' + str(self.args.clean_cosmic))
-                # ccd.data = np.nan_to_num(ccd.data)
-                # print('Length CCD Data', ccd.data.shape)
-                # if self.args.interp_invalid:
-                #     ccd = self.convolve(ccd=ccd)
-                # else:
-                #     log.warning('Replacing invalid values by numbers. Use --interpolate-invalid'
-                #                 ' for a more advanced method.')
-                #     ccd.data = np.nan_to_num(ccd.data)
-                #     print(ccd.data.shape)
-                # if self.args.debug_mode:
-                #     x, y = ccd.data.shape
-                #     print('x ', x, ' y ', y)
-                #     for i in range(x):
-                #         for e in range(y):
-                #             if np.isnan(ccd.data[i, e]):
-                #                 # print(i, x, e, y)
-                #                 plt.plot(e, i, marker='o', color='r', mec='r')
-                #             elif np.isneginf(ccd.data[i, e]):
-                #                 plt.plot(e, i, marker='o', color='r', mec='r')
-                #                 # print(" ")
-                #
-                #     plt.imshow(ccd.data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
-                #     plt.show()
+
                 ccd.write(os.path.join(self.args.red_path, self.out_prefix + science_image))
                 log.info('Created science image: ' + os.path.join(self.args.red_path, self.out_prefix + science_image))
                 
@@ -677,11 +674,14 @@ class ImageProcessor(object):
                 self.out_prefix = 'f' + self.out_prefix
                 ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
                 if self.args.clean_cosmic:
-                    ccd = self.cosmicray_rejection(ccd=ccd)
+                    ccd = cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
                 else:
                     print('Clean Cosmic ' + str(self.args.clean_cosmic))
-                ccd.write(self.args.red_path, self.out_prefix + image_file, clobber=True)
+
+                final_name = os.path.join(self.args.red_path,
+                                          self.out_prefix + image_file)
+                ccd.write(final_name, clobber=True)
                 log.info('Created science file: ' + os.path.join(self.args.red_path, self.out_prefix + image_file))
         else:
             log.error('Can not process data without a master flat')
