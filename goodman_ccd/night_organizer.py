@@ -179,11 +179,13 @@ class NightOrganizer(object):
     def spectroscopy_night(file_collection, data_container):
         """Organizes data for spectroscopy
 
-        This method identifies all combinations of nine **key** keywords that can set appart different objects with
-        their respective calibration data or not. The keywords used are: GAIN, RDNOISE, GRATING, FILTER2, CAM_TARG,
+        This method identifies all combinations of nine **key** keywords that
+        can set appart different objects with their respective calibration data
+        or not. The keywords used are: GAIN, RDNOISE, GRATING, FILTER2, CAM_TARG,
         GRT_TARG, SLIT, OBSRA and OBSDEC.
 
-        This method populates the `data_container` class attribute which is an instance of the class Night.
+        This method populates the `data_container` class attribute which is an
+        instance of the class Night.
         A data group is an instance of a Pandas DataFrame.
 
         """
