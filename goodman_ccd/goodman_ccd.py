@@ -177,7 +177,9 @@ class MainApp(object):
             self.args.raw_path = data_folder
 
             try:
+                log.debug('Initializing DataClassifier Class')
                 night_sorter = DataClassifier(self.args)
+                log.debug('Calling night_sorter Instance of DataClassifier')
                 night_sorter()
                 self.instrument = night_sorter.instrument
                 self.technique = night_sorter.technique
@@ -204,7 +206,8 @@ class MainApp(object):
                             os.unlink(os.path.join(self.args.red_path, _file))
                         log.info('Cleaned Reduced data directory: ' + self.args.red_path)
                     else:
-                        log.error('Please clean the reduced data folder or use --auto-clean')
+                        log.error('Please clean the reduced data folder or '
+                                  'use --auto-clean')
                         break
                 self.args.red_path = os.path.abspath(self.args.red_path)
                 log.debug(os.path.abspath(self.args.red_path))
@@ -224,10 +227,12 @@ class MainApp(object):
                 # night_organizer = NightOrganizer(args=self.args, night_dict=night_sorter.nights_dict[night])
                 # nd = Night Dictionary
                 nd = night_sorter.nights_dict[night]
+                log.debug('Initializing NightOrganizer Class')
                 night_organizer = NightOrganizer(full_path=nd['full_path'],
                                                  instrument=nd['instrument'],
                                                  technique=nd['technique'],
                                                  ignore_bias=self.args.ignore_bias)
+                log.debug('Calling night_organizer instance')
                 self.data_container = night_organizer()
                 if self.data_container is False or self.data_container is None:
                     log.error('Discarding night ' + str(night))
