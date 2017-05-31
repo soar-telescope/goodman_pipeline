@@ -2,6 +2,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import os
 from ccdproc import ImageFileCollection
+import matplotlib
+matplotlib.use('GTK3Agg')
 import matplotlib.pyplot as plt
 import time
 import numpy as np

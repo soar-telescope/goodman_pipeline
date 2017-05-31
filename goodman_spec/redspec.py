@@ -2,9 +2,10 @@
 # -*- coding: utf8 -*-
 """Pipeline for GOODMAN spectra Extraction.
 
-This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded, etc. that match the <pattern>
-in the source folder, then classify them in two groups: Science or Lamps. For science images, finds the spectrum
-or spectra and traces it doing some fit.
+This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded,
+etc. that match the <pattern> in the source folder, then classify them in two
+groups: Science or Lamps. For science images, finds the spectrum or spectra and
+traces it doing some fit.
 Simon Torres 2016-06-28
 
 """
@@ -49,7 +50,8 @@ def get_args():
     """Handles the argparse library and returns the arguments
 
     Returns:
-        An object that contains all the variables parsed through the argument system
+        An object that contains all the variables parsed through the argument
+        system
         The possible arguments to be returned are:
 
         -p or --data-path: has to be the source directory, where the data (images) is.
