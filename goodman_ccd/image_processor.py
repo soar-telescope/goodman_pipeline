@@ -606,7 +606,7 @@ class ImageProcessor(object):
                     self.out_prefix = 'z' + self.out_prefix
                     ccd.header.add_history('Bias subtracted image')
                 if master_flat is None or master_flat_name is None:
-                    log.warning('The file {:s} will not be'
+                    log.warning('The file {:s} will not be '
                                 'flatfielded'.format(science_image))
                 else:
                     if norm_master_flat is None:
