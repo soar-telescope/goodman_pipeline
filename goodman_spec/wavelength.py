@@ -738,13 +738,19 @@ class WavelengthCalibration(object):
         self.ax1.plot(reference_lamp_wav_axis, reference_lamp_data.data, label='Reference', color='k', alpha=1)
         self.ax1.plot(self.wsolution(self.raw_pixel_axis), self.lamp_data, label='Last Solution', color='r', alpha=0.7)
         # self.ax1.plot(lamp_axis_pixel, self.lamp_data, label='Last Solution', color='r', alpha=0.7)
+        try:
+            wavmode = self.lamp_header['wavmode']
+        except KeyError as error:
+            log.debug(error)
+            wavmode = ''
+        print(self.rms_error, wavmode, self.lamp_header['OBJECT'], '\n')
         self.ax1.legend(loc='best')
         self.ax1.set_xlabel('Wavelength (Angstrom)')
         self.ax1.set_ylabel('Intensity (ADU)')
-        self.ax1.set_title('Automatic Wavelength Solution Test\n'
+        self.ax1.set_title('Automatic Wavelength Solution Test'
                            + self.lamp_header['OBJECT']
-                           + ' ' + self.lamp_header['wavmode']
-                           + '\nRMS Error: ' + str(self.rms_error))
+                           + ' ' + wavmode
+                           + 'RMS Error: {:.3f}'.format(self.rms_error))
         self.i_fig.tight_layout()
         out_file_name = 'automatic-solution_' + self.lamp_header['OBJECT']
         file_count = len(glob.glob(os.path.join(self.args.destiny, out_file_name + '*')))
