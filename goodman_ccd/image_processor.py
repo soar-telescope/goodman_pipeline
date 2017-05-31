@@ -118,7 +118,7 @@ class ImageProcessor(object):
         assert technique is not None
         trim_section = None
         # TODO (simon): Consider binning and possibly ROIs for trim section
-        log.warning('Determining trim section. Assuming you have only one kind'
+        log.warning('Determining trim section. Assuming you have only one kind '
                     'of data in this folder')
         for group in [self.bias,
                       self.day_flats,
@@ -505,10 +505,10 @@ class ImageProcessor(object):
                 target_name = science_group.object[science_group.obstype ==
                                                    'OBJECT'].unique()[0]
 
-                log.info('Processing Science Target: ' + target_name)
+                log.info('Processing Science Target: {:s}'.format(target_name))
             else:
                 # target_name = science_group.object[science_group.obstype == 'COMP'].unique()[0]
-                log.info('Processing Comparison Lamp: ' + target_name)
+                log.info('Processing Comparison Lamp: {:s}'.format(target_name))
 
             if 'FLAT' in obstype:
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']

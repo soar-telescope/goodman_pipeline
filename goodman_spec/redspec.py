@@ -476,7 +476,9 @@ class MainApp(object):
         for target in self.night.sci:
             index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
             name = self.image_collection.object.iloc[index]
+            log.debug('Target Name is: {:s}'.format(name))
             grating = self.image_collection.grating.iloc[index]
+            log.debug('Target Grating is: {:s}'.format(grating))
             # print('Grating', grating)
             obs_time = self.image_collection['date-obs'][index]
             right_ascension, declination = ra_dec_to_deg(self.image_collection.ra.iloc[index],
@@ -485,17 +487,24 @@ class MainApp(object):
 
             comp_files = self.image_collection[(self.image_collection['grating'] == grating)
                                                & (self.image_collection['obstype'] == 'COMP')].index.tolist()
+            log.debug('Comparison Lamps with matching gratings are: {:d}'.format(len(comp_files)))
             # Need to define a better method for selecting the lamp
             # Now is just picking the first in the list
             try:
-                if self.args.lamp_all_night is not '':
+                log.debug('All night lamp is: {:s}'.format(self.args.lamp_all_night))
+                if self.args.lamp_all_night != '':
+                    print('here')
                     lamp = self.args.lamp_all_night
                     lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
                 else:
+                    print(comp_files)
                     lamp_index = comp_files[0]
+
+                    print(lamp_index)
                     lamp = self.image_collection.file.iloc[lamp_index]
                 log.debug("Lamp File: %s", lamp)
-            except IndexError:
+            except IndexError as err:
+                log.debug('IndexError: {:s}'.format(err))
                 log.error("There is no comparison lamp available for: %s", target)
                 # sys.exit('Bye!')
                 continue
@@ -568,7 +577,8 @@ class MainApp(object):
                             science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
                             # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
                         else:
-                            log.warning("Lamp within sky distance but too large time difference %s. Ignored.", time_dif)
+                            log.warning("Lamp within sky distance but too "
+                                        "large time difference %s. Ignored.", time_dif)
                 else:
                     log.info('Gratings do not match')
             # science_object.print_all()

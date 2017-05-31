@@ -371,7 +371,7 @@ def get_best_flat(flat_name):
 
     """
     flat_list = glob.glob(flat_name)
-    log.debug('Flat base name ', flat_name)
+    log.debug('Flat base name {:s}'.format(flat_name))
     log.debug('Matching master flats found: {:d}'.format(len(flat_list)))
     if len(flat_list) > 0:
         if len(flat_list) == 1:
@@ -382,7 +382,7 @@ def get_best_flat(flat_name):
         #     master_flat_name =
 
         master_flat = CCDData.read(master_flat_name, unit=u.adu)
-        log.info('Found suitable master flat: ' + master_flat_name)
+        log.info('Found suitable master flat: {:s}'.format(master_flat_name))
         return master_flat, master_flat_name
     else:
         log.error('There is no flat available')
