@@ -44,8 +44,10 @@ class Process(object):
         self.args = args
         self.science_object = sci_obj
         self.path = self.args.source
-        self.data = fits.getdata(os.path.join(self.path, self.science_object.file_name))
-        self.header = self.add_wcs_keys(fits.getheader(os.path.join(self.path, self.science_object.file_name)))
+        self.data = fits.getdata(os.path.join(self.path,
+                                              self.science_object.file_name))
+        self.header = self.add_wcs_keys(fits.getheader(os.path.join(self.path,
+                                                                    self.science_object.file_name)))
         self.lamps_data = []
         self.lamps_header = []
         self.close_targets = False
