@@ -743,13 +743,13 @@ class WavelengthCalibration(object):
         except KeyError as error:
             log.debug(error)
             wavmode = ''
-        print(self.rms_error, wavmode, self.lamp_header['OBJECT'], '\n')
+        # print(self.rms_error, wavmode, self.lamp_header['OBJECT'], '\n')
         self.ax1.legend(loc='best')
         self.ax1.set_xlabel('Wavelength (Angstrom)')
         self.ax1.set_ylabel('Intensity (ADU)')
-        self.ax1.set_title('Automatic Wavelength Solution Test'
+        self.ax1.set_title('Automatic Wavelength Solution Test\n'
                            + self.lamp_header['OBJECT']
-                           + ' ' + wavmode
+                           + ' ' + wavmode + '\n'
                            + 'RMS Error: {:.3f}'.format(self.rms_error))
         self.i_fig.tight_layout()
         out_file_name = 'automatic-solution_' + self.lamp_header['OBJECT']
@@ -758,6 +758,12 @@ class WavelengthCalibration(object):
         pdf_pages = PdfPages(os.path.join(self.args.destiny, out_file_name))
         plt.savefig(pdf_pages, format='pdf')
         pdf_pages.close()
+        if self.args.save_plots:
+            plots_path = os.path.join(self.args.destiny, 'plots')
+            if not os.path.isdir(plots_path):
+                os.path.os.makedirs(plots_path)
+            plot_name = os.path.join(plots_path, out_file_name + '.png')
+            plt.savefig(plot_name, dpi=300)
         if self.args.debug_mode:
             plt.show()
         else:
@@ -888,7 +894,7 @@ class WavelengthCalibration(object):
         ax1_y_range = ax1_ylim[1] - ax1_ylim[0]
         self.ax1.set_ylim((ax1_ylim[0] - 0.05 * ax1_y_range, ax1_ylim[1] + 0.05 * ax1_y_range))
 
-        self.ax3.set_title('Reference Data')
+        self.ax3.set_title('Reference Data - {:s}'.format(self.lamp_name))
         self.ax3.set_xlabel('Wavelength (Angstrom)')
         self.ax3.set_ylabel('Intensity (counts)')
         self.ax3.set_xlim((self.blue_limit.value, self.red_limit.value))
@@ -1057,16 +1063,31 @@ class WavelengthCalibration(object):
                         self.update_marks_plot('raw_data')
                     
             elif self.contextual_bb.contains(figure_x, figure_y):
-                closer_index_ref = int(np.argmin([abs(list_val - event.ydata) for list_val in self.reference_marks_x]))
-                closer_index_raw = int(np.argmin([abs(list_val - event.xdata) for list_val in self.raw_data_marks_x]))
-                # print(closer_index_raw, closer_index_ref)
-                self.raw_data_marks_x.pop(closer_index_raw)
-                self.raw_data_marks_y.pop(closer_index_raw)
-                self.reference_marks_x.pop(closer_index_ref)
-                self.reference_marks_y.pop(closer_index_ref)
-                self.update_marks_plot('reference')
-                self.update_marks_plot('raw_data')
-                self.update_marks_plot('eval_plots')
+                log.warning("Can't delete points from here because points "
+                            "represent each detected line in the raw data.")
+                # closer_index_ref = int(np.argmin([abs(list_val - event.ydata) for list_val in self.reference_marks_x]))
+                # closer_index_raw = int(np.argmin([abs(list_val - event.xdata) for list_val in self.raw_data_marks_x]))
+                # # log.debug('Raw Index {:d}, Ref Index {:d}'.format(closer_index_raw,
+                # #                                                   closer_index_ref))
+                # self.raw_data_marks_x.pop(closer_index_raw)
+                # self.raw_data_marks_y.pop(closer_index_raw)
+                # self.reference_marks_x.pop(closer_index_raw)
+                # self.reference_marks_y.pop(closer_index_raw)
+                # self.update_marks_plot('reference')
+                # self.update_marks_plot('raw_data')
+                # self.update_marks_plot('eval_plots')
+        elif event.key == 'i':
+            figure_x, figure_y = self.i_fig.transFigure.inverted().transform(
+                (event.x, event.y))
+            if self.contextual_bb.contains(figure_x, figure_y):
+                log.debug("Trying to identify point.")
+
+                closer_x_index = int(np.argmin(
+                    [abs(list_val - event.xdata) for list_val in
+                     self.raw_data_marks_x]))
+                print(self.raw_data_marks_x[closer_x_index])
+                print(self.reference_marks_x[closer_x_index])
+
 
         elif event.key == 'f6' or event.key == 'l':
             log.info('Linearize and smoothing spectrum')
@@ -1093,19 +1114,19 @@ class WavelengthCalibration(object):
                     # else:
                     # print self.raw_click_plot, self.ref_click_plot, 'mmm'
         elif event.key == 'ctrl+d':
-            log.info('Deleting all recording Clicks')
-            self.display_onscreen_message(message='Delete all marks? Answer on the terminal.')
-            # time.sleep(10)
-            answer = raw_input('Are you sure you want to delete all marks? only typing "No" will stop it! : ')
-            if answer.lower() != 'no':
+            try:
+                log.info('Deleting all recording Clicks')
+                self.display_onscreen_message(
+                    message='All points deleted')
                 self.reference_marks_x = []
                 self.reference_marks_y = []
                 self.raw_data_marks_x = []
                 self.raw_data_marks_y = []
                 self.update_marks_plot('delete')
                 self.plot_raw_over_reference(remove=True)
-            else:
-                log.info('No click was deleted this time!.')
+                log.info('All points deleted!')
+            except:
+                log.error('No points deleted')
         elif event.key == 'enter':
             if self.wsolution is not None:
                 log.info('Closing figure')
@@ -1232,6 +1253,8 @@ class WavelengthCalibration(object):
                 self.points_ref.remove()
                 self.ax3.relim()
                 self.i_fig.canvas.draw()
+        else:
+            log.error('Unknown Action {:s}'.format(action))
 
     def plot_raw_over_reference(self, remove=False):
         """Overplot raw data over reference lamp using current wavelength solution model
@@ -1627,8 +1650,7 @@ class WavelengthCalibration(object):
         self.ax2.text(1, 7.5, 'd :', fontsize=13)
         self.ax2.text(1.46, 7.5, 'Delete Closest Point', fontsize=13)
         self.ax2.text(1, 7, 'Ctrl+d:', fontsize=13)
-        self.ax2.text(1.5, 7, 'Delete all recorded marks. Requires', fontsize=13)
-        self.ax2.text(1.5, 6.5, 'confirmation on the terminal.', fontsize=13)
+        self.ax2.text(1.5, 7, 'Delete all recorded marks.', fontsize=13)
         self.ax2.text(1, 6, 'Ctrl+z:', fontsize=13)
         self.ax2.text(1.5, 6, 'Remove all automatic added points.', fontsize=13)
         self.ax2.text(1.5, 5.5, 'Undo what F3 does.', fontsize=13)

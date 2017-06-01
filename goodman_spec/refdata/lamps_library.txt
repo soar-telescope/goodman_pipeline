@@ -2,9 +2,11 @@
 Instrument_type_Grating_Mode_filter_Lamp
 goodman_comp_400_M1_(lamp)
  - goodman_comp_400_M2_GG455_HgArNe.fits
+ - goodman_comp_400_M2_GG455_HgAr.fits
 
 goodman_comp_600_UV_(lamp)
- - goodman_comp_600_BLUE_(lamp)
+ - goodman_comp_600_BLUE_HgAr.fits
+ - goodman_comp_600_BLUE_CuHeAr.fits
 goodman_comp_600_MID_GG385_(lamp)
 goodman_comp_600_RED_GG495_(lamp)
 
@@ -20,6 +22,6 @@ goodman_comp_1200_M1_(lamp)
 goodman_comp_1200_M2_(lamp)
 goodman_comp_1200_M3_(lamp)
 goodman_comp_1200_M4_GG455_(lamp)
-goodman_comp_1200_M5_GG455_(lamp)
+ - goodman_comp_1200_M5_GG455_HgArNe.fits
 goodman_comp_1200_M6_GG495_(lamp)
 goodman_comp_1200_M7_OG570_(lamp)
