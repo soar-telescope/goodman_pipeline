@@ -43,7 +43,8 @@ class ImageProcessor(object):
 
         Args:
             args (object): Argparse object
-            data_container (object): Contains relevant information of the night and the data itself.
+            data_container (object): Contains relevant information of the night
+            and the data itself.
         """
         self.args = args
         self.instrument = data_container.instrument
@@ -350,9 +351,12 @@ class ImageProcessor(object):
             ccd = CCDData.read(image_full_path, unit=u.adu)
             log.debug('Loading flat image: ' + image_full_path)
             if master_flat_name is None:
-                master_flat_name = self.name_master_flats(header=ccd.header,
-                                                          group=flat_group,
-                                                          target_name=target_name)
+
+                master_flat_name = self.name_master_flats(
+                    header=ccd.header,
+                    group=flat_group,
+                    target_name=target_name)
+
             if self.technique == 'Spectroscopy':
                 # plt.title('Before Overscan')
                 # plt.imshow(ccd.data, clim=(-100, 0))
@@ -507,7 +511,6 @@ class ImageProcessor(object):
 
                 log.info('Processing Science Target: {:s}'.format(target_name))
             else:
-                # target_name = science_group.object[science_group.obstype == 'COMP'].unique()[0]
                 log.info('Processing Comparison Lamp: {:s}'.format(target_name))
 
             if 'FLAT' in obstype:
@@ -610,10 +613,12 @@ class ImageProcessor(object):
                                 'flatfielded'.format(science_image))
                 else:
                     if norm_master_flat is None:
-                        norm_master_flat = normalize_master_flat(master=master_flat,
-                                                                 name=master_flat_name,
-                                                                 method=self.args.flat_normalize,
-                                                                 order=self.args.norm_order)
+
+                        norm_master_flat = normalize_master_flat(
+                            master=master_flat,
+                            name=master_flat_name,
+                            method=self.args.flat_normalize,
+                            order=self.args.norm_order)
 
                     ccd = ccdproc.flat_correct(ccd=ccd,
                                                flat=norm_master_flat,
@@ -633,8 +638,10 @@ class ImageProcessor(object):
                 else:
                     log.warning('Clean Cosmic ' + str(self.args.clean_cosmic))
 
-                ccd.write(os.path.join(self.args.red_path, self.out_prefix + science_image))
-                log.info('Created science image: ' + os.path.join(self.args.red_path, self.out_prefix + science_image))
+                full_path = os.path.join(self.args.red_path,
+                                       self.out_prefix + science_image)
+                ccd.write(full_path, clobber=True)
+                log.info('Created science image: {:s}'.format(full_path))
                 
 
                 # print(science_group)
@@ -642,7 +649,9 @@ class ImageProcessor(object):
             self.queue.append(science_group)
             log.warning('Only flats found in this group')
             flat_sub_group = science_group[science_group.obstype == 'FLAT']
-            master_flat, master_flat_name = self.create_master_flats(flat_group=flat_sub_group)
+            # TODO (simon): Find out if these variables are useful or not
+            master_flat, master_flat_name = \
+                self.create_master_flats(flat_group=flat_sub_group)
         else:
             log.error('There is no valid datatype in this group')
 
@@ -655,24 +664,52 @@ class ImageProcessor(object):
         Returns:
 
         """
+        # pick a random image in order to get a header
+        random_image = random.choice(imaging_group.file.tolist())
+        path_random_image = os.path.join(self.args.raw_path, random_image)
+        sample_file = CCDData.read(path_random_image, unit=u.adu)
 
-        sample_file = CCDData.read(os.path.join(self.args.raw_path, random.choice(imaging_group.file.tolist())), unit=u.adu)
-        master_flat_name = self.name_master_flats(sample_file.header, imaging_group, get=True)
-        print(master_flat_name)
-        master_flat, master_flat_name = get_best_flat(flat_name=master_flat_name)
+        master_flat_name = self.name_master_flats(header=sample_file.header,
+                                                  group=imaging_group,
+                                                  get=True)
+
+        log.debug('Got {:s} for master flat name'.format(master_flat_name))
+
+        master_flat, master_flat_name = get_best_flat(
+            flat_name=master_flat_name)
+
         if master_flat is not None:
             for image_file in imaging_group.file.tolist():
+
+                # start with an empty prefix
                 self.out_prefix = ''
-                ccd = CCDData.read(os.path.join(self.args.raw_path, image_file), unit=u.adu)
+
+                image_full_path = os.path.join(self.args.raw_path, image_file)
+                ccd = CCDData.read(image_full_path, unit=u.adu)
+
+                # Trim image
                 ccd = image_trim(ccd, trim_section=self.trim_section)
                 self.out_prefix = 't_'
                 if not self.args.ignore_bias:
-                    ccd = ccdproc.subtract_bias(ccd, self.master_bias, add_keyword=False)
+
+                    ccd = ccdproc.subtract_bias(ccd,
+                                                self.master_bias,
+                                                add_keyword=False)
+
                     self.out_prefix = 'z' + self.out_prefix
                     ccd.header.add_history('Bias subtracted image')
-                ccd = ccdproc.flat_correct(ccd, master_flat, add_keyword=False)
+
+                # apply flat correction
+                ccd = ccdproc.flat_correct(ccd,
+                                           master_flat,
+                                           add_keyword=False)
+
                 self.out_prefix = 'f' + self.out_prefix
-                ccd.header.add_history('Flat corrected ' + master_flat_name.split('/')[-1])
+
+                ccd.header.add_history(
+                    'Flat corrected '
+                    '{:s}'.format(master_flat_name.split('/')[-1]))
+
                 if self.args.clean_cosmic:
                     ccd = cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
@@ -682,66 +719,10 @@ class ImageProcessor(object):
                 final_name = os.path.join(self.args.red_path,
                                           self.out_prefix + image_file)
                 ccd.write(final_name, clobber=True)
-                log.info('Created science file: ' + os.path.join(self.args.red_path, self.out_prefix + image_file))
+                log.info('Created science file: {:s}'.format(final_name))
         else:
             log.error('Can not process data without a master flat')
 
-    def remove_nan(self, ccd):
-        # This methods should be deprecated
-        # do some kind of interpolation to remove NaN and -INF
-        # np.nan_to_num()
-        # TODO (simon): Re-write in a more comprehensive way
-        log.info('Removing NaN and INF by cubic interpolation')
-        x = np.arange(0, ccd.data.shape[1])
-        y = np.arange(0, ccd.data.shape[0])
-        # mask invalid values
-        array = np.ma.masked_invalid(ccd.data)
-        xx, yy = np.meshgrid(x, y)
-        # get only the valid values
-        x1 = xx[~array.mask]
-        y1 = yy[~array.mask]
-        newarr = array[~array.mask]
-
-        ccd.data = interpolate.griddata((x1, y1), newarr.ravel(),
-                                   (xx, yy),
-                                   method='cubic')
-
-        # print('Length CCD Data', ccd.data.shape)
-
-        plt.imshow(ccd.data, clim=(5, 150), cmap='cubehelix')
-        plt.show()
-
-        return ccd
-
-    # def convolve(self, ccd, instrument=None, pixel_scale=None):
-    #     binning = 1
-    #     if self.instrument == 'Red':
-    #         binning = int(ccd.header['PG5_4'])
-    #     elif self.instrument == 'Blue':
-    #         binning = int(ccd.header['PARAM22'])
-    #     else:
-    #         log.warning('No proper camera detected.')
-    #     seeing = float(ccd.header['SEEING']) * u.arcsec
-    #     print('seeing '+ str(seeing))
-    #     print('Pixel Scale '+ str(self.pixel_scale))
-    #     print('Binning '+ str(binning))
-    #     fwhm = seeing / (self.pixel_scale * binning)
-    #     # to deal with the cases when there is no seeing info
-    #     fwhm = abs(fwhm/2.)
-    #
-    #     gaussian_kernel = Gaussian2DKernel(stddev=1)
-    #     tophat_kernel = Tophat2DKernel(5)
-    #     new_ccd_data = convolve_fft(ccd.data, tophat_kernel, interpolate_nan=True, allow_huge=True)
-    #
-    #     fig = plt.figure()
-    #     a = fig.add_subplot(2, 1, 1)
-    #     plt.imshow(ccd.data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
-    #     a = fig.add_subplot(2,1,2)
-    #     plt.imshow(new_ccd_data, clim=(5, 150), cmap='cubehelix', origin='lower', interpolation='nearest')
-    #     plt.show()
-    #
-    #     print(fwhm)
-    #     return ccd
 
 if __name__ == '__main__':
     pass
