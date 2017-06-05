@@ -18,22 +18,12 @@ from goodman_ccd.core import cosmicray_rejection
 from goodman_ccd.core import identify_targets
 from goodman_ccd.core import trace_targets
 from goodman_ccd.core import get_extraction_zone
+from goodman_ccd.core import remove_background
 from numpy import ma
 from scipy import signal
 
 
-def remove_background(ccd, profile_model=None, plots=False):
-    ccd_copia = ccd.copy()
-    data = ma.masked_invalid(ccd.data)
-    x, y = ccd.data.shape
-    median = ma.median(data, axis=0)
 
-    data -= median
-    data.set_fill_value(-np.inf)
-    ccd.data = data.filled()
-
-    # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
-    return ccd
 
 
 def extract(ccd, spatial_profile, sampling_step=1, plots=False):
@@ -164,8 +154,9 @@ def optimal_extraction(ccd, n_sigma_extract=10, plots=False):
 
     assert isinstance(ccd, CCDData)
 
-    ccd = remove_background(ccd=ccd, plots=True)
-    profile_model = identify_targets(ccd=ccd, plots=True)
+    iccd = remove_background(ccd=ccd, plots=True)
+    profile_model = identify_targets(ccd=iccd, plots=True)
+    del(iccd)
     if isinstance(profile_model, Model):
         trace_targets(ccd=ccd, profile=profile_model, plots=True)
         # extract(ccd=ccd,
@@ -174,21 +165,41 @@ def optimal_extraction(ccd, n_sigma_extract=10, plots=False):
         #         sampling_step=5)
         if 'CompoundModel' in profile_model.__class__.name:
             for submodel_name in profile_model.submodel_names:
-                nccd, model = get_extraction_zone(ccd=ccd,
-                                                  model=profile_model[submodel_name],
-                                                  n_sigma_extract=n_sigma_extract,
-                                                  plots=True)
-                extract(ccd=nccd, spatial_profile=model, sampling_step=10, plots=True)
+
+                nccd, model, zone = get_extraction_zone(
+                    ccd=ccd,
+                    model=profile_model[submodel_name],
+                    n_sigma_extract=n_sigma_extract,
+                    plots=True)
+
+                nccd = remove_background(ccd=nccd,
+                                         plots=True)
+
+                extract(ccd=nccd,
+                        spatial_profile=model,
+                        sampling_step=10,
+                        plots=True)
+
                 if plots:
                     plt.imshow(nccd)
                     plt.show()
 
         else:
-            nccd, model = get_extraction_zone(ccd=ccd,
-                                              model=profile_model,
-                                              n_sigma_extract=n_sigma_extract,
-                                              plots=True)
-            extract(ccd=nccd, spatial_profile=model, sampling_step=10, plots=True)
+
+            nccd, model, zone = get_extraction_zone(
+                ccd=ccd,
+                model=profile_model,
+                n_sigma_extract=n_sigma_extract,
+                plots=True)
+
+            nccd = remove_background(ccd=nccd,
+                                         plots=True)
+
+            extract(ccd=nccd,
+                    spatial_profile=model,
+                    sampling_step=10,
+                    plots=True)
+
             if plots:
                 plt.imshow(nccd)
                 plt.show()

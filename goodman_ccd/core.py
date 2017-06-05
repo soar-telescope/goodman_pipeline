@@ -9,6 +9,7 @@ import random
 import logging
 import ccdproc
 import numpy as np
+import numpy.ma as ma
 import matplotlib
 matplotlib.use('GTK3Agg')
 from matplotlib import pyplot as plt
@@ -741,7 +742,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     return all_traces
 
 
-def get_extraction_zone(ccd, model, n_sigma_extract, plots=False):
+def get_extraction_zone(ccd, model, n_sigma_extract, plots=False, zone=None):
     """Get a rectangular CCD zone that contains the spectrum
 
     Notes:
@@ -758,6 +759,7 @@ def get_extraction_zone(ccd, model, n_sigma_extract, plots=False):
          fitted to the spatial profile.
         n_sigma_extract (int): Total number of sigmas to be extracted.
         plots (bool): If True will show plots, similar to a debugging mode.
+        zone (list): Low and high limits to extract
 
     Returns:
         nccd (object): Instance of ccdproc.CCDData that contains only the region
@@ -765,17 +767,23 @@ def get_extraction_zone(ccd, model, n_sigma_extract, plots=False):
         keyword that contain the region of the original image extracted.
         model (object): Instance of astropy.modeling.Model with an updated mean
         to match the new center in pixel units.
+        zone (list): Low and high limits of extraction zone
 
     """
 
-    spatial_length, dispersion_length = ccd.data.shape
+    if zone is None:
+        spatial_length, dispersion_length = ccd.data.shape
 
-    mean = model.mean.value
-    stddev = model.stddev.value
-    extract_width = n_sigma_extract // 2 * stddev
+        mean = model.mean.value
+        stddev = model.stddev.value
+        extract_width = n_sigma_extract // 2 * stddev
 
-    low_lim = np.max([0, int(mean - extract_width)])
-    hig_lim = np.min([int(mean + extract_width), spatial_length])
+        low_lim = np.max([0, int(mean - extract_width)])
+        hig_lim = np.min([int(mean + extract_width), spatial_length])
+
+        zone = [low_lim, hig_lim]
+    else:
+        low_lim, hig_lim = zone
 
     nccd = ccd.copy()
     nccd.data = ccd.data[low_lim:hig_lim, :]
@@ -788,7 +796,7 @@ def get_extraction_zone(ccd, model, n_sigma_extract, plots=False):
         plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
         plt.show()
 
-    return nccd, model
+    return nccd, model, zone
 
 
 def add_wcs_keys(header):
@@ -821,3 +829,16 @@ def add_wcs_keys(header):
     except TypeError as err:
         log.error("Can't add wcs keywords to header")
         log.debug(err)
+
+def remove_background(ccd, profile_model=None, plots=False):
+    # ccd_copia = ccd.copy()
+    data = ma.masked_invalid(ccd.data)
+    # x, y = ccd.data.shape
+    median = ma.median(data, axis=0)
+
+    data -= median
+    data.set_fill_value(-np.inf)
+    ccd.data = data.filled()
+
+    # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
+    return ccd
