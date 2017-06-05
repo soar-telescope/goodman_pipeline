@@ -57,11 +57,6 @@ class DataClassifier(object):
         else:
             log.error('Failed to determine Instrument or Technique for the night: ' + self.args.raw_path)
 
-        # print('END\n')
-        # TODO (simon): Remove this cleaning process and modify software so it is not necessary
-        self.instrument = None
-        self.technique = None
-
     def get_instrument(self, night_folder):
         """Identify Goodman's Camera
 

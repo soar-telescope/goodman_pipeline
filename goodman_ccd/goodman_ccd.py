@@ -153,8 +153,8 @@ class MainApp(object):
             self.args = args
         self.data_container = None
         self.full_path = None
-        self.instrument = None
-        self.technique = None
+        # self.instrument = None
+        # self.technique = None
     
     def __call__(self):
         """Call method for MainApp
@@ -181,8 +181,10 @@ class MainApp(object):
                 night_sorter = DataClassifier(self.args)
                 log.debug('Calling night_sorter Instance of DataClassifier')
                 night_sorter()
-                self.instrument = night_sorter.instrument
-                self.technique = night_sorter.technique
+                # self.instrument = night_sorter.instrument
+                # self.technique = night_sorter.technique
+                # print(self.instrument)
+                # print(self.technique)
             except AttributeError as error:
                 print(error)
                 log.error('Empty or Invalid data directory:'
@@ -234,7 +236,7 @@ class MainApp(object):
                                                  ignore_bias=self.args.ignore_bias)
                 log.debug('Calling night_organizer instance')
                 self.data_container = night_organizer()
-                if self.data_container is False or self.data_container is None:
+                if self.data_container is None or self.data_container is None:
                     log.error('Discarding night ' + str(night))
                     break
                 process_images = ImageProcessor(self.args, self.data_container)

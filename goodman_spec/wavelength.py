@@ -783,7 +783,8 @@ class WavelengthCalibration(object):
                 plt.clf()
                 plt.ioff()
 
-        # This is good and necessary as a first approach for some very wrong correlation results
+        # This is good and necessary as a first approach for some very wrong
+        # correlation results
         clipped_values = sigma_clip(correlation_values,
                                     sigma=2,
                                     iters=1,
@@ -1649,7 +1650,7 @@ class WavelengthCalibration(object):
                                                 color='k',
                                                 alpha=0.4,
                                                 edgecolor=None,
-                                                label='{:f} Sigma'.format(
+                                                label='{:.1f} Sigma'.format(
                                                     clipping_sigma))
 
                 self.ax4_plots = self.ax4.scatter(self.lines_center,
