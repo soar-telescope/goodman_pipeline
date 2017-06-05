@@ -163,7 +163,7 @@ Supported Processing Modes are:
                         dest='reference_dir',
                         help="Directory of Reference files location")
 
-    parser.add_argument('-i', '-interactive',
+    parser.add_argument('-i', '--interactive',
                         action='store_true',
                         dest='interactive_ws',
                         help="Interactive wavelength solution."
@@ -178,6 +178,11 @@ Supported Processing Modes are:
                         action='store_true',
                         dest='log_to_file',
                         help="Write log to a file")
+
+    parser.add_argument('--save-plots',
+                        action='store_true',
+                        dest='save_plots',
+                        help="Save all plots in a directory")
 
     args = parser.parse_args()
     if args.debug_mode:

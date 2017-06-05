@@ -6,12 +6,17 @@ the __call__ method returns a list contained uni-dimensional data extracted and 
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from astropy.io import fits
-import matplotlib.pyplot as plt
-import numpy as np
-from astropy.modeling import models, fitting
-import logging
+
+
 import os
+import numpy as np
+import matplotlib
+matplotlib.use('GTK3Agg')
+import matplotlib.pyplot as plt
+import logging
+from astropy.io import fits
+from astropy.modeling import models, fitting
+from goodman_ccd.core import add_wcs_keys
 
 
 
@@ -46,8 +51,8 @@ class Process(object):
         self.path = self.args.source
         self.data = fits.getdata(os.path.join(self.path,
                                               self.science_object.file_name))
-        self.header = self.add_wcs_keys(fits.getheader(os.path.join(self.path,
-                                                                    self.science_object.file_name)))
+        self.header = add_wcs_keys(fits.getheader(os.path.join(self.path,
+                                                               self.science_object.file_name)))
         self.lamps_data = []
         self.lamps_header = []
         self.close_targets = False
@@ -79,7 +84,7 @@ class Process(object):
                     lamp_data = fits.getdata(os.path.join(self.path, self.science_object.lamp_file[lamp_index]))
                     # lamp_type = self.science_object.lamp_type[lamp_index]
                     self.lamps_data.append(lamp_data)
-                    lamp_header = self.add_wcs_keys(
+                    lamp_header = add_wcs_keys(
                         fits.getheader(os.path.join(self.path, self.science_object.lamp_file[lamp_index])))
                     self.lamps_header.append(lamp_header)
             else:
@@ -576,38 +581,6 @@ class Process(object):
             log.error("There are no traces discovered here!!.")
             return None
 
-    @staticmethod
-    def add_wcs_keys(header):
-        """Adds generic keyword to the header
-        Linear wavelength solutions require a set of standard fits keywords. Later on they will be updated accordingly
-        The main goal of putting them here is to have consistent and nicely ordered headers
-
-        Args:
-            header (object): New header without WCS entries
-
-        Returns:
-            header (object): Modified header
-
-        """
-        try:
-            header['BANDID1'] = 'spectrum - background none, weights none, clean no'
-            header['APNUM1'] = '1 1 0 0'
-            header['WCSDIM'] = 1
-            header['CTYPE1'] = 'LINEAR'
-            header['CRVAL1'] = 1
-            header['CRPIX1'] = 1
-            header['CDELT1'] = 1
-            header['CD1_1'] = 1
-            header['LTM1_1'] = 1
-            header['WAT0_001'] = 'system=equispec'
-            header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
-            header['DC-FLAG'] = 0
-            header['DCLOG1'] = 'REFSPEC1 = non set'
-            return header
-        except TypeError as err:
-            log.error("Can't add wcs keywords to header")
-            log.debug(err)
-
 
 class IdentifiedTarget(object):
     """Allows for easy storage and manipulation of the targets found.
@@ -697,17 +670,19 @@ class SciencePack(object):
     def check_consistency(self):
         """Check that all stored data is consistent
 
-        There should be the same number of _data_ and their respective _headers_, the same for _lamps\_data_ and
-        _lamps\_headers_
+        There should be the same number of _data_ and their respective
+        _headers_, the same for _lamps\_data_ and _lamps\_headers_
 
         """
         if len(self.data) == len(self.headers):
             log.debug('Science data and headers are consistent')
         else:
             log.error('Science data and headers are not consistent')
-            log.error('Data: %s, Headers: %s', len(self.data), len(self.headers))
+            log.error('Data: {:d}, Headers: {:d}'.format(len(self.data),
+                                                         len(self.headers)))
         if len(self.lamps_data) == len(self.lamps_headers):
             log.debug('Lamps data and headers are consistent')
         else:
             log.error('Lamps data and headers are not consistent')
-            log.error('Lamps: %s, Headers: %s', len(self.data), len(self.headers))
+            log.error('Lamps: {:d}, Headers: {:d}'.format(len(self.data),
+                                                         len(self.headers)))

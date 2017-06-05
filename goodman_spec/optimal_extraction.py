@@ -15,205 +15,11 @@ import glob
 from astropy.modeling import (models, fitting, Model)
 from ccdproc import CCDData
 from goodman_ccd.core import cosmicray_rejection
+from goodman_ccd.core import identify_targets
+from goodman_ccd.core import trace_targets
+from goodman_ccd.core import get_extraction_zone
 from numpy import ma
 from scipy import signal
-
-
-def identify_targets(ccd, plots=False):
-    """Identify targets cross correlating spatial profile with a gaussian model
-
-    The method of cross-correlating a gaussian model to the spatial profile was
-    mentioned in Marsh 1989, then I created my own implementation. The spatial
-    profile is obtained by finding the median across the full dispersion axis.
-    For goodman the spectrum and ccd are very well aligned, there is a slight
-    variation from one configuration to another but in general is acceptable.
-
-    Args:
-        ccd (object): a ccdproc.CCDData instance
-
-    Returns:
-        profile_model (object): an astropy.modeling.Model instance, it could be
-        a Gaussian1D or CompoundModel (several Gaussian1D). Each of them
-        represent a point source spectrum found.
-
-    """
-    if isinstance(ccd, CCDData):
-        slit_size = re.sub('[a-zA-Z"]', '', ccd.header['SLIT'])
-        serial_binning = int(ccd.header['CCDSUM'].split()[0])
-        # order will be used for finding the peaks later but also as an initial
-        # estimate for stddev of gaussian
-        order = int(round(float(slit_size) / (0.15 * serial_binning)))
-        # averaging overall spectral dimension because in goodman the spectra is
-        # deviated very little
-        profile_median = np.median(ccd.data, axis=1)
-
-        # Gaussian has to be defined at the middle for it to work
-        gaussian = models.Gaussian1D(amplitude=profile_median.max(),
-                                     mean=profile_median.size // 2,
-                                     stddev=order).rename('Gaussian')
-
-        # do cross correlation of data with gaussian
-        # this is useful for cases with low signal to noise ratio
-        cross_corr = signal.correlate(in1=profile_median,
-                                      in2=gaussian(range(profile_median.size)),
-                                      mode='same')
-        # filter cross correlation data
-        filt_cross_corr = np.where(np.abs(cross_corr > cross_corr.min()
-                                          + 0.03 * cross_corr.max()),
-                                   cross_corr,
-                                   None)
-        peaks = signal.argrelmax(filt_cross_corr, axis=0, order=order)[0]
-
-        profile_model = None
-        for i in range(len(peaks)):
-            low_lim = np.max([0, peaks[i] - 5])
-            hig_lim = np.min([peaks[i] + 5, profile_median.size])
-            amplitude = profile_median[low_lim: hig_lim].max()
-            gaussian = models.Gaussian1D(amplitude=amplitude,
-                                         mean=peaks[i],
-                                         stddev=order).rename('Gaussian_{:d}'.format(i))
-            if profile_model is not None:
-                profile_model += gaussian
-            else:
-                profile_model = gaussian
-        #     plt.axvline(peaks[i])
-        # print(profile_model)
-
-        # fit model to profile
-        fit_gaussian = fitting.LevMarLSQFitter()
-        profile_model = fit_gaussian(model=profile_model,
-                                     x=range(profile_median.size),
-                                     y=profile_median)
-        # print(fit_gaussian.fit_info)
-        if plots:
-            # plt.plot(cross_corr, label='Cross Correlation', linestyle='--')
-            plt.plot(profile_model(range(profile_median.size)),
-                     label='Fitted Model')
-            plt.plot(profile_median, label='Profile (median)', linestyle='--')
-            plt.legend(loc='best')
-            plt.show()
-
-        # print(profile_model)
-        if fit_gaussian.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log.warning('There is some problem with the fitting. Returning None.')
-            return None
-        else:
-            return profile_model
-
-    else:
-        log.error('Not a CCDData instance')
-        return None
-
-
-def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
-    """Find the trace of the target's spectrum on the image
-
-    Args:
-        ccd (object): Instance of ccdproc.CCDData
-        profile (object): Instance of astropy.modeling.Model, contains the
-        spatial profile of the 2D spectrum.
-        sampling_step (int): Frequency of sampling in pixels
-        pol_deg (int): Polynomial degree for fitting the trace
-        plots (bool): If True will show plots (debugging)
-
-    Returns:
-
-    """
-    # added two assert for debugging purposes
-    assert isinstance(ccd, CCDData)
-    assert isinstance(profile, Model)
-
-    # Get image dimensions
-    spatial_length, dispersion_length = ccd.data.shape
-
-    # Initialize model fitter
-    model_fitter = fitting.LevMarLSQFitter()
-
-    # Initialize the model to fit the traces
-    trace_model = models.Polynomial1D(degree=pol_deg)
-
-    # Will store the arrays for the fitted location of the target obtained
-    # in the fitting
-    trace_points = None
-
-    # List that will contain all the Model instances corresponding to traced
-    # targets
-    all_traces = None
-
-    # Array defining the points to be sampled
-    sampling_axis = range(0,
-                          dispersion_length // sampling_step * sampling_step,
-                          sampling_step)
-
-    # Loop to go through all the sampling points
-    for i in sampling_axis:
-        # Fit the inital model to the data
-        fitted_profile = model_fitter(model=profile,
-                                      x=range(ccd.data[:, i].size),
-                                      y=ccd.data[:, i])
-        if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log.error(
-                "Fitting did not work fit_info['ierr'] = \
-                {:d}".format(model_fitter.fit_info['ierr']))
-
-        # alternatively could use fitted_profile.param_names
-        # the mean_keys is another way to tell how many submodels are in the
-        # model that was parsed.
-        mean_keys = [key for key in dir(fitted_profile) if 'mean' in key]
-
-        if trace_points is None:
-            trace_points = np.ndarray((len(mean_keys),
-                                       dispersion_length // sampling_step))
-
-        # store the corresponding value in the proper array for later fitting
-        # a low order polinomial
-        for e in range(trace_points.shape[0]):
-            trace_points[e][i // sampling_step] =\
-               fitted_profile.__getattribute__(mean_keys[e]).value
-
-    # fit a low order polynomial for the trace
-    for trace_num in range(trace_points.shape[0]):
-        fitted_trace = model_fitter(model=trace_model,
-                                    x=sampling_axis,
-                                    y=trace_points[trace_num])
-
-        fitted_trace.rename('Trace_{:d}'.format(trace_num))
-
-        if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log.error(model_fitter.fit_info['ierr'])
-        else:
-            # RMS Error calculation
-            RMSError = np.sqrt(
-                np.sum(np.array([fitted_trace(sampling_axis) -
-                                 trace_points[trace_num]]) ** 2))
-            log.info('Trace Fit RMSE: {:.3f}'.format(RMSError))
-
-            if all_traces is None:
-                all_traces = [fitted_trace]
-            else:
-                all_traces.append(fitted_trace)
-
-        if plots:
-            plt.plot(sampling_axis,
-                     trace_points[trace_num],
-                     marker='o',
-                     label='Data Points')
-            plt.plot(fitted_trace(range(dispersion_length)),
-                     label='Model RMSE: {:.2f}'.format(RMSError))
-
-    if plots:
-        plt.title('Targets Trace')
-        plt.xlabel('Dispersion Axis')
-        plt.ylabel('Spatial Axis')
-        plt.imshow(ccd.data, cmap='YlGnBu', clim=(0, 300))
-
-        for trace in trace_points:
-            plt.plot(sampling_axis, trace, marker='.', linestyle='--')
-            # print(trace)
-        plt.legend(loc='best')
-        plt.show()
-    return all_traces
-
 
 
 def remove_background(ccd, profile_model=None, plots=False):
@@ -354,39 +160,14 @@ def extract(ccd, spatial_profile, sampling_step=1, plots=False):
         # plt.close()
 
 
-def get_extraction_zone(ccd, model, n_sigma_extract, plots=False):
-
-    spatial_length, dispersion_length = ccd.data.shape
-
-    mean = model.mean.value
-    stddev = model.stddev.value
-    extract_width = n_sigma_extract // 2 * stddev
-
-    low_lim = np.max([0, int(mean - extract_width)])
-    hig_lim = np.min([int(mean + extract_width), spatial_length])
-
-    nccd = ccd.copy()
-    nccd.data = ccd.data[low_lim:hig_lim, :]
-    nccd.header['HISTORY'] = 'Subsection of CCD [{:d}:{:d}, :]'.format(low_lim,
-                                                                       hig_lim)
-    model.mean.value = extract_width
-
-    if plots:
-        plt.imshow(ccd.data)
-        plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
-        plt.show()
-
-    return nccd, model
-
-
 def optimal_extraction(ccd, n_sigma_extract=10, plots=False):
 
     assert isinstance(ccd, CCDData)
 
-    ccd = remove_background(ccd=ccd)
-    profile_model = identify_targets(ccd=ccd)
+    ccd = remove_background(ccd=ccd, plots=True)
+    profile_model = identify_targets(ccd=ccd, plots=True)
     if isinstance(profile_model, Model):
-        trace_targets(ccd=ccd, profile=profile_model)
+        trace_targets(ccd=ccd, profile=profile_model, plots=True)
         # extract(ccd=ccd,
         #         spatial_profile=profile_model,
         #         n_sigma_extract=10,
@@ -395,8 +176,9 @@ def optimal_extraction(ccd, n_sigma_extract=10, plots=False):
             for submodel_name in profile_model.submodel_names:
                 nccd, model = get_extraction_zone(ccd=ccd,
                                                   model=profile_model[submodel_name],
-                                                  n_sigma_extract=n_sigma_extract)
-                extract(ccd=nccd, spatial_profile=model, sampling_step=10)
+                                                  n_sigma_extract=n_sigma_extract,
+                                                  plots=True)
+                extract(ccd=nccd, spatial_profile=model, sampling_step=10, plots=True)
                 if plots:
                     plt.imshow(nccd)
                     plt.show()
@@ -404,8 +186,9 @@ def optimal_extraction(ccd, n_sigma_extract=10, plots=False):
         else:
             nccd, model = get_extraction_zone(ccd=ccd,
                                               model=profile_model,
-                                              n_sigma_extract=n_sigma_extract)
-            extract(ccd=nccd, spatial_profile=model, sampling_step=10)
+                                              n_sigma_extract=n_sigma_extract,
+                                              plots=True)
+            extract(ccd=nccd, spatial_profile=model, sampling_step=10, plots=True)
             if plots:
                 plt.imshow(nccd)
                 plt.show()
@@ -416,11 +199,18 @@ def optimal_extraction(ccd, n_sigma_extract=10, plots=False):
         log.error('Got wrong input')
 
 if __name__ == '__main__':
-    files = ['/data/simon/data/soar/work/GOO_BLU_SPE_2017-05-09/RED/cfzsto_1086_HD104237_400M2_GG455.fits',
-             '/data/simon/data/soar/work/20161114_eng_3/RED4/cfzsto_0216_EG21_1200M5_GG455.fits',
-             '/user/simon/Downloads/goodman_target_simulator-master/dummy2.fits',
-             '/data/simon/data/soar/work/GOO_BLU_SPE_2017-05-09/RED/cfzsto_1119_HgAr_400M2_GG455.fits']
+    # files = ['/data/simon/data/soar/work/GOO_BLU_SPE_2017-05-09/RED/cfzsto_1086_HD104237_400M2_GG455.fits',
+    #          '/data/simon/data/soar/work/20161114_eng_3/RED4/cfzsto_0216_EG21_1200M5_GG455.fits',
+    #          '/user/simon/Downloads/goodman_target_simulator-master/dummy2.fits',
+    #          '/data/simon/data/soar/work/GOO_BLU_SPE_2017-05-09/RED/cfzsto_1119_HgAr_400M2_GG455.fits']
     # files = glob.glob('/data/simon/data/soar/work/GOO_BLU_SPE_2017-05-09/RED/cfzsto*')
+    files = ['/user/simon/data/soar/observer/SciCase001/2014-11-10/SYZY_400M2/RED/cfzsto_0074.cvso114_400M2_GG455.fits',
+             '/user/simon/data/soar/observer/SciCase001/2014-11-10/SYZY_400M2/RED/cfzsto_0075.cvso114_400M2_GG455.fits',
+             '/user/simon/data/soar/observer/SciCase001/2014-11-10/SYZY_400M2/RED/cfzsto_0076.cvso114_400M2_GG455.fits']
+
+
+
+
     i=10
     for sfile in files:
         ccd = CCDData.read(sfile, unit=u.adu)
