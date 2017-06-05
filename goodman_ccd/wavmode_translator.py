@@ -1,12 +1,13 @@
 # translate from camera angle to wavmode
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import re
 import pandas
+import logging
+import numpy as np
 from ccdproc import CCDData
 from astropy import units as u
-import numpy as np
-import re
-import logging
+from .core import get_central_wavelength
 
 log = logging.getLogger('goodmanccd.wavmodetranslator')
 
@@ -74,10 +75,16 @@ class SpectroscopicMode(object):
         self.modes_data_frame = pandas.DataFrame(spec_mode, columns=columns)
         # print(self.modes_data_frame)
 
-    def __call__(self, header=None, grating=None, camera_targ=None, grating_targ=None, blocking_filter=None):
+    def __call__(self,
+                 header=None,
+                 grating=None,
+                 camera_targ=None,
+                 grating_targ=None,
+                 blocking_filter=None):
         """
 
-        This method can be called either parsing a header alone or the rest of values separated.
+        This method can be called either parsing a header alone or the rest of
+        values separated.
 
         Args:
             header:
@@ -90,16 +97,27 @@ class SpectroscopicMode(object):
 
         """
 
-        if all(x is None for x in (grating, camera_targ, grating_targ, blocking_filter)) and header is not None:
+        if all(x is None for x in (
+                grating, camera_targ, grating_targ, blocking_filter)) and \
+                        header is not None:
+
             grating = str(re.sub('[A-Za-z_-]', '', header['grating']))
             camera_targ = str(header['cam_targ'])
             grating_targ = str(header['grt_targ'])
             blocking_filter = str(header['filter2'])
             # print(grating, camera_targ, grating_targ, blocking_filter)
-            return self.get_mode(grating, camera_targ, grating_targ, blocking_filter)
+
+            return self.get_mode(grating=grating,
+                                 camera_targ=camera_targ,
+                                 grating_targ=grating_targ,
+                                 blocking_filter=blocking_filter)
         else:
             grating = re.sub('[A-Za-z_-]', '', grating)
-            return self.get_mode(grating, camera_targ, grating_targ, blocking_filter)
+
+            return self.get_mode(grating=grating,
+                                 camera_targ=camera_targ,
+                                 grating_targ=grating_targ,
+                                 blocking_filter=blocking_filter)
 
     def get_mode(self, grating, camera_targ, grating_targ, blocking_filter):
         """
@@ -116,34 +134,19 @@ class SpectroscopicMode(object):
 
         # print(grating, camera_targ, grating_targ)
         if any(grat == grating for grat in ('1800', '2100', '2400')):
-            return 'Custom' + self.get_central_wavelength(grating, grating_targ, camera_targ)
-        _mode = self.modes_data_frame[((self.modes_data_frame['grating_freq'] == grating)
-                                                    & (self.modes_data_frame['camtarg'] == camera_targ)
-                                                    & (self.modes_data_frame['grttarg'] == grating_targ))]
+            central_wavelength = get_central_wavelength(grating=grating,
+                                                     grt_ang=grating_targ,
+                                                     cam_ang=camera_targ)
+            return 'Custom_{:d}nm'.format(int(round(central_wavelength)))
+
+        _mode = self.modes_data_frame[
+            ((self.modes_data_frame['grating_freq'] == grating) &
+             (self.modes_data_frame['camtarg'] == camera_targ) &
+             (self.modes_data_frame['grttarg'] == grating_targ))]
+
         # print('%s %s' %(grating, _mode.wavmode))
         # print(_mode['wavmode'].to_string)
         return _mode['wavmode'].to_string(index=False)
-
-    @staticmethod
-    def get_central_wavelength(grating, grt_ang, cam_ang):
-        """
-
-        Args:
-            grating:
-            grt_ang:
-            cam_ang:
-
-        Returns:
-
-        """
-
-        grating_frequency = float(grating)
-        alpha = float(grt_ang)
-        beta = float(cam_ang) - float(grt_ang)
-        center_wavelength = (1e6 / grating_frequency) * (np.sin(alpha * np.pi / 180.) + np.sin(beta * np.pi / 180.))
-        # log.error(center_wavelength)
-        return '_{:d}nm'.format(int(round(center_wavelength)))
-
 
 if __name__ == '__main__':
     # TODO (simon): Remove these lines

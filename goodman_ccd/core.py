@@ -509,6 +509,38 @@ def normalize_master_flat(master, name, method='simple', order=15):
 
     return master
 
+
+def get_central_wavelength(grating, grt_ang, cam_ang):
+    """Calculates the central wavelength for a given spectroscopic mode
+
+    The equation used to calculate the central wavelength is the following
+
+
+    $$\lambda_{central} = \frac{1e6}{GRAT}
+    \sin\left(\frac{\alpha \pi}{180}\right) +
+    \sin\left(\frac{\beta \pi}{180}\right)$$
+
+    Args:
+        grating:
+        grt_ang:
+        cam_ang:
+
+    Returns:
+
+    """
+
+    grating_frequency = float(grating)
+    alpha = float(grt_ang)
+    beta = float(cam_ang) - float(grt_ang)
+
+    central_wavelength = (1e6 / grating_frequency) * \
+                         (np.sin(alpha * np.pi / 180.) +
+                          np.sin(beta * np.pi / 180.))
+
+    log.debug('Found {:.3f} as central wavelength'.format(central_wavelength))
+    return central_wavelength
+
+
 # spectroscopy specific functions
 
 def identify_targets(ccd, plots=False):
