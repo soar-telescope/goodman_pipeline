@@ -15,6 +15,7 @@ from astropy.time import Time, TimeDelta
 from astroplan import Observer
 from astropy import units as u
 from .core import convert_time, get_twilight_time, ra_dec_to_deg
+from .core import NightDataContainer
 
 log = logging.getLogger('goodmanccd.nightorganizer')
 
@@ -57,9 +58,9 @@ class NightOrganizer(object):
         self.file_collection = None
         self.all_datatypes = None
 
-        self.data_container = Night(path=self.path,
-                                    instrument=self.instrument,
-                                    technique=self.technique)
+        self.data_container = NightDataContainer(path=self.path,
+                                                 instrument=self.instrument,
+                                                 technique=self.technique)
 
         self.day_time_data = None
         self.night_time_data = None
@@ -129,14 +130,14 @@ class NightOrganizer(object):
         CAM_TARG,GRT_TARG, SLIT, OBSRA and OBSDEC.
 
         This method populates the `data_container` class attribute which is an
-        instance of the class Night.
+        instance of the class NightDataContainer.
         A data group is an instance of a Pandas DataFrame.
 
         """
 
         print(file_collection)
         assert isinstance(file_collection, pandas.DataFrame)
-        assert isinstance(data_container, Night)
+        assert isinstance(data_container, NightDataContainer)
 
         # obtain a list of timestamps of observing time
         # this will only be used for naming flats
@@ -280,122 +281,6 @@ class NightOrganizer(object):
                  (science_data['filter'] == confs.iloc[i]['filter']))]
 
             self.data_container.add_data_group(science_group)
-
-
-class Night(object):
-    """This class is designed to be the organized data container. It doesn't
-    store image data but list of pandas.DataFrame objects. Also it stores
-    critical variables such as sunrise and sunset times.
-
-    """
-
-    def __init__(self, path, instrument, technique):
-        """Initializes all the variables for the class
-
-        Args:
-            path (str): Full path to the directory where raw data is located
-            instrument (str): 'Red' or 'Blue' stating whether the data was taken
-            using the Red or Blue Goodman Camera.
-            technique (str): 'Spectroscopy' or 'Imaging' stating what kind of
-            data was taken.
-        """
-
-        self.full_path = path
-        self.instrument = instrument
-        self.technique = technique
-        self.is_empty = True
-        self.bias = None
-        self.day_flats = None
-        self.dome_flats = None
-        self.sky_flats = None
-        self.data_groups = None
-        self.sun_set_time = None
-        self.sun_rise_time = None
-        self.evening_twilight = None
-        self.morning_twilight = None
-
-    def add_bias(self, bias_group):
-        """Adds a bias group
-
-        Args:
-            bias_group (pandas.DataFrame): Contains a set of keyword values of
-            grouped image metadata
-
-        """
-
-        if len(bias_group) < 2:
-            if self.technique == 'Imaging':
-
-                log.error('Imaging mode needs BIAS to work properly. '
-                          'Go find some.')
-
-            else:
-                log.warning('BIAS are needed for optimal results.')
-        else:
-            if self.bias is None:
-                self.bias = [bias_group]
-            else:
-                self.bias.append(bias_group)
-        if self.bias is not None:
-            self.is_empty = False
-
-    def add_day_flats(self, day_flats):
-        """"Adds a daytime flat group
-
-        Args:
-            day_flats (pandas.DataFrame): Contains a set of keyword values of
-            grouped image metadata
-
-        """
-
-        if self.day_flats is None:
-            self.day_flats = [day_flats]
-        else:
-            self.day_flats.append(day_flats)
-        if self.day_flats is not None:
-            self.is_empty = False
-
-    def add_data_group(self, data_group):
-        """Adds a data group
-
-        Args:
-            data_group (pandas.DataFrame): Contains a set of keyword values of
-            grouped image metadata
-
-        """
-
-        if self.data_groups is None:
-            self.data_groups = [data_group]
-        else:
-            self.data_groups.append(data_group)
-        if self.data_groups is not None:
-            self.is_empty = False
-
-    def set_sun_times(self, sun_set, sun_rise):
-        """Sets values for sunset and sunrise
-
-        Args:
-            sun_set (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-            sun_rise (str):Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-
-        """
-
-        self.sun_set_time = sun_set
-        self.sun_rise_time = sun_rise
-
-    def set_twilight_times(self, evening, morning):
-        """Sets values for evening and morning twilight
-
-        Args:
-            evening (str): Evening twilight time in the format
-            'YYYY-MM-DDTHH:MM:SS.SS'
-            morning (str): Morning twilight time in the format
-            'YYYY-MM-DDTHH:MM:SS.SS'
-
-        """
-
-        self.evening_twilight = evening
-        self.morning_twilight = morning
 
 
 

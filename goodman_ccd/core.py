@@ -781,9 +781,9 @@ def get_extraction_zone(ccd, model, n_sigma_extract, plots=False, zone=None):
         low_lim = np.max([0, int(mean - extract_width)])
         hig_lim = np.min([int(mean + extract_width), spatial_length])
 
-        zone = [low_lim, hig_lim]
+        zone = [low_lim, hig_lim, extract_width]
     else:
-        low_lim, hig_lim = zone
+        low_lim, hig_lim, extract_width = zone
 
     nccd = ccd.copy()
     nccd.data = ccd.data[low_lim:hig_lim, :]
@@ -830,7 +830,16 @@ def add_wcs_keys(header):
         log.error("Can't add wcs keywords to header")
         log.debug(err)
 
-def remove_background(ccd, profile_model=None, plots=False):
+def remove_background(ccd):
+    """Remove Background of a ccd spectrum image
+
+    Args:
+        ccd (object): A ccdproc.CCDData instance.
+
+    Returns:
+        ccd (object): The modified
+
+    """
     # ccd_copia = ccd.copy()
     data = ma.masked_invalid(ccd.data)
     # x, y = ccd.data.shape
@@ -842,3 +851,121 @@ def remove_background(ccd, profile_model=None, plots=False):
 
     # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
     return ccd
+
+
+# classes definition
+
+class NightDataContainer(object):
+    """This class is designed to be the organized data container. It doesn't
+    store image data but list of pandas.DataFrame objects. Also it stores
+    critical variables such as sunrise and sunset times.
+
+    """
+
+    def __init__(self, path, instrument, technique):
+        """Initializes all the variables for the class
+
+        Args:
+            path (str): Full path to the directory where raw data is located
+            instrument (str): 'Red' or 'Blue' stating whether the data was taken
+            using the Red or Blue Goodman Camera.
+            technique (str): 'Spectroscopy' or 'Imaging' stating what kind of
+            data was taken.
+        """
+
+        self.full_path = path
+        self.instrument = instrument
+        self.technique = technique
+        self.is_empty = True
+        self.bias = None
+        self.day_flats = None
+        self.dome_flats = None
+        self.sky_flats = None
+        self.data_groups = None
+        self.sun_set_time = None
+        self.sun_rise_time = None
+        self.evening_twilight = None
+        self.morning_twilight = None
+
+    def add_bias(self, bias_group):
+        """Adds a bias group
+
+        Args:
+            bias_group (pandas.DataFrame): Contains a set of keyword values of
+            grouped image metadata
+
+        """
+
+        if len(bias_group) < 2:
+            if self.technique == 'Imaging':
+
+                log.error('Imaging mode needs BIAS to work properly. '
+                          'Go find some.')
+
+            else:
+                log.warning('BIAS are needed for optimal results.')
+        else:
+            if self.bias is None:
+                self.bias = [bias_group]
+            else:
+                self.bias.append(bias_group)
+        if self.bias is not None:
+            self.is_empty = False
+
+    def add_day_flats(self, day_flats):
+        """"Adds a daytime flat group
+
+        Args:
+            day_flats (pandas.DataFrame): Contains a set of keyword values of
+            grouped image metadata
+
+        """
+
+        if self.day_flats is None:
+            self.day_flats = [day_flats]
+        else:
+            self.day_flats.append(day_flats)
+        if self.day_flats is not None:
+            self.is_empty = False
+
+    def add_data_group(self, data_group):
+        """Adds a data group
+
+        Args:
+            data_group (pandas.DataFrame): Contains a set of keyword values of
+            grouped image metadata
+
+        """
+
+        if self.data_groups is None:
+            self.data_groups = [data_group]
+        else:
+            self.data_groups.append(data_group)
+        if self.data_groups is not None:
+            self.is_empty = False
+
+    def set_sun_times(self, sun_set, sun_rise):
+        """Sets values for sunset and sunrise
+
+        Args:
+            sun_set (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+            sun_rise (str):Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+
+        """
+
+        self.sun_set_time = sun_set
+        self.sun_rise_time = sun_rise
+
+    def set_twilight_times(self, evening, morning):
+        """Sets values for evening and morning twilight
+
+        Args:
+            evening (str): Evening twilight time in the format
+            'YYYY-MM-DDTHH:MM:SS.SS'
+            morning (str): Morning twilight time in the format
+            'YYYY-MM-DDTHH:MM:SS.SS'
+
+        """
+
+        self.evening_twilight = evening
+        self.morning_twilight = morning
