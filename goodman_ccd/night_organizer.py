@@ -81,8 +81,7 @@ class NightOrganizer(object):
         ifc = ImageFileCollection(self.path, self.keywords)
         self.file_collection = ifc.summary.to_pandas()
         # add two columns that will contain the ra and dec in degrees
-        # TODO (simon): This part creates a warning originated from Pandas.
-        # TODO (cont): Fixit
+
         self.file_collection['radeg'] = ''
         self.file_collection['decdeg'] = ''
         for i in self.file_collection.index.tolist():
@@ -90,16 +89,20 @@ class NightOrganizer(object):
             radeg, decdeg = ra_dec_to_deg(self.file_collection.obsra.iloc[i],
                                           self.file_collection.obsdec.iloc[i])
 
-            self.file_collection.radeg.iloc[i] = '{:.2f}'.format(radeg)
-            self.file_collection.decdeg.iloc[i] = '{:.2f}'.format(decdeg)
+            self.file_collection.iloc[
+                i, self.file_collection.columns.get_loc('radeg')] = \
+                '{:.2f}'.format(radeg)
+
+            self.file_collection.iloc[
+                i, self.file_collection.columns.get_loc('decdeg')] = \
+                '{:.2f}'.format(decdeg)
             # now we can compare using degrees
+
         self.initial_checks()
         self.all_datatypes = self.file_collection.obstype.unique()
         if self.technique == 'Spectroscopy':
-            print(self.data_container.is_empty)
             self.spectroscopy_night(file_collection=self.file_collection,
                                     data_container=self.data_container)
-            print(self.data_container.is_empty)
         elif self.technique == 'Imaging':
             self.imaging_night()
 

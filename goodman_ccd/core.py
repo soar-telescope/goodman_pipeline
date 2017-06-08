@@ -16,6 +16,7 @@ from matplotlib import pyplot as plt
 from ccdproc import CCDData
 from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
+from astropy.stats import sigma_clip
 from astroplan import Observer
 from astropy import units as u
 from astropy.modeling import (models, fitting, Model)
@@ -644,6 +645,8 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         plots (bool): If True will show plots (debugging)
 
     Returns:
+        all_traces (list): List that contains traces that are
+        astropy.modeling.Model instance
 
     """
     # added two assert for debugging purposes
@@ -672,12 +675,32 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                           dispersion_length // sampling_step * sampling_step,
                           sampling_step)
 
-    # Loop to go through all the sampling points
+    # Loop to go through all the sampling points and gather the points
     for i in sampling_axis:
         # Fit the inital model to the data
         fitted_profile = model_fitter(model=profile,
                                       x=range(ccd.data[:, i].size),
                                       y=ccd.data[:, i])
+        log.debug('Profile fitted')
+
+        # if plots or log.isEnabledFor(logging.DEBUG):
+        #     # print(fitted_profile)
+        #     x_axis = range(ccd.data[:, i].size)
+        #     plt.ion()
+        #     plt.title('Column {:d}'.format(i))
+        #     plt.plot(ccd.data[:, i], label='Data')
+        #     plt.plot(x_axis, fitted_profile(x_axis), label='Model')
+        #     plt.legend(loc='best')
+        #     # if model_fitter.fit_info['ierr'] == 1:
+        #     #     # print(model_fitter.fit_info)
+        #     #     plt.ioff()
+        #     #     plt.show()
+        #     #     plt.ion()
+        #     plt.draw()
+        #     plt.pause(.5)
+        #     plt.clf()
+        #     plt.ioff()
+
         if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
             log.error(
                 "Fitting did not work fit_info['ierr'] = \
@@ -688,6 +711,13 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         # model that was parsed.
         mean_keys = [key for key in dir(fitted_profile) if 'mean' in key]
 
+        # Since traces are assumed to vary smoothly with wavelength I change the
+        # previously found mean to the profile model used to fit the profile
+        # data
+        for mean_key in mean_keys:
+            profile.__getattribute__(mean_key).value = \
+                fitted_profile.__getattribute__(mean_key).value
+
         if trace_points is None:
             trace_points = np.ndarray((len(mean_keys),
                                        dispersion_length // sampling_step))
@@ -695,11 +725,15 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         # store the corresponding value in the proper array for later fitting
         # a low order polinomial
         for e in range(trace_points.shape[0]):
-            trace_points[e][i // sampling_step] =\
-               fitted_profile.__getattribute__(mean_keys[e]).value
+            log.debug('Median Trace'
+                      ' {:d}: {:.3f}'.format(e, np.median(trace_points[e])))
+
+            trace_points[e][i // sampling_step] = \
+                fitted_profile.__getattribute__(mean_keys[e]).value
 
     # fit a low order polynomial for the trace
     for trace_num in range(trace_points.shape[0]):
+
         fitted_trace = model_fitter(model=trace_model,
                                     x=sampling_axis,
                                     y=trace_points[trace_num])
@@ -710,10 +744,10 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
             log.error(model_fitter.fit_info['ierr'])
         else:
             # RMS Error calculation
-            RMSError = np.sqrt(
+            rms_error = np.sqrt(
                 np.sum(np.array([fitted_trace(sampling_axis) -
                                  trace_points[trace_num]]) ** 2))
-            log.info('Trace Fit RMSE: {:.3f}'.format(RMSError))
+            log.info('Trace Fit RMSE: {:.3f}'.format(rms_error))
 
             if all_traces is None:
                 all_traces = [fitted_trace]
@@ -726,7 +760,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                      marker='o',
                      label='Data Points')
             plt.plot(fitted_trace(range(dispersion_length)),
-                     label='Model RMSE: {:.2f}'.format(RMSError))
+                     label='Model RMSE: {:.2f}'.format(rms_error))
 
     if plots:
         plt.title('Targets Trace')
@@ -742,8 +776,13 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     return all_traces
 
 
-def get_extraction_zone(ccd, model, n_sigma_extract, plots=False, zone=None):
-    """Get a rectangular CCD zone that contains the spectrum
+def get_extraction_zone(ccd,
+                        trace=None,
+                        model=None,
+                        n_sigma_extract=None,
+                        zone=None,
+                        plots=False):
+    """Get the minimum rectangular CCD zone that fully contains the spectrum
 
     Notes:
         For Goodman HTS the alignment of the spectrum with the detector lines
@@ -755,6 +794,8 @@ def get_extraction_zone(ccd, model, n_sigma_extract, plots=False, zone=None):
     Args:
         ccd (object): A ccdproc.CCDData instance, the image from which the zone
          will be extracted
+        trace (object): An astropy.modeling.Model instance that correspond to
+        the trace of the spectrum
         model (object): An astropy.modeling.Model instance that was previously
          fitted to the spatial profile.
         n_sigma_extract (int): Total number of sigmas to be extracted.
@@ -772,31 +813,51 @@ def get_extraction_zone(ccd, model, n_sigma_extract, plots=False, zone=None):
     """
 
     if zone is None:
+        assert (model is not None) and (n_sigma_extract is not None)
+        assert isinstance(trace, Model)
+
         spatial_length, dispersion_length = ccd.data.shape
 
-        mean = model.mean.value
+        # get maximum variation in spatial direction
+        trace_array = trace(range(dispersion_length))
+        trace_inclination = trace_array.max() - trace_array.min()
+        log.debug('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
+
+
+        # mean = model.mean.value
         stddev = model.stddev.value
         extract_width = n_sigma_extract // 2 * stddev
 
-        low_lim = np.max([0, int(mean - extract_width)])
-        hig_lim = np.min([int(mean + extract_width), spatial_length])
+        # low_lim = np.max([0, int(mean - extract_width - (mean - trace_array.min()))])
+        # hig_lim = np.min([int(mean + extract_width + (trace_array.max() - mean)), spatial_length])
+        low_lim = np.max([0, int(trace_array.min() - extract_width)])
+        hig_lim = np.min([int(trace_array.max() + extract_width), spatial_length])
 
-        zone = [low_lim, hig_lim, extract_width]
+        zone = [low_lim, hig_lim]
+
+        model.mean.value = extract_width
+
+        nccd = ccd.copy()
+        nccd.data = ccd.data[low_lim:hig_lim, :]
+        nccd.header['HISTORY'] = 'Subsection of CCD ' \
+                                 '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
+
+        if plots:
+            plt.imshow(ccd.data)
+            plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
+            plt.show()
+
+        return nccd, model, zone
+
     else:
-        low_lim, hig_lim, extract_width = zone
 
-    nccd = ccd.copy()
-    nccd.data = ccd.data[low_lim:hig_lim, :]
-    nccd.header['HISTORY'] = 'Subsection of CCD [{:d}:{:d}, :]'.format(low_lim,
-                                                                       hig_lim)
-    model.mean.value = extract_width
+        low_lim, hig_lim = zone
 
-    if plots:
-        plt.imshow(ccd.data)
-        plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
-        plt.show()
-
-    return nccd, model, zone
+        nccd = ccd.copy()
+        nccd.data = ccd.data[low_lim:hig_lim, :]
+        nccd.header['HISTORY'] = 'Subsection of CCD ' \
+                                 '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
+        return nccd
 
 
 def add_wcs_keys(header):
@@ -830,7 +891,8 @@ def add_wcs_keys(header):
         log.error("Can't add wcs keywords to header")
         log.debug(err)
 
-def remove_background(ccd):
+
+def remove_background(ccd, plots=False):
     """Remove Background of a ccd spectrum image
 
     Args:
@@ -882,6 +944,8 @@ class NightDataContainer(object):
         self.dome_flats = None
         self.sky_flats = None
         self.data_groups = None
+        self.spec_groups = None
+        # time reference points
         self.sun_set_time = None
         self.sun_rise_time = None
         self.evening_twilight = None
@@ -942,6 +1006,22 @@ class NightDataContainer(object):
         else:
             self.data_groups.append(data_group)
         if self.data_groups is not None:
+            self.is_empty = False
+
+    def add_spec_group(self, spec_group):
+        """Adds a data group
+
+        Args:
+            spec_group (pandas.DataFrame): Contains a set of keyword values of
+            grouped image metadata
+
+        """
+
+        if self.spec_groups is None:
+            self.spec_groups = [spec_group]
+        else:
+            self.spec_groups.append(spec_group)
+        if self.spec_groups is not None:
             self.is_empty = False
 
     def set_sun_times(self, sun_set, sun_rise):
