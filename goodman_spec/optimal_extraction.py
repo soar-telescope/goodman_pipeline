@@ -35,9 +35,10 @@ log = logging.getLogger('optimal')
 
 
 
-def extract(ccd, comp_list, spatial_profile, sampling_step=1, plots=False):
+def extract(ccd, comp_list, trace, spatial_profile, sampling_step=1, plots=False):
 
     assert isinstance(ccd, CCDData)
+    assert isinstance(trace, Model)
 
     spatial_length, dispersion_length = ccd.data.shape
 
@@ -60,6 +61,9 @@ def extract(ccd, comp_list, spatial_profile, sampling_step=1, plots=False):
 
     model_fitter = fitting.LevMarLSQFitter()
 
+    # print(spatial_profile.mean.value)
+    # print(trace.c0.value)
+
     if isinstance(spatial_profile, models.Gaussian1D):
         amplitude = spatial_profile.amplitude.value
         mean = spatial_profile.mean.value
@@ -70,42 +74,38 @@ def extract(ccd, comp_list, spatial_profile, sampling_step=1, plots=False):
         # print('Fixed ', new_model.mean.fixed)
     else:
         raise NotImplementedError
-    print(np.ma.isMaskedArray(ccd.data))
+    log.debug('ccd.data is a masked array: '
+              '{:s}'.format(str(np.ma.isMaskedArray(ccd.data))))
+
     ccd.data = np.ma.masked_invalid(ccd.data)
-    print(np.ma.isMaskedArray(ccd.data))
+    # print(np.ma.isMaskedArray(ccd.data))
     np.ma.set_fill_value(ccd.data, 0)
-    print(np.ma.isMaskedArray(ccd.data))
+
+    # print(np.ma.isMaskedArray(ccd.data))
     simple_sum = np.ma.sum(ccd.data, axis=0)
 
-    print(np.mean(ccd.data))
-    # masked =
-
-    # plt.show()
     out_spectrum = np.empty(dispersion_length)
     for i in range(0, dispersion_length, sampling_step):
+        # force the model to follow the trace
+        new_model.mean.value = trace(i)
+
+        # warn if the difference of the spectrum position in the trace at the
+        # extremes of the sampling range is larger than 1 pixel.
+        if np.abs(trace(i) - trace(i+sampling_step)) > 1:
+            log.warning('Sampling step might be too large')
+
         sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)
         fitted_profile = model_fitter(model=new_model,
                                       x=range(len(sample)),
                                       y=sample)
-        print(model_fitter.fit_info)
+
         profile = fitted_profile(range(sample.size))
-        if (i > 2990) or (i < 30):
-            plt.plot(new_model(range(sample.size)), color='g')
-            plt.plot(fitted_profile(range(sample.size)), color='k')
-            plt.plot(sample, color='r')
-            plt.show()
 
         # enforce positivity
         pos_profile = np.array([np.max([0, x]) for x in profile])
 
         # enforce normalization
         nor_profile = np.array([x / pos_profile.sum() for x in pos_profile])
-        for k in range(nor_profile.size):
-            print(' ', pos_profile[k], nor_profile[k], profile[k])
-        if np.isnan(nor_profile).any():
-            print('Yes there are!')
-
-        # print(i)
 
         if sampling_step > 1:
             # TODO (simon): Simplify to Pythonic way
@@ -202,7 +202,7 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
         if 'CompoundModel' in profile_model.__class__.name:
             for submodel_name in profile_model.submodel_names:
 
-                nccd, model, zone = get_extraction_zone(
+                nccd, trace, model, zone = get_extraction_zone(
                     ccd=ccd,
                     trace=traces[0],
                     model=profile_model[submodel_name],
@@ -219,6 +219,7 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
 
                 extract(ccd=nccd,
                         comp_list=comp_zones,
+                        trace=trace,
                         spatial_profile=model,
                         sampling_step=10,
                         plots=True)
@@ -228,8 +229,7 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
                     plt.show()
 
         else:
-
-            nccd, model, zone = get_extraction_zone(
+            nccd, trace, model, zone = get_extraction_zone(
                 ccd=ccd,
                 trace=traces[0],
                 model=profile_model,
@@ -238,7 +238,7 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
 
             for comp in comp_list:
                 comp_zone = get_extraction_zone(ccd=comp,
-                                                trace=traces[0],
+                                                trace=trace,
                                                 zone=zone)
                 comp_zones.append(comp_zone)
 
@@ -247,6 +247,7 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
 
             extract(ccd=nccd,
                     comp_list=comp_zones,
+                    trace=trace,
                     spatial_profile=model,
                     sampling_step=10,
                     plots=True)

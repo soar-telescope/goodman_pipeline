@@ -65,8 +65,10 @@ def fix_duplicated_keywords(night_dir):
                 if keyword not in multiple_keys:
                     multiple_keys.append(keyword)
     if multiple_keys != []:
-        log.info('Found {:d} duplicated keyword{:s}'.format(len(multiple_keys),
-                                                            's' if len(multiple_keys) > 1 else ''))
+        log.info('Found {:d} duplicated keyword '
+                 '{:s}'.format(len(multiple_keys),
+                               's' if len(multiple_keys) > 1 else ''))
+
         for image_file in files:
             log.debug('Processing Image File: {:s}'.format(image_file))
             try:
@@ -96,12 +98,14 @@ def ra_dec_to_deg(right_ascension, declination):
     """
     right_ascension = right_ascension.split(":")
     declination = declination.split(":")
+
     # RIGHT ASCENTION conversion
     right_ascension_deg = (float(right_ascension[0])
                            + (float(right_ascension[1])
-                              + (float(right_ascension[2]) / 60.)) / 60.) * (360. / 24.)
+                              + (float(right_ascension[2]) / 60.)) / 60.) * \
+                          (360. / 24.)
+
     # DECLINATION conversion
-    # sign = float(declination[0]) / abs(float(declination[0]))
     if float(declination[0]) == abs(float(declination[0])):
         sign = 1
     else:
@@ -175,10 +179,13 @@ def get_twilight_time(date_obs):
         date_obs (list): List of all the dates from data.
 
     Returns:
-        twilight_evening (str): Evening twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-        twilight_morning (str): Morning twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+        twilight_evening (str): Evening twilight time in the format
+        'YYYY-MM-DDTHH:MM:SS.SS'
+        twilight_morning (str): Morning twilight time in the format
+        'YYYY-MM-DDTHH:MM:SS.SS'
         sun_set_time (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-        sun_rise_time (str): Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+        sun_rise_time (str): Sun rise time in the format
+        'YYYY-MM-DDTHH:MM:SS.SS'
 
     """
     # observatory(str): Observatory name.
@@ -207,16 +214,21 @@ def get_twilight_time(date_obs):
 
     time_first_frame, time_last_frame = Time(min(date_obs)), Time(max(date_obs))
 
-    twilight_evening = soar.twilight_evening_astronomical(Time(time_first_frame),
-                                                          which='nearest').isot
-    twilight_morning = soar.twilight_morning_astronomical(Time(time_last_frame),
-                                                          which='nearest').isot
-    sun_set_time = soar.sun_set_time(Time(time_first_frame),
-                                     which='nearest').isot
-    sun_rise_time = soar.sun_rise_time(Time(time_last_frame),
-                                       which='nearest').isot
+    twilight_evening = soar.twilight_evening_astronomical(
+        Time(time_first_frame), which='nearest').isot
+
+    twilight_morning = soar.twilight_morning_astronomical(
+        Time(time_last_frame), which='nearest').isot
+
+    sun_set_time = soar.sun_set_time(
+        Time(time_first_frame), which='nearest').isot
+
+    sun_rise_time = soar.sun_rise_time(
+        Time(time_last_frame), which='nearest').isot
+
     log.debug('Sun Set ' + sun_set_time)
     log.debug('Sun Rise ' + sun_rise_time)
+
     return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
 
 
@@ -291,28 +303,33 @@ def get_slit_trim_section(master_flat):
     # Spatial half will be used later to constrain the detection of the first
     # edge before the first half.
     spatial_half = len(ccd_section_median) / 2.
+
     # pseudo-derivative to help finding the edges.
     pseudo_derivative = np.array(
-        [abs(ccd_section_median[i + 1] - ccd_section_median[i]) for i in range(0, len(ccd_section_median) - 1)])
-    filtered_data = np.where(np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
-                             pseudo_derivative,
-                             None)
+        [abs(ccd_section_median[i + 1] - ccd_section_median[i])
+         for i in range(0, len(ccd_section_median) - 1)])
+
+    filtered_data = np.where(
+        np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
+        pseudo_derivative,
+        None)
+
     peaks = signal.argrelmax(filtered_data, axis=0, order=3)[0]
-    # print(peaks)
 
     slit_trim_section = None
     if len(peaks) > 2 or peaks == []:
         log.debug('No trim section')
     else:
-        # print(peaks, flat_files.grating[flat_files.file == file], flat_files.slit[flat_files.file == file])
         if len(peaks) == 2:
             # This is the ideal case, when the two edges of the slit are found.
             low, high = peaks
             slit_trim_section = '[:,{:d}:{:d}]'.format(low, high)
         elif len(peaks) == 1:
-            # when only one peak is found it will choose the largest region from the spatial axis center to one edge.
+            # when only one peak is found it will choose the largest region from
+            # the spatial axis center to one edge.
             if peaks[0] <= spatial_half:
-                slit_trim_section = '[:,{:d}:{:d}]'.format(peaks[0], len(ccd_section_median))
+                slit_trim_section = '[:,{:d}:{:d}]' \
+                                    ''.format(peaks[0],len(ccd_section_median))
             else:
                 slit_trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
     return slit_trim_section
@@ -340,12 +357,21 @@ def cosmicray_rejection(ccd, mask_only=False):
     if ccd.header['OBSTYPE'] == 'OBJECT':
         value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
         log.info('Cleaning cosmic rays... ')
-        # ccd.data= ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
-        ccd.data, mask = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
-                                                     gain=float(ccd.header['GAIN']),
-                                                     readnoise=float(ccd.header['RDNOISE']),
-                                                     satlevel=np.inf, sepmed=True, fsmode='median',
-                                                     psfmodel='gaussy', verbose=False)
+
+        ccd.data, mask = ccdproc.cosmicray_lacosmic(
+            ccd.data,
+            sigclip=2.5,
+            sigfrac=value,
+            objlim=value,
+            gain=float(ccd.header['GAIN']),
+            readnoise=float(ccd.header['RDNOISE']),
+            satlevel=np.inf,
+            sepmed=True,
+            fsmode='median',
+            psfmodel='gaussy',
+            verbose=False)
+
+
         ccd.header.add_history("Cosmic rays rejected with LACosmic")
         log.info("Cosmic rays rejected with LACosmic")
         if mask_only:
@@ -353,9 +379,9 @@ def cosmicray_rejection(ccd, mask_only=False):
         else:
             return ccd
     else:
-        log.info('Skipping cosmic ray rejection for image of datatype: {:s}'.format(ccd.header['OBSTYPE']))
+        log.info('Skipping cosmic ray rejection for image of datatype: '
+                 '{:s}'.format(ccd.header['OBSTYPE']))
         return ccd
-
 
 
 def get_best_flat(flat_name):
@@ -823,18 +849,22 @@ def get_extraction_zone(ccd,
         trace_inclination = trace_array.max() - trace_array.min()
         log.debug('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
 
-
-        # mean = model.mean.value
         stddev = model.stddev.value
         extract_width = n_sigma_extract // 2 * stddev
 
-        # low_lim = np.max([0, int(mean - extract_width - (mean - trace_array.min()))])
-        # hig_lim = np.min([int(mean + extract_width + (trace_array.max() - mean)), spatial_length])
         low_lim = np.max([0, int(trace_array.min() - extract_width)])
-        hig_lim = np.min([int(trace_array.max() + extract_width), spatial_length])
+
+        hig_lim = np.min([int(trace_array.max() + extract_width),
+                          spatial_length])
 
         zone = [low_lim, hig_lim]
 
+        # this is neccessary since we are cutting a piece of the full ccd.
+        trace.c0.value -= low_lim
+        log.debug('Changing attribute c0 from trace, this is to adjust it to '
+                  'the new extraction zone which is smaller that the full CCD.')
+
+        log.debug('Changing attribute mean of profile model')
         model.mean.value = extract_width
 
         nccd = ccd.copy()
@@ -847,7 +877,7 @@ def get_extraction_zone(ccd,
             plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
             plt.show()
 
-        return nccd, model, zone
+        return nccd, trace, model, zone
 
     else:
 
@@ -862,8 +892,10 @@ def get_extraction_zone(ccd,
 
 def add_wcs_keys(header):
     """Adds generic keyword to the header
-    Linear wavelength solutions require a set of standard fits keywords. Later on they will be updated accordingly
-    The main goal of putting them here is to have consistent and nicely ordered headers
+    Linear wavelength solutions require a set of standard fits keywords. Later
+    on they will be updated accordingly
+    The main goal of putting them here is to have consistent and nicely ordered
+    headers
 
     Args:
         header (object): New header without WCS entries
