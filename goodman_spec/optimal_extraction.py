@@ -34,11 +34,14 @@ log = logging.getLogger('optimal')
 # log.setLevel(level=logging.DEBUG)
 
 
-
 def extract(ccd, comp_list, trace, spatial_profile, sampling_step=1, plots=False):
 
     assert isinstance(ccd, CCDData)
     assert isinstance(trace, Model)
+    assert isinstance(comp_list, list)
+
+    # create a copy of comp_list to store the data to be returned
+    comp_extracted = comp_list.copy()
 
     spatial_length, dispersion_length = ccd.data.shape
 
@@ -113,53 +116,19 @@ def extract(ccd, comp_list, trace, spatial_profile, sampling_step=1, plots=False
 
             for e in range(i, right, 1):
                 mask = cr_mask[:,e]
-                data  = ma.masked_invalid(ccd.data[:, e])
+                data = ma.masked_invalid(ccd.data[:, e])
                 # print(ma.isMaskedArray(data))
                 V = variance2D[:, e]
                 P = nor_profile
                 a = [(P[z] / V[z]) / np.sum(P ** 2 / V) for z in range(P.size)]
                 weights = (nor_profile / variance2D[:, e]) / np.sum(nor_profile ** 2 / variance2D[:, e])
                 # print('SUMN ', np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))
-                # if 1500 < e < 1510:
-                #     plt.ion()
-                #     plt.title('Variance')
-                #     plt.plot(variance2D[:, e], label='Variance')
-                #     # plt.show()
-                #     plt.title('Data')
-                #     plt.plot(data, label='Data')
-                #     plt.legend(loc='best')
-                #     # plt.show()
-                #     plt.draw()
-                #     plt.pause(1)
-                #     plt.clf()
-                #     plt.title('Norm Profile')
-                #     plt.plot(nor_profile, label='Normalized Profile')
-                #     # plt.show()
-                #     plt.draw()
-                #     plt.pause(1)
-                #     plt.clf()
-                #     plt.title('Weights')
-                #     plt.plot(weights, label='Old')
-                #     plt.plot(a, label='New')
-                #     plt.legend(loc='best')
-                #     # plt.show()
-                #     plt.draw()
-                #     plt.pause(1)
-                #     plt.clf()
-                #     plt.ioff()
+
+
+                # extract comparison lamps
 
                 out_spectrum[e] = np.sum(data * mask * nor_profile)
-                # print(np.sum(ccd.data[:, e] * mask * nor_profile))
-                # for k in range(len(ccd.data[:, e])):
-                #     print(' ', ccd.data[:, e][k], mask[k], nor_profile[k])
-                # # if 0 in cr_mask[:,e]:
-                #     print(cr_mask[:,e])
-                # # print(e)
 
-        # print(cr_mask[:,i])
-        # plt.plot(cr_mask[:,i], color='k')
-        # plt.plot(nor_profile)
-        # plt.show()
     if plots:
         manager = plt.get_current_fig_manager()
         manager.window.maximize()
@@ -315,9 +284,9 @@ if __name__ == '__main__':
 
     file_list = glob.glob(search_path)
 
-    file_list = ['cfzsto_0180_Feige110_400M2_GG455.fits',
-                 'cfzsto_0182_Feige110_400M2_GG455.fits',
-                 'cfzsto_0181_Feige110_400M2_GG455.fits']
+    # file_list = ['cfzsto_0180_Feige110_400M2_GG455.fits',
+    #              'cfzsto_0182_Feige110_400M2_GG455.fits',
+    #              'cfzsto_0181_Feige110_400M2_GG455.fits']
     keywords = ['date',
                 'slit',
                 'date-obs',

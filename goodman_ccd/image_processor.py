@@ -133,6 +133,8 @@ class ImageProcessor(object):
                                             random.choice(image_list))
                 ccd = CCDData.read(sample_image, unit=u.adu)
 
+                # serial binning - dispersion binning
+                # parallel binngin - spatial binning
                 serial_binning, \
                 parallel_binning = [int(x) for x
                                     in ccd.header['CCDSUM'].split()]
