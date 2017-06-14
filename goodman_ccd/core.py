@@ -841,13 +841,13 @@ def get_extraction_zone(ccd,
     if zone is None:
         assert (model is not None) and (n_sigma_extract is not None)
         assert isinstance(trace, Model)
-
+        log.info('Extracting zone centered at: {:.3f}'.format(model.mean.value))
         spatial_length, dispersion_length = ccd.data.shape
 
         # get maximum variation in spatial direction
         trace_array = trace(range(dispersion_length))
         trace_inclination = trace_array.max() - trace_array.min()
-        log.debug('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
+        log.info('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
 
         stddev = model.stddev.value
         extract_width = n_sigma_extract // 2 * stddev
@@ -861,10 +861,10 @@ def get_extraction_zone(ccd,
 
         # this is neccessary since we are cutting a piece of the full ccd.
         trace.c0.value -= low_lim
-        log.debug('Changing attribute c0 from trace, this is to adjust it to '
+        log.info('Changing attribute c0 from trace, this is to adjust it to '
                   'the new extraction zone which is smaller that the full CCD.')
 
-        log.debug('Changing attribute mean of profile model')
+        log.info('Changing attribute mean of profile model')
         model.mean.value = extract_width
 
         nccd = ccd.copy()
