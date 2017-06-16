@@ -25,6 +25,7 @@ from goodman_ccd.core import trace_targets
 from goodman_ccd.core import get_extraction_zone
 from goodman_ccd.core import remove_background
 from goodman_ccd.core import ra_dec_to_deg
+from goodman_ccd.core import classify_spectroscopic_data
 from numpy import ma
 from scipy import signal
 
@@ -34,7 +35,7 @@ log = logging.getLogger('goodmanccd')
 # log.setLevel(level=logging.DEBUG)
 
 
-def extract(ccd, trace, spatial_profile, sampling_step=1, plots=False):
+def extract(ccd, trace, spatial_profile, extraction, sampling_step=1, plots=False):
 
     assert isinstance(ccd, CCDData)
     assert isinstance(trace, Model)
@@ -47,12 +48,16 @@ def extract(ccd, trace, spatial_profile, sampling_step=1, plots=False):
     print('Original Name {:s}'.format(ccd.header['OFNAME']))
 
     variance_2d = (rdnoise + np.absolute(ccd.data) * gain) / gain
-    if ccd.header['OBSTYPE'] == 'OBJECT':
+    if ccd.mask is None and ccd.header['OBSTYPE'] == 'OBJECT':
+        log.info('Finding cosmic rays to create mask')
         cr_mask = cosmicray_rejection(ccd=ccd, mask_only=True)
         cr_mask = np.logical_not(cr_mask).astype(int)
-    else:
+    elif ccd.mask is None and ccd.header['OBSTYPE'] != 'OBJECT':
         log.info('Only OBSTYPE == OBJECT get cosmic ray rejection.')
         cr_mask = np.ones(ccd.data.shape, dtype=int)
+    else:
+        log.debug('Cosmic ray mask already exists.')
+        cr_mask = np.logical_not(ccd.mask).astype(int)
 
     model_fitter = fitting.LevMarLSQFitter()
 
@@ -76,85 +81,111 @@ def extract(ccd, trace, spatial_profile, sampling_step=1, plots=False):
     # print(np.ma.isMaskedArray(ccd.data))
     np.ma.set_fill_value(ccd.data, 0)
 
-    # print(np.ma.isMaskedArray(ccd.data))
-    to_sum = ccd.data * cr_mask
-    simple_sum = np.ma.sum(to_sum, axis=0)
+    if extraction == 'simple':
 
-    out_spectrum = np.empty(dispersion_length)
-    for i in range(0, dispersion_length, sampling_step):
-        # force the model to follow the trace
-        new_model.mean.value = trace(i)
+        indexes = np.argwhere(cr_mask == 0)
+        print(indexes)
+        for index in indexes:
+            x, y = index
+            plt.plot(y, x, marker='o', color='r')
 
-        # warn if the difference of the spectrum position in the trace at the
-        # extremes of the sampling range is larger than 1 pixel.
-        if np.abs(trace(i) - trace(i+sampling_step)) > 1:
-            log.warning('Sampling step might be too large')
-
-        sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)
-        fitted_profile = model_fitter(model=new_model,
-                                      x=range(len(sample)),
-                                      y=sample)
-
-        profile = fitted_profile(range(sample.size))
-
-        # enforce positivity
-        pos_profile = np.array([np.max([0, x]) for x in profile])
-
-        # enforce normalization
-        nor_profile = np.array([x / pos_profile.sum() for x in pos_profile])
-
-        if sampling_step > 1:
-            # TODO (simon): Simplify to Pythonic way
-            right = min((i + sampling_step), dispersion_length)
-
-            for e in range(i, right, 1):
-                mask = cr_mask[:,e]
-                data = ma.masked_invalid(ccd.data[:, e])
-                # print(ma.isMaskedArray(data))
-                V = variance_2d[:, e]
-                P = nor_profile
-                a = [(P[z] / V[z]) / np.sum(P ** 2 / V) for z in range(P.size)]
-                weights = (nor_profile / variance_2d[:, e]) / np.sum(nor_profile ** 2 / variance_2d[:, e])
-                # print('SUMN ', np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))
-
-
-
-                # if e in range(5, 4001, 500):
-                #     plt.plot(nor_profile * data.max()/ nor_profile.max(), label=str(e))
-                #     plt.plot(data, label='Data')
-                #     plt.legend(loc='best')
-                #     plt.show()
-
-                out_spectrum[e] = np.sum(data * mask * nor_profile)
-
-
-    if plots:
-        manager = plt.get_current_fig_manager()
-        manager.window.maximize()
-        ratio = np.mean(simple_sum / out_spectrum)
-        # print(ratio)
-        plt.title(ccd.header['OBJECT'])
-        plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
-        plt.plot(out_spectrum * ratio, color='r',
-                 label='Optimal * {:.1f}'.format(ratio), alpha=0.5)
-        plt.legend(loc='best')
+        plt.imshow(ccd.data, interpolation='none')
         plt.show()
+        # print(np.ma.isMaskedArray(ccd.data))
+        to_sum = ccd.data * cr_mask
+        simple_sum = np.ma.sum(to_sum, axis=0)
 
-        #     plt.ion()
-        #     plt.title(i)
-        #     plt.plot(fitted_profile(range(len(sample))), color='r', alpha=0.1)
-        #     plt.plot(sample, color='k', alpha=0.1)
-        #     plt.draw()
-        #     plt.pause(.1)
-        # plt.ioff()
-        # plt.close()
+        ccd.data = simple_sum
 
-    ccd.data = simple_sum
+        if plots:
+            fig = plt.figure()
+            fig.canvas.set_window_title('Simple Extraction')
+            # ax = fig.add_subplot(111)
+            manager = plt.get_current_fig_manager()
+            manager.window.maximize()
+
+            plt.title(ccd.header['OBJECT'])
+            plt.xlabel('Dispersion Axis (Pixels)')
+            plt.ylabel('Intensity (Counts)')
+            # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
+            plt.plot(ccd.data, color='k',
+                     label='Simple Extracted')
+            plt.xlim((0, len(ccd.data)))
+            plt.legend(loc='best')
+            plt.show()
+
+    elif extraction == 'optimal':
+        out_spectrum = np.empty(dispersion_length)
+        for i in range(0, dispersion_length, sampling_step):
+            # force the model to follow the trace
+            new_model.mean.value = trace(i)
+
+            # warn if the difference of the spectrum position in the trace at the
+            # extremes of the sampling range is larger than 1 pixel.
+            if np.abs(trace(i) - trace(i + sampling_step)) > 1:
+                log.warning('Sampling step might be too large')
+
+            sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)
+            fitted_profile = model_fitter(model=new_model,
+                                          x=range(len(sample)),
+                                          y=sample)
+
+            profile = fitted_profile(range(sample.size))
+
+            # enforce positivity
+            pos_profile = np.array([np.max([0, x]) for x in profile])
+
+            # enforce normalization
+            nor_profile = np.array([x / pos_profile.sum() for x in pos_profile])
+
+            if sampling_step > 1:
+                # TODO (simon): Simplify to Pythonic way
+                right = min((i + sampling_step), dispersion_length)
+
+                for e in range(i, right, 1):
+                    mask = cr_mask[:, e]
+                    data = ma.masked_invalid(ccd.data[:, e])
+                    # print(ma.isMaskedArray(data))
+                    V = variance_2d[:, e]
+                    P = nor_profile
+                    a = [(P[z] / V[z]) / np.sum(P ** 2 / V) for z in
+                         range(P.size)]
+                    weights = (nor_profile / variance_2d[:, e]) / np.sum(
+                        nor_profile ** 2 / variance_2d[:, e])
+                    # print('SUMN ', np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))
+
+
+
+                    # if e in range(5, 4001, 500):
+                    #     plt.plot(nor_profile * data.max()/ nor_profile.max(), label=str(e))
+                    #     plt.plot(data, label='Data')
+                    #     plt.legend(loc='best')
+                    #     plt.show()
+
+                    out_spectrum[e] = np.sum(data * mask * nor_profile)
+        ccd.data = out_spectrum
+        if plots:
+            fig = plt.figure()
+            fig.canvas.set_window_title('Optimal Extraction')
+            # ax = fig.add_subplot(111)
+            manager = plt.get_current_fig_manager()
+            manager.window.maximize()
+
+            plt.title(ccd.header['OBJECT'])
+            plt.xlabel('Dispersion Axis (Pixels)')
+            plt.ylabel('Intensity (Counts)')
+            # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
+            plt.plot(ccd.data, color='k',
+                     label='Optimal Extracted')
+            plt.xlim((0, len(ccd.data)))
+            plt.legend(loc='best')
+            plt.show()
+
     # ccd.data = out_spectrum
     return ccd
 
 
-def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
+def manage_extraction(ccd, extraction, comp_list=None, n_sigma_extract=10, plots=False):
 
     assert isinstance(ccd, CCDData)
 
@@ -166,11 +197,11 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
 
     iccd = remove_background(ccd=ccd,)
 
-    profile_model = identify_targets(ccd=iccd, plots=True)
+    profile_model = identify_targets(ccd=iccd, plots=False)
     del(iccd)
 
     if isinstance(profile_model, Model):
-        traces = trace_targets(ccd=ccd, profile=profile_model, plots=True)
+        traces = trace_targets(ccd=ccd, profile=profile_model, plots=False)
         # extract(ccd=ccd,
         #         spatial_profile=profile_model,
         #         n_sigma_extract=10,
@@ -183,15 +214,18 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
 
                 nccd, trace, model, zone = get_extraction_zone(
                     ccd=ccd,
+                    extraction=extraction,
                     trace=traces[m],
                     model=profile_model[submodel_name],
                     n_sigma_extract=n_sigma_extract,
-                    plots=True)
+                    plots=False)
 
                 for comp in comp_list:
                     comp_zone = get_extraction_zone(ccd=comp,
+                                                    extraction=extraction,
                                                     trace=trace,
-                                                    zone=zone)
+                                                    zone=zone,
+                                                    plots=False)
                     # since a comparison lamp only needs only the relative line
                     # center in the dispersion direction, therefore the flux is
                     # not important we are only calculating the median along the
@@ -203,7 +237,7 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
                 original.write('/data/simon/original.fits', clobber=True)
 
                 nccd = remove_background(ccd=nccd,
-                                         plots=True)
+                                         plots=False)
 
                 nccd.write('/data/simon/bkg-removed.fits', clobber=True)
 
@@ -215,6 +249,7 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
                 extracted_ccd = extract(ccd=nccd,
                                         trace=trace,
                                         spatial_profile=model,
+                                        extraction=extraction,
                                         sampling_step=10,
                                         plots=True)
                 extracted.append(extracted_ccd)
@@ -226,15 +261,18 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
         else:
             nccd, trace, model, zone = get_extraction_zone(
                 ccd=ccd,
+                extraction=extraction,
                 trace=traces[0],
                 model=profile_model,
                 n_sigma_extract=n_sigma_extract,
-                plots=True)
+                plots=False)
 
             for comp in comp_list:
                 comp_zone = get_extraction_zone(ccd=comp,
+                                                extraction=extraction,
                                                 trace=trace,
-                                                zone=zone)
+                                                zone=zone,
+                                                plots=False)
 
                 # since a comparison lamp only needs only the relative line
                 # center in the dispersion direction, therefore the flux is not
@@ -244,11 +282,12 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
                 comp_zones.append(comp_zone)
 
             nccd = remove_background(ccd=nccd,
-                                     plots=True)
+                                     plots=False)
 
             extracted_ccd = extract(ccd=nccd,
                                     trace=trace,
                                     spatial_profile=model,
+                                    extraction=extraction,
                                     sampling_step=10,
                                     plots=True)
 
@@ -268,9 +307,11 @@ def optimal_extraction(ccd, comp_list=None, n_sigma_extract=10, plots=False):
         log.error('Got wrong input')
 
 
-def process_spectroscopy_data(data_container):
+def process_spectroscopy_data(data_container, extraction_type='simple'):
 
     assert data_container.is_empty is False
+    assert any(extraction_type == option for option in ['simple',
+                                                        'optimal'])
 
     full_path = data_container.full_path
 
@@ -297,7 +338,9 @@ def process_spectroscopy_data(data_container):
                                                  'Original File Name')
                     comp_ccd_list.append(comp_ccd)
 
-            extracted, comps = optimal_extraction(ccd=ccd, comp_list=comp_ccd_list)
+            extracted, comps = manage_extraction(ccd=ccd,
+                                                 extraction=extraction_type,
+                                                 comp_list=comp_ccd_list)
             if True:
                 manager = plt.get_current_fig_manager()
                 manager.window.maximize()
@@ -311,104 +354,17 @@ def process_spectroscopy_data(data_container):
 
     print('\nEND')
 
+
+
+
+
 if __name__ == '__main__':
-    # # files = ['/data/simon/data/soar/work/GOO_BLU_SPE_2017-05-09/RED/cfzsto_1086_HD104237_400M2_GG455.fits',
-    # #          '/data/simon/data/soar/work/20161114_eng_3/RED4/cfzsto_0216_EG21_1200M5_GG455.fits',
-    # #          '/user/simon/Downloads/goodman_target_simulator-master/dummy2.fits',
-    # #          '/data/simon/data/soar/work/GOO_BLU_SPE_2017-05-09/RED/cfzsto_1119_HgAr_400M2_GG455.fits']
-    # # files = glob.glob('/data/simon/data/soar/work/GOO_BLU_SPE_2017-05-09/RED/cfzsto*')
-    # files = ['/user/simon/data/soar/observer/SciCase001/2014-11-10/SYZY_400M2/RED/cfzsto_0074.cvso114_400M2_GG455.fits',
-    #          '/user/simon/data/soar/observer/SciCase001/2014-11-10/SYZY_400M2/RED/cfzsto_0075.cvso114_400M2_GG455.fits',
-    #          '/user/simon/data/soar/observer/SciCase001/2014-11-10/SYZY_400M2/RED/cfzsto_0076.cvso114_400M2_GG455.fits']
 
     pandas.set_option('display.expand_frame_repr', False)
 
     prefix = 'cfzsto'
     path = '/user/simon/data/soar/work/20161114_eng_3/RED'
-    search_path = os.path.join(path, prefix + '*.fits')
 
-    data_container = NightDataContainer(path=path,
-                                        instrument='Red',
-                                        technique='Spectroscopy')
+    data_cont = classify_spectroscopic_data(path=path, search_pattern=prefix)
 
-    file_list = glob.glob(search_path)
-
-    # file_list = ['cfzsto_0276_HILT600_1200M5_GG455.fits',
-    #              'cfzsto_0278_HILT600_1200M5_GG455.fits',
-    #              'cfzsto_0279_HILT600_2100.fits']
-
-    keywords = ['date',
-                'slit',
-                'date-obs',
-                'obstype',
-                'object',
-                'exptime',
-                'obsra',
-                'obsdec',
-                'grating',
-                'cam_targ',
-                'grt_targ',
-                'filter',
-                'filter2',
-                'gain',
-                'rdnoise']
-
-    ifc = ImageFileCollection(path, keywords=keywords, filenames=file_list)
-
-    pifc = ifc.summary.to_pandas()
-
-    pifc['radeg'] = ''
-    pifc['decdeg'] = ''
-    for i in pifc.index.tolist():
-        radeg, decdeg = ra_dec_to_deg(pifc.obsra.iloc[i], pifc.obsdec.iloc[i])
-
-        pifc.iloc[i, pifc.columns.get_loc('radeg')] = '{:.2f}'.format(radeg)
-
-        pifc.iloc[i, pifc.columns.get_loc('decdeg')] = '{:.2f}'.format(decdeg)
-        # now we can compare using degrees
-
-    confs = pifc.groupby(['slit',
-                          'radeg',
-                          'decdeg',
-                          'grating',
-                          'cam_targ',
-                          'grt_targ',
-                          'filter',
-                          'filter2',
-                          'gain',
-                          'rdnoise']).size().reset_index().rename(columns={0: 'count'})
-
-    for i in confs.index:
-        spec_group = pifc[((pifc['slit'] == confs.iloc[i]['slit']) &
-                           (pifc['radeg'] == confs.iloc[i]['radeg']) &
-                           (pifc['decdeg'] == confs.iloc[i]['decdeg']) &
-                           (pifc['grating'] == confs.iloc[i]['grating']) &
-                           (pifc['cam_targ'] == confs.iloc[i]['cam_targ']) &
-                           (pifc['grt_targ'] == confs.iloc[i]['grt_targ']) &
-                           (pifc['filter'] == confs.iloc[i]['filter']) &
-                           (pifc['filter2'] == confs.iloc[i]['filter2']) &
-                           (pifc['gain'] == confs.iloc[i]['gain']) &
-                           (pifc['rdnoise'] == confs.iloc[i]['rdnoise']))]
-        data_container.add_spec_group(spec_group=spec_group)
-
-    # print(confs)
-
-
-    # print(pifc)
-    process_spectroscopy_data(data_container=data_container)
-
-
-    # i=10
-    # for sfile in files:
-    #     ccd = CCDData.read(sfile, unit=u.adu)
-    #
-    #     if ccd.data.ndim == 3:
-    #         ccd.data = ccd.data[0]
-    #     # for z in range(ccd.data.shape[1]):
-    #     #     plt.plot(ccd.data[:,z])
-    #     # plt.plot()
-    #
-    #     optimal_extraction(ccd=ccd)
-    #     # remove_background(ccd=ccd, g=i)
-    #     i += 1
-
+    process_spectroscopy_data(data_container=data_cont)

@@ -13,7 +13,7 @@ import numpy.ma as ma
 import matplotlib
 matplotlib.use('GTK3Agg')
 from matplotlib import pyplot as plt
-from ccdproc import CCDData
+from ccdproc import CCDData, ImageFileCollection
 from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
 from astropy.stats import sigma_clip
@@ -358,8 +358,8 @@ def cosmicray_rejection(ccd, mask_only=False):
         value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
         log.info('Cleaning cosmic rays... ')
 
-        ccd.data, mask = ccdproc.cosmicray_lacosmic(
-            ccd.data,
+        ccd = ccdproc.cosmicray_lacosmic(
+            ccd,
             sigclip=2.5,
             sigfrac=value,
             objlim=value,
@@ -371,11 +371,10 @@ def cosmicray_rejection(ccd, mask_only=False):
             psfmodel='gaussy',
             verbose=False)
 
-
         ccd.header.add_history("Cosmic rays rejected with LACosmic")
         log.info("Cosmic rays rejected with LACosmic")
         if mask_only:
-            return mask
+            return ccd.mask
         else:
             return ccd
     else:
@@ -570,6 +569,74 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 
 
 # spectroscopy specific functions
+
+def classify_spectroscopic_data(path, search_pattern):
+    search_path = os.path.join(path, search_pattern + '*.fits')
+
+    data_container = NightDataContainer(path=path,
+                                        instrument='Red',
+                                        technique='Spectroscopy')
+
+    file_list = glob.glob(search_path)
+
+    keywords = ['date',
+                'slit',
+                'date-obs',
+                'obstype',
+                'object',
+                'exptime',
+                'obsra',
+                'obsdec',
+                'grating',
+                'cam_targ',
+                'grt_targ',
+                'filter',
+                'filter2',
+                'gain',
+                'rdnoise']
+
+    ifc = ImageFileCollection(path, keywords=keywords, filenames=file_list)
+
+    pifc = ifc.summary.to_pandas()
+
+    pifc['radeg'] = ''
+    pifc['decdeg'] = ''
+    for i in pifc.index.tolist():
+        radeg, decdeg = ra_dec_to_deg(pifc.obsra.iloc[i], pifc.obsdec.iloc[i])
+
+        pifc.iloc[i, pifc.columns.get_loc('radeg')] = '{:.2f}'.format(radeg)
+
+        pifc.iloc[i, pifc.columns.get_loc('decdeg')] = '{:.2f}'.format(decdeg)
+        # now we can compare using degrees
+
+    confs = pifc.groupby(['slit',
+                          'radeg',
+                          'decdeg',
+                          'grating',
+                          'cam_targ',
+                          'grt_targ',
+                          'filter',
+                          'filter2',
+                          'gain',
+                          'rdnoise']).size().reset_index().rename(
+        columns={0: 'count'})
+
+    for i in confs.index:
+        spec_group = pifc[((pifc['slit'] == confs.iloc[i]['slit']) &
+                           (pifc['radeg'] == confs.iloc[i]['radeg']) &
+                           (pifc['decdeg'] == confs.iloc[i]['decdeg']) &
+                           (pifc['grating'] == confs.iloc[i]['grating']) &
+                           (pifc['cam_targ'] == confs.iloc[i]['cam_targ']) &
+                           (pifc['grt_targ'] == confs.iloc[i]['grt_targ']) &
+                           (pifc['filter'] == confs.iloc[i]['filter']) &
+                           (pifc['filter2'] == confs.iloc[i]['filter2']) &
+                           (pifc['gain'] == confs.iloc[i]['gain']) &
+                           (pifc['rdnoise'] == confs.iloc[i]['rdnoise']))]
+
+        data_container.add_spec_group(spec_group=spec_group)
+
+    return data_container
+
 
 def identify_targets(ccd, plots=False):
     """Identify targets cross correlating spatial profile with a gaussian model
@@ -803,6 +870,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
 
 
 def get_extraction_zone(ccd,
+                        extraction=None,
                         trace=None,
                         model=None,
                         n_sigma_extract=None,
@@ -820,6 +888,7 @@ def get_extraction_zone(ccd,
     Args:
         ccd (object): A ccdproc.CCDData instance, the image from which the zone
          will be extracted
+        extraction (str): Extraction type, 'simple' or 'optimal'
         trace (object): An astropy.modeling.Model instance that correspond to
         the trace of the spectrum
         model (object): An astropy.modeling.Model instance that was previously
@@ -838,7 +907,7 @@ def get_extraction_zone(ccd,
 
     """
 
-    if zone is None:
+    if zone is None and extraction is not None:
         assert (model is not None) and (n_sigma_extract is not None)
         assert isinstance(trace, Model)
         log.info('Extracting zone centered at: {:.3f}'.format(model.mean.value))
@@ -849,13 +918,22 @@ def get_extraction_zone(ccd,
         trace_inclination = trace_array.max() - trace_array.min()
         log.info('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
 
-        stddev = model.stddev.value
-        extract_width = n_sigma_extract // 2 * stddev
+        m_mean = model.mean.value
+        m_stddev = model.stddev.value
+        extract_width = n_sigma_extract // 2 * m_stddev
 
-        low_lim = np.max([0, int(trace_array.min() - extract_width)])
+        # for simple extraction the extraction zone is narrower since there is
+        # no weight
+        if extraction == 'simple':
+            low_lim = np.max([0, int(m_mean - extract_width)])
 
-        hig_lim = np.min([int(trace_array.max() + extract_width),
-                          spatial_length])
+            hig_lim = np.min([int(m_mean + extract_width), spatial_length])
+
+        else:
+            low_lim = np.max([0, int(trace_array.min() - extract_width)])
+
+            hig_lim = np.min([int(trace_array.max() + extract_width),
+                              spatial_length])
 
         zone = [low_lim, hig_lim]
 
