@@ -947,6 +947,9 @@ def get_extraction_zone(ccd,
 
         nccd = ccd.copy()
         nccd.data = ccd.data[low_lim:hig_lim, :]
+        if nccd.mask is not None:
+            log.debug('Trimming mask')
+            nccd.mask = ccd.mask[low_lim:hig_lim, :]
         nccd.header['HISTORY'] = 'Subsection of CCD ' \
                                  '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
 
@@ -963,6 +966,9 @@ def get_extraction_zone(ccd,
 
         nccd = ccd.copy()
         nccd.data = ccd.data[low_lim:hig_lim, :]
+        if nccd.mask is not None:
+            log.debug('Trimming mask')
+            nccd.mask = ccd.mask[low_lim:hig_lim, :]
         nccd.header['HISTORY'] = 'Subsection of CCD ' \
                                  '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
         return nccd
