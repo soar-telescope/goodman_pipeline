@@ -355,15 +355,12 @@ def process_spectroscopy_data(data_container, extraction_type='simple'):
     print('\nEND')
 
 
-
-
-
 if __name__ == '__main__':
 
     pandas.set_option('display.expand_frame_repr', False)
 
     prefix = 'cfzsto'
-    path = '/user/simon/data/soar/work/20161114_eng_3/RED'
+    path = '/user/simon/data/soar/work/20161114_eng_3/RED3'
 
     data_cont = classify_spectroscopic_data(path=path, search_pattern=prefix)
 

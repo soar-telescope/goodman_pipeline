@@ -922,18 +922,10 @@ def get_extraction_zone(ccd,
         m_stddev = model.stddev.value
         extract_width = n_sigma_extract // 2 * m_stddev
 
-        # for simple extraction the extraction zone is narrower since there is
-        # no weight
-        if extraction == 'simple':
-            low_lim = np.max([0, int(m_mean - extract_width)])
+        low_lim = np.max([0, int(trace_array.min() - extract_width)])
 
-            hig_lim = np.min([int(m_mean + extract_width), spatial_length])
-
-        else:
-            low_lim = np.max([0, int(trace_array.min() - extract_width)])
-
-            hig_lim = np.min([int(trace_array.max() + extract_width),
-                              spatial_length])
+        hig_lim = np.min([int(trace_array.max() + extract_width),
+                          spatial_length])
 
         zone = [low_lim, hig_lim]
 
