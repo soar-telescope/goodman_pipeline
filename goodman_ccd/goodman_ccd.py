@@ -113,7 +113,8 @@ def get_args(arguments=None):
     # parser.add_argument('--interpolate-invalid',
     #                     action='store_true',
     #                     dest='interp_invalid',
-    #                     help="Do a cubic interpolation to remove NaN or INF values."
+    #                     help="Do a cubic interpolation to remove NaN or
+    #                          " INF values."
     #                          "By default it will replace them by a number.")
 
     args = parser.parse_args(args=arguments)
@@ -143,8 +144,10 @@ class MainApp(object):
     def __init__(self, args=None):
         """This method initalizes the MainApp class
 
-        The main task of this method is to call the get_args function that returns an argparse object.
-        The arguments will be obtained here and they will be available for all execution of the program.
+        The main task of this method is to call the get_args function that
+        returns an argparse object.
+        The arguments will be obtained here and they will be available for all
+        execution of the program.
         Other attributes will be initilized as None.
         """
         if args is None:
@@ -153,16 +156,17 @@ class MainApp(object):
             self.args = args
         self.data_container = None
         self.full_path = None
-        self.instrument = None
-        self.technique = None
+        # self.instrument = None
+        # self.technique = None
     
     def __call__(self):
         """Call method for MainApp
 
-        From the arguments this method finds the raw_path attribute and checks its contents for the existance of
-        files containing the '.fits' string. If there is none it will assume every item is a different data directory
-        and they will be treated independently. If there are '.fits' files the program will assume is a single data
-        directory.
+        From the arguments this method finds the raw_path attribute and checks
+        its contents for the existance of files containing the '.fits' string.
+        If there is none it will assume every item is a different data directory
+        and they will be treated independently. If there are '.fits' files the
+        program will assume is a single data directory.
         Any subdirectory will be ignored.
 
         """
@@ -181,8 +185,10 @@ class MainApp(object):
                 night_sorter = DataClassifier(self.args)
                 log.debug('Calling night_sorter Instance of DataClassifier')
                 night_sorter()
-                self.instrument = night_sorter.instrument
-                self.technique = night_sorter.technique
+                # self.instrument = night_sorter.instrument
+                # self.technique = night_sorter.technique
+                # print(self.instrument)
+                # print(self.technique)
             except AttributeError as error:
                 print(error)
                 log.error('Empty or Invalid data directory:'
@@ -192,8 +198,10 @@ class MainApp(object):
             # # check start
             # self.args.raw_path = data_folder
             if self.args.red_path == './RED' or len(folders) > 1:
-                log.info(
-                    'No special reduced data path defined. Proceeding with defaults.')
+
+                log.info('No special reduced data path defined. '
+                         'Proceeding with defaults.')
+
                 if self.args.raw_path not in self.args.red_path:
                     self.args.red_path = os.path.join(self.args.raw_path, 'RED')
                     # print(self.args.red_path)
@@ -204,7 +212,9 @@ class MainApp(object):
                     if self.args.auto_clean:
                         for _file in os.listdir(self.args.red_path):
                             os.unlink(os.path.join(self.args.red_path, _file))
-                        log.info('Cleaned Reduced data directory: ' + self.args.red_path)
+
+                        log.info('Cleaned Reduced data directory:'
+                                 ' {:s}'.format(self.args.red_path))
                     else:
                         log.error('Please clean the reduced data folder or '
                                   'use --auto-clean')
@@ -224,17 +234,21 @@ class MainApp(object):
             # print(night_sorter.nights_dict)
             for night in night_sorter.nights_dict:
                 # print(night_sorter.nights_dict[night])
-                # night_organizer = NightOrganizer(args=self.args, night_dict=night_sorter.nights_dict[night])
+                # night_organizer = \
+                #     NightOrganizer(args=self.args,
+                #                    night_dict=night_sorter.nights_dict[night])
                 # nd = Night Dictionary
                 nd = night_sorter.nights_dict[night]
                 log.debug('Initializing NightOrganizer Class')
                 night_organizer = NightOrganizer(full_path=nd['full_path'],
                                                  instrument=nd['instrument'],
                                                  technique=nd['technique'],
-                                                 ignore_bias=self.args.ignore_bias)
+                                                 ignore_bias=
+                                                 self.args.ignore_bias)
+
                 log.debug('Calling night_organizer instance')
                 self.data_container = night_organizer()
-                if self.data_container is False or self.data_container is None:
+                if self.data_container is None or self.data_container is None:
                     log.error('Discarding night ' + str(night))
                     break
                 process_images = ImageProcessor(self.args, self.data_container)

@@ -9,12 +9,14 @@ import random
 import logging
 import ccdproc
 import numpy as np
+import numpy.ma as ma
 import matplotlib
 matplotlib.use('GTK3Agg')
 from matplotlib import pyplot as plt
-from ccdproc import CCDData
+from ccdproc import CCDData, ImageFileCollection
 from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
+from astropy.stats import sigma_clip
 from astroplan import Observer
 from astropy import units as u
 from astropy.modeling import (models, fitting, Model)
@@ -63,8 +65,10 @@ def fix_duplicated_keywords(night_dir):
                 if keyword not in multiple_keys:
                     multiple_keys.append(keyword)
     if multiple_keys != []:
-        log.info('Found {:d} duplicated keyword{:s}'.format(len(multiple_keys),
-                                                            's' if len(multiple_keys) > 1 else ''))
+        log.info('Found {:d} duplicated keyword '
+                 '{:s}'.format(len(multiple_keys),
+                               's' if len(multiple_keys) > 1 else ''))
+
         for image_file in files:
             log.debug('Processing Image File: {:s}'.format(image_file))
             try:
@@ -94,12 +98,14 @@ def ra_dec_to_deg(right_ascension, declination):
     """
     right_ascension = right_ascension.split(":")
     declination = declination.split(":")
+
     # RIGHT ASCENTION conversion
     right_ascension_deg = (float(right_ascension[0])
                            + (float(right_ascension[1])
-                              + (float(right_ascension[2]) / 60.)) / 60.) * (360. / 24.)
+                              + (float(right_ascension[2]) / 60.)) / 60.) * \
+                          (360. / 24.)
+
     # DECLINATION conversion
-    # sign = float(declination[0]) / abs(float(declination[0]))
     if float(declination[0]) == abs(float(declination[0])):
         sign = 1
     else:
@@ -173,10 +179,13 @@ def get_twilight_time(date_obs):
         date_obs (list): List of all the dates from data.
 
     Returns:
-        twilight_evening (str): Evening twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-        twilight_morning (str): Morning twilight time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+        twilight_evening (str): Evening twilight time in the format
+        'YYYY-MM-DDTHH:MM:SS.SS'
+        twilight_morning (str): Morning twilight time in the format
+        'YYYY-MM-DDTHH:MM:SS.SS'
         sun_set_time (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-        sun_rise_time (str): Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+        sun_rise_time (str): Sun rise time in the format
+        'YYYY-MM-DDTHH:MM:SS.SS'
 
     """
     # observatory(str): Observatory name.
@@ -205,16 +214,21 @@ def get_twilight_time(date_obs):
 
     time_first_frame, time_last_frame = Time(min(date_obs)), Time(max(date_obs))
 
-    twilight_evening = soar.twilight_evening_astronomical(Time(time_first_frame),
-                                                          which='nearest').isot
-    twilight_morning = soar.twilight_morning_astronomical(Time(time_last_frame),
-                                                          which='nearest').isot
-    sun_set_time = soar.sun_set_time(Time(time_first_frame),
-                                     which='nearest').isot
-    sun_rise_time = soar.sun_rise_time(Time(time_last_frame),
-                                       which='nearest').isot
+    twilight_evening = soar.twilight_evening_astronomical(
+        Time(time_first_frame), which='nearest').isot
+
+    twilight_morning = soar.twilight_morning_astronomical(
+        Time(time_last_frame), which='nearest').isot
+
+    sun_set_time = soar.sun_set_time(
+        Time(time_first_frame), which='nearest').isot
+
+    sun_rise_time = soar.sun_rise_time(
+        Time(time_last_frame), which='nearest').isot
+
     log.debug('Sun Set ' + sun_set_time)
     log.debug('Sun Rise ' + sun_rise_time)
+
     return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
 
 
@@ -289,28 +303,33 @@ def get_slit_trim_section(master_flat):
     # Spatial half will be used later to constrain the detection of the first
     # edge before the first half.
     spatial_half = len(ccd_section_median) / 2.
+
     # pseudo-derivative to help finding the edges.
     pseudo_derivative = np.array(
-        [abs(ccd_section_median[i + 1] - ccd_section_median[i]) for i in range(0, len(ccd_section_median) - 1)])
-    filtered_data = np.where(np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
-                             pseudo_derivative,
-                             None)
+        [abs(ccd_section_median[i + 1] - ccd_section_median[i])
+         for i in range(0, len(ccd_section_median) - 1)])
+
+    filtered_data = np.where(
+        np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
+        pseudo_derivative,
+        None)
+
     peaks = signal.argrelmax(filtered_data, axis=0, order=3)[0]
-    # print(peaks)
 
     slit_trim_section = None
     if len(peaks) > 2 or peaks == []:
         log.debug('No trim section')
     else:
-        # print(peaks, flat_files.grating[flat_files.file == file], flat_files.slit[flat_files.file == file])
         if len(peaks) == 2:
             # This is the ideal case, when the two edges of the slit are found.
             low, high = peaks
             slit_trim_section = '[:,{:d}:{:d}]'.format(low, high)
         elif len(peaks) == 1:
-            # when only one peak is found it will choose the largest region from the spatial axis center to one edge.
+            # when only one peak is found it will choose the largest region from
+            # the spatial axis center to one edge.
             if peaks[0] <= spatial_half:
-                slit_trim_section = '[:,{:d}:{:d}]'.format(peaks[0], len(ccd_section_median))
+                slit_trim_section = '[:,{:d}:{:d}]' \
+                                    ''.format(peaks[0],len(ccd_section_median))
             else:
                 slit_trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
     return slit_trim_section
@@ -338,22 +357,30 @@ def cosmicray_rejection(ccd, mask_only=False):
     if ccd.header['OBSTYPE'] == 'OBJECT':
         value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
         log.info('Cleaning cosmic rays... ')
-        # ccd.data= ccdproc.cosmicray_lacosmic(ccd, sigclip=2.5, sigfrac=value, objlim=value,
-        ccd.data, mask = ccdproc.cosmicray_lacosmic(ccd.data, sigclip=2.5, sigfrac=value, objlim=value,
-                                                     gain=float(ccd.header['GAIN']),
-                                                     readnoise=float(ccd.header['RDNOISE']),
-                                                     satlevel=np.inf, sepmed=True, fsmode='median',
-                                                     psfmodel='gaussy', verbose=False)
+
+        ccd = ccdproc.cosmicray_lacosmic(
+            ccd,
+            sigclip=2.5,
+            sigfrac=value,
+            objlim=value,
+            gain=float(ccd.header['GAIN']),
+            readnoise=float(ccd.header['RDNOISE']),
+            satlevel=np.inf,
+            sepmed=True,
+            fsmode='median',
+            psfmodel='gaussy',
+            verbose=False)
+
         ccd.header.add_history("Cosmic rays rejected with LACosmic")
         log.info("Cosmic rays rejected with LACosmic")
         if mask_only:
-            return mask
+            return ccd.mask
         else:
             return ccd
     else:
-        log.info('Skipping cosmic ray rejection for image of datatype: {:s}'.format(ccd.header['OBSTYPE']))
+        log.info('Skipping cosmic ray rejection for image of datatype: '
+                 '{:s}'.format(ccd.header['OBSTYPE']))
         return ccd
-
 
 
 def get_best_flat(flat_name):
@@ -509,7 +536,107 @@ def normalize_master_flat(master, name, method='simple', order=15):
 
     return master
 
+
+def get_central_wavelength(grating, grt_ang, cam_ang):
+    """Calculates the central wavelength for a given spectroscopic mode
+
+    The equation used to calculate the central wavelength is the following
+
+
+    $$\lambda_{central} = \frac{1e6}{GRAT}
+    \sin\left(\frac{\alpha \pi}{180}\right) +
+    \sin\left(\frac{\beta \pi}{180}\right)$$
+
+    Args:
+        grating:
+        grt_ang:
+        cam_ang:
+
+    Returns:
+
+    """
+
+    grating_frequency = float(grating)
+    alpha = float(grt_ang)
+    beta = float(cam_ang) - float(grt_ang)
+
+    central_wavelength = (1e6 / grating_frequency) * \
+                         (np.sin(alpha * np.pi / 180.) +
+                          np.sin(beta * np.pi / 180.))
+
+    log.debug('Found {:.3f} as central wavelength'.format(central_wavelength))
+    return central_wavelength
+
+
 # spectroscopy specific functions
+
+def classify_spectroscopic_data(path, search_pattern):
+    search_path = os.path.join(path, search_pattern + '*.fits')
+
+    data_container = NightDataContainer(path=path,
+                                        instrument='Red',
+                                        technique='Spectroscopy')
+
+    file_list = glob.glob(search_path)
+
+    keywords = ['date',
+                'slit',
+                'date-obs',
+                'obstype',
+                'object',
+                'exptime',
+                'obsra',
+                'obsdec',
+                'grating',
+                'cam_targ',
+                'grt_targ',
+                'filter',
+                'filter2',
+                'gain',
+                'rdnoise']
+
+    ifc = ImageFileCollection(path, keywords=keywords, filenames=file_list)
+
+    pifc = ifc.summary.to_pandas()
+
+    pifc['radeg'] = ''
+    pifc['decdeg'] = ''
+    for i in pifc.index.tolist():
+        radeg, decdeg = ra_dec_to_deg(pifc.obsra.iloc[i], pifc.obsdec.iloc[i])
+
+        pifc.iloc[i, pifc.columns.get_loc('radeg')] = '{:.2f}'.format(radeg)
+
+        pifc.iloc[i, pifc.columns.get_loc('decdeg')] = '{:.2f}'.format(decdeg)
+        # now we can compare using degrees
+
+    confs = pifc.groupby(['slit',
+                          'radeg',
+                          'decdeg',
+                          'grating',
+                          'cam_targ',
+                          'grt_targ',
+                          'filter',
+                          'filter2',
+                          'gain',
+                          'rdnoise']).size().reset_index().rename(
+        columns={0: 'count'})
+
+    for i in confs.index:
+        spec_group = pifc[((pifc['slit'] == confs.iloc[i]['slit']) &
+                           (pifc['radeg'] == confs.iloc[i]['radeg']) &
+                           (pifc['decdeg'] == confs.iloc[i]['decdeg']) &
+                           (pifc['grating'] == confs.iloc[i]['grating']) &
+                           (pifc['cam_targ'] == confs.iloc[i]['cam_targ']) &
+                           (pifc['grt_targ'] == confs.iloc[i]['grt_targ']) &
+                           (pifc['filter'] == confs.iloc[i]['filter']) &
+                           (pifc['filter2'] == confs.iloc[i]['filter2']) &
+                           (pifc['gain'] == confs.iloc[i]['gain']) &
+                           (pifc['rdnoise'] == confs.iloc[i]['rdnoise']))]
+
+        data_container.add_spec_group(spec_group=spec_group)
+
+    return data_container
+
 
 def identify_targets(ccd, plots=False):
     """Identify targets cross correlating spatial profile with a gaussian model
@@ -595,12 +722,22 @@ def identify_targets(ccd, plots=False):
             return profile_model
 
     else:
-        log.error('Not a CCDData instance')
+        log.error('Not a ccdproc.CCDData instance')
         return None
 
 
 def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     """Find the trace of the target's spectrum on the image
+
+    This function defines a low order polynomial that trace the location of the
+    spectrum. The attributes pol_deg and sampling_step define the polynomial
+    degree and the spacing in pixels for the samples. For every sample a
+    gaussian model is fitted and the center (mean) is recorded and since
+    spectrum traces vary smoothly this value is used as a new center for the
+    base model used to fit the spectrum profile.
+
+    Notes:
+        This doesn't work for extended sources.
 
     Args:
         ccd (object): Instance of ccdproc.CCDData
@@ -611,8 +748,11 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         plots (bool): If True will show plots (debugging)
 
     Returns:
+        all_traces (list): List that contains traces that are
+        astropy.modeling.Model instance
 
     """
+
     # added two assert for debugging purposes
     assert isinstance(ccd, CCDData)
     assert isinstance(profile, Model)
@@ -639,15 +779,35 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                           dispersion_length // sampling_step * sampling_step,
                           sampling_step)
 
-    # Loop to go through all the sampling points
+    # Loop to go through all the sampling points and gather the points
     for i in sampling_axis:
         # Fit the inital model to the data
         fitted_profile = model_fitter(model=profile,
                                       x=range(ccd.data[:, i].size),
                                       y=ccd.data[:, i])
+        log.debug('Profile fitted')
+
+        # if plots or log.isEnabledFor(logging.DEBUG):
+        #     # print(fitted_profile)
+        #     x_axis = range(ccd.data[:, i].size)
+        #     plt.ion()
+        #     plt.title('Column {:d}'.format(i))
+        #     plt.plot(ccd.data[:, i], label='Data')
+        #     plt.plot(x_axis, fitted_profile(x_axis), label='Model')
+        #     plt.legend(loc='best')
+        #     # if model_fitter.fit_info['ierr'] == 1:
+        #     #     # print(model_fitter.fit_info)
+        #     #     plt.ioff()
+        #     #     plt.show()
+        #     #     plt.ion()
+        #     plt.draw()
+        #     plt.pause(.5)
+        #     plt.clf()
+        #     plt.ioff()
+
         if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
             log.error(
-                "Fitting did not work fit_info['ierr'] = \
+                "Fitting did not work, fit_info['ierr'] = \
                 {:d}".format(model_fitter.fit_info['ierr']))
 
         # alternatively could use fitted_profile.param_names
@@ -655,33 +815,46 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         # model that was parsed.
         mean_keys = [key for key in dir(fitted_profile) if 'mean' in key]
 
+        # Since traces are assumed to vary smoothly with wavelength I change the
+        # previously found mean to the profile model used to fit the profile
+        # data
+        for mean_key in mean_keys:
+            profile.__getattribute__(mean_key).value = \
+                fitted_profile.__getattribute__(mean_key).value
+
         if trace_points is None:
             trace_points = np.ndarray((len(mean_keys),
                                        dispersion_length // sampling_step))
 
         # store the corresponding value in the proper array for later fitting
-        # a low order polinomial
+        # a low order polynomial
         for e in range(trace_points.shape[0]):
-            trace_points[e][i // sampling_step] =\
-               fitted_profile.__getattribute__(mean_keys[e]).value
+            log.debug('Median Trace'
+                      ' {:d}: {:.3f}'.format(e, np.median(trace_points[e])))
+
+            trace_points[e][i // sampling_step] = \
+                fitted_profile.__getattribute__(mean_keys[e]).value
 
     # fit a low order polynomial for the trace
     for trace_num in range(trace_points.shape[0]):
+
         fitted_trace = model_fitter(model=trace_model,
                                     x=sampling_axis,
                                     y=trace_points[trace_num])
 
         fitted_trace.rename('Trace_{:d}'.format(trace_num))
 
+        # TODO (simon): Validate which kind of errors are represented here
         if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
             log.error(model_fitter.fit_info['ierr'])
         else:
             # RMS Error calculation
-            RMSError = np.sqrt(
+            rms_error = np.sqrt(
                 np.sum(np.array([fitted_trace(sampling_axis) -
                                  trace_points[trace_num]]) ** 2))
-            log.info('Trace Fit RMSE: {:.3f}'.format(RMSError))
+            log.info('Trace Fit RMSE: {:.3f}'.format(rms_error))
 
+            # append for returning
             if all_traces is None:
                 all_traces = [fitted_trace]
             else:
@@ -693,7 +866,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                      marker='o',
                      label='Data Points')
             plt.plot(fitted_trace(range(dispersion_length)),
-                     label='Model RMSE: {:.2f}'.format(RMSError))
+                     label='Model RMSE: {:.2f}'.format(rms_error))
 
     if plots:
         plt.title('Targets Trace')
@@ -709,8 +882,17 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     return all_traces
 
 
-def get_extraction_zone(ccd, model, n_sigma_extract, plots=False):
-    """Get a rectangular CCD zone that contains the spectrum
+def get_extraction_zone(ccd,
+                        extraction=None,
+                        trace=None,
+                        model=None,
+                        n_sigma_extract=None,
+                        zone=None,
+                        plots=False):
+    """Get the minimum rectangular CCD zone that fully contains the spectrum
+
+    In this context, _fully contained_ means the spectrum plus some region for
+    background subtraction.
 
     Notes:
         For Goodman HTS the alignment of the spectrum with the detector lines
@@ -722,10 +904,14 @@ def get_extraction_zone(ccd, model, n_sigma_extract, plots=False):
     Args:
         ccd (object): A ccdproc.CCDData instance, the image from which the zone
          will be extracted
+        extraction (str): Extraction type, 'simple' or 'optimal'
+        trace (object): An astropy.modeling.Model instance that correspond to
+        the trace of the spectrum
         model (object): An astropy.modeling.Model instance that was previously
          fitted to the spatial profile.
         n_sigma_extract (int): Total number of sigmas to be extracted.
         plots (bool): If True will show plots, similar to a debugging mode.
+        zone (list): Low and high limits to extract
 
     Returns:
         nccd (object): Instance of ccdproc.CCDData that contains only the region
@@ -733,36 +919,75 @@ def get_extraction_zone(ccd, model, n_sigma_extract, plots=False):
         keyword that contain the region of the original image extracted.
         model (object): Instance of astropy.modeling.Model with an updated mean
         to match the new center in pixel units.
+        zone (list): Low and high limits of extraction zone
 
     """
 
-    spatial_length, dispersion_length = ccd.data.shape
+    if zone is None and extraction is not None:
+        assert (model is not None) and (n_sigma_extract is not None)
+        assert isinstance(trace, Model)
+        log.info('Extracting zone centered at: {:.3f}'.format(model.mean.value))
+        spatial_length, dispersion_length = ccd.data.shape
 
-    mean = model.mean.value
-    stddev = model.stddev.value
-    extract_width = n_sigma_extract // 2 * stddev
+        # get maximum variation in spatial direction
+        trace_array = trace(range(dispersion_length))
+        trace_inclination = trace_array.max() - trace_array.min()
+        log.info('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
 
-    low_lim = np.max([0, int(mean - extract_width)])
-    hig_lim = np.min([int(mean + extract_width), spatial_length])
+        # m_mean = model.mean.value
+        m_stddev = model.stddev.value
+        extract_width = n_sigma_extract // 2 * m_stddev
 
-    nccd = ccd.copy()
-    nccd.data = ccd.data[low_lim:hig_lim, :]
-    nccd.header['HISTORY'] = 'Subsection of CCD [{:d}:{:d}, :]'.format(low_lim,
-                                                                       hig_lim)
-    model.mean.value = extract_width
+        low_lim = np.max([0, int(trace_array.min() - extract_width)])
 
-    if plots:
-        plt.imshow(ccd.data)
-        plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
-        plt.show()
+        hig_lim = np.min([int(trace_array.max() + extract_width),
+                          spatial_length])
 
-    return nccd, model
+        zone = [low_lim, hig_lim]
+
+        # this is necessary since we are cutting a piece of the full ccd.
+        trace.c0.value -= low_lim
+        log.info('Changing attribute c0 from trace, this is to adjust it to '
+                  'the new extraction zone which is smaller that the full CCD.')
+
+        log.info('Changing attribute mean of profile model')
+        model.mean.value = extract_width
+
+        nccd = ccd.copy()
+        nccd.data = ccd.data[low_lim:hig_lim, :]
+        if nccd.mask is not None:
+            log.debug('Trimming mask')
+            nccd.mask = ccd.mask[low_lim:hig_lim, :]
+        nccd.header['HISTORY'] = 'Subsection of CCD ' \
+                                 '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
+
+        if plots:
+            plt.imshow(ccd.data)
+            plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
+            plt.show()
+
+        return nccd, trace, model, zone
+
+    else:
+
+        low_lim, hig_lim = zone
+
+        nccd = ccd.copy()
+        nccd.data = ccd.data[low_lim:hig_lim, :]
+        if nccd.mask is not None:
+            log.debug('Trimming mask')
+            nccd.mask = ccd.mask[low_lim:hig_lim, :]
+        nccd.header['HISTORY'] = 'Subsection of CCD ' \
+                                 '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
+        return nccd
 
 
 def add_wcs_keys(header):
     """Adds generic keyword to the header
-    Linear wavelength solutions require a set of standard fits keywords. Later on they will be updated accordingly
-    The main goal of putting them here is to have consistent and nicely ordered headers
+    Linear wavelength solutions require a set of standard fits keywords. Later
+    on they will be updated accordingly
+    The main goal of putting them here is to have consistent and nicely ordered
+    headers
 
     Args:
         header (object): New header without WCS entries
@@ -789,3 +1014,162 @@ def add_wcs_keys(header):
     except TypeError as err:
         log.error("Can't add wcs keywords to header")
         log.debug(err)
+
+
+def remove_background(ccd, plots=False):
+    """Remove Background of a ccd spectrum image
+
+    Args:
+        ccd (object): A ccdproc.CCDData instance.
+
+    Returns:
+        ccd (object): The modified
+
+    """
+    # ccd_copia = ccd.copy()
+    data = ma.masked_invalid(ccd.data)
+    # x, y = ccd.data.shape
+    median = ma.median(data, axis=0)
+
+    data -= median
+    data.set_fill_value(-np.inf)
+    ccd.data = data.filled()
+
+    # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
+    return ccd
+
+
+# classes definition
+
+class NightDataContainer(object):
+    """This class is designed to be the organized data container. It doesn't
+    store image data but list of pandas.DataFrame objects. Also it stores
+    critical variables such as sunrise and sunset times.
+
+    """
+
+    def __init__(self, path, instrument, technique):
+        """Initializes all the variables for the class
+
+        Args:
+            path (str): Full path to the directory where raw data is located
+            instrument (str): 'Red' or 'Blue' stating whether the data was taken
+            using the Red or Blue Goodman Camera.
+            technique (str): 'Spectroscopy' or 'Imaging' stating what kind of
+            data was taken.
+        """
+
+        self.full_path = path
+        self.instrument = instrument
+        self.technique = technique
+        self.is_empty = True
+        self.bias = None
+        self.day_flats = None
+        self.dome_flats = None
+        self.sky_flats = None
+        self.data_groups = None
+        self.spec_groups = None
+        # time reference points
+        self.sun_set_time = None
+        self.sun_rise_time = None
+        self.evening_twilight = None
+        self.morning_twilight = None
+
+    def add_bias(self, bias_group):
+        """Adds a bias group
+
+        Args:
+            bias_group (pandas.DataFrame): Contains a set of keyword values of
+            grouped image metadata
+
+        """
+
+        if len(bias_group) < 2:
+            if self.technique == 'Imaging':
+
+                log.error('Imaging mode needs BIAS to work properly. '
+                          'Go find some.')
+
+            else:
+                log.warning('BIAS are needed for optimal results.')
+        else:
+            if self.bias is None:
+                self.bias = [bias_group]
+            else:
+                self.bias.append(bias_group)
+        if self.bias is not None:
+            self.is_empty = False
+
+    def add_day_flats(self, day_flats):
+        """"Adds a daytime flat group
+
+        Args:
+            day_flats (pandas.DataFrame): Contains a set of keyword values of
+            grouped image metadata
+
+        """
+
+        if self.day_flats is None:
+            self.day_flats = [day_flats]
+        else:
+            self.day_flats.append(day_flats)
+        if self.day_flats is not None:
+            self.is_empty = False
+
+    def add_data_group(self, data_group):
+        """Adds a data group
+
+        Args:
+            data_group (pandas.DataFrame): Contains a set of keyword values of
+            grouped image metadata
+
+        """
+
+        if self.data_groups is None:
+            self.data_groups = [data_group]
+        else:
+            self.data_groups.append(data_group)
+        if self.data_groups is not None:
+            self.is_empty = False
+
+    def add_spec_group(self, spec_group):
+        """Adds a data group
+
+        Args:
+            spec_group (pandas.DataFrame): Contains a set of keyword values of
+            grouped image metadata
+
+        """
+
+        if self.spec_groups is None:
+            self.spec_groups = [spec_group]
+        else:
+            self.spec_groups.append(spec_group)
+        if self.spec_groups is not None:
+            self.is_empty = False
+
+    def set_sun_times(self, sun_set, sun_rise):
+        """Sets values for sunset and sunrise
+
+        Args:
+            sun_set (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+            sun_rise (str):Sun rise time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+
+        """
+
+        self.sun_set_time = sun_set
+        self.sun_rise_time = sun_rise
+
+    def set_twilight_times(self, evening, morning):
+        """Sets values for evening and morning twilight
+
+        Args:
+            evening (str): Evening twilight time in the format
+            'YYYY-MM-DDTHH:MM:SS.SS'
+            morning (str): Morning twilight time in the format
+            'YYYY-MM-DDTHH:MM:SS.SS'
+
+        """
+
+        self.evening_twilight = evening
+        self.morning_twilight = morning
