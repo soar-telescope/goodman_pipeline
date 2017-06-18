@@ -722,12 +722,22 @@ def identify_targets(ccd, plots=False):
             return profile_model
 
     else:
-        log.error('Not a CCDData instance')
+        log.error('Not a ccdproc.CCDData instance')
         return None
 
 
 def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     """Find the trace of the target's spectrum on the image
+
+    This function defines a low order polynomial that trace the location of the
+    spectrum. The attributes pol_deg and sampling_step define the polynomial
+    degree and the spacing in pixels for the samples. For every sample a
+    gaussian model is fitted and the center (mean) is recorded and since
+    spectrum traces vary smoothly this value is used as a new center for the
+    base model used to fit the spectrum profile.
+
+    Notes:
+        This doesn't work for extended sources.
 
     Args:
         ccd (object): Instance of ccdproc.CCDData
@@ -742,6 +752,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         astropy.modeling.Model instance
 
     """
+
     # added two assert for debugging purposes
     assert isinstance(ccd, CCDData)
     assert isinstance(profile, Model)
@@ -796,7 +807,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
 
         if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
             log.error(
-                "Fitting did not work fit_info['ierr'] = \
+                "Fitting did not work, fit_info['ierr'] = \
                 {:d}".format(model_fitter.fit_info['ierr']))
 
         # alternatively could use fitted_profile.param_names
@@ -816,7 +827,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                                        dispersion_length // sampling_step))
 
         # store the corresponding value in the proper array for later fitting
-        # a low order polinomial
+        # a low order polynomial
         for e in range(trace_points.shape[0]):
             log.debug('Median Trace'
                       ' {:d}: {:.3f}'.format(e, np.median(trace_points[e])))
@@ -833,6 +844,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
 
         fitted_trace.rename('Trace_{:d}'.format(trace_num))
 
+        # TODO (simon): Validate which kind of errors are represented here
         if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
             log.error(model_fitter.fit_info['ierr'])
         else:
@@ -842,6 +854,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                                  trace_points[trace_num]]) ** 2))
             log.info('Trace Fit RMSE: {:.3f}'.format(rms_error))
 
+            # append for returning
             if all_traces is None:
                 all_traces = [fitted_trace]
             else:
@@ -877,6 +890,9 @@ def get_extraction_zone(ccd,
                         zone=None,
                         plots=False):
     """Get the minimum rectangular CCD zone that fully contains the spectrum
+
+    In this context, _fully contained_ means the spectrum plus some region for
+    background subtraction.
 
     Notes:
         For Goodman HTS the alignment of the spectrum with the detector lines
@@ -918,7 +934,7 @@ def get_extraction_zone(ccd,
         trace_inclination = trace_array.max() - trace_array.min()
         log.info('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
 
-        m_mean = model.mean.value
+        # m_mean = model.mean.value
         m_stddev = model.stddev.value
         extract_width = n_sigma_extract // 2 * m_stddev
 
@@ -929,7 +945,7 @@ def get_extraction_zone(ccd,
 
         zone = [low_lim, hig_lim]
 
-        # this is neccessary since we are cutting a piece of the full ccd.
+        # this is necessary since we are cutting a piece of the full ccd.
         trace.c0.value -= low_lim
         log.info('Changing attribute c0 from trace, this is to adjust it to '
                   'the new extraction zone which is smaller that the full CCD.')
