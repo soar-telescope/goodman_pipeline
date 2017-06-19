@@ -28,8 +28,11 @@ import matplotlib.pyplot as plt
 import warnings
 from .process import Process, SciencePack
 from .wavelength import WavelengthCalibration
-from goodman_ccd.core import (print_spacers, ra_dec_to_deg, convert_time,
-                              print_default_args)
+from goodman_ccd.core import (print_spacers,
+                              ra_dec_to_deg,
+                              convert_time,
+                              print_default_args,
+                              classify_spectroscopic_data)
 
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
