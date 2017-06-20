@@ -700,13 +700,13 @@ def spectroscopic_extraction(ccd, extraction,
     if comp_list is None:
         comp_list = []
 
-    iccd = remove_background(ccd=ccd,)
+    iccd = remove_background(ccd=ccd)
 
-    profile_model = identify_targets(ccd=iccd, plots=False)
+    profile_model = identify_targets(ccd=iccd, plots=plots)
     del(iccd)
 
     if isinstance(profile_model, Model):
-        traces = trace_targets(ccd=ccd, profile=profile_model, plots=False)
+        traces = trace_targets(ccd=ccd, profile=profile_model, plots=plots)
         # extract(ccd=ccd,
         #         spatial_profile=profile_model,
         #         n_sigma_extract=10,
@@ -723,14 +723,14 @@ def spectroscopic_extraction(ccd, extraction,
                     trace=traces[m],
                     model=profile_model[submodel_name],
                     n_sigma_extract=n_sigma_extract,
-                    plots=False)
+                    plots=plots)
 
                 for comp in comp_list:
                     comp_zone = get_extraction_zone(ccd=comp,
                                                     extraction=extraction,
                                                     trace=trace,
                                                     zone=zone,
-                                                    plots=False)
+                                                    plots=plots)
                     # since a comparison lamp only needs only the relative line
                     # center in the dispersion direction, therefore the flux is
                     # not important we are only calculating the median along the
@@ -740,14 +740,14 @@ def spectroscopic_extraction(ccd, extraction,
 
 
                 nccd = remove_background(ccd=nccd,
-                                         plots=False)
+                                         plots=plots)
 
                 extracted_ccd = extract(ccd=nccd,
                                         trace=trace,
                                         spatial_profile=model,
                                         extraction=extraction,
                                         sampling_step=10,
-                                        plots=False)
+                                        plots=plots)
                 extracted.append(extracted_ccd)
 
                 if plots:
@@ -761,14 +761,14 @@ def spectroscopic_extraction(ccd, extraction,
                 trace=traces[0],
                 model=profile_model,
                 n_sigma_extract=n_sigma_extract,
-                plots=False)
+                plots=plots)
 
             for comp in comp_list:
                 comp_zone = get_extraction_zone(ccd=comp,
                                                 extraction=extraction,
                                                 trace=trace,
                                                 zone=zone,
-                                                plots=False)
+                                                plots=plots)
 
                 # since a comparison lamp only needs the relative line
                 # center in the dispersion direction, therefore the flux is not
@@ -778,14 +778,14 @@ def spectroscopic_extraction(ccd, extraction,
                 comp_zones.append(comp_zone)
 
             nccd = remove_background(ccd=nccd,
-                                     plots=False)
+                                     plots=plots)
 
             extracted_ccd = extract(ccd=nccd,
                                     trace=trace,
                                     spatial_profile=model,
                                     extraction=extraction,
                                     sampling_step=10,
-                                    plots=False)
+                                    plots=plots)
 
             extracted.append(extracted_ccd)
 
@@ -1256,7 +1256,7 @@ def extract(ccd, trace, spatial_profile, extraction, sampling_step=1, plots=Fals
 
         indexes = np.argwhere(cr_mask == 0)
         # print(indexes)
-        if True:
+        if plots:
             fig = plt.figure(1)
             ax1 = fig.add_subplot(111)
             for index in indexes:
