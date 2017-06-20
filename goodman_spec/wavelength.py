@@ -30,12 +30,88 @@ import scipy.interpolate
 from scipy import signal
 from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
 from .linelist import ReferenceData
+from goodman_ccd.core import spectroscopic_extraction, NoTargetException
 
 
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.INFO, format=FORMAT)
 log = logging.getLogger('redspec.wavelength')
+
+
+def process_spectroscopy_data(data_container, args, extraction_type='simple'):
+
+    assert data_container.is_empty is False
+    assert any(extraction_type == option for option in ['simple',
+                                                        'optimal'])
+    # to be returned
+    extracted = None
+    comps = None
+    full_path = data_container.full_path
+
+    # instantiate wavelength solution class
+    get_wsolution = WavelengthCalibration(args=args)
+
+    for spec_group in data_container.spec_groups:
+        comp_group = None
+        object_group = None
+        comp_ccd_list = []
+        obstypes = spec_group.obstype.unique()
+        if 'COMP' in obstypes:
+            comp_group = spec_group[spec_group.obstype == 'COMP']
+            # print(comp_group)
+        if 'OBJECT' in obstypes:
+            object_group = spec_group[spec_group.obstype == 'OBJECT']
+            # print(object_group)
+        for spec_file in object_group.file.tolist():
+            log.info('Processing Science File: {:s}'.format(spec_file))
+            file_path = os.path.join(full_path, spec_file)
+            ccd = CCDData.read(file_path, unit=u.adu)
+            ccd.header['OFNAME'] = (spec_file, 'Original File Name')
+            if comp_group is not None:
+                for comp_file in comp_group.file.tolist():
+                    comp_path = os.path.join(full_path, comp_file)
+                    comp_ccd = CCDData.read(comp_path, unit=u.adu)
+                    comp_ccd.header['OFNAME'] = (comp_file,
+                                                 'Original File Name')
+                    comp_ccd_list.append(comp_ccd)
+
+            try:
+                extracted, comps = spectroscopic_extraction(
+                    ccd=ccd,
+                    extraction=extraction_type,
+                    comp_list=comp_ccd_list)
+
+                if args.debug_mode:
+                    fig = plt.figure(0)
+                    fig.clf()
+                    fig.canvas.set_window_title('Extracted Data')
+
+                    manager = plt.get_current_fig_manager()
+                    manager.window.maximize()
+                    for edata in extracted:
+                        plt.plot(edata.data, label=edata.header['OBJECT'])
+                        if comps != []:
+                            for comp in comps:
+                                plt.plot(comp.data, label=comp.header['OBJECT'])
+                    plt.legend(loc='best')
+                    if plt.isinteractive():
+                        plt.draw()
+                        plt.pause(1)
+                    else:
+                        plt.show()
+
+                for extracted_ccd in extracted:
+                    get_wsolution(ccd=extracted_ccd, comp_list=comps)
+            except NoTargetException:
+                log.error('No target was identified')
+                break
+
+
+
+
+    return extracted, comps
+
 
 
 class WavelengthCalibration(object):
@@ -53,7 +129,7 @@ class WavelengthCalibration(object):
 
     """
 
-    def __init__(self, sci_pack, science_object, args):
+    def __init__(self, args):
         """Wavelength Calibration Class Initialization
 
         A WavelengthCalibration class is instantiated for each science target being processed, i.e. every science image.
@@ -72,7 +148,7 @@ class WavelengthCalibration(object):
         self.wsolution = None
         self.rms_error = None
         self.reference_data = ReferenceData(self.args)
-        self.science_object = science_object
+        # self.science_object = science_object
         self.slit_offset = None
         self.interpolation_size = 200
         self.line_search_method = 'derivative'
@@ -121,12 +197,12 @@ class WavelengthCalibration(object):
         self.pixelcenter = []
         """this data must come parsed"""
         self.path = self.args.source
-        self.science_pack = sci_pack
-        self.sci_filename = self.science_object.file_name
+        # self.science_pack = sci_pack
+        # self.sci_filename = self.science_object.file_name
         # self.history_of_lamps_solutions = {}
         self.reference_solution = None
 
-    def __call__(self, wsolution_obj=None):
+    def __call__(self, ccd, comp_list, wsolution_obj=None):
         """Call method for the WavelengthSolution Class
 
         It takes extracted data and produces wavelength calibrated by means of an interactive mode. The call method
@@ -142,83 +218,84 @@ class WavelengthCalibration(object):
                                           will return a None element.
 
         """
-        log.info('Processing Science Target: {:s}'.format(self.science_pack.headers[0]['OBJECT']))
-        if wsolution_obj is None:
-            if self.science_object.lamp_count > 0:
-                for lamp_index in range(self.science_object.lamp_count):
-                    self.calibration_lamp = self.science_object.lamp_file[lamp_index - 1]
-                    self.lamp_data = self.science_pack.lamps_data[lamp_index]
-                    self.raw_pixel_axis = range(len(self.lamp_data))
-                    # self.raw_pixel_axis = range(len(self.lamp_data))
-                    self.lamp_header = self.science_pack.lamps_headers[lamp_index]
-                    self.lamp_name = self.lamp_header['OBJECT']
-                    log.info('Processing Comparison Lamp: {:s}'.format(self.lamp_name))
-                    self.data1 = self.interpolate(self.lamp_data)
-                    # self.lines_limits = self.get_line_limits()
-                    # self.lines_center = self.get_line_centers(self.lines_limits)
-                    self.lines_center = self.get_lines_in_lamp()
-                    self.spectral = self.get_spectral_characteristics()
-                    if self.args.interactive_ws:
-                        self.interactive_wavelength_solution()
-                    else:
-                        log.warning('Automatic Wavelength Solution might fail to provide accurate solutions')
-                        self.automatic_wavelength_solution()
-                        # self.wsolution = self.wavelength_solution()
-                    if self.wsolution is not None:
-                        self.linear_lamp = self.linearize_spectrum(self.lamp_data)
-                        self.lamp_header = self.add_wavelength_solution(self.lamp_header,
-                                                                        self.linear_lamp,
-                                                                        self.science_object.lamp_file[lamp_index - 1])
-                        for target_index in range(self.science_object.no_targets):
-                            log.debug('Processing target {:d}'.format(target_index + 1))
-                            new_data = self.science_pack.data[target_index]
-                            new_header = self.science_pack.headers[target_index]
-                            if self.science_object.no_targets > 1:
-                                new_index = target_index + 1
-                            else:
-                                new_index = None
-                            self.linearized_sci = self.linearize_spectrum(new_data)
-                            self.header = self.add_wavelength_solution(new_header,
-                                                                       self.linearized_sci,
-                                                                       self.sci_filename,
-                                                                       index=new_index)
-                        wavelength_solution = WavelengthSolution(solution_type='non_linear',
-                                                                 model_name='chebyshev',
-                                                                 model_order=3,
-                                                                 model=self.wsolution,
-                                                                 ref_lamp=self.calibration_lamp,
-                                                                 eval_comment=self.evaluation_comment,
-                                                                 header=self.header)
+        assert isinstance(ccd, CCDData)
+        assert isinstance(comp_list, list)
 
-                        return wavelength_solution
-                    else:
-                        log.error('It was not possible to get a wavelength solution from this lamp.')
-                        return None
+        self.i_fig = None
 
-            else:
-                log.error('There are no lamps to process')
-        else:
-            self.wsolution = wsolution_obj.wsolution
-            self.calibration_lamp = wsolution_obj.reference_lamp
-            self.evaluation_comment = wsolution_obj.evaluation_comment
-            # print('wavelengthSolution ', self.wsolution)
-            # print('Evaluation Comment', self.evaluation_comment)
-            # repeat for all sci
-            for target_index in range(self.science_object.no_targets):
-                log.debug('Processing target {:d}'.format(target_index + 1))
-                new_data = self.science_pack.data[target_index]
-                new_header = self.science_pack.headers[target_index]
-                if self.science_object.no_targets > 1:
-                    new_index = target_index + 1
+        log.info('Processing Science Target: {:s}'.format(ccd.header['OBJECT']))
+        if comp_list is not None:
+            for lamp_ccd in comp_list:
+                self.calibration_lamp = lamp_ccd.header['OFNAME']
+                self.lamp_data = lamp_ccd.data
+                self.raw_pixel_axis = range(len(self.lamp_data))
+                # self.raw_pixel_axis = range(len(self.lamp_data))
+                self.lamp_header = lamp_ccd.header.copy()
+                self.lamp_name = self.lamp_header['OBJECT']
+                log.info(
+                    'Processing Comparison Lamp: {:s}'.format(self.lamp_name))
+                self.data1 = self.interpolate(self.lamp_data)
+                # self.lines_limits = self.get_line_limits()
+                # self.lines_center = self.get_line_centers(self.lines_limits)
+                self.lines_center = self.get_lines_in_lamp()
+                self.spectral = self.get_spectral_characteristics()
+                if self.args.interactive_ws:
+                    self.interactive_wavelength_solution()
                 else:
-                    new_index = None
-                self.linearized_sci = self.linearize_spectrum(new_data)
-                self.header = self.add_wavelength_solution(new_header,
-                                                           self.linearized_sci,
-                                                           self.sci_filename,
-                                                           self.evaluation_comment,
-                                                           index=new_index)
-            return wsolution_obj
+                    log.warning('Automatic Wavelength Solution might fail to '
+                                'provide accurate solutions')
+                    self.automatic_wavelength_solution()
+                    # self.wsolution = self.wavelength_solution()
+                if self.wsolution is not None:
+                    self.linear_lamp = self.linearize_spectrum(self.lamp_data)
+                    self.lamp_header = self.add_wavelength_solution(
+                        self.lamp_header,
+                        self.linear_lamp,
+                        self.calibration_lamp)
+                    self.linearized_sci = self.linearize_spectrum(ccd.data)
+                    self.header = self.add_wavelength_solution(ccd.header,
+                                                               self.linearized_sci,
+                                                               ccd.header['OFNAME'],
+                                                               index=0)
+
+                    wavelength_solution = WavelengthSolution(
+                        solution_type='non_linear',
+                        model_name='chebyshev',
+                        model_order=3,
+                        model=self.wsolution,
+                        ref_lamp=self.calibration_lamp,
+                        eval_comment=self.evaluation_comment,
+                        header=self.header)
+
+                    return wavelength_solution
+                else:
+                    log.error(
+                        'It was not possible to get a wavelength solution from this lamp.')
+                    return None
+
+
+        # else:
+        #     self.wsolution = wsolution_obj.wsolution
+        #     self.calibration_lamp = wsolution_obj.reference_lamp
+        #     self.evaluation_comment = wsolution_obj.evaluation_comment
+        #     # print('wavelengthSolution ', self.wsolution)
+        #     # print('Evaluation Comment', self.evaluation_comment)
+        #     # repeat for all sci
+        #     for target_index in range(self.science_object.no_targets):
+        #         log.debug('Processing target {:d}'.format(target_index + 1))
+        #         new_data = self.science_pack.data[target_index]
+        #         new_header = self.science_pack.headers[target_index]
+        #         if self.science_object.no_targets > 1:
+        #             new_index = target_index + 1
+        #         else:
+        #             new_index = None
+        #         self.linearized_sci = self.linearize_spectrum(new_data)
+        #         self.header = self.add_wavelength_solution(new_header,
+        #                                                    self.linearized_sci,
+        #                                                    self.sci_filename,
+        #                                                    self.evaluation_comment,
+        #                                                    index=new_index)
+        #     return wsolution_obj
 
     def get_wsolution(self):
         """Get the mathematical model of the wavelength solution
@@ -839,12 +916,17 @@ class WavelengthCalibration(object):
         if self.i_fig is None:
             self.i_fig = plt.figure(figsize=(15, 10))
             self.i_fig.canvas.set_window_title('Automatic Wavelength Solution')
-            if not self.args.debug_mode:
-                plt.ion()
-                plt.show()
-            manager = plt.get_current_fig_manager()
-            manager.window.maximize()
-            self.ax1 = self.i_fig.add_subplot(111)
+        else:
+            self.i_fig.clf()
+
+        if not self.args.debug_mode:
+            plt.ion()
+            # plt.show()
+        else:
+            plt.ioff()
+        manager = plt.get_current_fig_manager()
+        manager.window.maximize()
+        self.ax1 = self.i_fig.add_subplot(111)
 
         self.ax1.plot([], color='m', label='Pixels')
         self.ax1.plot([], color='c', label='Angstrom')
@@ -890,7 +972,7 @@ class WavelengthCalibration(object):
         self.ax1.set_xlabel('Wavelength (Angstrom)')
         self.ax1.set_ylabel('Intensity (ADU)')
 
-        self.ax1.set_title('Automatic Wavelength Solution Test\n'
+        self.ax1.set_title('Automatic Wavelength Solution\n'
                            + self.lamp_header['OBJECT']
                            + ' ' + wavmode + '\n'
                            + 'RMS Error: {:.3f}'.format(self.rms_error))
@@ -917,8 +999,9 @@ class WavelengthCalibration(object):
         else:
             plt.draw()
             plt.pause(1)
-            # plt.ion()
-        # plt.show()
+            plt.ioff()
+            plt.close()
+        # plt.close(self.i_fig)
 
     def cross_correlation(self, reference, new_array, mode='full'):
         """Do cross correlation to two arrays
