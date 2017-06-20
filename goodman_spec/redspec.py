@@ -26,13 +26,15 @@ matplotlib.use('GTK3Agg')
 import matplotlib.pyplot as plt
 # from astropy import log
 import warnings
+from ccdproc import CCDData
 from .process import Process, SciencePack
-from .wavelength import WavelengthCalibration
+from .wavelength import WavelengthCalibration, process_spectroscopy_data
 from goodman_ccd.core import (print_spacers,
                               ra_dec_to_deg,
                               convert_time,
                               print_default_args,
                               classify_spectroscopic_data)
+
 
 warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s: %(message)s'
@@ -248,103 +250,80 @@ class MainApp(object):
     smooth working in all the other modules.
 
     """
-    def __init__(self):
-        """Initalization of important parameters
+    def __init__(self, args=None):
 
-        Initializes the list of images using ccdproc.ImageFileCollection and
-        pandas the get the arguments that define the working of the pipeline
-        using arpargse and instantiate a Night class, an object that will store
-        relevant information of the observed night being processed.
-
-        """
-        self.args = get_args()
-        self.image_collection = pd.DataFrame
-        self.night = self.set_night()
-        self.extracted_data = None
-        self.wsolution = None
-        self.calibration_lamp = None
+        if args is None:
+            self.args = get_args()
+        else:
+            self.args = args
+        # self.image_collection = pd.DataFrame
+        # self.night = self.set_night()
+        # self.extracted_data = None
+        # self.wsolution = None
+        # self.calibration_lamp = None
         self.wavelength_solution_obj = None
 
     def __call__(self):
-        """Call method for the MainApp class
 
-        This is equivalent to a main() function where all the logic and controls
-        are implemented.
+        # data_container instance of NightDataContainer defined in core
+        data_container = classify_spectroscopic_data(
+            path=self.args.source,
+            search_pattern=self.args.pattern)
 
-        Raises:
-            NotImplementedError: For observing modes 2 and 3
+        # TODO (simon): add extraction to arguments.
+        extracted, comps = process_spectroscopy_data(
+            data_container=data_container,
+            args=self.args,
+            extraction_type='simple')
 
-        """
-        # TODO (simon): Add the possibility of managing multi wavelength
-        # solutions for different capabilities
-        self.organize_full_night()
-        # print(len(self.night.sci_targets))
-        # Remove all related to this
-        sol_array = []
-        ref_array = []
-        pixel_axis = range(4096)
+        for i in range(len(extracted)):
+            ccd = extracted[i]
+            assert isinstance(ccd, CCDData)
+            if self.wavelength_solution_obj.check_compatibility() or self.wavelength_solution_obj is None:
+                log.debug(self.night.night_wsolution)
+                self.extracted_data, self.night.sci_targets[i] = process(
+                    extract_lamps=True)
+                if isinstance(self.extracted_data, SciencePack):
+                    wavelength_calibration = WavelengthCalibration(
+                        self.extracted_data,
+                        self.night.sci_targets[i],
+                        self.args)
 
-        for i in range(len(self.night.sci_targets)):
-            science_object = self.night.sci_targets[i]
-            # print(science_object)
-            # print(self.night.sci_targets)
-            process = Process(science_object, self.args)
-            if self.args.procmode == 0:
-                if self.wavelength_solution_obj is None:
-                    self.extracted_data, self.night.sci_targets[i] = process()
-                    if isinstance(self.extracted_data, SciencePack):
-                        wavelength_calibration = WavelengthCalibration(self.extracted_data,
-                                                                       self.night.sci_targets[i],
-                                                                       self.args)
-
-                        self.wavelength_solution_obj = wavelength_calibration()
-
-                        # self.night.set_night_wsolution(process.get_wsolution())
-                        # self.night.set_night_calibration_lamp(process.get_calibration_lamp())
-                    else:
-                        log.error('No data was extracted from this target.')
-                else:
-                    if self.wavelength_solution_obj.check_compatibility(process.header):
-                        log.debug(self.night.night_wsolution)
-                        self.extracted_data, self.night.sci_targets[i] = process(extract_lamps=True)
-                        if isinstance(self.extracted_data, SciencePack):
-                            wavelength_calibration = WavelengthCalibration(self.extracted_data,
-                                                                           self.night.sci_targets[i],
-                                                                           self.args)
-
-                            wavelength_calibration(self.wavelength_solution_obj)
-                        else:
-                            log.error('No data was extracted from this target.')
-                    else:
-                        log.info('Incompatibility of solution to new data')
-                        time.sleep(3)
-                        # TODO(simon): complete this part
-            elif self.args.procmode == 1:
-                self.extracted_data, self.night.sci_targets[i] = process()
-                if self.extracted_data is not None:
-                    wavelength_calibration = WavelengthCalibration(self.extracted_data,
-                                                                   self.night.sci_targets[i],
-                                                                   self.args)
-
-                    self.wavelength_solution_obj = wavelength_calibration()
-                    # if self.wavelength_solution_obj is not None:
-                    #     # print(self.wavelength_solution_obj.wsolution)
-                    #     log.debug('Wavelength Solution exists')
-                    #     # sol_array.append(self.wavelength_solution_obj.wsolution(pixel_axis))
-                    #     # ref_array.append(self.wavelength_solution_obj.reference_lamp)
-                    #     # plt.plot(pixel_axis,  self.wavelength_solution_obj.wsolution(pixel_axis), label=self.wavelength_solution_obj.reference_lamp)
-                    #     # plt.legend(loc='best')
-                    #     # plt.show()
-                    #     # plt.draw()
-                    #     # plt.pause(1)
-                    # else:
-                    #     log.debug('Wavelength Solution does not exists')
+                    wavelength_calibration(self.wavelength_solution_obj)
                 else:
                     log.error('No data was extracted from this target.')
-            elif self.args.procmode == 2:
-                raise NotImplementedError
-            elif self.args.procmode == 3:
-                raise NotImplementedError
+            else:
+                log.info('Incompatibility of solution to new data')
+                time.sleep(3)
+
+            #
+            #             # TODO(simon): complete this part
+            # elif self.args.procmode == 1:
+            #     self.extracted_data, self.night.sci_targets[i] = process()
+            #     if self.extracted_data is not None:
+            #         wavelength_calibration = WavelengthCalibration(self.extracted_data,
+            #                                                        self.night.sci_targets[i],
+            #                                                        self.args)
+            #
+            #         self.wavelength_solution_obj = wavelength_calibration()
+            #         # if self.wavelength_solution_obj is not None:
+            #         #     # print(self.wavelength_solution_obj.wsolution)
+            #         #     log.debug('Wavelength Solution exists')
+            #         #     # sol_array.append(self.wavelength_solution_obj.wsolution(pixel_axis))
+            #         #     # ref_array.append(self.wavelength_solution_obj.reference_lamp)
+            #         #     # plt.plot(pixel_axis,  self.wavelength_solution_obj.wsolution(pixel_axis), label=self.wavelength_solution_obj.reference_lamp)
+            #         #     # plt.legend(loc='best')
+            #         #     # plt.show()
+            #         #     # plt.draw()
+            #         #     # plt.pause(1)
+            #         # else:
+            #         #     log.debug('Wavelength Solution does not exists')
+            #     else:
+            #         log.error('No data was extracted from this target.')
+            # elif self.args.procmode == 2:
+            #     raise NotImplementedError
+            # elif self.args.procmode == 3:
+            #     raise NotImplementedError
 
         # fig_wsol = plt.figure(10)
         # fig_wsol.canvas.set_window_title('Comparison of Wavelength Solutions')
@@ -365,264 +344,264 @@ class MainApp(object):
             # else:
                 # process = Process(self.night.source, science_object, self.args, self.night.night_wsolution)
 
-    def set_night(self):
-        """Defines and initialize the 'night' class
+    # def set_night(self):
+    #     """Defines and initialize the 'night' class
+    #
+    #     Uses information parsed by arguments to construct a table with the
+    #     values of the keys specified within the code itself. A night object
+    #     stores specific values regarding the night that is going to be
+    #     processed. If the program is not going to be used while observing at the
+    #     telescope it creates two lists of images, one for science and another
+    #     for lamp files. Although the telescope mode is not fully developed yet,
+    #     in case of it being selected it will return the night object without the
+    #     list of images.
+    #
+    #     Returns:
+    #         new_night (class): A class that stores critical data of the night
+    #         that will be processed and can be parsed to other methods.
+    #
+    #     """
+    #     keys = ['date',
+    #             'date-obs',
+    #             'obstype',
+    #             'object',
+    #             'exptime',
+    #             'ra',
+    #             'dec',
+    #             'grating']
+    #     try:
+    #         image_collection = ccd.ImageFileCollection(self.args.source, keys)
+    #         self.image_collection = image_collection.summary.to_pandas()
+    #     except ValueError as error:
+    #         log.error('The images contain duplicated keywords')
+    #         log.error('ValueError: %s', error)
+    #         sys.exit(0)
+    #     except AttributeError as error:
+    #         log.warning('Check that the folder is not Empty')
+    #         log.error('AttributeError: %s', error)
+    #         sys.exit(0)
+    #     # type(self.image_collection)
+    #
+    #     date = self.image_collection.date[0]
+    #     new_night = Night(date, self.args)
+    #
+    #     gratings_array = self.image_collection.grating.unique()
+    #     new_night.set_gratings(gratings=gratings_array)
+    #
+    #     # if self.args.telescope:
+    #     #     new_night.is_telescope()
+    #     #     log.info("Telescope Mode is not implemented yet...")
+    #     #     return new_night
+    #     # else:
+    #     new_night.add_sci(self.image_collection.file[self.image_collection.obstype == 'OBJECT'])
+    #     new_night.add_lamp(self.image_collection.file[self.image_collection.obstype == 'COMP'])
+    #     return new_night
 
-        Uses information parsed by arguments to construct a table with the
-        values of the keys specified within the code itself. A night object
-        stores specific values regarding the night that is going to be
-        processed. If the program is not going to be used while observing at the
-        telescope it creates two lists of images, one for science and another
-        for lamp files. Although the telescope mode is not fully developed yet,
-        in case of it being selected it will return the night object without the
-        list of images.
-
-        Returns:
-            new_night (class): A class that stores critical data of the night
-            that will be processed and can be parsed to other methods.
-
-        """
-        keys = ['date',
-                'date-obs',
-                'obstype',
-                'object',
-                'exptime',
-                'ra',
-                'dec',
-                'grating']
-        try:
-            image_collection = ccd.ImageFileCollection(self.args.source, keys)
-            self.image_collection = image_collection.summary.to_pandas()
-        except ValueError as error:
-            log.error('The images contain duplicated keywords')
-            log.error('ValueError: %s', error)
-            sys.exit(0)
-        except AttributeError as error:
-            log.warning('Check that the folder is not Empty')
-            log.error('AttributeError: %s', error)
-            sys.exit(0)
-        # type(self.image_collection)
-
-        date = self.image_collection.date[0]
-        new_night = Night(date, self.args)
-
-        gratings_array = self.image_collection.grating.unique()
-        new_night.set_gratings(gratings=gratings_array)
-
-        # if self.args.telescope:
-        #     new_night.is_telescope()
-        #     log.info("Telescope Mode is not implemented yet...")
-        #     return new_night
-        # else:
-        new_night.add_sci(self.image_collection.file[self.image_collection.obstype == 'OBJECT'])
-        new_night.add_lamp(self.image_collection.file[self.image_collection.obstype == 'COMP'])
-        return new_night
-
-    def organize_full_night(self):
-        """Organize the data according to the Processing Mode
-
-        There are four observing modes defined by numbers in Python's style. From 0 to 3:
-
-        In mode 0 one lamp is used to calibrate all the science targets of the night. As of December 2016 it picks
-        up the first calibration lamp and uses it to find the wavelength calibration it doesn't discriminate if the lamp
-        has good quality. It can also be parsed as an argument using -r or --reference-lamp
-
-        In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
-        in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure
-        time itself. For the sky distance calculation a flat sky is assumed.
-
-        In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
-        used by using a octothorp or hash (#) followed by one space. Not implemented yet.
-
-        In mode 3 no sky lamp is used, instead the science target's spectrum will be calibrated using sky lines. Not
-        implemented yet.
-
-        It does not return anything but creates a ScienceObject instance and stores it in the night class. ScienceObject
-        is one of its attributes.
-
-        Raises:
-            NotImplementedError: For mode 2 and 3.
-
-        """
-        print_spacers("Processing night %s" % self.night.date)
-
-        if self.args.procmode == 0:
-            self.procmode_zero()
-
-        if self.args.procmode == 1:
-            self.procmode_one()
-
-        if self.args.procmode == 2:
-            self.procmode_two()
-
-        if self.args.procmode == 3:
-            self.procmode_three()
+    # def organize_full_night(self):
+    #     """Organize the data according to the Processing Mode
+    #
+    #     There are four observing modes defined by numbers in Python's style. From 0 to 3:
+    #
+    #     In mode 0 one lamp is used to calibrate all the science targets of the night. As of December 2016 it picks
+    #     up the first calibration lamp and uses it to find the wavelength calibration it doesn't discriminate if the lamp
+    #     has good quality. It can also be parsed as an argument using -r or --reference-lamp
+    #
+    #     In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance
+    #     in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure
+    #     time itself. For the sky distance calculation a flat sky is assumed.
+    #
+    #     In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be
+    #     used by using a octothorp or hash (#) followed by one space. Not implemented yet.
+    #
+    #     In mode 3 no sky lamp is used, instead the science target's spectrum will be calibrated using sky lines. Not
+    #     implemented yet.
+    #
+    #     It does not return anything but creates a ScienceObject instance and stores it in the night class. ScienceObject
+    #     is one of its attributes.
+    #
+    #     Raises:
+    #         NotImplementedError: For mode 2 and 3.
+    #
+    #     """
+    #     print_spacers("Processing night %s" % self.night.date)
+    #
+    #     if self.args.procmode == 0:
+    #         self.procmode_zero()
+    #
+    #     if self.args.procmode == 1:
+    #         self.procmode_one()
+    #
+    #     if self.args.procmode == 2:
+    #         self.procmode_two()
+    #
+    #     if self.args.procmode == 3:
+    #         self.procmode_three()
 
         # science_object.print_all()
         # self.print_spacers(name)
         # print(self.night.sci)
         # print(self.night.lamp)
 
-    def procmode_zero(self):
-        """Observing/Processing mode 0
-
-        In mode 0 one lamp is used to calibrate all the science targets of the
-        night. As of September 2016 it picks up the first calibration lamp and
-        uses it to find the wavelength calibration it doesn't discriminate if
-        the lamp has good quality.
-
-        Notes:
-            Although you can parse one lamp as a whole night lamp it is not
-            recommended since there might be different gratings which would rise
-            the need to give one lamp per grating and in this case it better to
-            let the software choose the first in the list and assume there will
-            be no bad lamps.
-        """
-        log.info("Observation mode 0")
-        log.debug("One lamp for all targets.")
-
-        for target in self.night.sci:
-            index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
-            name = self.image_collection.object.iloc[index]
-            log.debug('Target Name is: {:s}'.format(name))
-            grating = self.image_collection.grating.iloc[index]
-            log.debug('Target Grating is: {:s}'.format(grating))
-            # print('Grating', grating)
-            obs_time = self.image_collection['date-obs'][index]
-            right_ascension, declination = ra_dec_to_deg(self.image_collection.ra.iloc[index],
-                                                              self.image_collection.dec.iloc[index])
-            science_object = ScienceObject(name, target, obs_time, right_ascension, declination, grating)
-
-            comp_files = self.image_collection[(self.image_collection['grating'] == grating)
-                                               & (self.image_collection['obstype'] == 'COMP')].index.tolist()
-            log.debug('Comparison Lamps with matching gratings are: {:d}'.format(len(comp_files)))
-            # Need to define a better method for selecting the lamp
-            # Now is just picking the first in the list
-            try:
-                log.debug('All night lamp is: {:s}'.format(self.args.lamp_all_night))
-                if self.args.lamp_all_night != '':
-                    print('here')
-                    lamp = self.args.lamp_all_night
-                    lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
-                else:
-                    print(comp_files)
-                    lamp_index = comp_files[0]
-
-                    print(lamp_index)
-                    lamp = self.image_collection.file.iloc[lamp_index]
-                log.debug("Lamp File: %s", lamp)
-            except IndexError as err:
-                log.debug('IndexError: {:s}'.format(err))
-                log.error("There is no comparison lamp available for: %s", target)
-                # sys.exit('Bye!')
-                continue
-
-            lamp_name = self.image_collection.object.iloc[lamp_index]
-            lamp_grating = self.image_collection.grating.iloc[lamp_index]
-            # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
-            lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
-                                                   self.image_collection.ra.iloc[lamp_index])
-
-            if lamp_grating == grating:
-                science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
-            # else:
-                # log.info('Gratings do not match. Looking for another one.')
-
-                # print(comp_files)
-                # lamp_index = comp_files[0]
-                # lamp_name = self.image_collection.object.iloc[lamp_index]
-                # lamp_grating = self.image_collection.grating.iloc[lamp_index]
-                # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
-                # lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
-                #                                        self.image_collection.ra.iloc[lamp_index])
-                # science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
-            # science_object.print_all()
-            self.night.add_sci_object(science_object)
-
-        return
-
-    def procmode_one(self):
-        """Observing/Processing mode 1
-
-        In mode 1 one or more lamps are linked with a science target by matching
-        them using two parameters. Distance in the sky equal or lower than 1e-3
-        degrees and a time difference of 300 seconds this is without the
-        exposure time itself. For the sky distance calculation a flat sky is
-        assumed.
-        """
-        log.info("Observation mode 1")
-        log.debug("One or more lamps around the target")
-        for target in self.night.sci:
-            # Get basic data of the target
-            index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
-            name = self.image_collection.object.iloc[index]
-            obs_time = self.image_collection['date-obs'][index]
-            exptime = self.image_collection.exptime.iloc[index]
-            grating = self.image_collection.grating.iloc[index]
-            right_ascension, declination = ra_dec_to_deg(self.image_collection.ra.iloc[index],
-                                                              self.image_collection.dec.iloc[index])
-            # Reformat some data of the target for comparison
-            target_time = convert_time(obs_time)
-            # Define ScienceObject object
-            science_object = ScienceObject(name, target, obs_time, right_ascension, declination, grating)
-            # Loop trough lamps to find a match for target
-            for lamp in self.night.lamp:
-                lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
-                lamp_name = self.image_collection.object.iloc[lamp_index]
-                lamp_time = convert_time(self.image_collection['date-obs'][lamp_index])
-                lamp_exptime = self.image_collection.exptime.iloc[lamp_index]
-                lamp_grating = self.image_collection.grating.iloc[lamp_index]
-                lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
-                                                       self.image_collection.dec.iloc[lamp_index])
-                # print(lamp, lamp_name, lamp_ra, lamp_dec)
-                if lamp_grating == grating:
-                    # Since we are not doing astrometry here we assume the sky is flat
-                    sky_distance = np.sqrt((lamp_ra - right_ascension) ** 2 + (lamp_dec - declination) ** 2)
-                    if sky_distance <= 1e-3:
-                        log.debug("Lamps by distance")
-                        time_dif = abs(target_time - lamp_time) - abs(exptime + lamp_exptime)
-                        if time_dif <= 300:
-                            science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
-                            # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
-                        else:
-                            log.warning("Lamp within sky distance but too "
-                                        "large time difference %s. Ignored.", time_dif)
-                else:
-                    log.info('Gratings do not match')
-            # science_object.print_all()
-            self.night.add_sci_object(science_object)
-        return
-
-    def procmode_two(self):
-        """Observing/Processing mode 2
-
-        In mode 2 a text file is defined which correlates the science target
-        with one or more lamps. Comments can be used by using a octothorp or
-        hash (#) followed by one space. Not implemented yet.
-        """
-        log.info("Observation mode 2")
-        log.debug("A text file defines the relation of lamps and science targets")
-        log.debug(self.night.lamps_file)
-        lamps_file_full = os.path.join(self.night.source, self.night.lamps_file)
-        log.debug(lamps_file_full)
-
-        read_file = open(lamps_file_full)
-        read_file = read_file.readlines()
-        for i in range(len(read_file)):
-            if read_file[i][0] != '#':
-                read_file[i] = read_file[i].split()
-                print(read_file[i])
-
-    @staticmethod
-    def procmode_three():
-        """Observing/Processing Mode 3
-
-        In mode 3 no sky lamp is used, instead the science target's spectrum
-        will be calibrated using sky lines.
-        """
-        log.info("Observation mode 3")
-        log.debug("No Lamps. Use sky lines")
-        raise NotImplementedError
+    # def procmode_zero(self):
+    #     """Observing/Processing mode 0
+    #
+    #     In mode 0 one lamp is used to calibrate all the science targets of the
+    #     night. As of September 2016 it picks up the first calibration lamp and
+    #     uses it to find the wavelength calibration it doesn't discriminate if
+    #     the lamp has good quality.
+    #
+    #     Notes:
+    #         Although you can parse one lamp as a whole night lamp it is not
+    #         recommended since there might be different gratings which would rise
+    #         the need to give one lamp per grating and in this case it better to
+    #         let the software choose the first in the list and assume there will
+    #         be no bad lamps.
+    #     """
+    #     log.info("Observation mode 0")
+    #     log.debug("One lamp for all targets.")
+    #
+    #     for target in self.night.sci:
+    #         index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
+    #         name = self.image_collection.object.iloc[index]
+    #         log.debug('Target Name is: {:s}'.format(name))
+    #         grating = self.image_collection.grating.iloc[index]
+    #         log.debug('Target Grating is: {:s}'.format(grating))
+    #         # print('Grating', grating)
+    #         obs_time = self.image_collection['date-obs'][index]
+    #         right_ascension, declination = ra_dec_to_deg(self.image_collection.ra.iloc[index],
+    #                                                           self.image_collection.dec.iloc[index])
+    #         science_object = ScienceObject(name, target, obs_time, right_ascension, declination, grating)
+    #
+    #         comp_files = self.image_collection[(self.image_collection['grating'] == grating)
+    #                                            & (self.image_collection['obstype'] == 'COMP')].index.tolist()
+    #         log.debug('Comparison Lamps with matching gratings are: {:d}'.format(len(comp_files)))
+    #         # Need to define a better method for selecting the lamp
+    #         # Now is just picking the first in the list
+    #         try:
+    #             log.debug('All night lamp is: {:s}'.format(self.args.lamp_all_night))
+    #             if self.args.lamp_all_night != '':
+    #                 print('here')
+    #                 lamp = self.args.lamp_all_night
+    #                 lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
+    #             else:
+    #                 print(comp_files)
+    #                 lamp_index = comp_files[0]
+    #
+    #                 print(lamp_index)
+    #                 lamp = self.image_collection.file.iloc[lamp_index]
+    #             log.debug("Lamp File: %s", lamp)
+    #         except IndexError as err:
+    #             log.debug('IndexError: {:s}'.format(err))
+    #             log.error("There is no comparison lamp available for: %s", target)
+    #             # sys.exit('Bye!')
+    #             continue
+    #
+    #         lamp_name = self.image_collection.object.iloc[lamp_index]
+    #         lamp_grating = self.image_collection.grating.iloc[lamp_index]
+    #         # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
+    #         lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+    #                                                self.image_collection.ra.iloc[lamp_index])
+    #
+    #         if lamp_grating == grating:
+    #             science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+    #         # else:
+    #             # log.info('Gratings do not match. Looking for another one.')
+    #
+    #             # print(comp_files)
+    #             # lamp_index = comp_files[0]
+    #             # lamp_name = self.image_collection.object.iloc[lamp_index]
+    #             # lamp_grating = self.image_collection.grating.iloc[lamp_index]
+    #             # lamp_obs_time = self.image_collection['date-obs'][lamp_index]
+    #             # lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+    #             #                                        self.image_collection.ra.iloc[lamp_index])
+    #             # science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+    #         # science_object.print_all()
+    #         self.night.add_sci_object(science_object)
+    #
+    #     return
+    #
+    # def procmode_one(self):
+    #     """Observing/Processing mode 1
+    #
+    #     In mode 1 one or more lamps are linked with a science target by matching
+    #     them using two parameters. Distance in the sky equal or lower than 1e-3
+    #     degrees and a time difference of 300 seconds this is without the
+    #     exposure time itself. For the sky distance calculation a flat sky is
+    #     assumed.
+    #     """
+    #     log.info("Observation mode 1")
+    #     log.debug("One or more lamps around the target")
+    #     for target in self.night.sci:
+    #         # Get basic data of the target
+    #         index = self.image_collection[self.image_collection['file'] == target].index.tolist()[0]
+    #         name = self.image_collection.object.iloc[index]
+    #         obs_time = self.image_collection['date-obs'][index]
+    #         exptime = self.image_collection.exptime.iloc[index]
+    #         grating = self.image_collection.grating.iloc[index]
+    #         right_ascension, declination = ra_dec_to_deg(self.image_collection.ra.iloc[index],
+    #                                                           self.image_collection.dec.iloc[index])
+    #         # Reformat some data of the target for comparison
+    #         target_time = convert_time(obs_time)
+    #         # Define ScienceObject object
+    #         science_object = ScienceObject(name, target, obs_time, right_ascension, declination, grating)
+    #         # Loop trough lamps to find a match for target
+    #         for lamp in self.night.lamp:
+    #             lamp_index = self.image_collection[self.image_collection['file'] == lamp].index.tolist()[0]
+    #             lamp_name = self.image_collection.object.iloc[lamp_index]
+    #             lamp_time = convert_time(self.image_collection['date-obs'][lamp_index])
+    #             lamp_exptime = self.image_collection.exptime.iloc[lamp_index]
+    #             lamp_grating = self.image_collection.grating.iloc[lamp_index]
+    #             lamp_ra, lamp_dec = ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],
+    #                                                    self.image_collection.dec.iloc[lamp_index])
+    #             # print(lamp, lamp_name, lamp_ra, lamp_dec)
+    #             if lamp_grating == grating:
+    #                 # Since we are not doing astrometry here we assume the sky is flat
+    #                 sky_distance = np.sqrt((lamp_ra - right_ascension) ** 2 + (lamp_dec - declination) ** 2)
+    #                 if sky_distance <= 1e-3:
+    #                     log.debug("Lamps by distance")
+    #                     time_dif = abs(target_time - lamp_time) - abs(exptime + lamp_exptime)
+    #                     if time_dif <= 300:
+    #                         science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)
+    #                         # print(target,lamp,time_dif,exptime,lamp_exptime,sep=' : ')
+    #                     else:
+    #                         log.warning("Lamp within sky distance but too "
+    #                                     "large time difference %s. Ignored.", time_dif)
+    #             else:
+    #                 log.info('Gratings do not match')
+    #         # science_object.print_all()
+    #         self.night.add_sci_object(science_object)
+    #     return
+    #
+    # def procmode_two(self):
+    #     """Observing/Processing mode 2
+    #
+    #     In mode 2 a text file is defined which correlates the science target
+    #     with one or more lamps. Comments can be used by using a octothorp or
+    #     hash (#) followed by one space. Not implemented yet.
+    #     """
+    #     log.info("Observation mode 2")
+    #     log.debug("A text file defines the relation of lamps and science targets")
+    #     log.debug(self.night.lamps_file)
+    #     lamps_file_full = os.path.join(self.night.source, self.night.lamps_file)
+    #     log.debug(lamps_file_full)
+    #
+    #     read_file = open(lamps_file_full)
+    #     read_file = read_file.readlines()
+    #     for i in range(len(read_file)):
+    #         if read_file[i][0] != '#':
+    #             read_file[i] = read_file[i].split()
+    #             print(read_file[i])
+    #
+    # @staticmethod
+    # def procmode_three():
+    #     """Observing/Processing Mode 3
+    #
+    #     In mode 3 no sky lamp is used, instead the science target's spectrum
+    #     will be calibrated using sky lines.
+    #     """
+    #     log.info("Observation mode 3")
+    #     log.debug("No Lamps. Use sky lines")
+    #     raise NotImplementedError
 
 
 class Night(object):
