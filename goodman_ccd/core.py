@@ -338,6 +338,10 @@ def get_slit_trim_section(master_flat):
 def cosmicray_rejection(ccd, mask_only=False):
     """Do cosmic ray rejection
 
+    This function in fact does not apply any correction, it detects the cosmic
+    rays and updates the attribute mask of the ccd object (CCDData instance).
+    The attribute mask is used later as a mask for the pixels hit by cosmic rays
+
       Notes:
           OBS: cosmic ray rejection is working pretty well by defining gain = 1.
           It's not working when we use the real gain of the image. In this case
@@ -350,7 +354,7 @@ def cosmicray_rejection(ccd, mask_only=False):
           rays mask only
 
       Returns:
-          ccd (object): The modified CCDData object
+          ccd (object): A CCDData instance with the mask attribute updated.
 
       """
     # TODO (simon): Validate this method
@@ -386,9 +390,11 @@ def cosmicray_rejection(ccd, mask_only=False):
 def get_best_flat(flat_name):
     """Look for matching master flat
 
-    Given a basename for masterflats this function will find the name of the
-    files that matches the base name and then will choose the first. Ideally
-    this should go further as to check signal, time gap, etc.
+    Given a basename for masterflats defined as a combination of key parameters
+    extracted from the header of the image that we want to flatfield, this
+    function will find the name of the files that matches the base name and then
+    will choose the first. Ideally this should go further as to check signal,
+    time gap, etc.
     After it identifies the file it will load it using ccdproc.CCDData and
     return it along the filename.
     In case if fails it will return None instead of master_flat and another
@@ -426,6 +432,9 @@ def print_default_args(args):
 
     This is mostly helpful for debug but people not familiar with the software
     might find it useful as well
+
+    Notes:
+        This is not dynamically updated so use with caution
 
     Args:
         args (object): An argparse instance
@@ -571,11 +580,31 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 # spectroscopy specific functions
 
 def classify_spectroscopic_data(path, search_pattern):
+    """Classify data by grouping them as pandas.DataFrame instances
+
+    This functions uses ImageFileCollection from ccdproc. First it creates a
+    collection of information regarding the images located in _path_ that match
+    the pattern _search_pattern_
+    The information obtained are all keywords listed in the list _keywords_
+    The ImageFileCollection is translated into pandas.DataFrame and then is used
+    much like SQL database to select and filter values and in that way put them
+    in groups that are pandas.DataFrame instances.
+
+
+    Args:
+        path (str): Path to data location
+        search_pattern (str): Prefix to match files.
+
+    Returns:
+        data_container (object): Instance of NightDataContainer
+
+    """
+
     search_path = os.path.join(path, search_pattern + '*.fits')
 
     data_container = NightDataContainer(path=path,
-                                        instrument='Red',
-                                        technique='Spectroscopy')
+                                        instrument=str('Red'),
+                                        technique=str('Spectroscopy'))
 
     file_list = glob.glob(search_path)
 
@@ -642,6 +671,26 @@ def spectroscopic_extraction(ccd, extraction,
                              comp_list=None,
                              n_sigma_extract=10,
                              plots=False):
+    """This function does not do the actual extraction but prepares the data
+
+
+
+    Args:
+        ccd (object): A ccdproc.CCDData Instance
+        extraction (str): Extraction type name. _simple_ or _optimal_
+        comp_list (list): List of ccdproc.CCDData instances of COMP lamps data
+        n_sigma_extract (int): Number of sigmas to be used for extraction
+        plots (bool): If plots will be shown or not.
+
+    Returns:
+        extracted (list): List of ccdproc.CCDData instances
+        comp_zones (list): List of ccdproc.CCDData instances
+
+    Raises:
+        NoTargetException (Exception): A NoTargetException if there is no target
+        found.
+
+    """
 
     assert isinstance(ccd, CCDData)
 
@@ -689,18 +738,9 @@ def spectroscopic_extraction(ccd, extraction,
                     comp_zone.data = np.median(comp_zone.data, axis=0)
                     comp_zones.append(comp_zone)
 
-                # original = nccd.copy()
-                # original.write('/data/simon/original.fits', clobber=True)
 
                 nccd = remove_background(ccd=nccd,
                                          plots=False)
-
-                # nccd.write('/data/simon/bkg-removed.fits', clobber=True)
-                #
-                # original.data -= nccd.data
-                #
-                # original.write('/data/simon/background.fits', clobber=True)
-                # print('Written difference')
 
                 extracted_ccd = extract(ccd=nccd,
                                         trace=trace,
@@ -730,7 +770,7 @@ def spectroscopic_extraction(ccd, extraction,
                                                 zone=zone,
                                                 plots=False)
 
-                # since a comparison lamp only needs only the relative line
+                # since a comparison lamp only needs the relative line
                 # center in the dispersion direction, therefore the flux is not
                 # important we are only calculating the median along the spatial
                 # direction
