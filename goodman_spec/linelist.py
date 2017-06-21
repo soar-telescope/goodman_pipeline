@@ -791,7 +791,7 @@ class ReferenceData(object):
             for element in elements:
                 linelist_file = self.line_list_files[element]
                 pandas_data_frame = pandas.read_csv(self.args.reference_dir + linelist_file)
-                print(linelist_file, pandas_data_frame, blue, red)
+                # print(linelist_file, pandas_data_frame, blue, red)
 
         else:
             log.error('Error in the calibration lamp name: %s', name)

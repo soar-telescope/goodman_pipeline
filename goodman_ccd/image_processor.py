@@ -644,7 +644,8 @@ class ImageProcessor(object):
                     dcr_cosmicray_rejection(data_path=self.args.red_path,
                                             in_file=in_file,
                                             prefix='c',
-                                            delete=False)
+                                            dcr_par_dir=self.args.dcr_par_dir,
+                                            delete=self.args.keep_cosmic_files)
 
                     # ccd = cosmicray_rejection(ccd=ccd)
                     # self.out_prefix = 'c' + self.out_prefix

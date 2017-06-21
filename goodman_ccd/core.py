@@ -14,6 +14,7 @@ import matplotlib
 import shutil
 import subprocess
 from threading import Timer
+
 matplotlib.use('GTK3Agg')
 from matplotlib import pyplot as plt
 from ccdproc import CCDData, ImageFileCollection
@@ -332,13 +333,14 @@ def get_slit_trim_section(master_flat):
             # the spatial axis center to one edge.
             if peaks[0] <= spatial_half:
                 slit_trim_section = '[:,{:d}:{:d}]' \
-                                    ''.format(peaks[0],len(ccd_section_median))
+                                    ''.format(peaks[0], len(ccd_section_median))
             else:
                 slit_trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
     return slit_trim_section
 
 
-def dcr_cosmicray_rejection(data_path, in_file, prefix, delete=False):
+def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
+                            delete=False):
     """Runs an external code for cosmic ray rejection
 
     DCR was created by Wojtek Pych and the code can be obtained from
@@ -348,12 +350,12 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, delete=False):
         data_path (str): Data location
         in_file (str): Name of the file to have its cosmic rays removed
         prefix (str): Prefix to add to the file with the cosmic rays removed
+        dcr_par_dir (str): Directory of default dcr.par file
         delete (bool): True for deleting the input and cosmic ray file.
 
     Returns:
 
     """
-
 
     log.info('Removing cosmic rays using DCR by Wojtek Pych')
     log.info('See http://users.camk.edu.pl/pych/DCR/')
@@ -386,7 +388,8 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, delete=False):
     # check if file dcr.par exists
     if not os.path.isfile('dcr.par'):
         log.error('File drc.par does not exist. Copying default one.')
-        shutil.copy2('../dcr.par', './')
+        dcr_par_path = os.path.join(dcr_par_dir, 'dcr.par')
+        shutil.copy2(dcr_par_path, './')
 
     # call dcr
 
@@ -395,7 +398,9 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, delete=False):
                            stdout=subprocess.PIPE,
                            stderr=subprocess.PIPE)
 
-    kill_process = lambda process: process.kill()
+    # if the process is taking too long to respond, kill it
+    # kill_process = lambda process: process.kill()
+    def kill_process(process): process.kill()
 
     dcr_timer = Timer(5, kill_process, [dcr])
     try:
@@ -553,10 +558,13 @@ def print_default_args(args):
                 'procmode': '-m --proc-mode',
                 'reference_dir': '-R --reference-files',
                 'source': '-p --data-path',
-                'save_plots': '--save-plots' }
+                'save_plots': '--save-plots',
+                'dcr_par_dir': '--dcr-par-dir'}
     for key in args.__dict__:
         log.info('Default value for {:s} is {:s}'.format(arg_name[key],
-                                       str(args.__getattribute__(key))))
+                                                         str(
+                                                             args.__getattribute__(
+                                                                 key))))
 
 
 def normalize_master_flat(master, name, method='simple', order=15):
@@ -797,7 +805,7 @@ def spectroscopic_extraction(ccd, extraction,
     iccd = remove_background(ccd=ccd)
 
     profile_model = identify_targets(ccd=iccd, plots=plots)
-    del(iccd)
+    del (iccd)
 
     if isinstance(profile_model, Model):
         traces = trace_targets(ccd=ccd, profile=profile_model, plots=plots)
@@ -831,7 +839,6 @@ def spectroscopic_extraction(ccd, extraction,
                     # spatial direction
                     comp_zone.data = np.median(comp_zone.data, axis=0)
                     comp_zones.append(comp_zone)
-
 
                 nccd = remove_background(ccd=nccd,
                                          plots=plots)
@@ -957,7 +964,7 @@ def identify_targets(ccd, plots=False):
                 profile_model += gaussian
             else:
                 profile_model = gaussian
-        #     plt.axvline(peaks[i])
+        # plt.axvline(peaks[i])
         # print(profile_model)
 
         # fit model to profile
@@ -1209,7 +1216,7 @@ def get_extraction_zone(ccd,
         # this is necessary since we are cutting a piece of the full ccd.
         trace.c0.value -= low_lim
         log.info('Changing attribute c0 from trace, this is to adjust it to '
-                  'the new extraction zone which is smaller that the full CCD.')
+                 'the new extraction zone which is smaller that the full CCD.')
 
         log.info('Changing attribute mean of profile model')
         model.mean.value = extract_width
@@ -1300,8 +1307,8 @@ def remove_background(ccd, plots=False):
     return ccd
 
 
-def extract(ccd, trace, spatial_profile, extraction, sampling_step=1, plots=False):
-
+def extract(ccd, trace, spatial_profile, extraction, sampling_step=1,
+            plots=False):
     assert isinstance(ccd, CCDData)
     assert isinstance(trace, Model)
 

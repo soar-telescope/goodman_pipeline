@@ -345,7 +345,7 @@ class WavelengthCalibration(object):
             lamp_header = self.lamp_header
             raw_pixel_axis = self.raw_pixel_axis
         elif isinstance(ccddata_lamp, CCDData):
-            print(ccddata_lamp.data.shape)
+            # print(ccddata_lamp.data.shape)
             lamp_data = ccddata_lamp.data
             lamp_header = ccddata_lamp.header
             raw_pixel_axis = range(len(lamp_data))
