@@ -11,6 +11,9 @@ import ccdproc
 import numpy as np
 import numpy.ma as ma
 import matplotlib
+import shutil
+import subprocess
+from threading import Timer
 matplotlib.use('GTK3Agg')
 from matplotlib import pyplot as plt
 from ccdproc import CCDData, ImageFileCollection
@@ -333,6 +336,97 @@ def get_slit_trim_section(master_flat):
             else:
                 slit_trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
     return slit_trim_section
+
+
+def dcr_cosmicray_rejection(data_path, in_file, prefix, delete=False):
+    """Runs an external code for cosmic ray rejection
+
+    DCR was created by Wojtek Pych and the code can be obtained from
+    http://users.camk.edu.pl/pych/DCR/ and is written in C
+
+    Args:
+        data_path (str): Data location
+        in_file (str): Name of the file to have its cosmic rays removed
+        prefix (str): Prefix to add to the file with the cosmic rays removed
+        delete (bool): True for deleting the input and cosmic ray file.
+
+    Returns:
+
+    """
+
+
+    log.info('Removing cosmic rays using DCR by Wojtek Pych')
+    log.info('See http://users.camk.edu.pl/pych/DCR/')
+
+    # add the prefix for the output file
+    out_file = prefix + in_file
+
+    # define the name for the cosmic rays file
+    cosmic_file = 'cosmic_' + '_'.join(in_file.split('_')[1:])
+
+    # define full path for all the files involved
+    full_path_in = os.path.join(data_path, in_file)
+    full_path_out = os.path.join(data_path, out_file)
+    full_path_cosmic = os.path.join(data_path, cosmic_file)
+
+    # this is the command for running dcr, all arguments are required
+    command = 'dcr {:s} {:s} {:s}'.format(full_path_in,
+                                          full_path_out,
+                                          full_path_cosmic)
+    log.debug('DCR command:')
+    log.debug(command)
+
+    # get the current working directory to go back to it later in case the
+    # the pipeline has not been called from the same data directory.
+    cwd = os.getcwd()
+
+    # move to the directory were the data is, dcr is expecting a file dcr.par
+    os.chdir(data_path)
+
+    # check if file dcr.par exists
+    if not os.path.isfile('dcr.par'):
+        log.error('File drc.par does not exist. Copying default one.')
+        shutil.copy2('../dcr.par', './')
+
+    # call dcr
+
+
+    dcr = subprocess.Popen(command.split(),
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+
+    kill_process = lambda process: process.kill()
+
+    dcr_timer = Timer(5, kill_process, [dcr])
+    try:
+        dcr_timer.start()
+        stdout, stderr = dcr.communicate()
+    finally:
+        dcr_timer.cancel()
+
+    # wait for dcr to terminate
+    # dcr.wait()
+
+    # go back to the original directory. Could be the same.
+    os.chdir(cwd)
+
+    # read stdout and stderr
+    # stdout = dcr.stdout.read()
+    # stderr = dcr.stderr.read()
+
+    # If no error stderr is an empty string
+    if stderr != '':
+        log.error(stderr)
+    else:
+        for output_line in stdout.split('\n'):
+            log.info(output_line)
+
+    # delete extra files only if the execution ended without error
+    if delete and stderr == '':
+        log.warning('Removing input file: {:s}'.format(full_path_in))
+        os.unlink(full_path_in)
+        log.warning('Removing cosmic rays file: {:s}'.format(full_path_cosmic))
+        os.unlink(full_path_cosmic)
 
 
 def cosmicray_rejection(ccd, mask_only=False):
