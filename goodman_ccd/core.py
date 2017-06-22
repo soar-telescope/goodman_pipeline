@@ -378,6 +378,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
     log.debug('DCR command:')
     log.debug(command)
+    # print(command.split(' '))
 
     # get the current working directory to go back to it later in case the
     # the pipeline has not been called from the same data directory.
@@ -385,23 +386,25 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
     # move to the directory were the data is, dcr is expecting a file dcr.par
     os.chdir(data_path)
-    print(os.getcwd())
 
     # check if file dcr.par exists
-    if not os.path.isfile('dcr.par'):
+    while not os.path.isfile('dcr.par'):
 
         log.error('File dcr.par does not exist. Copying default one.')
         dcr_par_path = os.path.join(dcr_par_dir, 'dcr.par')
         log.debug('dcr.par full path: {:s}'.format(dcr_par_path))
-        shutil.copy2(dcr_par_path, './')
+        shutil.copy2(dcr_par_path, data_path)
+
+    else:
+        log.info('File dcr.par exists.')
 
     # call dcr
     try:
-        # env = os.environ
+
         dcr = subprocess.Popen(command.split(),
                                stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE,
-                               shell=True)
+                               stderr=subprocess.PIPE)
+
     except OSError as error:
         log.error(error)
         sys.exit('Your system can not locate the executable file dcr, try '
@@ -444,10 +447,19 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
     # delete extra files only if the execution ended without error
     if delete and stderr == '' and 'USAGE:' not in stdout:
-        log.warning('Removing input file: {:s}'.format(full_path_in))
-        os.unlink(full_path_in)
-        log.warning('Removing cosmic rays file: {:s}'.format(full_path_cosmic))
-        os.unlink(full_path_cosmic)
+        try:
+            log.warning('Removing input file: {:s}'.format(full_path_in))
+            os.unlink(full_path_in)
+        except OSError as error:
+            log.error(error)
+
+        try:
+            log.warning(
+                'Removing cosmic rays file: {:s}'.format(full_path_cosmic))
+            os.unlink(full_path_cosmic)
+        except OSError as error:
+            log.error(error)
+
 
 
 def cosmicray_rejection(ccd, mask_only=False):
