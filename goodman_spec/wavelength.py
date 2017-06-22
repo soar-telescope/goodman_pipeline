@@ -1,8 +1,9 @@
 # -*- coding: utf8 -*-
 """Contains the tools to produce a wavelength solution
 
-This module gets the extracted data to produce a wavelength solution, linearize the spectrum and write the solution
-to the image's header following the FITS standard.
+This module gets the extracted data to produce a wavelength solution, linearize
+the spectrum and write the solution to the image's header following the FITS
+standard.
 """
 
 # TODO Reformat file - It is confusing at the moment
@@ -10,24 +11,26 @@ to the image's header following the FITS standard.
 # TODO (simon): Discuss this because there are other rules that will probably conflict with this request.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import logging
-import sys
-import os
-import re
+import astropy.units as u
 import glob
+import logging
 # import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
-from ccdproc import CCDData
-import astropy.units as u
+import os
+import re
+import sys
+import scipy.interpolate
+
 from astropy.io import fits
 from astropy.stats import sigma_clip
 from astropy.modeling import models, fitting
 from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
-import scipy.interpolate
+from ccdproc import CCDData
+from matplotlib.backends.backend_pdf import PdfPages
 from scipy import signal
+
 from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
 from .linelist import ReferenceData
 from goodman_ccd.core import spectroscopic_extraction, NoTargetException
@@ -40,6 +43,16 @@ log = logging.getLogger('redspec.wavelength')
 
 
 def process_spectroscopy_data(data_container, args, extraction_type='simple'):
+    """
+
+    Args:
+        data_container:
+        args:
+        extraction_type:
+
+    Returns:
+
+    """
 
     assert data_container.is_empty is False
     assert any(extraction_type == option for option in ['simple',
@@ -111,37 +124,43 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     return True
 
 
-
-
 class WavelengthCalibration(object):
     """Wavelength Calibration Class
 
-    The WavelengthCalibration class is instantiated for each of the science images, which are treated as a "science
-    object". In this first release it can find a wavelength solution for a given comparison lamp using an interactive
-    GUI based on Matplotlib. Although it works very good, for the next release there is a plan for creating an
-    independent GUI based on QT in order to work better in different screen sizes and other topic such as showing
-    warnings, messages and help.
+    The WavelengthCalibration class is instantiated for each of the science
+    images, which are treated as a "science object". In this first release it
+    can find a wavelength solution for a given comparison lamp using an
+    interactive GUI based on Matplotlib. Although it works very good, for the
+    next release there is a plan for creating an independent GUI based on QT in
+    order to work better in different screen sizes and other topic such as
+    showing warnings, messages and help.
 
-    This class takes 1D spectrum with no wavelength calibration and returns fits files with wavelength solutions using
-    the FITS standard for linear solutions. Goodman spectra are slightly non-linear therefore they are linearized and
-    smoothed before they are returned for the user.
+    This class takes 1D spectrum with no wavelength calibration and returns fits
+    files with wavelength solutions using the FITS standard for linear
+    solutions. Goodman spectra are slightly non-linear therefore they are
+    linearized and smoothed before they are returned for the user.
 
     """
 
     def __init__(self, args):
         """Wavelength Calibration Class Initialization
 
-        A WavelengthCalibration class is instantiated for each science target being processed, i.e. every science image.
+        A WavelengthCalibration class is instantiated for each science target
+        being processed, i.e. every science image.
 
         Notes:
-            This class violates some conventions as for length and number of attributes is concerned. Solving this is
-            part of a prioritary plans for next release.
+            This class violates some conventions as for length and number of
+            attributes is concerned. Solving this is part of a prioritary plans
+            for next release.
 
         Args:
             sci_pack (object): Extracted data organized in a Class
-            science_object (object): Class with information regarding the science image being processed
+            science_object (object): Class with information regarding the
+                science image being processed
             args (objects): Runtime arguments.
+
         """
+
         # TODO - Documentation missing
         self.args = args
         self.wsolution = None
@@ -204,17 +223,21 @@ class WavelengthCalibration(object):
     def __call__(self, ccd, comp_list, wsolution_obj=None):
         """Call method for the WavelengthSolution Class
 
-        It takes extracted data and produces wavelength calibrated by means of an interactive mode. The call method
-        takes care of the order and logic needed to call the different methods. A wavelength solution can be recycled
-        for the next science object. In that case, the wavelength solution is parsed as an argument and then there is no
-        need to calculate it again.
+        It takes extracted data and produces wavelength calibrated by means of
+        an interactive mode. The call method takes care of the order and logic
+        needed to call the different methods. A wavelength solution can be
+        recycled for the next science object. In that case, the wavelength
+        solution is parsed as an argument and then there is no need to calculate
+        it again.
 
         Args:
-            wsolution_obj (object): Mathematical model of the wavelength solution if exist. If it doesnt is a None
+            wsolution_obj (object): Mathematical model of the wavelength
+                solution if exist. If it doesnt is a None
 
         Returns:
-            wavelength_solution (object): The mathematical model of the wavelength solution. If it fails to create it
-                                          will return a None element.
+            wavelength_solution (object): The mathematical model of the
+                wavelength solution. If it fails to create it will return a
+                None element.
 
         """
         assert isinstance(ccd, CCDData)
@@ -308,6 +331,17 @@ class WavelengthCalibration(object):
 
                         ax1.legend(loc='best')
                         plt.tight_layout()
+                        if self.args.save_plots:
+                            log.info('Saving plots')
+                            plots_dir = os.path.join(self.args.destiny, 'plots')
+                            if not os.path.isdir(plots_dir):
+                                os.mkdir(plots_dir)
+                            plot_name = re.sub('.fits',
+                                               '.png',
+                                               ccd.header['OFNAME'])
+                            plot_path = os.path.join(plots_dir, plot_name)
+                            print(plot_path)
+                            plt.savefig(plot_path, dpi=300)
                         if self.args.debug_mode:
                             plt.show()
                         else:
@@ -350,8 +384,9 @@ class WavelengthCalibration(object):
     def get_wsolution(self):
         """Get the mathematical model of the wavelength solution
 
-        The wavelength solution is a callable mathematical function from astropy.modeling.models
-        By obtaining this solution it can be applied to a pixel axis.
+        The wavelength solution is a callable mathematical function from
+        astropy.modeling.models By obtaining this solution it can be applied to
+        a pixel axis.
 
         Returns:
             wsolution (callable): A callable mathematical function
@@ -366,10 +401,12 @@ class WavelengthCalibration(object):
     def get_calibration_lamp(self):
         """Get the name of the calibration lamp used for obtain the solution
 
-        The filename of the lamp used to obtain must go to the header for documentation
+        The filename of the lamp used to obtain must go to the header for
+        documentation
 
         Returns:
-            calibration_lamp (str): Filename of calibration lamp used to obtain wavelength solution
+            calibration_lamp (str): Filename of calibration lamp used to obtain
+            wavelength solution
 
         """
         if self.wsolution is not None and self.calibration_lamp is not None:
@@ -380,16 +417,17 @@ class WavelengthCalibration(object):
     def get_lines_in_lamp(self, ccddata_lamp=None):
         """Identify peaks in a lamp spectrum
 
-        Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission lines then it calls the recenter_lines
-        method that will recenter them using a "center of mass", because, not always the maximum value (peak)
+        Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission
+        lines then it calls the recenter_lines method that will recenter them
+        using a "center of mass", because, not always the maximum value (peak)
         is the center of the line.
 
         Returns:
-            lines_candidates (list): A common list containing pixel values at approximate location of lines.
+            lines_candidates (list): A common list containing pixel values at
+                approximate location of lines.
+
         """
-        # import cPickle
-        # lamp_out = open('lamp.pkl', 'wb')
-        # cPickle.dump([self.lamp_data, self.lamp_header], lamp_out, protocol=cPickle.HIGHEST_PROTOCOL)
+
         if ccddata_lamp is None:
             lamp_data = self.lamp_data
             lamp_header = self.lamp_header
@@ -401,25 +439,33 @@ class WavelengthCalibration(object):
             raw_pixel_axis = range(len(lamp_data))
         else:
             log.error('Error receiving lamp')
-        no_nan_lamp_data = np.nan_to_num(lamp_data)
-        filtered_data = np.where(np.abs(no_nan_lamp_data > no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()),
-                                 no_nan_lamp_data,
-                                 None)
 
+        no_nan_lamp_data = np.nan_to_num(lamp_data)
+
+        filtered_data = np.where(
+            np.abs(no_nan_lamp_data > no_nan_lamp_data.min() +
+                   0.03 * no_nan_lamp_data.max()),
+            no_nan_lamp_data,
+            None)
 
         _upper_limit = no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()
         slit_size = re.sub('[a-zA-Z" ]', '', lamp_header['slit'])
-        # get serial binning value PG5_9 is for RED camera and PARAM18 is for BLUE camera
-        # serial binning is dispersion axis, the only one that matters for this purpose
 
-        serial_binning, parallel_binning = [int(x) for x in lamp_header['CCDSUM'].split()]
+        serial_binning, parallel_binning = [
+            int(x) for x in lamp_header['CCDSUM'].split()]
 
         new_order = int(round(float(slit_size) / (0.15 * serial_binning)))
         log.debug('New Order:  {:d}'.format(new_order))
+
         # print(round(new_order))
         peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
+
         if slit_size >= 5:
-            lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data, lines=peaks, slit_size=slit_size, order=new_order)
+
+            lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data,
+                                                     lines=peaks,
+                                                     slit_size=slit_size,
+                                                     order=new_order)
         else:
             # lines_center = peaks
             lines_center = self.recenter_lines(no_nan_lamp_data, peaks)
@@ -430,15 +476,19 @@ class WavelengthCalibration(object):
             plt.title('Lines detected in Lamp\n{:s}'.format(lamp_header['OBJECT']))
             plt.xlabel('Pixel Axis')
             plt.ylabel('Intensity (counts)')
-            # Build legends without data
+
+            # Build legends without data to avoid repetitions
             plt.plot([], color='k', label='Comparison Lamp Data')
             plt.plot([], color='k', linestyle=':', label='Spectral Line Detected')
             plt.axhline(_upper_limit, color='r')
+
             for line in peaks:
                 plt.axvline(line + 1, color='k', linestyle=':')
+
             # plt.axhline(median + stddev, color='g')
             # for rc_line in lines_center:
             #     plt.axvline(rc_line, color='r')
+
             plt.plot(raw_pixel_axis, no_nan_lamp_data, color='k')
             plt.legend(loc='best')
             plt.show()
@@ -447,49 +497,76 @@ class WavelengthCalibration(object):
     def recenter_lines(self, data, lines, plots=False):
         """Finds the centroid of an emission line
 
-        For every line center (pixel value) it will scan left first until the data stops decreasing, it assumes it
-        is an emission line and then will scan right until it stops decreasing too. Defined those limits it will
+        For every line center (pixel value) it will scan left first until the
+        data stops decreasing, it assumes it is an emission line and then will
+        scan right until it stops decreasing too. Defined those limits it will
+
+        Args:
+            data:
+            lines:
+            plots:
+
+        Returns:
+
         """
         new_center = []
         x_size = data.shape[0]
         median = np.median(data)
         for line in lines:
-            # TODO (simon): Check if this definition is valid, so far is not critical
+            # TODO (simon): Check if this definition is valid, so far is not
+            # TODO (cont..): critical
             left_limit = 0
             right_limit = 1
             condition = True
             left_index = int(line)
+
             while condition and left_index - 2 > 0:
-                if (data[left_index - 1] > data[left_index]) and (data[left_index - 2] > data[left_index - 1]):
+
+                if (data[left_index - 1] > data[left_index]) and \
+                        (data[left_index - 2] > data[left_index - 1]):
+
                     condition = False
                     left_limit = left_index
+
                 elif data[left_index] < median:
                     condition = False
                     left_limit = left_index
+
                 else:
                     left_limit = left_index
+
                 left_index -= 1
 
             # id right limit
             condition = True
             right_index = int(line)
             while condition and right_index + 2 < x_size - 1:
-                if (data[right_index + 1] > data[right_index]) and (data[right_index + 2] > data[right_index + 1]):
+
+                if (data[right_index + 1] > data[right_index]) and \
+                        (data[right_index + 2] > data[right_index + 1]):
+
                     condition = False
                     right_limit = right_index
+
                 elif data[right_index] < median:
                     condition = False
                     right_limit = right_index
+
                 else:
                     right_limit = right_index
                 right_index += 1
             index_diff = [abs(line - left_index), abs(line - right_index)]
 
-            sub_x_axis = range(line - min(index_diff), (line + min(index_diff)) + 1)
+            sub_x_axis = range(line - min(index_diff),
+                               (line + min(index_diff)) + 1)
+
             sub_data = data[line - min(index_diff):(line + min(index_diff)) + 1]
             centroid = np.sum(sub_x_axis * sub_data) / np.sum(sub_data)
+
             # checks for asymmetries
-            differences = [abs(data[line] - data[left_limit]), abs(data[line] - data[right_limit])]
+            differences = [abs(data[line] - data[left_limit]),
+                           abs(data[line] - data[right_limit])]
+
             if max(differences) / min(differences) >= 2.:
                 if plots:
                     plt.axvspan(line - 1, line + 1, color='g', alpha=0.3)
@@ -500,15 +577,41 @@ class WavelengthCalibration(object):
             fig = plt.figure(1)
             fig.canvas.set_window_title('Lines Detected in Lamp')
             plt.axhline(median, color='b')
-            plt.plot(self.raw_pixel_axis, data, color='k', label='Lamp Data')
+
+            plt.plot(self.raw_pixel_axis,
+                     data,
+                     color='k',
+                     label='Lamp Data')
+
             for line in lines:
-                plt.axvline(line + 1, color='k', linestyle=':', label='First Detected Center')
+
+                plt.axvline(line + 1,
+                            color='k',
+                            linestyle=':',
+                            label='First Detected Center')
+
             for center in new_center:
-                plt.axvline(center, color='k', linestyle='.-', label='New Center')
+
+                plt.axvline(center,
+                            color='k',
+                            linestyle='.-',
+                            label='New Center')
+
             plt.show()
         return new_center
 
     def recenter_broad_lines(self, lamp_data, lines, slit_size, order):
+        """
+
+        Args:
+            lamp_data:
+            lines:
+            slit_size:
+            order:
+
+        Returns:
+
+        """
         new_line_centers = []
         gaussian_kernel = Gaussian1DKernel(stddev=2.)
         lamp_data = convolve(lamp_data, gaussian_kernel)
@@ -518,7 +621,11 @@ class WavelengthCalibration(object):
             lamp_sample = lamp_data[lower_index:upper_index]
             x_axis = np.linspace(lower_index, upper_index, len(lamp_sample))
             line_max = np.max(lamp_sample)
-            gaussian_model = models.Gaussian1D(amplitude=line_max, mean=line, stddev=order)
+
+            gaussian_model = models.Gaussian1D(amplitude=line_max,
+                                               mean=line,
+                                               stddev=order)
+
             fit_gaussian = fitting.LevMarLSQFitter()
             fitted_gaussian = fit_gaussian(gaussian_model, x_axis, lamp_sample)
             new_line_centers.append(fitted_gaussian.mean.value)
@@ -533,46 +640,63 @@ class WavelengthCalibration(object):
     def get_spectral_characteristics(self):
         """Calculates some Goodman's specific spectroscopic values.
 
-        From the Header value for Grating, Grating Angle and Camera Angle it is possible to estimate what are the limits
-        wavelength values and central wavelength. It was necessary to add offsets though, since the formulas provided
-        are slightly off. The values are only an estimate.
+        From the Header value for Grating, Grating Angle and Camera Angle it is
+        possible to estimate what are the limits wavelength values and central
+        wavelength. It was necessary to add offsets though, since the formulas
+        provided are slightly off. The values are only an estimate.
 
         Returns:
             spectral_characteristics (dict): Contains the following parameters:
-                                            center: Center Wavelength
-                                            blue: Blue limit in Angstrom
-                                            red: Red limit in Angstrom
-                                            alpha: Angle
-                                            beta: Angle
-                                            pix1: Pixel One
-                                            pix2: Pixel Two
+                center: Center Wavelength
+                blue: Blue limit in Angstrom
+                red: Red limit in Angstrom
+                alpha: Angle
+                beta: Angle
+                pix1: Pixel One
+                pix2: Pixel Two
+
 
         """
         # TODO (simon): find a definite solution for this, this only work (a little) for one configuration
         blue_correction_factor = -50 * u.angstrom
         red_correction_factor = -37 * u.angstrom
-        self.grating_frequency = float(re.sub('[A-Za-z_-]', '', self.lamp_header['GRATING'])) / u.mm
+
+        self.grating_frequency = float(
+            re.sub('[A-Za-z_-]',
+                   '',
+                   self.lamp_header['GRATING'])) / u.mm
+
         # print('Grating Frequency ' + '{:d}'.format(int(self.grating_frequency)))
         self.grating_angle = float(self.lamp_header['GRT_ANG']) * u.deg
         self.camera_angle = float(self.lamp_header['CAM_ANG']) * u.deg
 
-        self.serial_binning, self.parallel_binning = [int(x) for x in self.lamp_header['CCDSUM'].split()]
+        self.serial_binning, self.parallel_binning = [
+            int(x) for x in self.lamp_header['CCDSUM'].split()]
 
         self.pixel_count = len(self.lamp_data)
         # Calculations
         # TODO (simon): Check whether is necessary to remove the self.slit_offset variable
         self.alpha = self.grating_angle.to(u.rad)
         self.beta = self.camera_angle.to(u.rad) - self.grating_angle.to(u.rad)
-        self.center_wavelength = (np.sin(self.alpha) + np.sin(self.beta)) / self.grating_frequency
-        limit_angle = np.arctan(self.pixel_count * (self.pixel_size / self.goodman_focal_length) / 2)
-        self.blue_limit = ((np.sin(self.alpha) + np.sin(self.beta - limit_angle.to(u.rad))) / self.grating_frequency).to(u.angstrom) + blue_correction_factor
-        self.red_limit = ((np.sin(self.alpha) + np.sin(self.beta + limit_angle.to(u.rad))) / self.grating_frequency).to(u.angstrom) + red_correction_factor
-        # self.center_wavelength = 10 * (1e6 / self.grating_frequency) * (
-        #     np.sin(self.alpha * np.pi / 180.) + np.sin(self.beta * np.pi / 180.))
-        # self.blue_limit = 10 * (1e6 / self.grating_frequency) * (
-        #     np.sin(self.alpha * np.pi / 180.) + np.sin((self.beta - 4.656) * np.pi / 180.)) + blue_correction_factor
-        # self.red_limit = 10 * (1e6 / self.grating_frequency) * (
-        #     np.sin(self.alpha * np.pi / 180.) + np.sin((self.beta + 4.656) * np.pi / 180.)) + red_correction_factor
+
+        self.center_wavelength = (np.sin(self.alpha) +
+                                  np.sin(self.beta)) / self.grating_frequency
+
+        limit_angle = np.arctan(
+            self.pixel_count *
+            (self.pixel_size / self.goodman_focal_length) / 2)
+
+        self.blue_limit = ((np.sin(self.alpha) +
+                            np.sin(self.beta - limit_angle.to(u.rad))) /
+                           self.grating_frequency).to(u.angstrom) + \
+                          blue_correction_factor
+
+        self.red_limit = ((np.sin(self.alpha) +
+                           np.sin(self.beta +
+                                  limit_angle.to(u.rad))) /
+                          self.grating_frequency).to(u.angstrom) +\
+                         red_correction_factor
+
         pixel_one = 0
         pixel_two = 0
         log.debug('Center Wavelength : {:.3f} Blue Limit : '
