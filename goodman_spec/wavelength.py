@@ -102,15 +102,14 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                         plt.show()
 
                 for extracted_ccd in extracted:
-                    get_wsolution(ccd=extracted_ccd, comp_list=comps)
+                    wsolution_obj = get_wsolution(ccd=extracted_ccd,
+                                                  comp_list=comps)
+                    # return wsolution_obj
             except NoTargetException:
                 log.error('No target was identified')
                 break
+    return True
 
-
-
-
-    return extracted, comps
 
 
 
@@ -232,8 +231,10 @@ class WavelengthCalibration(object):
                 # self.raw_pixel_axis = range(len(self.lamp_data))
                 self.lamp_header = lamp_ccd.header.copy()
                 self.lamp_name = self.lamp_header['OBJECT']
-                log.info(
-                    'Processing Comparison Lamp: {:s}'.format(self.lamp_name))
+
+                log.info('Processing Comparison Lamp: '
+                         '{:s}'.format(self.lamp_name))
+
                 self.data1 = self.interpolate(self.lamp_data)
                 # self.lines_limits = self.get_line_limits()
                 # self.lines_center = self.get_line_centers(self.lines_limits)
@@ -247,16 +248,22 @@ class WavelengthCalibration(object):
                     self.automatic_wavelength_solution()
                     # self.wsolution = self.wavelength_solution()
                 if self.wsolution is not None:
+
                     self.linear_lamp = self.linearize_spectrum(self.lamp_data)
+
                     self.lamp_header = self.add_wavelength_solution(
                         self.lamp_header,
                         self.linear_lamp,
                         self.calibration_lamp)
+
                     self.linearized_sci = self.linearize_spectrum(ccd.data)
-                    self.header = self.add_wavelength_solution(ccd.header,
-                                                               self.linearized_sci,
-                                                               ccd.header['OFNAME'],
-                                                               index=0)
+
+                    self.header = self.add_wavelength_solution(
+                        ccd.header,
+                        self.linearized_sci,
+                        ccd.header['OFNAME'],
+                        index=0)
+
 
                     wavelength_solution = WavelengthSolution(
                         solution_type='non_linear',
@@ -267,10 +274,53 @@ class WavelengthCalibration(object):
                         eval_comment=self.evaluation_comment,
                         header=self.header)
 
+                    if self.args.plot_results:
+
+                        if not self.args.debug_mode:
+                            plt.ion()
+                            # plt.show()
+                        else:
+                            plt.ioff()
+
+                        wavelength_axis = self.wsolution(range(ccd.data.size))
+
+                        object_name = ccd.header['OBJECT']
+                        grating = ccd.header['GRATING']
+
+                        fig_title = 'Wavelength Calibrated Data : ' \
+                                    '{:s}\n{:s}'.format(object_name, grating)
+
+                        fig = plt.figure()
+                        fig.canvas.set_window_title(ccd.header['OFNAME'])
+                        ax1 = fig.add_subplot(111)
+                        manager = plt.get_current_fig_manager()
+                        manager.window.maximize()
+
+                        ax1.set_title(fig_title)
+                        ax1.set_xlabel('Wavelength (Angstrom)')
+                        ax1.set_ylabel('Intensity (ADU)')
+                        ax1.set_xlim((wavelength_axis[0], wavelength_axis[-1]))
+
+                        ax1.plot(wavelength_axis,
+                                 ccd.data,
+                                 color='k',
+                                 label='Data')
+
+                        ax1.legend(loc='best')
+                        plt.tight_layout()
+                        if self.args.debug_mode:
+                            plt.show()
+                        else:
+                            plt.draw()
+                            plt.pause(2)
+                            plt.ioff()
+
+
+
                     return wavelength_solution
                 else:
-                    log.error(
-                        'It was not possible to get a wavelength solution from this lamp.')
+                    log.error('It was not possible to get a wavelength '
+                              'solution from this lamp.')
                     return None
 
 

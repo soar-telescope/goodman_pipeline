@@ -375,6 +375,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     command = 'dcr {:s} {:s} {:s}'.format(full_path_in,
                                           full_path_out,
                                           full_path_cosmic)
+
     log.debug('DCR command:')
     log.debug(command)
 
@@ -384,19 +385,30 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
     # move to the directory were the data is, dcr is expecting a file dcr.par
     os.chdir(data_path)
+    print(os.getcwd())
 
     # check if file dcr.par exists
     if not os.path.isfile('dcr.par'):
-        log.error('File drc.par does not exist. Copying default one.')
+
+        log.error('File dcr.par does not exist. Copying default one.')
         dcr_par_path = os.path.join(dcr_par_dir, 'dcr.par')
+        log.debug('dcr.par full path: {:s}'.format(dcr_par_path))
         shutil.copy2(dcr_par_path, './')
 
     # call dcr
+    try:
+        # env = os.environ
+        dcr = subprocess.Popen(command.split(),
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE,
+                               shell=True)
+    except OSError as error:
+        log.error(error)
+        sys.exit('Your system can not locate the executable file dcr, try '
+                 'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
+                 'sudo ln -s /full/path/to/dcr')
 
-
-    dcr = subprocess.Popen(command.split(),
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
+        # return False
 
     # if the process is taking too long to respond, kill it
     # kill_process = lambda process: process.kill()
@@ -422,12 +434,16 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     # If no error stderr is an empty string
     if stderr != '':
         log.error(stderr)
+        if 'dcr: not found' in stderr:
+            sys.exit('Your system can not locate the executable file dcr, try '
+                 'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
+                     'sudo ln -s /full/path/to/dcr')
     else:
         for output_line in stdout.split('\n'):
             log.info(output_line)
 
     # delete extra files only if the execution ended without error
-    if delete and stderr == '':
+    if delete and stderr == '' and 'USAGE:' not in stdout:
         log.warning('Removing input file: {:s}'.format(full_path_in))
         os.unlink(full_path_in)
         log.warning('Removing cosmic rays file: {:s}'.format(full_path_cosmic))

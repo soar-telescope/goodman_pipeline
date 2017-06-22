@@ -138,7 +138,6 @@ class NightOrganizer(object):
 
         """
 
-        print(file_collection)
         assert isinstance(file_collection, pandas.DataFrame)
         assert isinstance(data_container, NightDataContainer)
 

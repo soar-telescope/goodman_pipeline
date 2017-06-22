@@ -99,7 +99,7 @@ def get_args(arguments=None):
                         metavar='<Normalization Method>',
                         dest='flat_normalize',
                         choices=['mean', 'simple', 'full'],
-                        help='Chose a method to normalize the flat for'
+                        help='Choose a method to normalize the master flat for'
                              'spectroscoy. Choices are: mean, simple (model)'
                              'and full (fits model to each line).')
 
@@ -124,12 +124,6 @@ def get_args(arguments=None):
                         help="After cleaning cosmic rays with dcr, do not "
                              "remove the input file and the cosmic rays file.")
 
-    # parser.add_argument('--interpolate-invalid',
-    #                     action='store_true',
-    #                     dest='interp_invalid',
-    #                     help="Do a cubic interpolation to remove NaN or
-    #                          " INF values."
-    #                          "By default it will replace them by a number.")
 
     args = parser.parse_args(args=arguments)
 
@@ -219,7 +213,7 @@ class MainApp(object):
                 # print(self.instrument)
                 # print(self.technique)
             except AttributeError as error:
-                print(error)
+                log.error(error)
                 log.error('Empty or Invalid data directory:'
                           '{:s}'.format(data_folder))
                 continue

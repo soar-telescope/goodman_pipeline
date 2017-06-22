@@ -54,10 +54,7 @@ __status__ = "Development"
 def get_args():
     """Handles the argparse library and returns the arguments
 
-    Returns:
-        An object that contains all the variables parsed through the argument
-        system
-        The possible arguments to be used are:
+    The possible arguments to be used are:
 
         --data-path: has to be the source directory, where the data (images) is.
             The location is `self.source` and the default value is ./
@@ -73,6 +70,13 @@ def get_args():
         --debug: Show plots for intermediate steps. Also prints more messages.
         --log-to-file: Write the log to a file.
         --save-plots: Save all plots ina directory
+        --plot-results: Show a plot of the wavelength calibrated data at the
+            end.
+
+
+    Returns:
+        An object that contains all the variables parsed through the argument
+        system
 
     """
     leave = False
@@ -155,6 +159,11 @@ def get_args():
                         dest='save_plots',
                         help="Save all plots in a directory")
 
+    parser.add_argument('--plot-results',
+                        action='store_true',
+                        dest='plot_results',
+                        help="Show wavelength calibrated spectrum at the end.")
+
     args = parser.parse_args()
     if args.debug_mode:
         log.info('Changing log level to DEBUG.')
@@ -196,7 +205,7 @@ def get_args():
     if leave:
         parser.print_help()
         parser.exit("Leaving the Program.")
-    print_default_args(args)
+    # print_default_args(args)
     return args
 
 
@@ -224,11 +233,10 @@ class MainApp(object):
             path=self.args.source,
             search_pattern=self.args.pattern)
 
-        # TODO (simon): add extraction to arguments.
-        extracted, comps = process_spectroscopy_data(
+        self.wavelength_solution_obj = process_spectroscopy_data(
             data_container=data_container,
             args=self.args,
-            extraction_type='simple')
+            extraction_type=self.args.extraction_type)
 
 
 if __name__ == '__main__':

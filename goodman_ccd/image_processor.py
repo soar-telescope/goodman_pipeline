@@ -647,11 +647,6 @@ class ImageProcessor(object):
                                             dcr_par_dir=self.args.dcr_par_dir,
                                             delete=self.args.keep_cosmic_files)
 
-                    # ccd = cosmicray_rejection(ccd=ccd)
-                    # self.out_prefix = 'c' + self.out_prefix
-                    # plt.title('Cosmic')
-                    # plt.imshow(ccd.data, clim=(0, 1000))
-                    # plt.show()
                 else:
                     log.warning('Clean Cosmic ' + str(self.args.clean_cosmic))
 
