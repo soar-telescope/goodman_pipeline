@@ -23,8 +23,9 @@ __version__ = "0.1"
 __email__ = "dsanmartim@ctio.noao.edu"
 __maintainer__ = "Simon Torres"
 
-FORMAT = '%(levelname)s: %(asctime)s: %(module)s: %(message)s'
-DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
+FORMAT = '%(levelname)s: %(asctime)s: %(module)s.%(funcName)s: %(message)s'
+# DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
+DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_ccd.log'
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 log = logging.getLogger('goodmanccd')
@@ -98,7 +99,7 @@ def get_args(arguments=None):
                         metavar='<Normalization Method>',
                         dest='flat_normalize',
                         choices=['mean', 'simple', 'full'],
-                        help='Chose a method to normalize the flat for'
+                        help='Choose a method to normalize the master flat for'
                              'spectroscoy. Choices are: mean, simple (model)'
                              'and full (fits model to each line).')
 
@@ -110,12 +111,19 @@ def get_args(arguments=None):
                         dest='norm_order',
                         help='Defines the order of the model to be fitted.')
 
-    # parser.add_argument('--interpolate-invalid',
-    #                     action='store_true',
-    #                     dest='interp_invalid',
-    #                     help="Do a cubic interpolation to remove NaN or
-    #                          " INF values."
-    #                          "By default it will replace them by a number.")
+    parser.add_argument('--dcr-par-dir',
+                        action='store',
+                        default='files/',
+                        metavar='<dcr.par directory>',
+                        dest='dcr_par_dir',
+                        help="Directory of default dcr.par file.")
+
+    parser.add_argument('--keep-cosmic-files',
+                        action='store_false',
+                        dest='keep_cosmic_files',
+                        help="After cleaning cosmic rays with dcr, do not "
+                             "remove the input file and the cosmic rays file.")
+
 
     args = parser.parse_args(args=arguments)
 
@@ -135,7 +143,22 @@ def get_args(arguments=None):
     else:
         parser.print_help()
         parser.exit("Raw data folder doesn't exist")
-    print_default_args(args)
+
+    # updated full path for default dcr.par file. If it doesn't exist it will
+    # create an empty one.
+    dcr_par_full_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 args.dcr_par_dir)
+    if not os.path.isdir(dcr_par_full_path) or args.dcr_par_dir != 'files/':
+        log.info("dcr.par default location doesn't exist.")
+        try:
+            os.path.os.makedirs(dcr_par_full_path)
+            log.info('Created dcr.par empty directory: %s', dcr_par_full_path)
+            args.dcr_par_dir = dcr_par_full_path
+        except OSError as err:
+            log.error(err)
+    else:
+        args.dcr_par_dir = dcr_par_full_path
+    # print_default_args(args)
     return args
 
 
@@ -190,7 +213,7 @@ class MainApp(object):
                 # print(self.instrument)
                 # print(self.technique)
             except AttributeError as error:
-                print(error)
+                log.error(error)
                 log.error('Empty or Invalid data directory:'
                           '{:s}'.format(data_folder))
                 continue

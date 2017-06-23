@@ -11,6 +11,10 @@ import ccdproc
 import numpy as np
 import numpy.ma as ma
 import matplotlib
+import shutil
+import subprocess
+from threading import Timer
+
 matplotlib.use('GTK3Agg')
 from matplotlib import pyplot as plt
 from ccdproc import CCDData, ImageFileCollection
@@ -329,14 +333,143 @@ def get_slit_trim_section(master_flat):
             # the spatial axis center to one edge.
             if peaks[0] <= spatial_half:
                 slit_trim_section = '[:,{:d}:{:d}]' \
-                                    ''.format(peaks[0],len(ccd_section_median))
+                                    ''.format(peaks[0], len(ccd_section_median))
             else:
                 slit_trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
     return slit_trim_section
 
 
+def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
+                            delete=False):
+    """Runs an external code for cosmic ray rejection
+
+    DCR was created by Wojtek Pych and the code can be obtained from
+    http://users.camk.edu.pl/pych/DCR/ and is written in C
+
+    Args:
+        data_path (str): Data location
+        in_file (str): Name of the file to have its cosmic rays removed
+        prefix (str): Prefix to add to the file with the cosmic rays removed
+        dcr_par_dir (str): Directory of default dcr.par file
+        delete (bool): True for deleting the input and cosmic ray file.
+
+    Returns:
+
+    """
+
+    log.info('Removing cosmic rays using DCR by Wojtek Pych')
+    log.info('See http://users.camk.edu.pl/pych/DCR/')
+
+    # add the prefix for the output file
+    out_file = prefix + in_file
+
+    # define the name for the cosmic rays file
+    cosmic_file = 'cosmic_' + '_'.join(in_file.split('_')[1:])
+
+    # define full path for all the files involved
+    full_path_in = os.path.join(data_path, in_file)
+    full_path_out = os.path.join(data_path, out_file)
+    full_path_cosmic = os.path.join(data_path, cosmic_file)
+
+    # this is the command for running dcr, all arguments are required
+    command = 'dcr {:s} {:s} {:s}'.format(full_path_in,
+                                          full_path_out,
+                                          full_path_cosmic)
+
+    log.debug('DCR command:')
+    log.debug(command)
+    # print(command.split(' '))
+
+    # get the current working directory to go back to it later in case the
+    # the pipeline has not been called from the same data directory.
+    cwd = os.getcwd()
+
+    # move to the directory were the data is, dcr is expecting a file dcr.par
+    os.chdir(data_path)
+
+    # check if file dcr.par exists
+    while not os.path.isfile('dcr.par'):
+
+        log.error('File dcr.par does not exist. Copying default one.')
+        dcr_par_path = os.path.join(dcr_par_dir, 'dcr.par')
+        log.debug('dcr.par full path: {:s}'.format(dcr_par_path))
+        if os.path.isfile(dcr_par_path):
+            shutil.copy2(dcr_par_path, data_path)
+        else:
+            log.error('Could not find dcr.par file')
+    else:
+        log.info('File dcr.par exists.')
+
+    # call dcr
+    try:
+
+        dcr = subprocess.Popen(command.split(),
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+
+    except OSError as error:
+        log.error(error)
+        sys.exit('Your system can not locate the executable file dcr, try '
+                 'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
+                 'sudo ln -s /full/path/to/dcr')
+
+        # return False
+
+    # if the process is taking too long to respond, kill it
+    # kill_process = lambda process: process.kill()
+    def kill_process(process): process.kill()
+
+    dcr_timer = Timer(5, kill_process, [dcr])
+    try:
+        dcr_timer.start()
+        stdout, stderr = dcr.communicate()
+    finally:
+        dcr_timer.cancel()
+
+    # wait for dcr to terminate
+    # dcr.wait()
+
+    # go back to the original directory. Could be the same.
+    os.chdir(cwd)
+
+    # read stdout and stderr
+    # stdout = dcr.stdout.read()
+    # stderr = dcr.stderr.read()
+
+    # If no error stderr is an empty string
+    if stderr != '':
+        log.error(stderr)
+        if 'dcr: not found' in stderr:
+            sys.exit('Your system can not locate the executable file dcr, try '
+                 'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
+                     'sudo ln -s /full/path/to/dcr')
+    else:
+        for output_line in stdout.split('\n'):
+            log.info(output_line)
+
+    # delete extra files only if the execution ended without error
+    if delete and stderr == '' and 'USAGE:' not in stdout:
+        try:
+            log.warning('Removing input file: {:s}'.format(full_path_in))
+            os.unlink(full_path_in)
+        except OSError as error:
+            log.error(error)
+
+        try:
+            log.warning(
+                'Removing cosmic rays file: {:s}'.format(full_path_cosmic))
+            os.unlink(full_path_cosmic)
+        except OSError as error:
+            log.error(error)
+
+
+
 def cosmicray_rejection(ccd, mask_only=False):
     """Do cosmic ray rejection
+
+    This function in fact does not apply any correction, it detects the cosmic
+    rays and updates the attribute mask of the ccd object (CCDData instance).
+    The attribute mask is used later as a mask for the pixels hit by cosmic rays
 
       Notes:
           OBS: cosmic ray rejection is working pretty well by defining gain = 1.
@@ -350,7 +483,7 @@ def cosmicray_rejection(ccd, mask_only=False):
           rays mask only
 
       Returns:
-          ccd (object): The modified CCDData object
+          ccd (object): A CCDData instance with the mask attribute updated.
 
       """
     # TODO (simon): Validate this method
@@ -386,9 +519,11 @@ def cosmicray_rejection(ccd, mask_only=False):
 def get_best_flat(flat_name):
     """Look for matching master flat
 
-    Given a basename for masterflats this function will find the name of the
-    files that matches the base name and then will choose the first. Ideally
-    this should go further as to check signal, time gap, etc.
+    Given a basename for masterflats defined as a combination of key parameters
+    extracted from the header of the image that we want to flatfield, this
+    function will find the name of the files that matches the base name and then
+    will choose the first. Ideally this should go further as to check signal,
+    time gap, etc.
     After it identifies the file it will load it using ccdproc.CCDData and
     return it along the filename.
     In case if fails it will return None instead of master_flat and another
@@ -427,6 +562,9 @@ def print_default_args(args):
     This is mostly helpful for debug but people not familiar with the software
     might find it useful as well
 
+    Notes:
+        This is not dynamically updated so use with caution
+
     Args:
         args (object): An argparse instance
 
@@ -450,10 +588,13 @@ def print_default_args(args):
                 'procmode': '-m --proc-mode',
                 'reference_dir': '-R --reference-files',
                 'source': '-p --data-path',
-                'save_plots': '--save-plots' }
+                'save_plots': '--save-plots',
+                'dcr_par_dir': '--dcr-par-dir'}
     for key in args.__dict__:
         log.info('Default value for {:s} is {:s}'.format(arg_name[key],
-                                       str(args.__getattribute__(key))))
+                                                         str(
+                                                             args.__getattribute__(
+                                                                 key))))
 
 
 def normalize_master_flat(master, name, method='simple', order=15):
@@ -571,13 +712,40 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 # spectroscopy specific functions
 
 def classify_spectroscopic_data(path, search_pattern):
+    """Classify data by grouping them as pandas.DataFrame instances
+
+    This functions uses ImageFileCollection from ccdproc. First it creates a
+    collection of information regarding the images located in _path_ that match
+    the pattern _search_pattern_
+    The information obtained are all keywords listed in the list _keywords_
+    The ImageFileCollection is translated into pandas.DataFrame and then is used
+    much like SQL database to select and filter values and in that way put them
+    in groups that are pandas.DataFrame instances.
+
+
+    Args:
+        path (str): Path to data location
+        search_pattern (str): Prefix to match files.
+
+    Returns:
+        data_container (object): Instance of NightDataContainer
+
+    """
+
     search_path = os.path.join(path, search_pattern + '*.fits')
 
-    data_container = NightDataContainer(path=path,
-                                        instrument='Red',
-                                        technique='Spectroscopy')
-
     file_list = glob.glob(search_path)
+
+    if file_list == []:
+        log.error('No file found using search pattern '
+                  '"{:s}"'.format(search_pattern))
+
+        sys.exit('Please use the argument --search-pattern to define the '
+                 'common prefix for the files to be processed.')
+
+    data_container = NightDataContainer(path=path,
+                                        instrument=str('Red'),
+                                        technique=str('Spectroscopy'))
 
     keywords = ['date',
                 'slit',
@@ -638,6 +806,143 @@ def classify_spectroscopic_data(path, search_pattern):
     return data_container
 
 
+def spectroscopic_extraction(ccd, extraction,
+                             comp_list=None,
+                             n_sigma_extract=10,
+                             plots=False):
+    """This function does not do the actual extraction but prepares the data
+
+
+
+    Args:
+        ccd (object): A ccdproc.CCDData Instance
+        extraction (str): Extraction type name. _simple_ or _optimal_
+        comp_list (list): List of ccdproc.CCDData instances of COMP lamps data
+        n_sigma_extract (int): Number of sigmas to be used for extraction
+        plots (bool): If plots will be shown or not.
+
+    Returns:
+        extracted (list): List of ccdproc.CCDData instances
+        comp_zones (list): List of ccdproc.CCDData instances
+
+    Raises:
+        NoTargetException (Exception): A NoTargetException if there is no target
+        found.
+
+    """
+
+    assert isinstance(ccd, CCDData)
+
+    comp_zones = []
+    extracted = []
+
+    if comp_list is None:
+        comp_list = []
+
+    iccd = remove_background(ccd=ccd)
+
+    profile_model = identify_targets(ccd=iccd, plots=plots)
+    del (iccd)
+
+    if isinstance(profile_model, Model):
+        traces = trace_targets(ccd=ccd, profile=profile_model, plots=plots)
+        # extract(ccd=ccd,
+        #         spatial_profile=profile_model,
+        #         n_sigma_extract=10,
+        #         sampling_step=5)
+        if 'CompoundModel' in profile_model.__class__.name:
+            log.debug(profile_model.submodel_names)
+            for m in range(len(profile_model.submodel_names)):
+
+                submodel_name = profile_model.submodel_names[m]
+
+                nccd, trace, model, zone = get_extraction_zone(
+                    ccd=ccd,
+                    extraction=extraction,
+                    trace=traces[m],
+                    model=profile_model[submodel_name],
+                    n_sigma_extract=n_sigma_extract,
+                    plots=plots)
+
+                for comp in comp_list:
+                    comp_zone = get_extraction_zone(ccd=comp,
+                                                    extraction=extraction,
+                                                    trace=trace,
+                                                    zone=zone,
+                                                    plots=plots)
+                    # since a comparison lamp only needs only the relative line
+                    # center in the dispersion direction, therefore the flux is
+                    # not important we are only calculating the median along the
+                    # spatial direction
+                    comp_zone.data = np.median(comp_zone.data, axis=0)
+                    comp_zones.append(comp_zone)
+
+                nccd = remove_background(ccd=nccd,
+                                         plots=plots)
+
+                extracted_ccd = extract(ccd=nccd,
+                                        trace=trace,
+                                        spatial_profile=model,
+                                        extraction=extraction,
+                                        sampling_step=10,
+                                        plots=plots)
+                extracted.append(extracted_ccd)
+
+                if plots:
+                    plt.imshow(nccd)
+                    plt.show()
+
+        else:
+            nccd, trace, model, zone = get_extraction_zone(
+                ccd=ccd,
+                extraction=extraction,
+                trace=traces[0],
+                model=profile_model,
+                n_sigma_extract=n_sigma_extract,
+                plots=plots)
+
+            for comp in comp_list:
+                comp_zone = get_extraction_zone(ccd=comp,
+                                                extraction=extraction,
+                                                trace=trace,
+                                                zone=zone,
+                                                plots=plots)
+
+                # since a comparison lamp only needs the relative line
+                # center in the dispersion direction, therefore the flux is not
+                # important we are only calculating the median along the spatial
+                # direction
+                comp_zone.data = np.median(comp_zone.data, axis=0)
+                comp_zones.append(comp_zone)
+
+            nccd = remove_background(ccd=nccd,
+                                     plots=plots)
+
+            extracted_ccd = extract(ccd=nccd,
+                                    trace=trace,
+                                    spatial_profile=model,
+                                    extraction=extraction,
+                                    sampling_step=10,
+                                    plots=plots)
+
+            extracted.append(extracted_ccd)
+
+            if plots:
+                plt.imshow(nccd)
+                plt.show()
+
+        # print(extracted)
+        # print(comp_zones)
+        return extracted, comp_zones
+
+    elif profile_model is None:
+        log.warning("Didn't receive identified targets "
+                    "from {:s}".format(ccd.header['OFNAME']))
+        raise NoTargetException
+    else:
+        log.error('Got wrong input')
+
+
 def identify_targets(ccd, plots=False):
     """Identify targets cross correlating spatial profile with a gaussian model
 
@@ -696,7 +1001,7 @@ def identify_targets(ccd, plots=False):
                 profile_model += gaussian
             else:
                 profile_model = gaussian
-        #     plt.axvline(peaks[i])
+        # plt.axvline(peaks[i])
         # print(profile_model)
 
         # fit model to profile
@@ -948,7 +1253,7 @@ def get_extraction_zone(ccd,
         # this is necessary since we are cutting a piece of the full ccd.
         trace.c0.value -= low_lim
         log.info('Changing attribute c0 from trace, this is to adjust it to '
-                  'the new extraction zone which is smaller that the full CCD.')
+                 'the new extraction zone which is smaller that the full CCD.')
 
         log.info('Changing attribute mean of profile model')
         model.mean.value = extract_width
@@ -1036,6 +1341,171 @@ def remove_background(ccd, plots=False):
     ccd.data = data.filled()
 
     # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
+    return ccd
+
+
+def extract(ccd, trace, spatial_profile, extraction, sampling_step=1,
+            plots=False):
+    assert isinstance(ccd, CCDData)
+    assert isinstance(trace, Model)
+
+    spatial_length, dispersion_length = ccd.data.shape
+
+    # create variance model
+    rdnoise = float(ccd.header['RDNOISE'])
+    gain = float(ccd.header['GAIN'])
+    log.debug('Original Name {:s}'.format(ccd.header['OFNAME']))
+
+    variance_2d = (rdnoise + np.absolute(ccd.data) * gain) / gain
+    if ccd.mask is None and ccd.header['OBSTYPE'] == 'OBJECT':
+        log.info('Finding cosmic rays to create mask')
+        cr_mask = cosmicray_rejection(ccd=ccd, mask_only=True)
+        cr_mask = np.logical_not(cr_mask).astype(int)
+    elif ccd.mask is None and ccd.header['OBSTYPE'] != 'OBJECT':
+        log.info('Only OBSTYPE == OBJECT get cosmic ray rejection.')
+        cr_mask = np.ones(ccd.data.shape, dtype=int)
+    else:
+        log.debug('Cosmic ray mask already exists.')
+        cr_mask = np.logical_not(ccd.mask).astype(int)
+
+    model_fitter = fitting.LevMarLSQFitter()
+
+    # print(spatial_profile.mean.value)
+    # print(trace.c0.value)
+
+    if isinstance(spatial_profile, models.Gaussian1D):
+        amplitude = spatial_profile.amplitude.value
+        mean = spatial_profile.mean.value
+        stddev = spatial_profile.stddev.value
+        new_model = models.Gaussian1D(amplitude=amplitude,
+                                      mean=mean,
+                                      stddev=stddev)
+        # print('Fixed ', new_model.mean.fixed)
+    else:
+        raise NotImplementedError
+    log.debug('ccd.data is a masked array: '
+              '{:s}'.format(str(np.ma.isMaskedArray(ccd.data))))
+
+    ccd.data = np.ma.masked_invalid(ccd.data)
+    # print(np.ma.isMaskedArray(ccd.data))
+    np.ma.set_fill_value(ccd.data, 0)
+
+    if extraction == 'simple':
+
+        indexes = np.argwhere(cr_mask == 0)
+        # print(indexes)
+        if plots:
+            fig = plt.figure(1)
+            ax1 = fig.add_subplot(111)
+            for index in indexes:
+                x, y = index
+                ax1.plot(y, x, marker='o', color='r')
+
+            ax1.imshow(ccd.data, interpolation='none')
+            if plt.isinteractive():
+                plt.draw()
+                plt.pause(1)
+            else:
+                plt.show()
+        # print(np.ma.isMaskedArray(ccd.data))
+        to_sum = ccd.data * cr_mask
+        simple_sum = np.ma.sum(to_sum, axis=0)
+
+        ccd.data = simple_sum
+
+        if plots:
+            fig = plt.figure()
+            fig.canvas.set_window_title('Simple Extraction')
+            # ax = fig.add_subplot(111)
+            manager = plt.get_current_fig_manager()
+            manager.window.maximize()
+
+            plt.title(ccd.header['OBJECT'])
+            plt.xlabel('Dispersion Axis (Pixels)')
+            plt.ylabel('Intensity (Counts)')
+            # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
+            plt.plot(ccd.data, color='k',
+                     label='Simple Extracted')
+            plt.xlim((0, len(ccd.data)))
+            plt.legend(loc='best')
+            if plt.isinteractive():
+                plt.draw()
+                plt.pause(1)
+            else:
+                plt.show()
+
+    elif extraction == 'optimal':
+        out_spectrum = np.empty(dispersion_length)
+        for i in range(0, dispersion_length, sampling_step):
+            # force the model to follow the trace
+            new_model.mean.value = trace(i)
+
+            # warn if the difference of the spectrum position in the trace at the
+            # extremes of the sampling range is larger than 1 pixel.
+            if np.abs(trace(i) - trace(i + sampling_step)) > 1:
+                log.warning('Sampling step might be too large')
+
+            sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)
+            fitted_profile = model_fitter(model=new_model,
+                                          x=range(len(sample)),
+                                          y=sample)
+
+            profile = fitted_profile(range(sample.size))
+
+            # enforce positivity
+            pos_profile = np.array([np.max([0, x]) for x in profile])
+
+            # enforce normalization
+            nor_profile = np.array([x / pos_profile.sum() for x in pos_profile])
+
+            if sampling_step > 1:
+                # TODO (simon): Simplify to Pythonic way
+                right = min((i + sampling_step), dispersion_length)
+
+                for e in range(i, right, 1):
+                    mask = cr_mask[:, e]
+                    data = ma.masked_invalid(ccd.data[:, e])
+                    # print(ma.isMaskedArray(data))
+                    V = variance_2d[:, e]
+                    P = nor_profile
+                    a = [(P[z] / V[z]) / np.sum(P ** 2 / V) for z in
+                         range(P.size)]
+                    weights = (nor_profile / variance_2d[:, e]) / np.sum(
+                        nor_profile ** 2 / variance_2d[:, e])
+                    # print('SUMN ', np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))
+
+
+
+                    # if e in range(5, 4001, 500):
+                    #     plt.plot(nor_profile * data.max()/ nor_profile.max(), label=str(e))
+                    #     plt.plot(data, label='Data')
+                    #     plt.legend(loc='best')
+                    #     plt.show()
+
+                    out_spectrum[e] = np.sum(data * mask * nor_profile)
+        ccd.data = out_spectrum
+        if plots:
+            fig = plt.figure()
+            fig.canvas.set_window_title('Optimal Extraction')
+            # ax = fig.add_subplot(111)
+            manager = plt.get_current_fig_manager()
+            manager.window.maximize()
+
+            plt.title(ccd.header['OBJECT'])
+            plt.xlabel('Dispersion Axis (Pixels)')
+            plt.ylabel('Intensity (Counts)')
+            # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
+            plt.plot(ccd.data, color='k',
+                     label='Optimal Extracted')
+            plt.xlim((0, len(ccd.data)))
+            plt.legend(loc='best')
+            if plt.isinteractive():
+                plt.draw()
+                plt.pause(1)
+            else:
+                plt.show()
+
+    # ccd.data = out_spectrum
     return ccd
 
 
@@ -1173,3 +1643,8 @@ class NightDataContainer(object):
 
         self.evening_twilight = evening
         self.morning_twilight = morning
+
+
+class NoTargetException(Exception):
+    def __init__(self):
+        Exception.__init__(self, 'No targets identified.')

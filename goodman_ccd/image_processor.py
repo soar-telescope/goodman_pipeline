@@ -31,7 +31,8 @@ from .core import (image_overscan,
                    get_slit_trim_section,
                    cosmicray_rejection,
                    get_best_flat,
-                   normalize_master_flat)
+                   normalize_master_flat,
+                   dcr_cosmicray_rejection)
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
@@ -631,19 +632,25 @@ class ImageProcessor(object):
                     ccd.header.add_history('master flat norm_'
                                            '{:s}'.format(master_flat_name))
 
+                full_path = os.path.join(self.args.red_path,
+                                         self.out_prefix + science_image)
+                ccd.write(full_path, clobber=True)
+                log.info('Created science image: {:s}'.format(full_path))
+
                 if self.args.clean_cosmic:
-                    ccd = cosmicray_rejection(ccd=ccd)
-                    self.out_prefix = 'c' + self.out_prefix
-                    # plt.title('Cosmic')
-                    # plt.imshow(ccd.data, clim=(0, 1000))
-                    # plt.show()
+
+                    in_file = self.out_prefix + science_image
+
+                    dcr_cosmicray_rejection(data_path=self.args.red_path,
+                                            in_file=in_file,
+                                            prefix='c',
+                                            dcr_par_dir=self.args.dcr_par_dir,
+                                            delete=self.args.keep_cosmic_files)
+
                 else:
                     log.warning('Clean Cosmic ' + str(self.args.clean_cosmic))
 
-                full_path = os.path.join(self.args.red_path,
-                                       self.out_prefix + science_image)
-                ccd.write(full_path, clobber=True)
-                log.info('Created science image: {:s}'.format(full_path))
+
                 
 
                 # print(science_group)
