@@ -393,8 +393,10 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         log.error('File dcr.par does not exist. Copying default one.')
         dcr_par_path = os.path.join(dcr_par_dir, 'dcr.par')
         log.debug('dcr.par full path: {:s}'.format(dcr_par_path))
-        shutil.copy2(dcr_par_path, data_path)
-
+        if os.path.isfile(dcr_par_path):
+            shutil.copy2(dcr_par_path, data_path)
+        else:
+            log.error('Could not find dcr.par file')
     else:
         log.info('File dcr.par exists.')
 
