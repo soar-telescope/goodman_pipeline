@@ -114,9 +114,19 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                     else:
                         plt.show()
 
-                for extracted_ccd in extracted:
+                object_number = None
+                for i in range(len(extracted)):
+                    extracted_ccd = extracted[i]
+
+                    # this is for numbering the last file.
+                    if len(extracted) == 1:
+                        object_number = None
+                    else:
+                        object_number = i + 1
+
                     wsolution_obj = get_wsolution(ccd=extracted_ccd,
-                                                  comp_list=comps)
+                                                  comp_list=comps,
+                                                  object_number=object_number)
                     # return wsolution_obj
             except NoTargetException:
                 log.error('No target was identified')
@@ -220,7 +230,7 @@ class WavelengthCalibration(object):
         # self.history_of_lamps_solutions = {}
         self.reference_solution = None
 
-    def __call__(self, ccd, comp_list, wsolution_obj=None):
+    def __call__(self, ccd, comp_list, object_number=None, wsolution_obj=None):
         """Call method for the WavelengthSolution Class
 
         It takes extracted data and produces wavelength calibrated by means of
@@ -275,17 +285,18 @@ class WavelengthCalibration(object):
                     self.linear_lamp = self.linearize_spectrum(self.lamp_data)
 
                     self.lamp_header = self.add_wavelength_solution(
-                        self.lamp_header,
-                        self.linear_lamp,
-                        self.calibration_lamp)
+                        new_header=self.lamp_header,
+                        spectrum=self.linear_lamp,
+                        original_filename=self.calibration_lamp,
+                        index=object_number)
 
                     self.linearized_sci = self.linearize_spectrum(ccd.data)
 
                     self.header = self.add_wavelength_solution(
-                        ccd.header,
-                        self.linearized_sci,
-                        ccd.header['OFNAME'],
-                        index=0)
+                        new_header=ccd.header,
+                        spectrum=self.linearized_sci,
+                        original_filename=ccd.header['OFNAME'],
+                        index=object_number)
 
 
                     wavelength_solution = WavelengthSolution(
@@ -348,8 +359,6 @@ class WavelengthCalibration(object):
                             plt.draw()
                             plt.pause(2)
                             plt.ioff()
-
-
 
                     return wavelength_solution
                 else:
@@ -2152,6 +2161,7 @@ class WavelengthCalibration(object):
         new_header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
 
         # print(new_header['APNUM*'])
+        print(index)
         if index is None:
             f_end = '.fits'
         else:
