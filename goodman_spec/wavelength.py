@@ -308,7 +308,7 @@ class WavelengthCalibration(object):
                         eval_comment=self.evaluation_comment,
                         header=self.header)
 
-                    if self.args.plot_results:
+                    if self.args.plot_results or self.args.debug_mode:
 
                         if not self.args.debug_mode:
                             plt.ion()
@@ -1095,96 +1095,100 @@ class WavelengthCalibration(object):
                                                         angstrom_values)
 
         self.evaluate_solution()
-        plt.switch_backend('GTK3Agg')
-        if self.i_fig is None:
-            self.i_fig = plt.figure(figsize=(15, 10))
-            self.i_fig.canvas.set_window_title('Automatic Wavelength Solution')
-        else:
-            self.i_fig.clf()
 
-        if not self.args.debug_mode:
-            plt.ion()
-            # plt.show()
-        else:
-            plt.ioff()
-        manager = plt.get_current_fig_manager()
-        manager.window.maximize()
-        self.ax1 = self.i_fig.add_subplot(111)
+        if self.args.plot_results or self.args.debug_mode:
+            plt.switch_backend('GTK3Agg')
+            if self.i_fig is None:
+                self.i_fig = plt.figure(figsize=(15, 10))
+                self.i_fig.canvas.set_window_title(
+                    'Automatic Wavelength Solution')
+            else:
+                self.i_fig.clf()
 
-        self.ax1.plot([], color='m', label='Pixels')
-        self.ax1.plot([], color='c', label='Angstrom')
-        for val in pixel_values:
-            self.ax1.axvline(self.wsolution(val), color='m')
-        for val2 in angstrom_values:
-            self.ax1.axvline(val2, color='c', linestyle='--')
+            if not self.args.debug_mode:
+                plt.ion()
+                # plt.show()
+            else:
+                plt.ioff()
+            manager = plt.get_current_fig_manager()
+            manager.window.maximize()
+            self.ax1 = self.i_fig.add_subplot(111)
 
-        # print('Blue ' +
-        #       str(self.spectral['blue'].value) +
-        #       ' Red ' +
-        #       str(self.spectral['red'].value))
+            self.ax1.plot([], color='m', label='Pixels')
+            self.ax1.plot([], color='c', label='Angstrom')
+            for val in pixel_values:
+                self.ax1.axvline(self.wsolution(val), color='m')
+            for val2 in angstrom_values:
+                self.ax1.axvline(val2, color='c', linestyle='--')
 
-        # self.ax1.axvline(self.spectral['blue'].value, color='b')
-        # self.ax1.axvline(self.spectral['red'].value, color='r')
+            # print('Blue ' +
+            #       str(self.spectral['blue'].value) +
+            #       ' Red ' +
+            #       str(self.spectral['red'].value))
 
-        self.ax1.plot(reference_lamp_wav_axis,
-                      reference_lamp_data.data,
-                      label='Reference',
-                      color='k',
-                      alpha=1)
+            # self.ax1.axvline(self.spectral['blue'].value, color='b')
+            # self.ax1.axvline(self.spectral['red'].value, color='r')
 
-        self.ax1.plot(self.wsolution(self.raw_pixel_axis),
-                      self.lamp_data,
-                      label='Last Solution',
-                      color='r',
-                      alpha=0.7)
+            self.ax1.plot(reference_lamp_wav_axis,
+                          reference_lamp_data.data,
+                          label='Reference',
+                          color='k',
+                          alpha=1)
 
-        # self.ax1.plot(lamp_axis_pixel,
-        #               self.lamp_data,
-        #               label='Last Solution',
-        #               color='r',
-        #               alpha=0.7)
+            self.ax1.plot(self.wsolution(self.raw_pixel_axis),
+                          self.lamp_data,
+                          label='Last Solution',
+                          color='r',
+                          alpha=0.7)
 
-        try:
-            wavmode = self.lamp_header['wavmode']
-        except KeyError as error:
-            log.debug(error)
-            wavmode = ''
-        # print(self.rms_error, wavmode, self.lamp_header['OBJECT'], '\n')
+            # self.ax1.plot(lamp_axis_pixel,
+            #               self.lamp_data,
+            #               label='Last Solution',
+            #               color='r',
+            #               alpha=0.7)
 
-        self.ax1.legend(loc='best')
-        self.ax1.set_xlabel('Wavelength (Angstrom)')
-        self.ax1.set_ylabel('Intensity (ADU)')
+            try:
+                wavmode = self.lamp_header['wavmode']
+            except KeyError as error:
+                log.debug(error)
+                wavmode = ''
+            # print(self.rms_error, wavmode, self.lamp_header['OBJECT'], '\n')
 
-        self.ax1.set_title('Automatic Wavelength Solution\n'
-                           + self.lamp_header['OBJECT']
-                           + ' ' + wavmode + '\n'
-                           + 'RMS Error: {:.3f}'.format(self.rms_error))
+            self.ax1.legend(loc='best')
+            self.ax1.set_xlabel('Wavelength (Angstrom)')
+            self.ax1.set_ylabel('Intensity (ADU)')
 
-        self.i_fig.tight_layout()
+            self.ax1.set_title('Automatic Wavelength Solution\n'
+                               + self.lamp_header['OBJECT']
+                               + ' ' + wavmode + '\n'
+                               + 'RMS Error: {:.3f}'.format(self.rms_error))
 
-        out_file_name = 'automatic-solution_' + self.lamp_header['OBJECT']
+            self.i_fig.tight_layout()
 
-        file_count = len(glob.glob(os.path.join(self.args.destiny,
-                                                out_file_name + '*')))
+            out_file_name = 'automatic-solution_' + self.lamp_header['OBJECT']
 
-        out_file_name += '_{:04d}.pdf'.format(file_count)
-        pdf_pages = PdfPages(os.path.join(self.args.destiny, out_file_name))
-        plt.savefig(pdf_pages, format='pdf')
-        pdf_pages.close()
-        if self.args.save_plots:
-            plots_path = os.path.join(self.args.destiny, 'plots')
-            if not os.path.isdir(plots_path):
-                os.path.os.makedirs(plots_path)
-            plot_name = os.path.join(plots_path, out_file_name + '.png')
-            plt.savefig(plot_name, dpi=300)
-        if self.args.debug_mode:
-            plt.show()
-        else:
-            plt.draw()
-            plt.pause(1)
-            plt.ioff()
-            plt.close()
-        # plt.close(self.i_fig)
+            file_count = len(glob.glob(os.path.join(self.args.destiny,
+                                                    out_file_name + '*')))
+
+            out_file_name += '_{:04d}.pdf'.format(file_count)
+            pdf_pages = PdfPages(os.path.join(self.args.destiny, out_file_name))
+            plt.savefig(pdf_pages, format='pdf')
+            pdf_pages.close()
+            if self.args.save_plots:
+                plots_path = os.path.join(self.args.destiny, 'plots')
+                if not os.path.isdir(plots_path):
+                    os.path.os.makedirs(plots_path)
+                plot_name = os.path.join(plots_path, out_file_name + '.png')
+                plt.savefig(plot_name, dpi=300)
+            if self.args.debug_mode:
+                plt.show()
+            else:
+                plt.draw()
+                plt.pause(1)
+                plt.ioff()
+                plt.close()
+                # plt.close(self.i_fig)
+
 
     def cross_correlation(self, reference, new_array, mode='full'):
         """Do cross correlation to two arrays
@@ -2161,7 +2165,6 @@ class WavelengthCalibration(object):
         new_header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
 
         # print(new_header['APNUM*'])
-        print(index)
         if index is None:
             f_end = '.fits'
         else:
