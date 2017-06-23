@@ -103,7 +103,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--search-pattern',
                         action='store',
-                        default='cfzsto_',
+                        default='cfzsto',
                         type=str,
                         metavar='<Search Pattern>',
                         dest='pattern',
@@ -232,6 +232,19 @@ class MainApp(object):
         data_container = classify_spectroscopic_data(
             path=self.args.source,
             search_pattern=self.args.pattern)
+
+        # print('data_container.bias')
+        # print(data_container.bias)
+        # print('data_container.day_flats')
+        # print(data_container.day_flats)
+        # print('data_container.dome_flats')
+        # print(data_container.dome_flats)
+        # print('data_container.sky_flats')
+        # print(data_container.sky_flats)
+        # print('data_container.data_groups')
+        # print(data_container.data_groups)
+        # print('data_container.spec_groups')
+        # print(data_container.spec_groups)
 
         self.wavelength_solution_obj = process_spectroscopy_data(
             data_container=data_container,

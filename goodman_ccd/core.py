@@ -734,11 +734,18 @@ def classify_spectroscopic_data(path, search_pattern):
 
     search_path = os.path.join(path, search_pattern + '*.fits')
 
+    file_list = glob.glob(search_path)
+
+    if file_list == []:
+        log.error('No file found using search pattern '
+                  '"{:s}"'.format(search_pattern))
+
+        sys.exit('Please use the argument --search-pattern to define the '
+                 'common prefix for the files to be processed.')
+
     data_container = NightDataContainer(path=path,
                                         instrument=str('Red'),
                                         technique=str('Spectroscopy'))
-
-    file_list = glob.glob(search_path)
 
     keywords = ['date',
                 'slit',
