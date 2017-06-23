@@ -50,8 +50,7 @@ __email__ = "storres@ctio.noao.edu"
 __status__ = "Development"
 
 
-
-def get_args():
+def get_args(arguments=None):
     """Handles the argparse library and returns the arguments
 
     The possible arguments to be used are:
@@ -84,7 +83,6 @@ def get_args():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=textwrap.dedent(
             '''Extracts goodman spectra and does wavelength calibration.'''))
-
 
     parser.add_argument('--data-path',
                         action='store',
@@ -164,16 +162,18 @@ def get_args():
                         dest='plot_results',
                         help="Show wavelength calibrated spectrum at the end.")
 
-    args = parser.parse_args()
-    if args.debug_mode:
-        log.info('Changing log level to DEBUG.')
-        log.setLevel(level=logging.DEBUG)
+    args = parser.parse_args(args=arguments)
+
     if args.log_to_file:
         log.info('Logging to file {:s}'.format(LOG_FILENAME))
         file_handler = logging.FileHandler(LOG_FILENAME)
         formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
         file_handler.setFormatter(fmt=formatter)
         log.addHandler(file_handler)
+
+    if args.debug_mode:
+        log.info('Changing log level to DEBUG.')
+        log.setLevel(level=logging.DEBUG)
 
     # get full path for reference files directory
     ref_full_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
