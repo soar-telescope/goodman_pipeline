@@ -206,10 +206,7 @@ editor, open the file <code class="docutils literal"><span class="pre">~/.bashrc
 $ pwd
 </pre></div>
 </div>
-<dl class="docutils">
-<dt>Whatever the output is there you should replace it for</dt>
-<dd><code class="docutils literal"><span class="pre">/home/user/</span></code></dd>
-</dl>
+<p>Replace <code class="docutils literal"><span class="pre">/home/user/</span></code> for whatever the output is in the last command</p>
 <ol class="arabic simple" start="4">
 <li>Reload the environment variables. For this you can simply close and
 reopen the terminal or you can do:</li>
@@ -225,8 +222,9 @@ reopen the terminal or you can do:</li>
 <p>The pipeline is separated in two sub-pipelines. <em>redccd</em> and <em>redspec</em>.
 The <code class="docutils literal"><span class="pre">--help</span></code> argument will print the argument plus some some
 description</p>
-<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ redccd --help usage: redccd [-h] [-c] [--ignore-bias] [--auto-clean] [--saturation ]
-                              [--raw-path raw_path] [--red-path red_path] [--debug]
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ redccd --help usage: redccd [-h] [-c] [--ignore-bias] [--auto-clean]
+                              [--saturation ] [--raw-path raw_path]
+                              [--red-path red_path] [--debug]
                               [--log-to-file] [--flat-normalize ]
                               [--flat-norm-order ] [--dcr-par-dir ]
                               [--keep-cosmic-files]
@@ -244,8 +242,8 @@ description</p>
    --debug                 Show detailed information of the process.
    --log-to-file           Write log to a file.
    --flat-normalize        Choose a method to normalize the master
-                           flat forspectroscoy. Choices are: mean, simple (model) and
-                           full (fits model to each line).
+                           flat forspectroscoy. Choices are: mean, simple
+                           (model) and full (fits model to each line).
    --flat-norm-order       Defines the order of the model to be fitted.
    --dcr-par-dir           Directory of default dcr.par file.
    --keep-cosmic-files     After cleaning cosmic rays with dcr, do not remove
