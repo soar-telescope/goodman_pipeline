@@ -187,8 +187,8 @@ If you don't know your home directory do the following
    $ cd
    $ pwd
 
-Whatever the output is there you should replace it for
-   ``/home/user/``
+Replace ``/home/user/`` for whatever the output is in the last command
+
 
 4. Reload the environment variables. For this you can simply close and
    reopen the terminal or you can do:
