@@ -45,6 +45,7 @@ _for installing on Centos 7 see
 
 Below you will find the instrucctions anyways, please refer to the wiki for the
 specifics.
+
 ### Get the code
 
 #### Install Git
@@ -84,7 +85,7 @@ You may have some issues when using MatPlotLib on `virtualenvs` and on Mac OSX. 
 the instructions on [this site](http://matplotlib.org/faq/osx_framework.html#osxframework-faq) and, then add the 
 following line on your `.bashrc` or `.bash_profile` file.
 
-```bash
+```shell
 alias python='pythonw' 
 ```
 
@@ -172,7 +173,7 @@ $ redccd --help
 Goodman CCD Reduction - CCDreductions for Goodman spectroscopic data
 
 optional arguments:
-  -h, --help            show this help message and exit
+  -h, --help            Show this help message and exit
   -c, --cosmic          Clean cosmic rays from science data.
   --ignore-bias         Ignore bias correction
   --auto-clean          Automatically clean reduced data directory
@@ -183,7 +184,7 @@ optional arguments:
   --log-to-file         Write log to a file.
   --flat-normalize <Normalization Method>
                         Choose a method to normalize the master flat
-                        forspectroscoy. Choices are: mean, simple (model)and
+                        forspectroscoy. Choices are: mean, simple (model) and
                         full (fits model to each line).
   --flat-norm-order <Order>
                         Defines the order of the model to be fitted.

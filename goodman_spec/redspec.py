@@ -55,22 +55,22 @@ def get_args(arguments=None):
 
     The possible arguments to be used are:
 
-        --data-path: has to be the source directory, where the data (images) is.
-            The location is `self.source` and the default value is ./
-        --proc-path: is the destination where all new files/data will be
-            placed. The location is `self.destiny` and the default value is ./
-        --search-pattern: the pattern that matches the reduced data that
-            will be processed. The location is `self.pattern` default value is
-            fc\_
-        --interactive: Interactive Wavelength Solution. Enabled by default
-        --output-prefix: Prefix to use to name wavelength calibrated spectrum
-        --extraction: Spectrum extraction type. Simple or optimal.
-        --reference-files: Directory of reference files location
-        --debug: Show plots for intermediate steps. Also prints more messages.
-        --log-to-file: Write the log to a file.
-        --save-plots: Save all plots ina directory
-        --plot-results: Show a plot of the wavelength calibrated data at the
-            end.
+    --data-path: has to be the source directory, where the data (images) is.
+        The location is `self.source` and the default value is ./
+    --proc-path: is the destination where all new files/data will be
+        placed. The location is `self.destiny` and the default value is ./
+    --search-pattern: the pattern that matches the reduced data that
+        will be processed. The location is `self.pattern` default value is
+        fc\_
+    --interactive: Interactive Wavelength Solution. Enabled by default
+    --output-prefix: Prefix to use to name wavelength calibrated spectrum
+    --extraction: Spectrum extraction type. Simple or optimal.
+    --reference-files: Directory of reference files location
+    --debug: Show plots for intermediate steps. Also prints more messages.
+    --log-to-file: Write the log to a file.
+    --save-plots: Save all plots ina directory
+    --plot-results: Show a plot of the wavelength calibrated data at the
+        end.
 
 
     Returns:

@@ -4,6 +4,14 @@ goodman_ccd package
 Submodules
 ----------
 
+goodman_ccd.core module
+-----------------------
+
+.. automodule:: goodman_ccd.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 goodman_ccd.data_classifier module
 ----------------------------------
 
