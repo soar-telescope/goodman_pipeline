@@ -54,11 +54,20 @@
 <span class="sd">This module performs intermediate steps in the process to obtain a wavelength calibrated spectrum</span>
 <span class="sd">the __call__ method returns a list contained uni-dimensional data extracted and the modified instance of ScienceObject</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
+
+
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">astropy.modeling</span> <span class="k">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">fitting</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;GTK3Agg&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
+<span class="kn">from</span> <span class="nn">astropy.modeling</span> <span class="k">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">fitting</span>
+<span class="kn">from</span> <span class="nn">goodman_ccd.core</span> <span class="k">import</span> <span class="n">add_wcs_keys</span>
+
 
 
 <span class="c1"># FORMAT = &#39;%(levelname)s:%(filename)s:%(module)s: %(message)s&#39;</span>
@@ -90,8 +99,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span> <span class="o">=</span> <span class="n">sci_obj</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">source</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">file_name</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_wcs_keys</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">file_name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">file_name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="n">add_wcs_keys</span><span class="p">(</span><span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                                                               <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">file_name</span><span class="p">)))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lamps_data</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lamps_header</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">close_targets</span> <span class="o">=</span> <span class="kc">False</span>
@@ -120,11 +131,11 @@
         <span class="k">if</span> <span class="n">extract_lamps</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">lamp_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">lamp_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">lamp_count</span><span class="p">):</span>
-                    <span class="n">lamp_data</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">lamp_file</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">])</span>
+                    <span class="n">lamp_data</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">lamp_file</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">]))</span>
                     <span class="c1"># lamp_type = self.science_object.lamp_type[lamp_index]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">lamps_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lamp_data</span><span class="p">)</span>
-                    <span class="n">lamp_header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_wcs_keys</span><span class="p">(</span>
-                        <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">lamp_file</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">]))</span>
+                    <span class="n">lamp_header</span> <span class="o">=</span> <span class="n">add_wcs_keys</span><span class="p">(</span>
+                        <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">lamp_file</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">])))</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">lamps_header</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lamp_header</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;There Are no lamps available for the target: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -214,7 +225,7 @@
                                 <span class="n">raw_width</span><span class="o">=</span><span class="n">sample_width</span><span class="p">,</span>
                                 <span class="n">sample_loc</span><span class="o">=</span><span class="n">sample_loc</span><span class="p">))</span>
                             <span class="c1"># fitted_model = voigt</span>
-                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plots_enabled</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
                                 <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">spectrum</span> <span class="o">-</span> <span class="n">i</span><span class="p">,</span> <span class="n">spectrum</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Spectrum width&#39;</span><span class="p">)</span>
                                 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sub_sample_x_axis</span><span class="p">,</span> <span class="n">voigt</span><span class="p">(</span><span class="n">sub_sample_x_axis</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Voigt Fit&#39;</span><span class="p">)</span>
                                 <span class="c1"># plt.axvline(centroid, color=&#39;k&#39;)</span>
@@ -226,7 +237,7 @@
                         <span class="k">pass</span>
                     <span class="k">break</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plots_enabled</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">sample_median</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Median&#39;</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mf">1.1</span> <span class="o">*</span> <span class="n">sample_median</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;c&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;110% Median&#39;</span><span class="p">)</span>
@@ -369,7 +380,7 @@
                 <span class="n">traces</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">cheb</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">region</span><span class="p">])</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">update_no_targets</span><span class="p">(</span><span class="n">add_one</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plots_enabled</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
                     <span class="n">fig1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
                     <span class="n">fig1</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">set_window_title</span><span class="p">(</span><span class="s1">&#39;Trace&#39;</span><span class="p">)</span>
                     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
@@ -592,7 +603,7 @@
                         <span class="c1"># headers.append(self.lamps_header[lamp_index])</span>
                 <span class="c1">#</span>
                 <span class="c1"># Plot background subtraction</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">plots_enabled</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
                     <span class="c1"># sci_sample = sci[int(len(sci) / 2.) - 30:int(len(sci) / 2.) + 30]</span>
                     <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
                     <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">set_window_title</span><span class="p">(</span><span class="s1">&#39;Subtraction&#39;</span><span class="p">)</span>
@@ -618,39 +629,7 @@
             <span class="k">return</span> <span class="n">sci_pack</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;There are no traces discovered here!!.&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">None</span></div>
-
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="Process.add_wcs_keys"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.process.Process.add_wcs_keys">[docs]</a>    <span class="k">def</span> <span class="nf">add_wcs_keys</span><span class="p">(</span><span class="n">header</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Adds generic keyword to the header</span>
-<span class="sd">        Linear wavelength solutions require a set of standard fits keywords. Later on they will be updated accordingly</span>
-<span class="sd">        The main goal of putting them here is to have consistent and nicely ordered headers</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            header (object): New header without WCS entries</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            header (object): Modified header</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;BANDID1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;spectrum - background none, weights none, clean no&#39;</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;APNUM1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1 1 0 0&#39;</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;WCSDIM&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;CTYPE1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;LINEAR&#39;</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;CRPIX1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;CDELT1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;CD1_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;LTM1_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;WAT0_001&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;system=equispec&#39;</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;WAT1_001&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;wtype=linear label=Wavelength units=angstroms&#39;</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;DC-FLAG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">header</span><span class="p">[</span><span class="s1">&#39;DCLOG1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;REFSPEC1 = non set&#39;</span>
-            <span class="k">return</span> <span class="n">header</span>
-        <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Can&#39;t add wcs keywords to header&quot;</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">err</span><span class="p">)</span></div></div>
+            <span class="k">return</span> <span class="kc">None</span></div></div>
 
 
 <div class="viewcode-block" id="IdentifiedTarget"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.process.IdentifiedTarget">[docs]</a><span class="k">class</span> <span class="nc">IdentifiedTarget</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -741,20 +720,22 @@
 <div class="viewcode-block" id="SciencePack.check_consistency"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.process.SciencePack.check_consistency">[docs]</a>    <span class="k">def</span> <span class="nf">check_consistency</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Check that all stored data is consistent</span>
 
-<span class="sd">        There should be the same number of _data_ and their respective _headers_, the same for _lamps\_data_ and</span>
-<span class="sd">        _lamps\_headers_</span>
+<span class="sd">        There should be the same number of _data_ and their respective</span>
+<span class="sd">        _headers_, the same for _lamps\_data_ and _lamps\_headers_</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">):</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Science data and headers are consistent&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Science data and headers are not consistent&#39;</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Data: </span><span class="si">%s</span><span class="s1">, Headers: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Data: </span><span class="si">{:d}</span><span class="s1">, Headers: </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span>
+                                                         <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamps_data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamps_headers</span><span class="p">):</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Lamps data and headers are consistent&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Lamps data and headers are not consistent&#39;</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Lamps: </span><span class="si">%s</span><span class="s1">, Headers: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">))</span></div></div>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Lamps: </span><span class="si">{:d}</span><span class="s1">, Headers: </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span>
+                                                         <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)))</span></div></div>
 </pre></div>
 
           </div>

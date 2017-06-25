@@ -4,6 +4,14 @@ goodman_spec package
 Submodules
 ----------
 
+goodman_spec.id_and_extract module
+----------------------------------
+
+.. automodule:: goodman_spec.id_and_extract
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 goodman_spec.linelist module
 ----------------------------
 

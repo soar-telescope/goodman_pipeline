@@ -63,8 +63,13 @@
 <span class="sd">    CuAr: Copper Argon</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">pandas</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">ccdproc</span> <span class="k">as</span> <span class="nn">ccd</span>
+<span class="kn">import</span> <span class="nn">re</span>
 
 <span class="c1"># FORMAT = &#39;%(levelname)s:%(filename)s:%(module)s: 	%(message)s&#39;</span>
 <span class="c1"># log.basicConfig(level=log.DEBUG, format=FORMAT)</span>
@@ -86,7 +91,8 @@
 <span class="sd">            args(class): All the arguments parsed to the parent program</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="c1"># self.reference_files_path = os.path.expanduser(&#39;~/&#39;) + &#39;./refdata/&#39;</span>
+        <span class="n">reference_collection</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">ImageFileCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_lamp_collection</span> <span class="o">=</span> <span class="n">reference_collection</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lamps_file_list</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cuhear&#39;</span><span class="p">:</span> <span class="s1">&#39;goodman_comp_600_BLUE_CuHeAr.fits&#39;</span><span class="p">,</span>
                                 <span class="s1">&#39;hgar&#39;</span><span class="p">:</span> <span class="s1">&#39;hgar_reference_soar.fits&#39;</span><span class="p">,</span>
                                 <span class="s1">&#39;hgarne&#39;</span><span class="p">:</span> <span class="s1">&#39;goodman_comp_400_M2_GG455_HgArNe.fits&#39;</span><span class="p">}</span>
@@ -787,24 +793,55 @@
 <span class="sd">            reference_lamp(str): Full path to reference lamps</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">lamp_name</span> <span class="o">=</span> <span class="n">lamp_name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="c1"># TODO (simon): Do this using ImageFileCollection</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">reference_lamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamps_file_list</span><span class="p">[</span><span class="n">lamp_name</span><span class="p">]</span>
+            <span class="n">reference_lamp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamps_file_list</span><span class="p">[</span><span class="n">lamp_name</span><span class="p">])</span>
             <span class="k">return</span> <span class="n">reference_lamp</span>
         <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Reference lamp </span><span class="si">%s</span><span class="s1"> does not exist&#39;</span><span class="p">,</span> <span class="n">lamp_name</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span></div>
+
+<div class="viewcode-block" id="ReferenceData.get_best_reference_lamp"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.linelist.ReferenceData.get_best_reference_lamp">[docs]</a>    <span class="k">def</span> <span class="nf">get_best_reference_lamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds a suitable template lamp from the catalog</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            header:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">criteria</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;slit&#39;</span><span class="p">,</span> <span class="s1">&#39;cam_targ&#39;</span><span class="p">,</span> <span class="s1">&#39;grt_targ&#39;</span><span class="p">,</span> <span class="s1">&#39;grating&#39;</span><span class="p">,</span><span class="s1">&#39;object&#39;</span><span class="p">]</span>
+        <span class="n">lamp_pandas_data_frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_lamp_collection</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ref_lamp_collection</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lamp_pandas_data_frame</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">lamp_pandas_data_frame</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># print(lamp_pandas_data_frame.file)</span>
+                <span class="n">keyword_to_filter</span> <span class="o">=</span> <span class="n">criteria</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                <span class="c1"># print(&#39;Filter: &#39; + keyword_to_filter)</span>
+                <span class="n">lamp_pandas_data_frame</span> <span class="o">=</span> <span class="n">lamp_pandas_data_frame</span><span class="p">[</span>
+                    <span class="p">(</span><span class="n">lamp_pandas_data_frame</span><span class="p">[</span><span class="n">keyword_to_filter</span><span class="p">]</span> <span class="o">==</span> <span class="n">header</span><span class="p">[</span><span class="n">keyword_to_filter</span><span class="p">])]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;There is no reference lamp found&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lamp_name</span> <span class="o">=</span> <span class="n">lamp_pandas_data_frame</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ref_lamp_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span><span class="p">,</span> <span class="n">lamp_name</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Reference Lamp Full Path&#39;</span> <span class="o">+</span> <span class="n">ref_lamp_full_path</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ref_lamp_full_path</span>
+        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;No lamp found in reference files.&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="ReferenceData.get_ref_spectrum_from_linelist"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.linelist.ReferenceData.get_ref_spectrum_from_linelist">[docs]</a>    <span class="k">def</span> <span class="nf">get_ref_spectrum_from_linelist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">red</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Experimental not working at the moment</span>
 
 <span class="sd">        Builds a unidimensional spectrum to be used as a template for finding an automatic wavelength solution</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># raise DeprecationWarning</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">elements</span> <span class="o">=</span> <span class="p">[</span><span class="n">name</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="mi">2</span><span class="p">)]</span>
             <span class="k">for</span> <span class="n">element</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>
                 <span class="n">linelist_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">line_list_files</span><span class="p">[</span><span class="n">element</span><span class="p">]</span>
                 <span class="n">pandas_data_frame</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span> <span class="o">+</span> <span class="n">linelist_file</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">linelist_file</span><span class="p">,</span> <span class="n">pandas_data_frame</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">red</span><span class="p">)</span>
+                <span class="c1"># print(linelist_file, pandas_data_frame, blue, red)</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Error in the calibration lamp name: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>

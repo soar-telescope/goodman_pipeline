@@ -48,73 +48,271 @@
             
   <div class="section" id="goodman-high-throughput-spectrograph">
 <h1>Goodman High Throughput Spectrograph<a class="headerlink" href="#goodman-high-throughput-spectrograph" title="Permalink to this headline">¶</a></h1>
-<p><strong>WARNING</strong> This is the first release of this pipeline, although we have
-thoroughly tested it there might still be bugs. Please let me know by an
-e-mail to storres [at] ctio noao edu.</p>
+<p><strong>Important</strong> This is a Beta Release Candidate version of this pipeline,
+although we have thoroughly tested it there might (and will) still be
+bugs. Please let us know if you find any. My e-mail is storres [at] ctio
+noao edu.</p>
 <p>The Goodman High Throughput Spectrograph is an imaging spectrograph, if
 you wish to know more about the instrument please check the <a class="reference external" href="http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph">SOAR
 website</a></p>
-<p>To see the GitHub site go <a class="reference external" href="https://github.com/simontorres/goodman">here</a></p>
+<p>To see full documentation please go to the GitHub hosted site for
+<a class="reference external" href="https://soar-telescope.github.io/goodman/">Goodman</a></p>
 <div class="section" id="what-is-contained-in-this-package">
 <h2>What is contained in this package?<a class="headerlink" href="#what-is-contained-in-this-package" title="Permalink to this headline">¶</a></h2>
-<p>This repository contains tools for spectroscopy, but after the data is
-reduced, i.e. bias and flat corrected, for that part please use <a class="reference external" href="https://github.com/dsanmartim/goodman_ccdreduction">David
-Sanmartim&#8217;s</a>
-github repository.</p>
-<p>This package have the following capabilities.</p>
+<p>This repository contains tools for processing Goodman&#8217;s spectrograph
+data. It is separated into two main components. The <strong>CCD</strong> part is done
+by <em>redccd</em> originally developed by <a class="reference external" href="https://github.com/dsanmartim">David
+Sanmartim</a> and currently maintained by
+our team. It does the standard <em>ccd image reduction</em>, i.e. trim, bias
+and flat correction. Currently the ccd reduction pipeline has been
+integrated into this package so there is no need to look for it
+separately. The <strong>Spectroscopic</strong> processing is done by <em>redspec</em> and
+includes the following features:</p>
 <ul class="simple">
-<li>Identify targets in images</li>
-<li>Trace the target</li>
-<li>Extract the target with background subtraction</li>
-<li>Find the wavelength Solution (Requires User Input)</li>
-<li>Linearize data</li>
-<li>Write wavelength solution to a FITS header</li>
-<li>Create a new file for the wavelength calibrated 1D spectrum</li>
+<li>[x] Identify targets in images</li>
+<li>[x] Trace the target</li>
+<li>[x] Extract the target with background subtraction</li>
+<li>[x] Find the wavelength Solution, interactive and automatically</li>
+<li>[x] Linearize data (resample)</li>
+<li>[x] Write wavelength solution to a FITS header</li>
+<li>[x] Create a new file for the wavelength calibrated 1D spectrum</li>
 </ul>
+<p>There is also a library of calibrated spectrum in FITS format. Different
+configurations are provided but is very easy to add your own.</p>
 </div>
 <div class="section" id="how-to-install-it">
 <h2>How to install it?<a class="headerlink" href="#how-to-install-it" title="Permalink to this headline">¶</a></h2>
-<p>Either clone or download this code. If you decide to clone it, just do:</p>
-<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">simontorres</span><span class="o">/</span><span class="n">goodman</span><span class="o">.</span><span class="n">git</span>
+<div class="section" id="specific-platform-instructions">
+<h3>Specific platform instructions<a class="headerlink" href="#specific-platform-instructions" title="Permalink to this headline">¶</a></h3>
+<p>for installing on Ubuntu 16.04 see <a class="reference external" href="https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience">this
+wiki</a></p>
+<p>for installing on Centos 7 see <a class="reference external" href="https://github.com/simontorres/goodman/wiki/Centos-7-Installation">this
+wiki</a></p>
+<p>Below you will find the instrucctions anyways, please refer to the wiki
+for the specifics.</p>
+</div>
+<div class="section" id="get-the-code">
+<h3>Get the code<a class="headerlink" href="#get-the-code" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="install-git">
+<h4>Install Git<a class="headerlink" href="#install-git" title="Permalink to this headline">¶</a></h4>
+<p>This step will depend on your platform, below are two examples:</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="c1"># Centos</span>
+<span class="n">sudo</span> <span class="n">yum</span> <span class="n">install</span> <span class="n">git</span>
+
+<span class="c1"># Ubuntu</span>
+<span class="n">sudo</span> <span class="n">apt</span><span class="o">-</span><span class="n">get</span> <span class="n">install</span> <span class="n">git</span>
 </pre></div>
 </div>
-<p>Or you can simply go and <a class="reference external" href="https://github.com/simontorres/goodman/archive/master.zip">click
-here</a> for
-download a zip file with all the script files.</p>
+</div>
+<div class="section" id="clone-from-github">
+<h4>Clone from GitHub<a class="headerlink" href="#clone-from-github" title="Permalink to this headline">¶</a></h4>
+<p>To clone from GitHub copy and paste the following line in a terminal.</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">soar</span><span class="o">-</span><span class="n">telescope</span><span class="o">/</span><span class="n">goodman</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+<p>You are not ready to install the pipeline yet.</p>
+</div>
 <div class="section" id="requirements">
-<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
+<h4>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h4>
 <p>This software was developed on Python 2.7, use the <code class="docutils literal"><span class="pre">requirements.txt</span></code>
 file to install all dependencies.</p>
 <div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="o">-</span><span class="n">H</span> <span class="n">pip2</span><span class="o">.</span><span class="mi">7</span> <span class="n">install</span> <span class="o">-</span><span class="n">r</span> <span class="n">requirements</span><span class="o">.</span><span class="n">txt</span>
 </pre></div>
 </div>
+<p>Remember that if you do not have super user privileges, you can still
+install all the requirements by adding the <code class="docutils literal"><span class="pre">--users</span></code> flag. There is
+also an option of <a class="reference external" href="http://docs.python-guide.org/en/latest/dev/virtualenvs/">installing it using different virtual
+environments</a>
+or even using <a class="reference external" href="https://www.continuum.io/downloads">Anaconda</a>.</p>
+<p>You may have some issues when using MatPlotLib on <code class="docutils literal"><span class="pre">virtualenvs</span></code> and on
+Mac OSX. If so, you can try to follow the instructions on <a class="reference external" href="http://matplotlib.org/faq/osx_framework.html#osxframework-faq">this
+site</a>
+and, then add the following line on your <code class="docutils literal"><span class="pre">.bashrc</span></code> or
+<code class="docutils literal"><span class="pre">.bash_profile</span></code> file.</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">alias</span> <span class="n">python</span><span class="o">=</span><span class="s1">&#39;pythonw&#39;</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="install-dcr-cosmic-ray-rejection">
+<h3>Install DCR (Cosmic Ray Rejection)<a class="headerlink" href="#install-dcr-cosmic-ray-rejection" title="Permalink to this headline">¶</a></h3>
+<p>This pipeline uses <a class="reference external" href="http://users.camk.edu.pl/pych/DCR/">DCR</a>
+developed by <a class="reference external" href="mailto:pych&#37;&#52;&#48;camk&#46;edu&#46;pl">Wojtek Pych</a> instead of
+<code class="docutils literal"><span class="pre">ccdproc.cosmicray_lacosmic</span></code> because we got better results with
+<code class="docutils literal"><span class="pre">DCR</span></code>. Unfortunately you will have to compile it, I have successfully
+compiled it on Centos 7, Ubuntu 16.04, Linux Mint 18.1, Solaris 11 and
+MacOS Sierra.</p>
+<p>Follow <a class="reference external" href="http://users.camk.edu.pl/pych/DCR/">this link</a> and you can
+follow the instructions there. The same instructions are reproduced
+here.</p>
+<p>Download the <code class="docutils literal"><span class="pre">dcr.tar</span></code> file and untar it.</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">tar</span> <span class="o">-</span><span class="n">xvf</span> <span class="n">dcr</span><span class="o">.</span><span class="n">tar</span>
+</pre></div>
+</div>
+<p>Compile it</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="n">make</span>
+</pre></div>
+</div>
+<p>If you don&#8217;t get any errors you can try it without any arguments and you
+will get something like this</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ ./dcr
+
+        USAGE:  dcr  input_file  cleaned_file  cosmicrays_file
+
+File &#39;dcr.par&#39; must be present in the working directory.
+      ~~~~~~
+</pre></div>
+</div>
+<div class="section" id="make-it-available-for-the-system">
+<h4>Make it available for the system<a class="headerlink" href="#make-it-available-for-the-system" title="Permalink to this headline">¶</a></h4>
+<p>Now that you have compiled the program you have a file called <code class="docutils literal"><span class="pre">dcr</span></code>
+you need to put it in the <code class="docutils literal"><span class="pre">$PATH</span></code> variable of your system. I usually
+use <code class="docutils literal"><span class="pre">bash</span></code> so if you use something different follow the example below
+as a guide.</p>
+<ol class="arabic simple">
+<li>Create a directory to place the executable</li>
+</ol>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ mkdir ~/.bin
+</pre></div>
+</div>
+<p>Note that in the example above the
+directory .bin will be hidden and the symbol <code class="docutils literal"><span class="pre">~</span></code> denotes your home
+directory for instance: <code class="docutils literal"><span class="pre">/home/goodman/</span></code></p>
+<ol class="arabic simple" start="2">
+<li>Move <code class="docutils literal"><span class="pre">dcr</span></code> to your new folder.</li>
+</ol>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ mv dcr ~/.bin
+</pre></div>
+</div>
+<ol class="arabic simple" start="3">
+<li>Add the directory to the <code class="docutils literal"><span class="pre">PATH</span></code> variable. With your favorite text
+editor, open the file <code class="docutils literal"><span class="pre">~/.bashrc</span></code></li>
+</ol>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ vim ~/.bashrc
+</pre></div>
+</div>
+<p>At the end add the following line</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>export PATH=$PATH:/home/user/.bin
+</pre></div>
+</div>
+<p>If you don&#8217;t know your home directory do the following</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ cd
+$ pwd
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>Whatever the output is there you should replace it for</dt>
+<dd><code class="docutils literal"><span class="pre">/home/user/</span></code></dd>
+</dl>
+<ol class="arabic simple" start="4">
+<li>Reload the environment variables. For this you can simply close and
+reopen the terminal or you can do:</li>
+</ol>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ source ~/.bashrc
+</pre></div>
+</div>
+</div>
 </div>
 </div>
 <div class="section" id="how-to-use-it">
 <h2>How to use it?<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h2>
-<p>To get a list of the possible arguments do:</p>
-<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">this</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">redspec</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
+<p>The pipeline is separated in two sub-pipelines. <em>redccd</em> and <em>redspec</em>.
+The <code class="docutils literal"><span class="pre">--help</span></code> argument will print the argument plus some some
+description</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ redccd --help usage: redccd [-h] [-c] [--ignore-bias] [--auto-clean] [--saturation ]
+                              [--raw-path raw_path] [--red-path red_path] [--debug]
+                              [--log-to-file] [--flat-normalize ]
+                              [--flat-norm-order ] [--dcr-par-dir ]
+                              [--keep-cosmic-files]
+
+ Goodman CCD Reduction - CCDreductions for Goodman spectroscopic data
+
+ optional arguments:
+   -h, --help              show this help message and exit -c,
+   --cosmic                Clean cosmic rays from science data.
+   --ignore-bias           Ignore bias correction
+   --auto-clean            Automatically clean reduced data directory
+   --saturation            Saturation limit. Default to 55.000 ADU (counts)
+   --raw-path raw_path     Path to raw data.
+   --red-path red_path     Path to reduced data.
+   --debug                 Show detailed information of the process.
+   --log-to-file           Write log to a file.
+   --flat-normalize        Choose a method to normalize the master
+                           flat forspectroscoy. Choices are: mean, simple (model) and
+                           full (fits model to each line).
+   --flat-norm-order       Defines the order of the model to be fitted.
+   --dcr-par-dir           Directory of default dcr.par file.
+   --keep-cosmic-files     After cleaning cosmic rays with dcr, do not remove
+                           the input file and the cosmic rays file.
 </pre></div>
 </div>
-<p>The simplest way of running this pipeline is to go to your data folder,
-already processed with
-<a class="reference external" href="https://github.com/dsanmartim/goodman_ccdreduction">goodman_ccdreduction</a>
-and execute <code class="docutils literal"><span class="pre">redspec.py</span></code></p>
-<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="o">/</span><span class="n">path</span><span class="o">/</span><span class="n">to</span><span class="o">/</span><span class="n">this</span><span class="o">/</span><span class="n">repo</span><span class="o">/</span><span class="n">redspec</span><span class="o">.</span><span class="n">py</span>
+<p>And for <code class="docutils literal"><span class="pre">redspec</span></code>:</p>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span>$ redspec --help usage: redspec [-h] [--data-path ]
+                                [--proc-path ]
+                                [--search-pattern ]
+                                [--output-prefix ] [--extraction ]
+                                [--reference-files ] [--interactive]
+                                [--debug][--log-to-file]
+                                [--save-plots] [--plot-results]
+
+ Extracts goodman spectra and does wavelength calibration.
+
+ optional arguments:
+   -h, --help              show this help message and exit
+   --data-path             Path for location of raw data. Default &lt;./&gt;
+   --proc-path             Path for destination of processed data. Default &lt;./&gt;
+   --search-pattern        Pattern for matching the goodman&#39;s reduced data.
+   --output-prefix         Prefix to add to calibrated spectrum.
+   --extraction            Choose a which extraction to perform. Simple is a
+                           sum across the spatial direction after the
+                           background has been removed. Optimal is a more
+                           advanced method that considers weights and
+                           profile fitting.
+   --reference-files       Directory of Reference files location
+   --interactive           Interactive wavelength solution.Disbled by
+                           default.
+   --debug                 Debugging Mode
+   --log-to-file           Write log to a file
+   --save-plots            Save all plots in a directory
+   --plot-results          Show wavelength calibrated spectrum at the end.
 </pre></div>
 </div>
-<p>Will run the following defaults:</p>
-<ul class="simple">
-<li>Observing Mode <strong>0</strong>: One solution applied to all night</li>
-<li>Interactive Mode <strong>True</strong></li>
-<li>Data Path <strong>./</strong></li>
-<li>Destination folder for processed data <strong>./</strong></li>
-<li>Search Pattern <strong>fzh_</strong></li>
-<li>Output prefix <strong>g</strong></li>
-<li>Reference Files Path [/path/to/this/repo/]**refdata/**</li>
-<li>Plots Enabled <strong>False</strong></li>
-<li>Reference Lamp <strong>None</strong></li>
-</ul>
+<p>You should always run <code class="docutils literal"><span class="pre">redccd</span></code> first and then <code class="docutils literal"><span class="pre">redspec</span></code>. There are
+certain defaults values</p>
+<div class="section" id="redccd-defaults">
+<h3>redccd Defaults<a class="headerlink" href="#redccd-defaults" title="Permalink to this headline">¶</a></h3>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">cosmic</span>              <span class="kc">False</span>
+<span class="o">--</span><span class="n">ignore</span><span class="o">-</span><span class="n">bias</span>         <span class="kc">False</span>
+<span class="o">--</span><span class="n">auto</span><span class="o">-</span><span class="n">clean</span>          <span class="kc">False</span>
+<span class="o">--</span><span class="n">debug</span>               <span class="kc">False</span>
+<span class="o">--</span><span class="n">log</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">file</span>         <span class="kc">False</span>
+<span class="o">--</span><span class="n">keep</span><span class="o">-</span><span class="n">cosmic</span><span class="o">-</span><span class="n">files</span>   <span class="kc">False</span>
+<span class="o">--</span><span class="n">saturation</span>          <span class="mi">55000</span>
+<span class="o">--</span><span class="n">raw</span><span class="o">-</span><span class="n">path</span>            <span class="o">./</span>
+<span class="o">--</span><span class="n">red</span><span class="o">-</span><span class="n">path</span>            <span class="o">./</span><span class="n">RED</span><span class="o">/</span>
+<span class="o">--</span><span class="n">flat</span><span class="o">-</span><span class="n">normalize</span>      <span class="n">simple</span>
+<span class="o">--</span><span class="n">dcr</span><span class="o">-</span><span class="n">par</span><span class="o">-</span><span class="nb">dir</span>         <span class="n">files</span><span class="o">/</span>
+<span class="o">--</span><span class="n">flat</span><span class="o">-</span><span class="n">norm</span><span class="o">-</span><span class="n">order</span>     <span class="mi">15</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="redspec-defaults">
+<h3>redspec Defaults<a class="headerlink" href="#redspec-defaults" title="Permalink to this headline">¶</a></h3>
+<div class="code shell highlight-default"><div class="highlight"><pre><span></span><span class="o">--</span><span class="n">data</span><span class="o">-</span><span class="n">path</span>         <span class="o">./</span>
+<span class="o">--</span><span class="n">proc</span><span class="o">-</span><span class="n">path</span>         <span class="o">./</span>
+<span class="o">--</span><span class="n">search</span><span class="o">-</span><span class="n">pattern</span>    <span class="n">cfzsto</span>
+<span class="o">--</span><span class="n">extraction</span>        <span class="n">simple</span>
+<span class="o">--</span><span class="n">reference</span><span class="o">-</span><span class="n">files</span>   <span class="n">refdata</span>
+<span class="o">--</span><span class="n">reference</span><span class="o">-</span><span class="n">lamp</span>    <span class="p">(</span><span class="n">empty</span> <span class="n">string</span><span class="p">)</span>
+<span class="o">--</span><span class="n">output</span><span class="o">-</span><span class="n">prefix</span>     <span class="n">g</span>
+<span class="o">--</span><span class="n">interactive</span>       <span class="kc">False</span>
+<span class="o">--</span><span class="n">debug</span>             <span class="kc">False</span>
+<span class="o">--</span><span class="n">log</span><span class="o">-</span><span class="n">to</span><span class="o">-</span><span class="n">file</span>       <span class="kc">False</span>
+<span class="o">--</span><span class="n">save</span><span class="o">-</span><span class="n">plots</span>        <span class="kc">False</span>
+<span class="o">--</span><span class="n">plot</span><span class="o">-</span><span class="n">results</span>      <span class="kc">False</span>
+</pre></div>
+</div>
+</div>
 </div>
 </div>
 
@@ -129,10 +327,24 @@ and execute <code class="docutils literal"><span class="pre">redspec.py</span></
 <li><a class="reference internal" href="#">Goodman High Throughput Spectrograph</a><ul>
 <li><a class="reference internal" href="#what-is-contained-in-this-package">What is contained in this package?</a></li>
 <li><a class="reference internal" href="#how-to-install-it">How to install it?</a><ul>
+<li><a class="reference internal" href="#specific-platform-instructions">Specific platform instructions</a></li>
+<li><a class="reference internal" href="#get-the-code">Get the code</a><ul>
+<li><a class="reference internal" href="#install-git">Install Git</a></li>
+<li><a class="reference internal" href="#clone-from-github">Clone from GitHub</a></li>
 <li><a class="reference internal" href="#requirements">Requirements</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#how-to-use-it">How to use it?</a></li>
+<li><a class="reference internal" href="#install-dcr-cosmic-ray-rejection">Install DCR (Cosmic Ray Rejection)</a><ul>
+<li><a class="reference internal" href="#make-it-available-for-the-system">Make it available for the system</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#how-to-use-it">How to use it?</a><ul>
+<li><a class="reference internal" href="#redccd-defaults">redccd Defaults</a></li>
+<li><a class="reference internal" href="#redspec-defaults">redspec Defaults</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>

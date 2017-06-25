@@ -52,13 +52,16 @@
 <span class="c1"># -*- coding: utf8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Pipeline for GOODMAN spectra Extraction.</span>
 
-<span class="sd">This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded, etc. that match the &lt;pattern&gt;</span>
-<span class="sd">in the source folder, then classify them in two groups: Science or Lamps. For science images, finds the spectrum</span>
-<span class="sd">or spectra and traces it doing some fit.</span>
+<span class="sd">This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded,</span>
+<span class="sd">etc. that match the &lt;pattern&gt; in the source folder, then classify them in two</span>
+<span class="sd">groups: Science or Lamps. For science images, finds the spectrum or spectra and</span>
+<span class="sd">traces it doing some fit.</span>
 <span class="sd">Simon Torres 2016-06-28</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="c1"># TODO (simon): Change all astropy.io.fits to astropy.CCDData.read</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -68,14 +71,25 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;GTK3Agg&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="c1"># from astropy import log</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
-<span class="kn">from</span> <span class="nn">process</span> <span class="k">import</span> <span class="n">Process</span><span class="p">,</span> <span class="n">SciencePack</span>
-<span class="kn">from</span> <span class="nn">wavelength</span> <span class="k">import</span> <span class="n">WavelengthCalibration</span>
+<span class="kn">from</span> <span class="nn">ccdproc</span> <span class="k">import</span> <span class="n">CCDData</span>
+<span class="kn">from</span> <span class="nn">.process</span> <span class="k">import</span> <span class="n">Process</span><span class="p">,</span> <span class="n">SciencePack</span>
+<span class="kn">from</span> <span class="nn">.wavelength</span> <span class="k">import</span> <span class="n">WavelengthCalibration</span><span class="p">,</span> <span class="n">process_spectroscopy_data</span>
+<span class="kn">from</span> <span class="nn">goodman_ccd.core</span> <span class="k">import</span> <span class="p">(</span><span class="n">print_spacers</span><span class="p">,</span>
+                              <span class="n">ra_dec_to_deg</span><span class="p">,</span>
+                              <span class="n">convert_time</span><span class="p">,</span>
+                              <span class="n">print_default_args</span><span class="p">,</span>
+                              <span class="n">classify_spectroscopic_data</span><span class="p">)</span>
+
 
 <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
-<span class="n">FORMAT</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(levelname)s</span><span class="s1">: </span><span class="si">%(asctime)s</span><span class="s1">:</span><span class="si">%(module)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
-<span class="n">DATE_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">/%Y %I:%M:%S%p&#39;</span>
+<span class="n">FORMAT</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(levelname)s</span><span class="s1">: </span><span class="si">%(asctime)s</span><span class="s1">:</span><span class="si">%(module)s</span><span class="s1">.</span><span class="si">%(funcName)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
+<span class="n">DATE_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;%I:%M:%S%p&#39;</span>
+<span class="n">LOG_FILENAME</span> <span class="o">=</span> <span class="s1">&#39;goodman_spec.log&#39;</span>
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">FORMAT</span><span class="p">,</span> <span class="n">datefmt</span><span class="o">=</span><span class="n">DATE_FORMAT</span><span class="p">)</span>
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;redspec&#39;</span><span class="p">)</span>
 
@@ -86,791 +100,206 @@
 <span class="n">__status__</span> <span class="o">=</span> <span class="s2">&quot;Development&quot;</span>
 
 
-<div class="viewcode-block" id="MainApp"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp">[docs]</a><span class="k">class</span> <span class="nc">MainApp</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Defines and intialize all important variables for processing the data</span>
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">(</span><span class="n">arguments</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handles the argparse library and returns the arguments</span>
 
-<span class="sd">    The MainApp class controls the way the night is organize to its further processing. It also sets the appropriate</span>
-<span class="sd">    parameters that will allow for a smooth working in all the other modules.</span>
+<span class="sd">    The possible arguments to be used are:</span>
+
+<span class="sd">        --data-path: has to be the source directory, where the data (images) is.</span>
+<span class="sd">            The location is `self.source` and the default value is ./</span>
+<span class="sd">        --proc-path: is the destination where all new files/data will be</span>
+<span class="sd">            placed. The location is `self.destiny` and the default value is ./</span>
+<span class="sd">        --search-pattern: the pattern that matches the reduced data that</span>
+<span class="sd">            will be processed. The location is `self.pattern` default value is</span>
+<span class="sd">            fc\_</span>
+<span class="sd">        --interactive: Interactive Wavelength Solution. Enabled by default</span>
+<span class="sd">        --output-prefix: Prefix to use to name wavelength calibrated spectrum</span>
+<span class="sd">        --extraction: Spectrum extraction type. Simple or optimal.</span>
+<span class="sd">        --reference-files: Directory of reference files location</span>
+<span class="sd">        --debug: Show plots for intermediate steps. Also prints more messages.</span>
+<span class="sd">        --log-to-file: Write the log to a file.</span>
+<span class="sd">        --save-plots: Save all plots ina directory</span>
+<span class="sd">        --plot-results: Show a plot of the wavelength calibrated data at the</span>
+<span class="sd">            end.</span>
+
+
+<span class="sd">    Returns:</span>
+<span class="sd">        An object that contains all the variables parsed through the argument</span>
+<span class="sd">        system</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initalization of important parameters</span>
+    <span class="n">leave</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
+            <span class="sd">&#39;&#39;&#39;Extracts goodman spectra and does wavelength calibration.&#39;&#39;&#39;</span><span class="p">))</span>
 
-<span class="sd">        Initializes the list of images using ccdproc.ImageFileCollection and pandas the get the arguments that define</span>
-<span class="sd">        the working of the pipeline using arpargse and instantiate a Night class, an object that will store relevant</span>
-<span class="sd">        information of the observed night being processed.</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--data-path&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Source Path&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;source&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path for location of raw data. Default &lt;./&gt;&#39;</span><span class="p">)</span>
 
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_args</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">night</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_night</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">wsolution</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">calibration_lamp</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--proc-path&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Destination Path&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;destiny&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path for destination of processed data. Default &#39;</span>
+                             <span class="s1">&#39;&lt;./&gt;&#39;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--search-pattern&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;cfzsto&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Search Pattern&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;pattern&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Pattern for matching the goodman&#39;s reduced data.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-prefix&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Out Prefix&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;output_prefix&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix to add to calibrated spectrum.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--extraction&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;simple&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Extraction Type&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;extraction_type&#39;</span><span class="p">,</span>
+                        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="s1">&#39;optimal&#39;</span><span class="p">],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Choose a which extraction to perform. Simple is a &#39;</span>
+                             <span class="s1">&#39;sum across the spatial direction after the &#39;</span>
+                             <span class="s1">&#39;background has been removed. Optimal is a more &#39;</span>
+                             <span class="s1">&#39;advanced method that considers weights and profile&#39;</span>
+                             <span class="s1">&#39;fitting.&#39;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--reference-files&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;refdata/&#39;</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Reference Dir&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;reference_dir&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory of Reference files location&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--interactive&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;interactive_ws&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Interactive wavelength solution.&quot;</span>
+                             <span class="s2">&quot;Disbled by default.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--debug&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;debug_mode&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Debugging Mode&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-to-file&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;log_to_file&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Write log to a file&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--save-plots&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;save_plots&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Save all plots in a directory&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot-results&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;plot_results&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show wavelength calibrated spectrum at the end.&quot;</span><span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">arguments</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">log_to_file</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Logging to file </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">LOG_FILENAME</span><span class="p">))</span>
+        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">LOG_FILENAME</span><span class="p">)</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">FORMAT</span><span class="p">,</span> <span class="n">datefmt</span><span class="o">=</span><span class="n">DATE_FORMAT</span><span class="p">)</span>
+        <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Changing log level to DEBUG.&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+    <span class="c1"># get full path for reference files directory</span>
+    <span class="n">ref_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span>
+                                 <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">ref_full_path</span><span class="p">):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reference files directory doesn&#39;t exist.&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ref_full_path</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Reference Files Directory is: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ref_full_path</span><span class="p">)</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span> <span class="o">=</span> <span class="n">ref_full_path</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span> <span class="o">=</span> <span class="n">ref_full_path</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">):</span>
+        <span class="n">leave</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Source Directory doesn&#39;t exist.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">):</span>
+        <span class="n">leave</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Destination folder doesn&#39;t exist.&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Destination folder created: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">leave</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s2">&quot;Leaving the Program.&quot;</span><span class="p">)</span>
+    <span class="c1"># print_default_args(args)</span>
+    <span class="k">return</span> <span class="n">args</span></div>
+
+
+<div class="viewcode-block" id="MainApp"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp">[docs]</a><span class="k">class</span> <span class="nc">MainApp</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Defines and initialize all important variables for processing the data</span>
+
+<span class="sd">    The MainApp class controls the way the night is organize to its further</span>
+<span class="sd">    processing. It also sets the appropriate parameters that will allow for a</span>
+<span class="sd">    smooth working in all the other modules.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Call method for the MainApp class</span>
 
-<span class="sd">        This is equivalent to a main() function where all the logic and controls are implemented.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            NotImplementedError: For observing modes 2 and 3</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO (simon): Add the possibility of managing multi wavelength solutions for different capabilities</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">organize_full_night</span><span class="p">()</span>
-        <span class="c1"># print(len(self.night.sci_targets))</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci_targets</span><span class="p">)):</span>
-            <span class="n">science_object</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci_targets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="c1"># print(science_object)</span>
-            <span class="c1"># print(self.night.sci_targets)</span>
-            <span class="n">process</span> <span class="o">=</span> <span class="n">Process</span><span class="p">(</span><span class="n">science_object</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci_targets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">process</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span><span class="p">,</span> <span class="n">SciencePack</span><span class="p">):</span>
-                        <span class="n">wavelength_calibration</span> <span class="o">=</span> <span class="n">WavelengthCalibration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span><span class="p">,</span>
-                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci_targets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                                                       <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-
-                        <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span> <span class="o">=</span> <span class="n">wavelength_calibration</span><span class="p">()</span>
-
-                        <span class="c1"># self.night.set_night_wsolution(process.get_wsolution())</span>
-                        <span class="c1"># self.night.set_night_calibration_lamp(process.get_calibration_lamp())</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;No data was extracted from this target.&#39;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span><span class="o">.</span><span class="n">check_compatibility</span><span class="p">(</span><span class="n">process</span><span class="o">.</span><span class="n">header</span><span class="p">):</span>
-                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">night_wsolution</span><span class="p">)</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci_targets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="n">extract_lamps</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span><span class="p">,</span> <span class="n">SciencePack</span><span class="p">):</span>
-                            <span class="n">wavelength_calibration</span> <span class="o">=</span> <span class="n">WavelengthCalibration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span><span class="p">,</span>
-                                                                           <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci_targets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                                                           <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-
-                            <span class="n">wavelength_calibration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span><span class="p">)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;No data was extracted from this target.&#39;</span><span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Incompatibility of solution to new data&#39;</span><span class="p">)</span>
-                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-                        <span class="c1"># TODO(simon): complete this part</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci_targets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">process</span><span class="p">()</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">wavelength_calibration</span> <span class="o">=</span> <span class="n">WavelengthCalibration</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extracted_data</span><span class="p">,</span>
-                                                                   <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci_targets</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
-                                                                   <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-
-                    <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span> <span class="o">=</span> <span class="n">wavelength_calibration</span><span class="p">()</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;No data was extracted from this target.&#39;</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-            <span class="c1"># else:</span>
-                <span class="c1"># process = Process(self.night.source, science_object, self.args, self.night.night_wsolution)</span>
-
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="MainApp.get_args"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.get_args">[docs]</a>    <span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
-        <span class="sd">&quot;&quot;&quot;Handles the argparse library and returns the arguments</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            An object that contains all the variables parsed through the argument system</span>
-<span class="sd">            The possible arguments to be returned are:</span>
-
-<span class="sd">            -p or --data-path: has to be the source directory, where the data (images) is.</span>
-<span class="sd">                    the location is **self.source**</span>
-<span class="sd">                    default value is ./</span>
-<span class="sd">            -d or --proc-path: is the destination where all new files/data will be placed.</span>
-<span class="sd">                    the location is self.destiny</span>
-<span class="sd">                    default value is ./</span>
-<span class="sd">            -s or --search-pattern: the pattern that matches the reduced data that will be processed.</span>
-<span class="sd">                    the location is self.pattern</span>
-<span class="sd">                    default value is fc\_</span>
-<span class="sd">            -m or --proc-mode: is one of the predefined observing modes and the options are:</span>
-<span class="sd">                    0: One or more lamps taken during the beginning or end of the night, i.e. single</span>
-<span class="sd">                    calibration to all data in that night</span>
-<span class="sd">                    1: One or more lamps around every science exposure.</span>
-<span class="sd">                    2: An ASCII file will be read. This file contains a matching of science target files</span>
-<span class="sd">                    to respective calibration lamp file that will be used for calibration.</span>
-<span class="sd">                    3: No lamp used, use sky-lines instead.</span>
-<span class="sd">                    the location is self.mode</span>
-<span class="sd">                    default value is 0</span>
-<span class="sd">            -r or --reference-lamp: Name of reference lamp file for mode 0. If not present, the first one in the list</span>
-<span class="sd">                    will be selected</span>
-<span class="sd">            -l or --lamp-file: Name of the ASCII file that contains the relation between science files and lamp</span>
-<span class="sd">                    files. An example is depicted below. Note that the lamps can be repeated.</span>
-<span class="sd">                        #example of how the file should look</span>
-<span class="sd">                        science_target_01.fits lamp_001.fits</span>
-<span class="sd">                        science_target_02.fits lamp_001.fits</span>
-<span class="sd">                        science_target_03.fits lamp_002.fits</span>
-
-<span class="sd">                    the location is self.lamp_file</span>
-<span class="sd">                    default value is lamps.txt</span>
-
-<span class="sd">            -i or --non-interactive: Interactive Wavelength Solution. Enabled by default</span>
-<span class="sd">            -o or --output-prefix: Prefix to use to name wavelength calibrated spectrum</span>
-<span class="sd">            -R or --reference-files: Directory of reference files location</span>
-<span class="sd">            --plots-enabled: Show plots for intermediate steps. For debugging only.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            In the case when -m or --proc-mode is set to 3 will requiere the name of file parsed with the -l or</span>
-<span class="sd">            --lamp-file parameter an IOError is raised</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">leave</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
-                                         <span class="n">description</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
-                                             <span class="sd">&#39;&#39;&#39;Extracts goodman spectra and does wavelength calibration.\n\n\</span>
-<span class="sd">Supported Observing modes are:</span>
-<span class="sd">    &lt;0&gt;: (Default) reads lamps taken at the begining or end of the night.\n\</span>
-<span class="sd">    &lt;1&gt;: one or more lamps around science exposure.</span>
-<span class="sd">    &#39;&#39;&#39;</span><span class="p">))</span>
-    <span class="c1"># \n\</span>
-    <span class="c1"># &lt;2&gt;: ASCII file describing which science target uses which lamp.\n\</span>
-    <span class="c1"># &lt;3&gt;: No lamps. Uses the sky lines</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="s1">&#39;--data-path&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span>
-                            <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-                            <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Source Path&gt;&#39;</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;source&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path for location of raw data. Default &lt;./&gt;&#39;</span><span class="p">)</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="s1">&#39;--proc-path&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span>
-                            <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-                            <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Destination Path&gt;&#39;</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;destiny&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path for destination of processed data. Default &lt;./&gt;&#39;</span><span class="p">)</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="s1">&#39;--search-pattern&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="s1">&#39;fzh_&#39;</span><span class="p">,</span>
-                            <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-                            <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Search Pattern&gt;&#39;</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;pattern&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Pattern for matching the goodman&#39;s reduced data.&quot;</span><span class="p">)</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-m&#39;</span><span class="p">,</span> <span class="s1">&#39;--proc-mode&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                            <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-                            <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Processing Mode&gt;&#39;</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;procmode&#39;</span><span class="p">,</span>
-                            <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Defines the mode of matching lamps to science targets.&#39;</span><span class="p">)</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-r&#39;</span><span class="p">,</span> <span class="s1">&#39;--reference-lamp&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
-                            <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-                            <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Reference Lamp&gt;&#39;</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;lamp_all_night&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of reference lamp file for mode 0.</span><span class="se">\</span>
-<span class="s2">                             If not present, the first one in the list will be selected&quot;</span><span class="p">)</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-l&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="s1">&#39;lamps.txt&#39;</span><span class="p">,</span>
-                            <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-                            <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Lamp File&gt;&#39;</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;lamp_file&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of an ASCII file describing which science target</span><span class="se">\</span>
-<span class="s2">                                uses which lamp. default &lt;lamp.txt&gt;&quot;</span><span class="p">)</span>
-
-        <span class="c1"># parser.add_argument(&#39;-t&#39;, &#39;--telescope&#39;,</span>
-        <span class="c1">#                     action=&#39;store_true&#39;,</span>
-        <span class="c1">#                     default=False,</span>
-        <span class="c1">#                     dest=&#39;telescope&#39;,</span>
-        <span class="c1">#                     help=&quot;Enables the &lt;Telescope&gt; mode i.e. it run sequentially,\</span>
-        <span class="c1">#                         designed to use while observing at the telescope. Catches\</span>
-        <span class="c1">#                          new files arriving to the &lt;source&gt; folder. (NI!)&quot;)</span>
-
-
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="s1">&#39;--output-prefix&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span>
-                            <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Out Prefix&gt;&#39;</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;output_prefix&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix to add to calibrated spectrum.&quot;</span><span class="p">)</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-R&#39;</span><span class="p">,</span> <span class="s1">&#39;--reference-files&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="s1">&#39;../refdata/&#39;</span><span class="p">,</span>
-                            <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Reference Dir&gt;&#39;</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;reference_dir&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory of Reference files location&quot;</span><span class="p">)</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-i&#39;</span><span class="p">,</span> <span class="s1">&#39;--non-interactive&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_false&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;interactive_ws&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Interactive wavelength solution. Enabled by default.&quot;</span><span class="p">)</span>
-
-        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plots-enabled&#39;</span><span class="p">,</span>
-                            <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
-                            <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                            <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;plots_enabled&#39;</span><span class="p">,</span>
-                            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show plots of intermediate steps. Use for debugging only.&quot;</span><span class="p">)</span>
-
-        <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
-
-        <span class="c1"># there must be a more elegant way to do this</span>
-        <span class="n">root_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
-        <span class="n">root_path</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="n">root_full_path</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root_path</span><span class="p">)</span>
-        <span class="n">reference_full_path</span> <span class="o">=</span> <span class="n">root_full_path</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">reference_full_path</span><span class="p">):</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reference files directory doesn&#39;t exist.&quot;</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">reference_full_path</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Reference Files Directory is: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">reference_full_path</span><span class="p">)</span>
-                <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span> <span class="o">=</span> <span class="n">reference_full_path</span>
-            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span> <span class="o">=</span> <span class="n">reference_full_path</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">):</span>
-            <span class="n">leave</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Source Directory doesn&#39;t exist.&quot;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
-                <span class="n">args</span><span class="o">.</span><span class="n">source</span> <span class="o">+=</span> <span class="s1">&#39;/&#39;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">):</span>
-            <span class="n">leave</span> <span class="o">=</span> <span class="kc">True</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Destination folder doesn&#39;t exist.&quot;</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Destination folder created: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
-                <span class="n">args</span><span class="o">.</span><span class="n">destiny</span> <span class="o">+=</span> <span class="s1">&#39;/&#39;</span>
-        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="c1"># print(args.source + args.lamp_file)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">source</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">lamp_file</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">lamp_file</span> <span class="o">==</span> <span class="s1">&#39;lamps.txt&#39;</span><span class="p">:</span>
-                    <span class="n">leave</span> <span class="o">=</span> <span class="kc">True</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Default &lt;lamp file&gt; doesn&#39;t exist.&quot;</span><span class="p">)</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Please define a &lt;lamp file&gt; using the flags -l or --lamp-file&quot;</span><span class="p">)</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;or make sure you entered the right observing mode.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">leave</span><span class="p">:</span>
-            <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
-            <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s2">&quot;Leaving the Program.&quot;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">args</span></div>
-
-<div class="viewcode-block" id="MainApp.set_night"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.set_night">[docs]</a>    <span class="k">def</span> <span class="nf">set_night</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Defines and initialize the &#39;night&#39; class</span>
-
-<span class="sd">        Uses information parsed by arguments to construct a table with the values of the keys specified within the</span>
-<span class="sd">        code itself. A night object stores specific values regarding the night that is going to be processed. If the</span>
-<span class="sd">        program is not going to be used while observing at the telescope it creates two lists of images, one for</span>
-<span class="sd">        science and another for lamp files. Although the telescope mode is not fully developed yet, in case of it being</span>
-<span class="sd">        selected it will return the night object without the list of images.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            new_night (class): A class that stores critical data of the night that will be processed and can be</span>
-<span class="sd">            parsed to other methods.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;date-obs&#39;</span><span class="p">,</span> <span class="s1">&#39;obstype&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">,</span> <span class="s1">&#39;exptime&#39;</span><span class="p">,</span> <span class="s1">&#39;ra&#39;</span><span class="p">,</span> <span class="s1">&#39;dec&#39;</span><span class="p">,</span> <span class="s1">&#39;grating&#39;</span><span class="p">]</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">image_collection</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">ImageFileCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">keys</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span> <span class="o">=</span> <span class="n">image_collection</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;The images contain duplicated keywords&#39;</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;ValueError: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Check that the folder is not Empty&#39;</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;AttributeError: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="c1"># type(self.image_collection)</span>
-
-        <span class="n">date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">date</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">new_night</span> <span class="o">=</span> <span class="n">Night</span><span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
-
-        <span class="n">gratings_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">grating</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
-        <span class="n">new_night</span><span class="o">.</span><span class="n">set_gratings</span><span class="p">(</span><span class="n">gratings</span><span class="o">=</span><span class="n">gratings_array</span><span class="p">)</span>
-
-        <span class="c1"># if self.args.telescope:</span>
-        <span class="c1">#     new_night.is_telescope()</span>
-        <span class="c1">#     log.info(&quot;Telescope Mode is not implemented yet...&quot;)</span>
-        <span class="c1">#     return new_night</span>
-        <span class="c1"># else:</span>
-        <span class="n">new_night</span><span class="o">.</span><span class="n">add_sci</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;OBJECT&#39;</span><span class="p">])</span>
-        <span class="n">new_night</span><span class="o">.</span><span class="n">add_lamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;COMP&#39;</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">new_night</span></div>
-
-<div class="viewcode-block" id="MainApp.organize_full_night"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.organize_full_night">[docs]</a>    <span class="k">def</span> <span class="nf">organize_full_night</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Organize the data according to the Processing Mode</span>
-
-<span class="sd">        There are four observing modes defined by numbers in Python&#39;s style. From 0 to 3:</span>
-
-<span class="sd">        In mode 0 one lamp is used to calibrate all the science targets of the night. As of December 2016 it picks</span>
-<span class="sd">        up the first calibration lamp and uses it to find the wavelength calibration it doesn&#39;t discriminate if the lamp</span>
-<span class="sd">        has good quality. It can also be parsed as an argument using -r or --reference-lamp</span>
-
-<span class="sd">        In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance</span>
-<span class="sd">        in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure</span>
-<span class="sd">        time itself. For the sky distance calculation a flat sky is assumed.</span>
-
-<span class="sd">        In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be</span>
-<span class="sd">        used by using a octothorp or hash (#) followed by one space. Not implemented yet.</span>
-
-<span class="sd">        In mode 3 no sky lamp is used, instead the science target&#39;s spectrum will be calibrated using sky lines. Not</span>
-<span class="sd">        implemented yet.</span>
-
-<span class="sd">        It does not return anything but creates a ScienceObject instance and stores it in the night class. ScienceObject</span>
-<span class="sd">        is one of its attributes.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            NotImplementedError: For mode 2 and 3.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">print_spacers</span><span class="p">(</span><span class="s2">&quot;Processing night </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">procmode_zero</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">procmode_one</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">procmode_two</span><span class="p">()</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">procmode</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">procmode_three</span><span class="p">()</span></div>
-
-        <span class="c1"># science_object.print_all()</span>
-        <span class="c1"># self.print_spacers(name)</span>
-        <span class="c1"># print(self.night.sci)</span>
-        <span class="c1"># print(self.night.lamp)</span>
-
-<div class="viewcode-block" id="MainApp.procmode_zero"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.procmode_zero">[docs]</a>    <span class="k">def</span> <span class="nf">procmode_zero</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Observing/Processing mode 0</span>
-
-<span class="sd">        In mode 0 one lamp is used to calibrate all the science targets of the night. As of September 2016 it picks</span>
-<span class="sd">        up the first calibration lamp and uses it to find the wavelength calibration it doesn&#39;t discriminate if the lamp</span>
-<span class="sd">        has good quality.</span>
-
-<span class="sd">        Notes:</span>
-<span class="sd">            Although you can parse one lamp as a whole night lamp it is not recommended since there might be</span>
-<span class="sd">            different gratings which would rise the need to give one lamp per grating and in this case it better</span>
-<span class="sd">            to let the software choose the first in the list and assume there will be no bad lamps.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Observation mode 0&quot;</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;One lamp for all targets.&quot;</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci</span><span class="p">:</span>
-            <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">target</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-            <span class="n">grating</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">grating</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-            <span class="c1"># print(&#39;Grating&#39;, grating)</span>
-            <span class="n">obs_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;date-obs&#39;</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
-            <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ra_dec_to_deg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">],</span>
-                                                              <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
-            <span class="n">science_object</span> <span class="o">=</span> <span class="n">ScienceObject</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">obs_time</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">grating</span><span class="p">)</span>
-
-            <span class="n">comp_files</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">grating</span><span class="p">)</span>
-                                               <span class="o">&amp;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;obstype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;COMP&#39;</span><span class="p">)]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="c1"># Need to define a better method for selecting the lamp</span>
-            <span class="c1"># Now is just picking the first in the list</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">lamp_all_night</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
-                    <span class="n">lamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">lamp_all_night</span>
-                    <span class="n">lamp_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">lamp</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">lamp_index</span> <span class="o">=</span> <span class="n">comp_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                    <span class="n">lamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">]</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Lamp File: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">lamp</span><span class="p">)</span>
-            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;There are no comparison lamps available.&quot;</span><span class="p">)</span>
-                <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;Bye!&#39;</span><span class="p">)</span>
-
-            <span class="n">lamp_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">]</span>
-            <span class="n">lamp_grating</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">grating</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">]</span>
-            <span class="c1"># lamp_obs_time = self.image_collection[&#39;date-obs&#39;][lamp_index]</span>
-            <span class="n">lamp_ra</span><span class="p">,</span> <span class="n">lamp_dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ra_dec_to_deg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">],</span>
-                                                   <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">])</span>
-
-            <span class="k">if</span> <span class="n">lamp_grating</span> <span class="o">==</span> <span class="n">grating</span><span class="p">:</span>
-                <span class="n">science_object</span><span class="o">.</span><span class="n">add_lamp</span><span class="p">(</span><span class="n">lamp</span><span class="p">,</span> <span class="n">lamp_name</span><span class="p">,</span> <span class="n">lamp_ra</span><span class="p">,</span> <span class="n">lamp_dec</span><span class="p">)</span>
-            <span class="c1"># else:</span>
-                <span class="c1"># log.info(&#39;Gratings do not match. Looking for another one.&#39;)</span>
-
-                <span class="c1"># print(comp_files)</span>
-                <span class="c1"># lamp_index = comp_files[0]</span>
-                <span class="c1"># lamp_name = self.image_collection.object.iloc[lamp_index]</span>
-                <span class="c1"># lamp_grating = self.image_collection.grating.iloc[lamp_index]</span>
-                <span class="c1"># lamp_obs_time = self.image_collection[&#39;date-obs&#39;][lamp_index]</span>
-                <span class="c1"># lamp_ra, lamp_dec = self.ra_dec_to_deg(self.image_collection.ra.iloc[lamp_index],</span>
-                <span class="c1">#                                        self.image_collection.ra.iloc[lamp_index])</span>
-                <span class="c1"># science_object.add_lamp(lamp, lamp_name, lamp_ra, lamp_dec)</span>
-            <span class="c1"># science_object.print_all()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">add_sci_object</span><span class="p">(</span><span class="n">science_object</span><span class="p">)</span>
-
-        <span class="k">return</span></div>
-
-<div class="viewcode-block" id="MainApp.procmode_one"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.procmode_one">[docs]</a>    <span class="k">def</span> <span class="nf">procmode_one</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Observing/Processing mode 1</span>
-
-<span class="sd">        In mode 1 one or more lamps are linked with a science target by matching them using two parameters. Distance</span>
-<span class="sd">        in the sky equal or lower than 1e-3 degrees and a time difference of 300 seconds this is without the exposure</span>
-<span class="sd">        time itself. For the sky distance calculation a flat sky is assumed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Observation mode 1&quot;</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;One or more lamps around the target&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">target</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">sci</span><span class="p">:</span>
-            <span class="c1"># Get basic data of the target</span>
-            <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">target</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-            <span class="n">obs_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;date-obs&#39;</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
-            <span class="n">exptime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">exptime</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-            <span class="n">grating</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">grating</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-            <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ra_dec_to_deg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">],</span>
-                                                              <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
-            <span class="c1"># Reformat some data of the target for comparison</span>
-            <span class="n">target_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_time</span><span class="p">(</span><span class="n">obs_time</span><span class="p">)</span>
-            <span class="c1"># Define ScienceObject object</span>
-            <span class="n">science_object</span> <span class="o">=</span> <span class="n">ScienceObject</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">obs_time</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">grating</span><span class="p">)</span>
-            <span class="c1"># Loop trough lamps to find a match for target</span>
-            <span class="k">for</span> <span class="n">lamp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">lamp</span><span class="p">:</span>
-                <span class="n">lamp_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;file&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">lamp</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="n">lamp_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">object</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">]</span>
-                <span class="n">lamp_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span><span class="s1">&#39;date-obs&#39;</span><span class="p">][</span><span class="n">lamp_index</span><span class="p">])</span>
-                <span class="n">lamp_exptime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">exptime</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">]</span>
-                <span class="n">lamp_grating</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">grating</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">]</span>
-                <span class="n">lamp_ra</span><span class="p">,</span> <span class="n">lamp_dec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ra_dec_to_deg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">ra</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">],</span>
-                                                       <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">dec</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">lamp_index</span><span class="p">])</span>
-                <span class="c1"># print(lamp, lamp_name, lamp_ra, lamp_dec)</span>
-                <span class="k">if</span> <span class="n">lamp_grating</span> <span class="o">==</span> <span class="n">grating</span><span class="p">:</span>
-                    <span class="c1"># Since we are not doing astrometry here we assume the sky is flat</span>
-                    <span class="n">sky_distance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">lamp_ra</span> <span class="o">-</span> <span class="n">right_ascension</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">lamp_dec</span> <span class="o">-</span> <span class="n">declination</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">sky_distance</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="n">e</span><span class="o">-</span><span class="mi">3</span><span class="p">:</span>
-                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Lamps by distance&quot;</span><span class="p">)</span>
-                        <span class="n">time_dif</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">target_time</span> <span class="o">-</span> <span class="n">lamp_time</span><span class="p">)</span> <span class="o">-</span> <span class="nb">abs</span><span class="p">(</span><span class="n">exptime</span> <span class="o">+</span> <span class="n">lamp_exptime</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">time_dif</span> <span class="o">&lt;=</span> <span class="mi">300</span><span class="p">:</span>
-                            <span class="n">science_object</span><span class="o">.</span><span class="n">add_lamp</span><span class="p">(</span><span class="n">lamp</span><span class="p">,</span> <span class="n">lamp_name</span><span class="p">,</span> <span class="n">lamp_ra</span><span class="p">,</span> <span class="n">lamp_dec</span><span class="p">)</span>
-                            <span class="c1"># print(target,lamp,time_dif,exptime,lamp_exptime,sep=&#39; : &#39;)</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Lamp within sky distance but too large time difference </span><span class="si">%s</span><span class="s2">. Ignored.&quot;</span><span class="p">,</span> <span class="n">time_dif</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Gratings do not match&#39;</span><span class="p">)</span>
-            <span class="c1"># science_object.print_all()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">add_sci_object</span><span class="p">(</span><span class="n">science_object</span><span class="p">)</span>
-        <span class="k">return</span></div>
-
-<div class="viewcode-block" id="MainApp.procmode_two"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.procmode_two">[docs]</a>    <span class="k">def</span> <span class="nf">procmode_two</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Observing/Processing mode 2</span>
-
-<span class="sd">        In mode 2 a text file is defined which correlates the science target with one or more lamps. Comments can be</span>
-<span class="sd">        used by using a octothorp or hash (#) followed by one space. Not implemented yet.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Observation mode 2&quot;</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;A text file defines the relation of lamps and science targets&quot;</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">lamps_file</span><span class="p">)</span>
-        <span class="n">lamps_file_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">source</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">night</span><span class="o">.</span><span class="n">lamps_file</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">lamps_file_full</span><span class="p">)</span>
-
-        <span class="n">read_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">lamps_file_full</span><span class="p">)</span>
-        <span class="n">read_file</span> <span class="o">=</span> <span class="n">read_file</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">read_file</span><span class="p">)):</span>
-            <span class="k">if</span> <span class="n">read_file</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;#&#39;</span><span class="p">:</span>
-                <span class="n">read_file</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">read_file</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                <span class="nb">print</span><span class="p">(</span><span class="n">read_file</span><span class="p">[</span><span class="n">i</span><span class="p">])</span></div>
-
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="MainApp.procmode_three"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.procmode_three">[docs]</a>    <span class="k">def</span> <span class="nf">procmode_three</span><span class="p">():</span>
-        <span class="sd">&quot;&quot;&quot;Observing/Processing Mode 3</span>
-
-<span class="sd">        In mode 3 no sky lamp is used, instead the science target&#39;s spectrum will be calibrated using sky lines.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Observation mode 3&quot;</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No Lamps. Use sky lines&quot;</span><span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
-
-    <span class="c1"># Bunch of small functions</span>
-
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="MainApp.convert_time"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.convert_time">[docs]</a>    <span class="k">def</span> <span class="nf">convert_time</span><span class="p">(</span><span class="n">in_time</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Converts time to seconds since epoch</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            in_time (str): time obtained from header&#39;s keyword DATE-OBS</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            time in seconds since epoch</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">mktime</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">in_time</span><span class="p">,</span> <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">))</span></div>
-
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="MainApp.ra_dec_to_deg"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.ra_dec_to_deg">[docs]</a>    <span class="k">def</span> <span class="nf">ra_dec_to_deg</span><span class="p">(</span><span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Converts right ascension and declination to degrees</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            right_ascension (str): right ascension</span>
-<span class="sd">            declination (str): declination</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            right ascension and declination in degrees</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">right_ascension</span> <span class="o">=</span> <span class="n">right_ascension</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
-        <span class="n">declination</span> <span class="o">=</span> <span class="n">declination</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
-        <span class="c1"># RIGHT ASCENTION conversion</span>
-        <span class="n">right_ascension_deg</span> <span class="o">=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">right_ascension</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                               <span class="o">+</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">right_ascension</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                                  <span class="o">+</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">right_ascension</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mf">60.</span><span class="p">))</span> <span class="o">/</span> <span class="mf">60.</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">360.</span> <span class="o">/</span> <span class="mf">24.</span><span class="p">)</span>
-        <span class="c1"># DECLINATION conversion</span>
-        <span class="c1"># print(declination)</span>
-        <span class="c1"># sign = float(declination[0]) / abs(float(declination[0]))</span>
-        <span class="k">if</span> <span class="nb">float</span><span class="p">(</span><span class="n">declination</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">declination</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
-            <span class="n">sign</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sign</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="n">declination_deg</span> <span class="o">=</span> <span class="n">sign</span> <span class="o">*</span> <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">declination</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-                                  <span class="o">+</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">declination</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-                                     <span class="o">+</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">declination</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mf">60.</span><span class="p">))</span> <span class="o">/</span> <span class="mf">60.</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">right_ascension_deg</span><span class="p">,</span> <span class="n">declination_deg</span></div>
-
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="MainApp.print_spacers"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.print_spacers">[docs]</a>    <span class="k">def</span> <span class="nf">print_spacers</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Miscelaneous function to print uniform spacers</span>
-
-<span class="sd">        Prints a spacer of 80 columns with  and 3 rows height. The first and last rows contains the symbol &quot;=&quot;</span>
-<span class="sd">        repeated 80 times. The middle row contains the message centered and the extremes has one single &quot;=&quot; symbol.</span>
-<span class="sd">        The only functionality of this is aesthetic.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            message (str): a message to be printed</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            a True boolean</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="n">columns</span> <span class="o">=</span> <span class="mi">80</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">+=</span> <span class="s2">&quot; &quot;</span>
-        <span class="n">bar_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
-        <span class="n">spacer_bar</span> <span class="o">=</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="n">bar_length</span>
-        <span class="n">blanks</span> <span class="o">=</span> <span class="n">bar_length</span> <span class="o">-</span> <span class="mi">2</span>
-        <span class="n">space_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">blanks</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">message_bar</span> <span class="o">=</span> <span class="s2">&quot;=&quot;</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="n">space_length</span> <span class="o">+</span> <span class="n">message</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="n">space_length</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">spacer_bar</span><span class="p">)</span>
-
-        <span class="nb">print</span><span class="p">(</span><span class="n">message_bar</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">spacer_bar</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">True</span></div>
-
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="MainApp.print_progress"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp.print_progress">[docs]</a>    <span class="k">def</span> <span class="nf">print_progress</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">total</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Prints the percentage of a progress</span>
-
-<span class="sd">        It works for FOR loops, requires to know the full length of the loop. Prints to the standard output.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            current (int): Current value in the range of the loop.</span>
-<span class="sd">            total (int): The length of the loop.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Nothing</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="n">total</span><span class="p">:</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Progress </span><span class="si">{:.2%}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">current</span> <span class="o">/</span> <span class="n">total</span><span class="p">))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Progress </span><span class="si">{:.2%}</span><span class="se">\r</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">current</span> <span class="o">/</span> <span class="n">total</span><span class="p">))</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-        <span class="k">return</span></div></div>
-
-
-<div class="viewcode-block" id="Night"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.Night">[docs]</a><span class="k">class</span> <span class="nc">Night</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Stores all data relevant to the night being processed</span>
-
-<span class="sd">    Note:</span>
-<span class="sd">        The night class stores the data relative to single observing night</span>
-<span class="sd">        therefore this software works on a per-night basis</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize Night class</span>
-
-<span class="sd">        The night class will store filename of science images as well as lamp images. It also stores the arguments and</span>
-<span class="sd">        also the wavelength solution for the night.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            date (str): Date of the night being processed</span>
-<span class="sd">            args (object): argparse instance containing all the arguments the program was started with</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># source, destiny, pattern, mode, lamps</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">all</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">date</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sci</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
-        <span class="c1"># self.args.source,</span>
-        <span class="c1"># self.args.destiny,</span>
-        <span class="c1"># self.args.pattern,</span>
-        <span class="c1"># self.args.procmode,</span>
-        <span class="c1"># self.args.lamp_file</span>
-        <span class="c1"># self.source = args.source</span>
-        <span class="c1"># self.destiny = args.destiny</span>
-        <span class="c1"># self.pattern = args.pattern</span>
-        <span class="c1"># self.procmode = args.procmode</span>
-        <span class="c1"># self.lamps_file = args.lamps_file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sci_targets</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">telescope</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">night_wsolution</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">night_calibration_lamp</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gratings</span> <span class="o">=</span> <span class="kc">None</span>
-
-<div class="viewcode-block" id="Night.add_sci"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.Night.add_sci">[docs]</a>    <span class="k">def</span> <span class="nf">add_sci</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_sci</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Adds science object to list&quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">new_sci</span> <span class="ow">in</span> <span class="n">in_sci</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">pattern</span> <span class="o">==</span> <span class="n">new_sci</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">pattern</span><span class="p">)]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sci</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_sci</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_sci</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Image </span><span class="si">%s</span><span class="s1"> rejected because does not match pattern!&#39;</span><span class="p">,</span> <span class="n">new_sci</span><span class="p">)</span></div>
-        <span class="c1"># self.sci_targets = [[]] * len(self.sci)</span>
-
-<div class="viewcode-block" id="Night.add_lamp"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.Night.add_lamp">[docs]</a>    <span class="k">def</span> <span class="nf">add_lamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_lamp</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Adds lamp objects to list&quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">new_lamp</span> <span class="ow">in</span> <span class="n">in_lamp</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">pattern</span> <span class="o">==</span> <span class="n">new_lamp</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">pattern</span><span class="p">)]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">lamp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_lamp</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_lamp</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Image </span><span class="si">%s</span><span class="s1"> rejected because does not match pattern!&#39;</span><span class="p">,</span> <span class="n">new_lamp</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Night.add_sci_object"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.Night.add_sci_object">[docs]</a>    <span class="k">def</span> <span class="nf">add_sci_object</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sci_obj</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Appends a ScienceObject to the class attribute sci_targets&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sci_targets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sci_obj</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Added science object </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">sci_obj</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
-
-<div class="viewcode-block" id="Night.set_gratings"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.Night.set_gratings">[docs]</a>    <span class="k">def</span> <span class="nf">set_gratings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gratings</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Adds an array of the names of all the gratings observed in the night&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gratings</span> <span class="o">=</span> <span class="n">gratings</span></div>
-
-<div class="viewcode-block" id="Night.set_night_calibration_lamp"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.Night.set_night_calibration_lamp">[docs]</a>    <span class="k">def</span> <span class="nf">set_night_calibration_lamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calibration_lamp</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sets the filename of the calibration lamp as an attribute&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">night_calibration_lamp</span> <span class="o">=</span> <span class="n">calibration_lamp</span></div>
-
-<div class="viewcode-block" id="Night.is_telescope"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.Night.is_telescope">[docs]</a>    <span class="k">def</span> <span class="nf">is_telescope</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sets the operation mode as Telescope Mode&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">telescope</span> <span class="o">=</span> <span class="kc">True</span></div>
-
-<div class="viewcode-block" id="Night.set_night_wsolution"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.Night.set_night_wsolution">[docs]</a>    <span class="k">def</span> <span class="nf">set_night_wsolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wsolution</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sets the wavelength solution as a class attribute&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">wsolution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">night_wsolution</span> <span class="o">=</span> <span class="n">wsolution</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Night Solution Defined&#39;</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Wavelength solution still can&#39;t be defined&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="ScienceObject"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.ScienceObject">[docs]</a><span class="k">class</span> <span class="nc">ScienceObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;class that defines a science object attributes</span>
-
-<span class="sd">    Sci objects, for science, are the main targets which have lamps for</span>
-<span class="sd">    calibration. Their atritutes are: the name, the file name, the</span>
-<span class="sd">    observation time, right ascension and declination. The same information</span>
-<span class="sd">    can be obtained for the lamps but they are treated as lists</span>
-<span class="sd">    The list are created in a way that allows the use of elements&#39; index</span>
-<span class="sd">    as the correlator between atributes of the lamp.</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        name (str): science object name</span>
-<span class="sd">        file_name (str): file name</span>
-<span class="sd">        obs_time (str): observing time in the format yyyy-mm-ddThh:mm:ss.ss for instance 2016-03-20T23:54:15.96</span>
-<span class="sd">        right_ascension (float): right ascension in degrees</span>
-<span class="sd">        declination (float): declination in degrees</span>
-<span class="sd">        lamp_count (int): lamps count</span>
-<span class="sd">        lamp_file (list): every element is a string with the file name of the lamp</span>
-<span class="sd">        lamp_type (list): every element is a string with the OBJECT value of the lamp i.e Cu, HgAr, etc</span>
-<span class="sd">        lamp_ra (list): every element is a float with lamp&#39;s right ascension in degrees</span>
-<span class="sd">        lamp_dec (list): every element is a float with lamp&#39;s declination in degrees</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">obs_time</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">,</span> <span class="n">grating</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span> <span class="o">=</span> <span class="n">file_name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">obs_time</span> <span class="o">=</span> <span class="n">obs_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">right_ascension</span> <span class="o">=</span> <span class="n">right_ascension</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">declination</span> <span class="o">=</span> <span class="n">declination</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_count</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_file</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_type</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_ra</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_dec</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">grating</span> <span class="o">=</span> <span class="n">grating</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">no_targets</span> <span class="o">=</span> <span class="mi">0</span>
-
-<div class="viewcode-block" id="ScienceObject.add_lamp"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.ScienceObject.add_lamp">[docs]</a>    <span class="k">def</span> <span class="nf">add_lamp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_lamp</span><span class="p">,</span> <span class="n">new_type</span><span class="p">,</span> <span class="n">right_ascension</span><span class="p">,</span> <span class="n">declination</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Adds a lamp to the science object</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            new_lamp (str): new lamp file name</span>
-<span class="sd">            new_type (str): new lamp type</span>
-<span class="sd">            right_ascension (float): right ascension in degrees</span>
-<span class="sd">            declination (float): declination in degrees</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_file</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_lamp</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_type</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_type</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_ra</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">right_ascension</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_dec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">declination</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lamp_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_file</span><span class="p">))</span></div>
-
-<div class="viewcode-block" id="ScienceObject.update_no_targets"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.ScienceObject.update_no_targets">[docs]</a>    <span class="k">def</span> <span class="nf">update_no_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">add_one</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Update number of spectra in an image</span>
-
-<span class="sd">        An spectral image may contain multiple science target&#39;s spectra this method is set to update its number</span>
-<span class="sd">        as a class attribute. There are two ways it can work. Add one to the existing number or set a new one.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            new_value (int): New value for number of targets</span>
-<span class="sd">            add_one (bool): If True increase the count by one.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">add_one</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">no_targets</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Number of targets is </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">no_targets</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">new_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">no_targets</span> <span class="o">=</span> <span class="n">new_value</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Nothing to do: new_value: </span><span class="si">%s</span><span class="s1"> add_one: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">new_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">add_one</span><span class="p">))</span></div>
-
-<div class="viewcode-block" id="ScienceObject.print_all"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.ScienceObject.print_all">[docs]</a>    <span class="k">def</span> <span class="nf">print_all</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Prints all the relevant attributes of the object</span>
-
-<span class="sd">        Note:</span>
-<span class="sd">            this method is mainly used for development purposes</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Name: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;File: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_name</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Obs-T: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_time</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamp_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Lamp N: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamp_count</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_count</span><span class="p">):</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Lamp </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamp_file</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Type </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamp_type</span><span class="p">[</span><span class="n">i</span><span class="p">])</span></div></div>
-        <span class="c1"># time.sleep(10)</span>
+        <span class="c1"># data_container instance of NightDataContainer defined in core</span>
+        <span class="n">data_container</span> <span class="o">=</span> <span class="n">classify_spectroscopic_data</span><span class="p">(</span>
+            <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+            <span class="n">search_pattern</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
+
+        <span class="c1"># print(&#39;data_container.bias&#39;)</span>
+        <span class="c1"># print(data_container.bias)</span>
+        <span class="c1"># print(&#39;data_container.day_flats&#39;)</span>
+        <span class="c1"># print(data_container.day_flats)</span>
+        <span class="c1"># print(&#39;data_container.dome_flats&#39;)</span>
+        <span class="c1"># print(data_container.dome_flats)</span>
+        <span class="c1"># print(&#39;data_container.sky_flats&#39;)</span>
+        <span class="c1"># print(data_container.sky_flats)</span>
+        <span class="c1"># print(&#39;data_container.data_groups&#39;)</span>
+        <span class="c1"># print(data_container.data_groups)</span>
+        <span class="c1"># print(&#39;data_container.spec_groups&#39;)</span>
+        <span class="c1"># print(data_container.spec_groups)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span> <span class="o">=</span> <span class="n">process_spectroscopy_data</span><span class="p">(</span>
+            <span class="n">data_container</span><span class="o">=</span><span class="n">data_container</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">extraction_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">extraction_type</span><span class="p">)</span></div>
 
 
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>

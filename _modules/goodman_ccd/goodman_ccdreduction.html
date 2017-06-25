@@ -112,7 +112,7 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="c1"># import sys</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">glob</span>
@@ -216,6 +216,7 @@
                                                   <span class="bp">self</span><span class="o">.</span><span class="n">elevation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timezone</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
         <span class="c1"># Create master_flats</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">create_daymaster_flat</span><span class="p">(</span><span class="n">ic</span><span class="p">,</span> <span class="n">twi_eve</span><span class="p">,</span> <span class="n">twi_mor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">slit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memlim</span><span class="p">)</span>
+        <span class="c1"># sys.exit(0)</span>
 
         <span class="c1"># Create master bias</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ic</span><span class="o">.</span><span class="n">files_filtered</span><span class="p">(</span><span class="n">obstype</span><span class="o">=</span><span class="s1">&#39;BIAS&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -908,6 +909,9 @@
                     <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_nogrt&#39;</span>
             <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;KeyError: Blue Camera&#39;</span><span class="p">)</span>
+                <span class="c1"># if slit is no_mask it means is imaging</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;cam_targ&#39;</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">:</span>
+                    <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_nogrt&#39;</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">grating</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
             <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">grating</span>
@@ -921,13 +925,8 @@
                 <span class="c1"># it means it is Custom mode</span>
                 <span class="n">mode</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;wavmode&#39;</span><span class="p">]</span>
                 <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;Custom&#39;</span><span class="p">:</span>
-                    <span class="n">grating_frequency</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[a-zA-Z-]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">grating</span><span class="p">))</span>
-                    <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;grt_ang&#39;</span><span class="p">])</span>
-                    <span class="n">beta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;cam_ang&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;grt_ang&#39;</span><span class="p">])</span>
-                    <span class="n">center_wavelength</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="n">e6</span> <span class="o">/</span> <span class="n">grating_frequency</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span>
-                        <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span><span class="p">))</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">center_wavelength</span><span class="p">)</span>
-                    <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39;_</span><span class="si">{:d}</span><span class="s1">nm&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">center_wavelength</span><span class="p">)))</span>
+                    <span class="n">central_wavelength</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_central_wavelength</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+                    <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="n">central_wavelength</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;WAVMODE: </span><span class="si">%s</span><span class="s1"> not supported&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
 
@@ -945,7 +944,17 @@
             <span class="k">return</span> <span class="n">flat_name</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;There is no flat suitable for use&#39;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">False</span></div></div>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Main.get_central_wavelength"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.goodman_ccdreduction.Main.get_central_wavelength">[docs]</a>    <span class="k">def</span> <span class="nf">get_central_wavelength</span><span class="p">(</span><span class="n">header</span><span class="p">):</span>
+        <span class="n">grating_frequency</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[a-zA-Z-]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">]))</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;grt_ang&#39;</span><span class="p">])</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;cam_ang&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;grt_ang&#39;</span><span class="p">])</span>
+        <span class="n">center_wavelength</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="n">e6</span> <span class="o">/</span> <span class="n">grating_frequency</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">center_wavelength</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s1">&#39;_</span><span class="si">{:d}</span><span class="s1">nm&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">center_wavelength</span><span class="p">)))</span></div></div>
+
 
         <span class="c1"># def run(self):</span>
 

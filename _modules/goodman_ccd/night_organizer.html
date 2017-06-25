@@ -1,0 +1,380 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>goodman_ccd.night_organizer &#8212; Goodman Pipelines 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for goodman_ccd.night_organizer</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">pandas</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">ccdproc</span> <span class="k">import</span> <span class="n">ImageFileCollection</span>
+<span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="k">import</span> <span class="n">Axes3D</span>
+<span class="kn">from</span> <span class="nn">astropy.coordinates</span> <span class="k">import</span> <span class="n">EarthLocation</span>
+<span class="kn">from</span> <span class="nn">astropy.time</span> <span class="k">import</span> <span class="n">Time</span><span class="p">,</span> <span class="n">TimeDelta</span>
+<span class="kn">from</span> <span class="nn">astroplan</span> <span class="k">import</span> <span class="n">Observer</span>
+<span class="kn">from</span> <span class="nn">astropy</span> <span class="k">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
+<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">convert_time</span><span class="p">,</span> <span class="n">get_twilight_time</span><span class="p">,</span> <span class="n">ra_dec_to_deg</span>
+<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">NightDataContainer</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;goodmanccd.nightorganizer&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="NightOrganizer"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.night_organizer.NightOrganizer">[docs]</a><span class="k">class</span> <span class="nc">NightOrganizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">full_path</span><span class="p">,</span> <span class="n">instrument</span><span class="p">,</span> <span class="n">technique</span><span class="p">,</span> <span class="n">ignore_bias</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes the NightOrganizer class</span>
+
+<span class="sd">        This class contains methods to organize the data for processing. It will</span>
+<span class="sd">        identify groups of OBJECTS, FLATS or COMPS (comparison lamps) whenever</span>
+<span class="sd">        they exist. The product will be an object that will act as a data</span>
+<span class="sd">        container.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            args (object): Argparse object. Contains all the runtime arguments.</span>
+<span class="sd">            night_dict (dict): A dictionary that contains full path, instrument</span>
+<span class="sd">            and observational technique.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">full_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span> <span class="o">=</span> <span class="n">instrument</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">=</span> <span class="n">technique</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_bias</span> <span class="o">=</span> <span class="n">ignore_bias</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keywords</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;slit&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;date-obs&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;obstype&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;object&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;exptime&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;obsra&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;obsdec&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;grating&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;cam_targ&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;grt_targ&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;filter&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;filter2&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;gain&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;rdnoise&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_datatypes</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_container</span> <span class="o">=</span> <span class="n">NightDataContainer</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+                                                 <span class="n">instrument</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span>
+                                                 <span class="n">technique</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">technique</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">day_time_data</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">night_time_data</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Call method</span>
+
+<span class="sd">        Creates a table with selected keywords that will allow to group the data</span>
+<span class="sd">        in order to be classified according to the observational technique used,</span>
+<span class="sd">        imaging or spectroscopy.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            data_container (object): Class used as storage unit for classified</span>
+<span class="sd">            data.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ifc</span> <span class="o">=</span> <span class="n">ImageFileCollection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keywords</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span> <span class="o">=</span> <span class="n">ifc</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+        <span class="c1"># add two columns that will contain the ra and dec in degrees</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
+
+            <span class="n">radeg</span><span class="p">,</span> <span class="n">decdeg</span> <span class="o">=</span> <span class="n">ra_dec_to_deg</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">obsra</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">obsdec</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+                <span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="s1">&#39;radeg&#39;</span><span class="p">)]</span> <span class="o">=</span> \
+                <span class="s1">&#39;</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radeg</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
+                <span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="s1">&#39;decdeg&#39;</span><span class="p">)]</span> <span class="o">=</span> \
+                <span class="s1">&#39;</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">decdeg</span><span class="p">)</span>
+            <span class="c1"># now we can compare using degrees</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_checks</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_datatypes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">obstype</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Spectroscopy&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spectroscopy_night</span><span class="p">(</span><span class="n">file_collection</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="p">,</span>
+                                    <span class="n">data_container</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_container</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">imaging_night</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_container</span><span class="o">.</span><span class="n">is_empty</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;data_container is empty&#39;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;ERROR: There is no data to process!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Returning classified data&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_container</span>
+
+<div class="viewcode-block" id="NightOrganizer.initial_checks"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.night_organizer.NightOrganizer.initial_checks">[docs]</a>    <span class="k">def</span> <span class="nf">initial_checks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">readout_confs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;gain&#39;</span><span class="p">,</span> <span class="s1">&#39;rdnoise&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">readout_confs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;There are </span><span class="si">{:d}</span><span class="s1"> different readout modes in the &#39;</span>
+                        <span class="s1">&#39;data.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">readout_confs</span><span class="p">)))</span>
+
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Sleeping 10 seconds&#39;</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></div>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="NightOrganizer.spectroscopy_night"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.night_organizer.NightOrganizer.spectroscopy_night">[docs]</a>    <span class="k">def</span> <span class="nf">spectroscopy_night</span><span class="p">(</span><span class="n">file_collection</span><span class="p">,</span> <span class="n">data_container</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Organizes data for spectroscopy</span>
+
+<span class="sd">        This method identifies all combinations of nine **key** keywords that</span>
+<span class="sd">        can set appart different objects with their respective calibration data</span>
+<span class="sd">        or not. The keywords used are: GAIN, RDNOISE, GRATING, FILTER2,</span>
+<span class="sd">        CAM_TARG,GRT_TARG, SLIT, OBSRA and OBSDEC.</span>
+
+<span class="sd">        This method populates the `data_container` class attribute which is an</span>
+<span class="sd">        instance of the class NightDataContainer.</span>
+<span class="sd">        A data group is an instance of a Pandas DataFrame.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_collection</span><span class="p">,</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data_container</span><span class="p">,</span> <span class="n">NightDataContainer</span><span class="p">)</span>
+
+        <span class="c1"># obtain a list of timestamps of observing time</span>
+        <span class="c1"># this will only be used for naming flats</span>
+        <span class="n">dateobs_list</span> <span class="o">=</span> <span class="n">file_collection</span><span class="p">[</span><span class="s1">&#39;date-obs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="c1"># get times for twilights, sunset an sunrise</span>
+        <span class="n">afternoon_twilight</span><span class="p">,</span> <span class="n">morning_twilight</span><span class="p">,</span> <span class="n">sun_set</span><span class="p">,</span> <span class="n">sun_rise</span> <span class="o">=</span> \
+            <span class="n">get_twilight_time</span><span class="p">(</span><span class="n">date_obs</span><span class="o">=</span><span class="n">dateobs_list</span><span class="p">)</span>
+
+        <span class="c1"># set times in data container</span>
+        <span class="n">data_container</span><span class="o">.</span><span class="n">set_sun_times</span><span class="p">(</span><span class="n">sun_set</span><span class="p">,</span>
+                                     <span class="n">sun_rise</span><span class="p">)</span>
+        <span class="n">data_container</span><span class="o">.</span><span class="n">set_twilight_times</span><span class="p">(</span><span class="n">afternoon_twilight</span><span class="p">,</span>
+                                          <span class="n">morning_twilight</span><span class="p">)</span>
+
+
+        <span class="c1">#process bias</span>
+        <span class="n">bias_collection</span> <span class="o">=</span> <span class="n">file_collection</span><span class="p">[</span><span class="n">file_collection</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;BIAS&#39;</span><span class="p">]</span>
+
+        <span class="n">bias_conf</span> <span class="o">=</span> <span class="n">bias_collection</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;rdnoise&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;radeg&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;decdeg&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;count&#39;</span><span class="p">})</span>
+
+        <span class="c1"># bias_conf</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">bias_conf</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+
+            <span class="n">bias_group</span> <span class="o">=</span> <span class="n">bias_collection</span><span class="p">[</span>
+                <span class="p">((</span><span class="n">bias_collection</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bias_conf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">bias_collection</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bias_conf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">bias_collection</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bias_conf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;radeg&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">bias_collection</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bias_conf</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;decdeg&#39;</span><span class="p">]))]</span>
+
+            <span class="n">data_container</span><span class="o">.</span><span class="n">add_bias</span><span class="p">(</span><span class="n">bias_group</span><span class="o">=</span><span class="n">bias_group</span><span class="p">)</span>
+
+        <span class="c1"># process non-bias i.e. flats and object ... and comp</span>
+        <span class="n">data_collection</span> <span class="o">=</span> <span class="n">file_collection</span><span class="p">[</span><span class="n">file_collection</span><span class="o">.</span><span class="n">obstype</span> <span class="o">!=</span> <span class="s1">&#39;BIAS&#39;</span><span class="p">]</span>
+
+        <span class="n">confs</span> <span class="o">=</span> <span class="n">data_collection</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;rdnoise&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;grating&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;filter2&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;cam_targ&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;grt_targ&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;slit&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;radeg&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;decdeg&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;count&#39;</span><span class="p">})</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">confs</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+
+            <span class="n">data_group</span> <span class="o">=</span> <span class="n">data_collection</span><span class="p">[</span>
+                <span class="p">((</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;grating&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;filter2&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;filter2&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;cam_targ&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;cam_targ&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;grt_targ&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;grt_targ&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;slit&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;slit&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;radeg&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">data_collection</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;decdeg&#39;</span><span class="p">]))]</span>
+
+            <span class="n">data_container</span><span class="o">.</span><span class="n">add_data_group</span><span class="p">(</span><span class="n">data_group</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data_container</span></div>
+
+<div class="viewcode-block" id="NightOrganizer.imaging_night"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.night_organizer.NightOrganizer.imaging_night">[docs]</a>    <span class="k">def</span> <span class="nf">imaging_night</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Organizes data for imaging</span>
+
+<span class="sd">        For imaging there is no discrimination regarding night data since the</span>
+<span class="sd">        process is simpler. It is a three stage process classifying BIAS, FLAT</span>
+<span class="sd">        and OBJECT datatype. The data is packed in groups that are</span>
+<span class="sd">        pandas.DataFrame objects.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># bias data group</span>
+        <span class="n">date_obs_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="p">[</span><span class="s1">&#39;date-obs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="n">afternoon_twilight</span><span class="p">,</span> <span class="n">morning_twilight</span><span class="p">,</span> <span class="n">sun_set</span><span class="p">,</span> <span class="n">sun_rise</span> <span class="o">=</span> \
+            <span class="n">get_twilight_time</span><span class="p">(</span><span class="n">date_obs</span><span class="o">=</span><span class="n">date_obs_list</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_container</span><span class="o">.</span><span class="n">set_sun_times</span><span class="p">(</span><span class="n">sun_set</span><span class="o">=</span><span class="n">sun_set</span><span class="p">,</span>
+                                          <span class="n">sun_rise</span><span class="o">=</span><span class="n">sun_rise</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_container</span><span class="o">.</span><span class="n">set_twilight_times</span><span class="p">(</span><span class="n">evening</span><span class="o">=</span><span class="n">afternoon_twilight</span><span class="p">,</span>
+                                               <span class="n">morning</span><span class="o">=</span><span class="n">morning_twilight</span><span class="p">)</span>
+
+        <span class="n">bias_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;BIAS&#39;</span><span class="p">]</span> <span class="c1"># .tolist()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bias_group</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+
+            <span class="n">bias_confs</span> <span class="o">=</span> <span class="n">bias_group</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+                <span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;rdnoise&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;radeg&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;decdeg&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;count&#39;</span><span class="p">})</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">bias_confs</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+
+                <span class="n">bias_group</span> <span class="o">=</span> <span class="n">bias_group</span><span class="p">[</span>
+                    <span class="p">((</span><span class="n">bias_group</span><span class="p">[</span><span class="s1">&#39;gain&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bias_confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;gain&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                    <span class="p">(</span><span class="n">bias_group</span><span class="p">[</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bias_confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;rdnoise&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                    <span class="p">(</span><span class="n">bias_group</span><span class="p">[</span><span class="s1">&#39;radeg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bias_confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;radeg&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                    <span class="p">(</span><span class="n">bias_group</span><span class="p">[</span><span class="s1">&#39;decdeg&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">bias_confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;decdeg&#39;</span><span class="p">]))]</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">data_container</span><span class="o">.</span><span class="n">add_bias</span><span class="p">(</span><span class="n">bias_group</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Not enough bias images.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># flats separation</span>
+        <span class="n">flat_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;FLAT&#39;</span><span class="p">]</span>
+
+        <span class="c1"># confs stands for configurations</span>
+        <span class="n">confs</span> <span class="o">=</span> <span class="n">flat_data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;filter&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;count&#39;</span><span class="p">})</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">confs</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+
+            <span class="n">flat_group</span> <span class="o">=</span> <span class="n">flat_data</span><span class="p">[</span>
+                <span class="p">((</span><span class="n">flat_data</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;object&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                <span class="p">(</span><span class="n">flat_data</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;filter&#39;</span><span class="p">]))]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_container</span><span class="o">.</span><span class="n">add_day_flats</span><span class="p">(</span><span class="n">flat_group</span><span class="p">)</span>
+
+        <span class="c1"># science data separation</span>
+        <span class="n">science_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;OBJECT&#39;</span><span class="p">]</span>
+
+        <span class="c1"># confs stands for configurations</span>
+        <span class="n">confs</span> <span class="o">=</span> <span class="n">science_data</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;filter&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="mi">0</span><span class="p">:</span> <span class="s1">&#39;count&#39;</span><span class="p">})</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">confs</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+
+            <span class="n">science_group</span> <span class="o">=</span> <span class="n">science_data</span><span class="p">[</span>
+                <span class="p">((</span><span class="n">science_data</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;object&#39;</span><span class="p">])</span> <span class="o">&amp;</span>
+                 <span class="p">(</span><span class="n">science_data</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">confs</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;filter&#39;</span><span class="p">]))]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_container</span><span class="o">.</span><span class="n">add_data_group</span><span class="p">(</span><span class="n">science_group</span><span class="p">)</span></div></div>
+
+
+
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Simon Torres.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>

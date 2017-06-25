@@ -1,0 +1,828 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>goodman_ccd.image_processor &#8212; Goodman Pipelines 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for goodman_ccd.image_processor</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">ccdproc</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">pandas</span>
+<span class="kn">from</span> <span class="nn">.wavmode_translator</span> <span class="k">import</span> <span class="n">SpectroscopicMode</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">ccdproc</span> <span class="k">import</span> <span class="n">CCDData</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">interpolate</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">signal</span>
+
+<span class="kn">from</span> <span class="nn">astropy.convolution</span> <span class="k">import</span> <span class="p">(</span><span class="n">convolve</span><span class="p">,</span>
+                                 <span class="n">convolve_fft</span><span class="p">,</span>
+                                 <span class="n">Gaussian2DKernel</span><span class="p">,</span>
+                                 <span class="n">Tophat2DKernel</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">astropy.modeling</span> <span class="k">import</span> <span class="p">(</span><span class="n">models</span><span class="p">,</span>
+                              <span class="n">fitting</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="p">(</span><span class="n">image_overscan</span><span class="p">,</span>
+                   <span class="n">image_trim</span><span class="p">,</span>
+                   <span class="n">get_slit_trim_section</span><span class="p">,</span>
+                   <span class="n">cosmicray_rejection</span><span class="p">,</span>
+                   <span class="n">get_best_flat</span><span class="p">,</span>
+                   <span class="n">normalize_master_flat</span><span class="p">,</span>
+                   <span class="n">dcr_cosmicray_rejection</span><span class="p">)</span>
+
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;goodmanccd.imageprocessor&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ImageProcessor"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.image_processor.ImageProcessor">[docs]</a><span class="k">class</span> <span class="nc">ImageProcessor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">data_container</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            args (object): Argparse object</span>
+<span class="sd">            data_container (object): Contains relevant information of the night</span>
+<span class="sd">            and the data itself.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">instrument</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">technique</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">bias</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">day_flats</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">day_flats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dome_flats</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">dome_flats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sky_flats</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">sky_flats</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_groups</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">data_groups</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sun_set</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">sun_set_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sun_rise</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">sun_rise_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">morning_twilight</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">morning_twilight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">evening_twilight</span> <span class="o">=</span> <span class="n">data_container</span><span class="o">.</span><span class="n">evening_twilight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_scale</span> <span class="o">=</span> <span class="mf">0.15</span> <span class="o">*</span> <span class="n">u</span><span class="o">.</span><span class="n">arcsec</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">define_trim_section</span><span class="p">(</span><span class="n">technique</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">technique</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">overscan_region</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_overscan_region</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spec_mode</span> <span class="o">=</span> <span class="n">SpectroscopicMode</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            *args:</span>
+<span class="sd">            **kwargs:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">day_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">dome_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">sky_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data_groups</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">sub_group</span> <span class="ow">in</span> <span class="n">group</span><span class="p">:</span>
+                    <span class="n">group_obstype</span> <span class="o">=</span> <span class="n">sub_group</span><span class="o">.</span><span class="n">obstype</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">group_obstype</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">group_obstype</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;BIAS&#39;</span><span class="p">:</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Create Master Bias&#39;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">create_master_bias</span><span class="p">(</span><span class="n">sub_group</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">group_obstype</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">group_obstype</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;FLAT&#39;</span><span class="p">:</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Create Master FLATS&#39;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">create_master_flats</span><span class="p">(</span><span class="n">sub_group</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Process Data Group&#39;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Spectroscopy&#39;</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">process_spectroscopy_science</span><span class="p">(</span><span class="n">sub_group</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Imaging Science Data&#39;</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">process_imaging_science</span><span class="p">(</span><span class="n">sub_group</span><span class="p">)</span>
+        <span class="c1"># print(&#39;data groups &#39;, len(self.data_groups))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;QUEUE&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">sub_group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">sub_group</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ImageProcessor.define_trim_section"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.image_processor.ImageProcessor.define_trim_section">[docs]</a>    <span class="k">def</span> <span class="nf">define_trim_section</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">technique</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="n">technique</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="n">trim_section</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># TODO (simon): Consider binning and possibly ROIs for trim section</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Determining trim section. Assuming you have only one kind &#39;</span>
+                    <span class="s1">&#39;of data in this folder&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">day_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">dome_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">sky_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data_groups</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># print(self.bias[0])</span>
+                <span class="n">image_list</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">sample_image</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span>
+                                            <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">image_list</span><span class="p">))</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">sample_image</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+
+                <span class="c1"># serial binning - dispersion binning</span>
+                <span class="c1"># parallel binngin - spatial binning</span>
+                <span class="n">serial_binning</span><span class="p">,</span> \
+                <span class="n">parallel_binning</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span>
+                                    <span class="ow">in</span> <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CCDSUM&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+
+                <span class="c1"># Trim section is valid for Blue and Red Camera Binning 1x1 and</span>
+                <span class="c1"># Spectroscopic ROI</span>
+                <span class="k">if</span> <span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Spectroscopy&#39;</span><span class="p">:</span>
+
+                    <span class="c1"># left</span>
+                    <span class="n">l</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">51.</span> <span class="o">/</span> <span class="n">serial_binning</span><span class="p">))</span>
+
+                    <span class="c1"># right</span>
+                    <span class="n">r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">4110</span> <span class="o">/</span> <span class="n">serial_binning</span><span class="p">)</span>
+
+                    <span class="c1"># bottom</span>
+                    <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
+
+                    <span class="c1">#top</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1896</span> <span class="o">/</span> <span class="n">parallel_binning</span><span class="p">)</span>
+                    <span class="c1"># TODO (simon): Need testing</span>
+                    <span class="n">trim_section</span> <span class="o">=</span> <span class="s1">&#39;[</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">,</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
+                    <span class="n">trim_section</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;TRIMSEC&#39;</span><span class="p">]</span>
+
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Trim Section: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">trim_section</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">trim_section</span></div>
+
+<div class="viewcode-block" id="ImageProcessor.get_overscan_region"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.image_processor.ImageProcessor.get_overscan_region">[docs]</a>    <span class="k">def</span> <span class="nf">get_overscan_region</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the right overscan region for spectroscopy</span>
+
+<span class="sd">        It works for the following ROI:</span>
+<span class="sd">            Spectroscopic 1x1</span>
+<span class="sd">            Spectroscopic 2x2</span>
+<span class="sd">            Spectroscopic 3x3</span>
+
+<span class="sd">        The limits where measured on a Spectroscopic 1x1 image and then divided</span>
+<span class="sd">        by the binning size. This was checked</span>
+<span class="sd">        that it actually works as expected.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        1 based</span>
+<span class="sd">        IRAF V3 convention oppsoite to Python (poner en returns)</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            overscan_region (str): Region for overscan in the format</span>
+<span class="sd">            &#39;[min:max,:]&#39; where min is the starting point and max is the end</span>
+<span class="sd">            point of the overscan region.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO (simon): elaborate Notes on docstrings</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Determining Overscan Region. Assuming you have only one &#39;</span>
+                    <span class="s1">&#39;kind of binning in the data.&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">day_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">dome_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">sky_flats</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">data_groups</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># &#39;group&#39; is a list</span>
+                <span class="n">image_list</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;file&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">sample_image</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span>
+                                            <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">image_list</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Overscan Sample File &#39;</span> <span class="o">+</span> <span class="n">sample_image</span><span class="p">)</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">sample_image</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+
+                <span class="c1"># Image height - spatial direction</span>
+                <span class="n">h</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="c1"># Image width - spectral direction</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                <span class="c1"># Take the binnings</span>
+                <span class="n">serial_binning</span><span class="p">,</span> <span class="n">parallel_binning</span> <span class="o">=</span> \
+                    <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CCDSUM&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Spectroscopy&#39;</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Overscan regions has been tested for ROI &#39;</span>
+                             <span class="s1">&#39;Spectroscopic 1x1, 2x2 and 3x3&#39;</span><span class="p">)</span>
+
+                    <span class="c1"># define l r b and t to avoid local variable might be</span>
+                    <span class="c1"># defined before assignment warning</span>
+                    <span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span> <span class="o">==</span> <span class="s1">&#39;Red&#39;</span><span class="p">:</span>
+                        <span class="c1"># for red camera it is necessary to eliminate the first</span>
+                        <span class="c1"># rows/columns (depends on the point of view) because</span>
+                        <span class="c1"># they come with an abnormal high signal. Usually the</span>
+                        <span class="c1"># first 5 pixels. In order to find the corresponding</span>
+                        <span class="c1"># value for the subsequent binnings divide by the</span>
+                        <span class="c1"># binning size.</span>
+                        <span class="c1"># The numbers 6 and 49 where obtained from visual</span>
+                        <span class="c1"># inspection</span>
+
+                        <span class="c1"># left</span>
+                        <span class="n">l</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="mf">6.</span> <span class="o">/</span> <span class="n">serial_binning</span><span class="p">))</span>
+                        <span class="c1"># right</span>
+                        <span class="n">r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">49.</span> <span class="o">/</span> <span class="n">serial_binning</span><span class="p">)</span>
+                        <span class="c1"># bottom</span>
+                        <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
+                        <span class="c1"># top</span>
+                        <span class="n">t</span> <span class="o">=</span> <span class="n">h</span>
+                    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span> <span class="o">==</span> <span class="s1">&#39;Blue&#39;</span><span class="p">:</span>
+                        <span class="c1"># 16 is the length of the overscan region with no</span>
+                        <span class="c1"># binning.</span>
+
+                        <span class="c1"># left</span>
+                        <span class="n">l</span> <span class="o">=</span> <span class="mi">1</span>
+                        <span class="c1"># right</span>
+                        <span class="n">r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">16.</span> <span class="o">/</span> <span class="n">serial_binning</span><span class="p">)</span>
+                        <span class="c1"># bottom</span>
+                        <span class="n">b</span> <span class="o">=</span> <span class="mi">1</span>
+                        <span class="c1"># top</span>
+                        <span class="n">t</span> <span class="o">=</span> <span class="n">h</span>
+
+                    <span class="n">overscan_region</span> <span class="o">=</span> <span class="s1">&#39;[</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">,</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Imaging mode doesn&#39;t have overscan region. &quot;</span>
+                                <span class="s2">&quot;Use bias instead.&quot;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Bias are needed for Imaging mode&#39;</span><span class="p">)</span>
+                    <span class="n">overscan_region</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">overscan_region</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Overscan Region: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">overscan_region</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">overscan_region</span></div>
+
+<div class="viewcode-block" id="ImageProcessor.create_master_bias"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.image_processor.ImageProcessor.create_master_bias">[docs]</a>    <span class="k">def</span> <span class="nf">create_master_bias</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bias_group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            bias_group:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bias_file_list</span> <span class="o">=</span> <span class="n">bias_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">default_bias_name</span> <span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">red_path</span><span class="p">,</span> <span class="s1">&#39;master_bias.fits&#39;</span><span class="p">)</span>
+        <span class="n">search_bias_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;.fits&#39;</span><span class="p">,</span> <span class="s1">&#39;*.fits&#39;</span><span class="p">,</span> <span class="n">default_bias_name</span><span class="p">)</span>
+        <span class="n">n_bias</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">search_bias_name</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">n_bias</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">new_bias_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;.fits&#39;</span><span class="p">,</span>
+                                   <span class="s1">&#39;_</span><span class="si">{:d}</span><span class="s1">.fits&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_bias</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+                                   <span class="n">default_bias_name</span><span class="p">)</span>
+
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;New name for master bias: &#39;</span> <span class="o">+</span> <span class="n">new_bias_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">new_bias_name</span> <span class="o">=</span> <span class="n">default_bias_name</span>
+        <span class="c1"># TODO (simon): Review whether it is necessary to discriminate by</span>
+        <span class="c1"># TODO technique</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Spectroscopy&#39;</span><span class="p">:</span>
+            <span class="n">master_bias_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Creating master bias&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">image_file</span> <span class="ow">in</span> <span class="n">bias_file_list</span><span class="p">:</span>
+                <span class="c1"># print(image_file)</span>
+                <span class="n">image_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">image_file</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Overscan Region: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">overscan_region</span><span class="p">))</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Loading bias image: &#39;</span> <span class="o">+</span> <span class="n">image_full_path</span><span class="p">)</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_overscan</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">overscan_region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">overscan_region</span><span class="p">)</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span><span class="p">)</span>
+                <span class="n">master_bias_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ccd</span><span class="p">)</span>
+
+            <span class="c1"># combine bias for spectroscopy</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span> <span class="o">=</span> <span class="n">ccdproc</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">master_bias_list</span><span class="p">,</span>
+                                               <span class="n">method</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="p">,</span>
+                                               <span class="n">sigma_clip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                               <span class="n">sigma_clip_low_thresh</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+                                               <span class="n">sigma_clip_high_thresh</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+                                               <span class="n">add_keyword</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># write master bias to file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">new_bias_name</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created master bias: &#39;</span> <span class="o">+</span> <span class="n">new_bias_name</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
+            <span class="n">master_bias_list</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Creating master bias&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">image_file</span> <span class="ow">in</span> <span class="n">bias_file_list</span><span class="p">:</span>
+                <span class="n">image_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">image_file</span><span class="p">)</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Loading bias image: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">))</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span><span class="p">)</span>
+                <span class="n">master_bias_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ccd</span><span class="p">)</span>
+
+            <span class="c1"># combine bias for imaging</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span> <span class="o">=</span> <span class="n">ccdproc</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">master_bias_list</span><span class="p">,</span>
+                                               <span class="n">method</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="p">,</span>
+                                               <span class="n">sigma_clip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                               <span class="n">sigma_clip_low_thresh</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+                                               <span class="n">sigma_clip_high_thresh</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span>
+                                               <span class="n">add_keyword</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># write master bias to file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">new_bias_name</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created master bias: &#39;</span> <span class="o">+</span> <span class="n">new_bias_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ImageProcessor.create_master_flats"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.image_processor.ImageProcessor.create_master_flats">[docs]</a>    <span class="k">def</span> <span class="nf">create_master_flats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flat_group</span><span class="p">,</span> <span class="n">target_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flat_group:</span>
+<span class="sd">            target_name:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">flat_file_list</span> <span class="o">=</span> <span class="n">flat_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">master_flat_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">master_flat_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Creating Master Flat&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">flat_file</span> <span class="ow">in</span> <span class="n">flat_file_list</span><span class="p">:</span>
+            <span class="c1"># print(f_file)</span>
+            <span class="n">image_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">flat_file</span><span class="p">)</span>
+            <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Loading flat image: &#39;</span> <span class="o">+</span> <span class="n">image_full_path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">master_flat_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+                <span class="n">master_flat_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_master_flats</span><span class="p">(</span>
+                    <span class="n">header</span><span class="o">=</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
+                    <span class="n">group</span><span class="o">=</span><span class="n">flat_group</span><span class="p">,</span>
+                    <span class="n">target_name</span><span class="o">=</span><span class="n">target_name</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Spectroscopy&#39;</span><span class="p">:</span>
+                <span class="c1"># plt.title(&#39;Before Overscan&#39;)</span>
+                <span class="c1"># plt.imshow(ccd.data, clim=(-100, 0))</span>
+                <span class="c1"># plt.show()</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_overscan</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">overscan_region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">overscan_region</span><span class="p">)</span>
+                <span class="c1"># plt.title(&#39;After Overscan&#39;)</span>
+                <span class="c1"># plt.imshow(ccd.data, clim=(-100, 0))</span>
+                <span class="c1"># plt.show()</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span><span class="p">)</span>
+                <span class="c1"># plt.title(&#39;After Trimming&#39;)</span>
+                <span class="c1"># plt.imshow(ccd.data, clim=(-100, 0))</span>
+                <span class="c1"># plt.show()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span><span class="p">)</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">ccdproc</span><span class="o">.</span><span class="n">subtract_bias</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span>
+                                            <span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span><span class="p">,</span>
+                                            <span class="n">add_keyword</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Unknown observation technique: &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">saturation_limit</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Removing saturated image </span><span class="si">{:s}</span><span class="s1">. Use --saturation &#39;</span>
+                            <span class="s1">&#39;to change saturation level&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">flat_file</span><span class="p">))</span>
+                <span class="c1"># plt.plot(ccd.data[802,:])</span>
+                <span class="c1"># plt.show()</span>
+                <span class="c1"># print(ccd.data.max())</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">master_flat_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ccd</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">master_flat_list</span> <span class="o">!=</span> <span class="p">[]:</span>
+            <span class="n">master_flat</span> <span class="o">=</span> <span class="n">ccdproc</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">master_flat_list</span><span class="p">,</span>
+                                          <span class="n">method</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="p">,</span>
+                                          <span class="n">sigma_clip</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                          <span class="n">sigma_clip_low_thresh</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                                          <span class="n">sigma_clip_high_thresh</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                                          <span class="n">add_keyword</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">master_flat</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># plt.imshow(master_flat.data, clim=(-100,0))</span>
+            <span class="c1"># plt.show()</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created Master Flat: &#39;</span> <span class="o">+</span> <span class="n">master_flat_name</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">master_flat</span><span class="p">,</span> <span class="n">master_flat_name</span>
+            <span class="c1"># print(master_flat_name)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Empty flat list. Probably they exceed the &#39;</span>
+                      <span class="s1">&#39;saturation limit.&#39;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="ImageProcessor.name_master_flats"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.image_processor.ImageProcessor.name_master_flats">[docs]</a>    <span class="k">def</span> <span class="nf">name_master_flats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">group</span><span class="p">,</span> <span class="n">target_name</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">get</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            header:</span>
+<span class="sd">            group:</span>
+<span class="sd">            target_name:</span>
+<span class="sd">            get:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">master_flat_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">red_path</span><span class="p">,</span> <span class="s1">&#39;master_flat&#39;</span><span class="p">)</span>
+        <span class="n">sunset</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sun_set</span><span class="p">,</span>
+                                            <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">sunrise</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sun_rise</span><span class="p">,</span>
+                                             <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">afternoon_twilight</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evening_twilight</span><span class="p">,</span>
+                                                        <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">morning_twilight</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">morning_twilight</span><span class="p">,</span>
+                                                      <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">date_obs</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;DATE-OBS&#39;</span><span class="p">],</span>
+                                              <span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">T%H:%M:%S.</span><span class="si">%f</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># print(sunset, date_obs, evening_twilight)</span>
+        <span class="c1"># print(&#39; &#39;)</span>
+        <span class="k">if</span> <span class="n">target_name</span> <span class="o">!=</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+            <span class="n">target_name</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">target_name</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">get</span><span class="p">:</span>
+            <span class="c1"># TODO (simon): There must be a pythonic way to do this</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">date_obs</span> <span class="o">&lt;</span> <span class="n">sunset</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">date_obs</span> <span class="o">&gt;</span> <span class="n">sunrise</span><span class="p">):</span>
+                <span class="n">dome_sky</span> <span class="o">=</span> <span class="s1">&#39;_dome&#39;</span>
+            <span class="k">elif</span> <span class="p">(</span><span class="n">sunset</span> <span class="o">&lt;</span> <span class="n">date_obs</span> <span class="o">&lt;</span> <span class="n">afternoon_twilight</span><span class="p">)</span> <span class="ow">or</span>\
+                    <span class="p">(</span><span class="n">morning_twilight</span> <span class="o">&lt;</span> <span class="n">date_obs</span> <span class="o">&lt;</span> <span class="n">sunrise</span><span class="p">):</span>
+                <span class="n">dome_sky</span> <span class="o">=</span> <span class="s1">&#39;_sky&#39;</span>
+            <span class="k">elif</span> <span class="n">afternoon_twilight</span> <span class="o">&lt;</span> <span class="n">date_obs</span> <span class="o">&lt;</span> <span class="n">morning_twilight</span><span class="p">:</span>
+                <span class="n">dome_sky</span> <span class="o">=</span> <span class="s1">&#39;_night&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dome_sky</span> <span class="o">=</span> <span class="s1">&#39;_other&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dome_sky</span> <span class="o">=</span> <span class="s1">&#39;*&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Spectroscopy&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">group</span><span class="o">.</span><span class="n">grating</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;&lt;NO GRATING&gt;&#39;</span><span class="p">:</span>
+                <span class="n">flat_grating</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[A-Za-z_-]&#39;</span><span class="p">,</span>
+                                            <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                                            <span class="n">group</span><span class="o">.</span><span class="n">grating</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+
+                <span class="c1"># self.spec_mode is an instance of SpectroscopicMode</span>
+                <span class="n">wavmode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spec_mode</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">flat_grating</span> <span class="o">=</span> <span class="s1">&#39;_no_grating&#39;</span>
+                <span class="n">wavmode</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+            <span class="n">flat_slit</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[A-Za-z&quot; ]&#39;</span><span class="p">,</span>
+                               <span class="s1">&#39;&#39;</span><span class="p">,</span>
+                               <span class="n">group</span><span class="o">.</span><span class="n">slit</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+
+            <span class="n">filter2</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;filter2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">filter2</span> <span class="o">==</span> <span class="s1">&#39;&lt;NO FILTER&gt;&#39;</span><span class="p">:</span>
+                <span class="n">filter2</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">filter2</span> <span class="o">=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">filter2</span>
+
+            <span class="n">master_flat_name</span> <span class="o">+=</span> <span class="n">target_name</span> <span class="o">+</span>\
+                                <span class="n">flat_grating</span> <span class="o">+</span>\
+                                <span class="n">wavmode</span> <span class="o">+</span>\
+                                <span class="n">filter2</span> <span class="o">+</span>\
+                                <span class="s1">&#39;_&#39;</span> <span class="o">+</span>\
+                                <span class="n">flat_slit</span> <span class="o">+</span>\
+                                <span class="n">dome_sky</span> <span class="o">+</span>\
+                                <span class="s1">&#39;.fits&#39;</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
+            <span class="n">flat_filter</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">group</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">master_flat_name</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> <span class="n">flat_filter</span> <span class="o">+</span> <span class="n">dome_sky</span> <span class="o">+</span> <span class="s1">&#39;.fits&#39;</span>
+        <span class="c1"># print(master_flat_name)</span>
+        <span class="k">return</span> <span class="n">master_flat_name</span></div>
+
+<div class="viewcode-block" id="ImageProcessor.process_spectroscopy_science"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.image_processor.ImageProcessor.process_spectroscopy_science">[docs]</a>    <span class="k">def</span> <span class="nf">process_spectroscopy_science</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">science_group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            science_group:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO (simon): The code here is too crowded.</span>
+        <span class="c1"># TODO cont. Create other functions as necessary</span>
+
+        <span class="n">target_name</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">slit_trim</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">obstype</span> <span class="o">=</span> <span class="n">science_group</span><span class="o">.</span><span class="n">obstype</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="c1"># print(obstype)</span>
+        <span class="k">if</span> <span class="s1">&#39;OBJECT&#39;</span> <span class="ow">in</span> <span class="n">obstype</span> <span class="ow">or</span> <span class="s1">&#39;COMP&#39;</span> <span class="ow">in</span> <span class="n">obstype</span><span class="p">:</span>
+            <span class="n">object_group</span> <span class="o">=</span> <span class="n">science_group</span><span class="p">[(</span><span class="n">science_group</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;OBJECT&#39;</span><span class="p">)</span> <span class="o">|</span>
+                                         <span class="p">(</span><span class="n">science_group</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;COMP&#39;</span><span class="p">)]</span>
+            <span class="k">if</span> <span class="s1">&#39;OBJECT&#39;</span> <span class="ow">in</span> <span class="n">obstype</span><span class="p">:</span>
+                <span class="n">target_name</span> <span class="o">=</span> <span class="n">science_group</span><span class="o">.</span><span class="n">object</span><span class="p">[</span><span class="n">science_group</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span>
+                                                   <span class="s1">&#39;OBJECT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Science Target: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_name</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Comparison Lamp: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_name</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="s1">&#39;FLAT&#39;</span> <span class="ow">in</span> <span class="n">obstype</span><span class="p">:</span>
+                <span class="n">flat_sub_group</span> <span class="o">=</span> <span class="n">science_group</span><span class="p">[</span><span class="n">science_group</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;FLAT&#39;</span><span class="p">]</span>
+
+                <span class="n">master_flat</span><span class="p">,</span> <span class="n">master_flat_name</span> <span class="o">=</span>\
+                    <span class="bp">self</span><span class="o">.</span><span class="n">create_master_flats</span><span class="p">(</span><span class="n">flat_group</span><span class="o">=</span><span class="n">flat_sub_group</span><span class="p">,</span>
+                                             <span class="n">target_name</span><span class="o">=</span><span class="n">target_name</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">object_list</span> <span class="o">=</span> <span class="n">object_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+                <span class="c1"># grab a random image from the list</span>
+                <span class="n">random_image</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">object_list</span><span class="p">)</span>
+
+                <span class="c1"># define random image full path</span>
+                <span class="n">random_image_full</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span>
+                                                 <span class="n">random_image</span><span class="p">)</span>
+
+                <span class="c1"># read the random chosen file</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">random_image_full</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+
+                <span class="c1"># define the master flat name</span>
+                <span class="n">master_flat_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_master_flats</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
+                                                          <span class="n">group</span><span class="o">=</span><span class="n">object_group</span><span class="p">,</span>
+                                                          <span class="n">get</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+                <span class="c1"># load the best flat based on the name previously defined</span>
+                <span class="n">master_flat</span><span class="p">,</span> <span class="n">master_flat_name</span> <span class="o">=</span>\
+                    <span class="n">get_best_flat</span><span class="p">(</span><span class="n">flat_name</span><span class="o">=</span><span class="n">master_flat_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">master_flat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">master_flat_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                    <span class="c1"># attempt to find a set of flats in all the data</span>
+
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="p">[</span><span class="n">science_group</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">science_group</span><span class="p">)</span>
+                        <span class="c1"># for sgroup in self.queue:</span>
+                        <span class="c1">#     if isinstance(sgroup, pandas.DataFrame):</span>
+                        <span class="c1">#         if sgroup.equals(science_group):</span>
+                        <span class="c1">#             log.info(&#39;Science group already in queue&#39;)</span>
+                        <span class="c1">#         else:</span>
+                        <span class="c1">#             log.info(&#39;Appending science Group&#39;)</span>
+                        <span class="c1">#             self.queue.append(science_group)</span>
+                        <span class="c1">#     else:</span>
+                        <span class="c1">#         log.error(&#39;Science Group is not an instance of</span>
+                        <span class="c1"># pandas.DataFrame&#39;)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Adding image group to Queue&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">master_flat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Attempting to find slit trim section&#39;</span><span class="p">)</span>
+                <span class="n">slit_trim</span> <span class="o">=</span> <span class="n">get_slit_trim_section</span><span class="p">(</span><span class="n">master_flat</span><span class="o">=</span><span class="n">master_flat</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Master flat inexistent, cant find slit trim section&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">slit_trim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+
+                <span class="n">master_flat</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="n">master_flat</span><span class="p">,</span>
+                                         <span class="n">trim_section</span><span class="o">=</span><span class="n">slit_trim</span><span class="p">)</span>
+
+                <span class="n">master_bias</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span><span class="p">,</span>
+                                         <span class="n">trim_section</span><span class="o">=</span><span class="n">slit_trim</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">master_bias</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+            <span class="n">norm_master_flat</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">for</span> <span class="n">science_image</span> <span class="ow">in</span> <span class="n">object_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+                <span class="c1"># define image full path</span>
+                <span class="n">image_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span>
+                                               <span class="n">science_image</span><span class="p">)</span>
+
+                <span class="c1"># load image</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+
+                <span class="c1"># apply overscan</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_overscan</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">overscan_region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">overscan_region</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">+=</span> <span class="s1">&#39;o_&#39;</span>
+
+                <span class="k">if</span> <span class="n">slit_trim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># There is a double trimming of the image, this is to match</span>
+                    <span class="c1"># the size of the other data</span>
+                    <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span><span class="p">)</span>
+                    <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="n">slit_trim</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;st&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;t&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">ignore_bias</span><span class="p">:</span>
+                    <span class="c1"># TODO (simon): Add check that bias is compatible</span>
+
+                    <span class="n">ccd</span> <span class="o">=</span> <span class="n">ccdproc</span><span class="o">.</span><span class="n">subtract_bias</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="n">ccd</span><span class="p">,</span>
+                                                <span class="n">master</span><span class="o">=</span><span class="n">master_bias</span><span class="p">,</span>
+                                                <span class="n">add_keyword</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;z&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
+                    <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="s1">&#39;Bias subtracted image&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">master_flat</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">master_flat_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;The file </span><span class="si">{:s}</span><span class="s1"> will not be &#39;</span>
+                                <span class="s1">&#39;flatfielded&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">science_image</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">norm_master_flat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+                        <span class="n">norm_master_flat</span> <span class="o">=</span> <span class="n">normalize_master_flat</span><span class="p">(</span>
+                            <span class="n">master</span><span class="o">=</span><span class="n">master_flat</span><span class="p">,</span>
+                            <span class="n">name</span><span class="o">=</span><span class="n">master_flat_name</span><span class="p">,</span>
+                            <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">flat_normalize</span><span class="p">,</span>
+                            <span class="n">order</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">norm_order</span><span class="p">)</span>
+
+                    <span class="n">ccd</span> <span class="o">=</span> <span class="n">ccdproc</span><span class="o">.</span><span class="n">flat_correct</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="n">ccd</span><span class="p">,</span>
+                                               <span class="n">flat</span><span class="o">=</span><span class="n">norm_master_flat</span><span class="p">,</span>
+                                               <span class="n">add_keyword</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;f&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
+
+                    <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="s1">&#39;master flat norm_&#39;</span>
+                                           <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">))</span>
+
+                <span class="n">full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">red_path</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="n">science_image</span><span class="p">)</span>
+                <span class="n">ccd</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">full_path</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created science image: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path</span><span class="p">))</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">clean_cosmic</span><span class="p">:</span>
+
+                    <span class="n">in_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="n">science_image</span>
+
+                    <span class="n">dcr_cosmicray_rejection</span><span class="p">(</span><span class="n">data_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">red_path</span><span class="p">,</span>
+                                            <span class="n">in_file</span><span class="o">=</span><span class="n">in_file</span><span class="p">,</span>
+                                            <span class="n">prefix</span><span class="o">=</span><span class="s1">&#39;c&#39;</span><span class="p">,</span>
+                                            <span class="n">dcr_par_dir</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">dcr_par_dir</span><span class="p">,</span>
+                                            <span class="n">delete</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">keep_cosmic_files</span><span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Clean Cosmic &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">clean_cosmic</span><span class="p">))</span>
+
+
+                
+
+                <span class="c1"># print(science_group)</span>
+        <span class="k">elif</span> <span class="s1">&#39;FLAT&#39;</span> <span class="ow">in</span> <span class="n">obstype</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">science_group</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Only flats found in this group&#39;</span><span class="p">)</span>
+            <span class="n">flat_sub_group</span> <span class="o">=</span> <span class="n">science_group</span><span class="p">[</span><span class="n">science_group</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;FLAT&#39;</span><span class="p">]</span>
+            <span class="c1"># TODO (simon): Find out if these variables are useful or not</span>
+            <span class="n">master_flat</span><span class="p">,</span> <span class="n">master_flat_name</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_master_flats</span><span class="p">(</span><span class="n">flat_group</span><span class="o">=</span><span class="n">flat_sub_group</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;There is no valid datatype in this group&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ImageProcessor.process_imaging_science"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.image_processor.ImageProcessor.process_imaging_science">[docs]</a>    <span class="k">def</span> <span class="nf">process_imaging_science</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">imaging_group</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            imaging_group:</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># pick a random image in order to get a header</span>
+        <span class="n">random_image</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">imaging_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="n">path_random_image</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">random_image</span><span class="p">)</span>
+        <span class="n">sample_file</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">path_random_image</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+
+        <span class="n">master_flat_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_master_flats</span><span class="p">(</span><span class="n">header</span><span class="o">=</span><span class="n">sample_file</span><span class="o">.</span><span class="n">header</span><span class="p">,</span>
+                                                  <span class="n">group</span><span class="o">=</span><span class="n">imaging_group</span><span class="p">,</span>
+                                                  <span class="n">get</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Got </span><span class="si">{:s}</span><span class="s1"> for master flat name&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">))</span>
+
+        <span class="n">master_flat</span><span class="p">,</span> <span class="n">master_flat_name</span> <span class="o">=</span> <span class="n">get_best_flat</span><span class="p">(</span>
+            <span class="n">flat_name</span><span class="o">=</span><span class="n">master_flat_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">master_flat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">image_file</span> <span class="ow">in</span> <span class="n">imaging_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
+
+                <span class="c1"># start with an empty prefix</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+                <span class="n">image_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">image_file</span><span class="p">)</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
+
+                <span class="c1"># Trim image</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;t_&#39;</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">ignore_bias</span><span class="p">:</span>
+
+                    <span class="n">ccd</span> <span class="o">=</span> <span class="n">ccdproc</span><span class="o">.</span><span class="n">subtract_bias</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">master_bias</span><span class="p">,</span>
+                                                <span class="n">add_keyword</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;z&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
+                    <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="s1">&#39;Bias subtracted image&#39;</span><span class="p">)</span>
+
+                <span class="c1"># apply flat correction</span>
+                <span class="n">ccd</span> <span class="o">=</span> <span class="n">ccdproc</span><span class="o">.</span><span class="n">flat_correct</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span>
+                                           <span class="n">master_flat</span><span class="p">,</span>
+                                           <span class="n">add_keyword</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;f&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
+
+                <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span>
+                    <span class="s1">&#39;Flat corrected &#39;</span>
+                    <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">clean_cosmic</span><span class="p">:</span>
+                    <span class="n">ccd</span> <span class="o">=</span> <span class="n">cosmicray_rejection</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="n">ccd</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;c&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Clean Cosmic &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">clean_cosmic</span><span class="p">))</span>
+
+                <span class="n">final_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">red_path</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="n">image_file</span><span class="p">)</span>
+                <span class="n">ccd</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">final_name</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created science file: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">final_name</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Can not process data without a master flat&#39;</span><span class="p">)</span></div></div>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Simon Torres.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+    </div>
+  </body>
+</html>
