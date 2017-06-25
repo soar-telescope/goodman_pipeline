@@ -37,12 +37,26 @@ to add your own.
 
 ## How to install it?
 ### Specific platform instructions
-_for installing on Ubuntu 16.04 see [this wiki](https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience)_
+_for installing on Ubuntu 16.04 see 
+[this wiki](https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience)_
 
-_for installing on Centos 7 see [this wiki](https://github.com/simontorres/goodman/wiki/Centos-7-Installation)_
+_for installing on Centos 7 see 
+[this wiki](https://github.com/simontorres/goodman/wiki/Centos-7-Installation)_
 
-
+Below you will find the instrucctions anyways, please refer to the wiki for the
+specifics.
 ### Get the code
+
+#### Install Git
+This step will depend on your platform, below are two examples:
+
+```shell
+# Centos
+sudo yum install git
+
+# Ubuntu
+sudo apt-get install git
+```
 #### Clone from GitHub
 To clone from GitHub copy and paste the following line in a terminal.
 
@@ -50,17 +64,12 @@ To clone from GitHub copy and paste the following line in a terminal.
 git clone https://github.com/soar-telescope/goodman.git
 ```
  
-You might need to install dependencies, please refer to [Ubuntu](https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience)
-or [Centos7](https://github.com/simontorres/goodman/wiki/Centos-7-Installation) Installation guide. Once you have solved the dependencies issues (if any) do:
+You are not ready to install the pipeline yet.
 
-```shell
-sudo python2.7 setup.py install
-```
+#### Requirements
 
-
-### Requirements
-
-This software was developed on Python 2.7, use the `requirements.txt` file to install all dependencies.
+This software was developed on Python 2.7, use the `requirements.txt` file to 
+install all dependencies.
 
 ```shell
 sudo -H pip2.7 install -r requirements.txt
@@ -79,6 +88,73 @@ following line on your `.bashrc` or `.bash_profile` file.
 alias python='pythonw' 
 ```
 
+### Install DCR (Cosmic Ray Rejection)
+This pipeline uses [DCR](http://users.camk.edu.pl/pych/DCR/) developed by 
+[Wojtek Pych](mailto:pych@camk.edu.pl) instead of `ccdproc.cosmicray_lacosmic` 
+because we got better results with `DCR`. Unfortunately you will have to compile
+it, I have successfully compiled it on Centos 7, Ubuntu 16.04, Linux Mint 18.1, 
+Solaris 11 and MacOS Sierra.
+
+
+Follow [this link](http://users.camk.edu.pl/pych/DCR/) and you can follow the 
+instructions there. The same instructions are reproduced here.
+
+Download the `dcr.tar` file and untar it.
+```shell
+tar -xvf dcr.tar
+```
+
+Compile it
+```shell
+make
+```
+
+If you don't get any errors you can try it without any arguments and you will
+get something like this
+```shell
+$ ./dcr
+
+        USAGE:  dcr  input_file  cleaned_file  cosmicrays_file
+
+File 'dcr.par' must be present in the working directory.
+      ~~~~~~
+```
+
+#### Make it available for the system
+Now that you have compiled the program you have a file called `dcr` you need to
+put it in the `$PATH` variable of your system. I usually use `bash` so if you
+use something different follow the example below as a guide.
+
+ 1. Create a directory to place the executable
+     ```shell
+     $ mkdir ~/.bin
+     ```
+     Note that in the example above the directory .bin will be hidden and the 
+     symbol `~` denotes your home directory for instance: `/home/goodman/`
+ 2. Move `dcr` to your new folder.
+     ```shell
+     $ mv dcr ~/.bin
+     ```
+ 3. Add the directory to the `PATH` variable. With your favorite text editor, 
+ open the file `~/.bashrc`
+     ```shell
+     $ vim ~/.bashrc
+     ```
+     At the end add the following line.
+     ```text
+     export PATH=$PATH:/home/user/.bin
+     ```
+     If you don't know your home directory do the following
+     ```shell
+     $ cd
+     $ pwd
+     ```
+     Whatever the output is there you should replace it for `/home/user/`
+ 4. Reload the environment variables. For this you can simply close and reopen
+ the terminal or you can do:
+     ```shell
+     $ source ~/.bashrc
+     ```
 
 ## How to use it?
  
@@ -90,68 +166,70 @@ $ redccd --help
   usage: redccd [-h] [-c] [--ignore-bias] [--auto-clean] [--saturation <Value>]
                 [--raw-path raw_path] [--red-path red_path] [--debug]
                 [--log-to-file] [--flat-normalize <Normalization Method>]
-                [--flat-norm-order <Order>]
-  
-  Goodman CCD Reduction - CCD reductions for Goodman spectroscopic data
-  
-  optional arguments:
-    -h, --help            show this help message and exit
-    -c, --cosmic          Clean cosmic rays from science data.
-    --ignore-bias         Ignore bias correction
-    --auto-clean          Automatically clean reduced data directory
-    --saturation <Value>  Saturation limit. Default to 55.000 ADU (counts)
-    --raw-path raw_path   Path to raw data.
-    --red-path red_path   Path to reduced data.
-    --debug               Show detailed information of the process.
-    --log-to-file         Write log to a file.
-    --flat-normalize <Normalization Method>
-                          Chose a method to normalize the flat for spectroscoy.
-                          Choices are: mean, simple (model) and full (fits model
-                          to each line).
-    --flat-norm-order <Order>
-                          Defines the order of the model to be fitted.
-  
+                [--flat-norm-order <Order>] [--dcr-par-dir <dcr.par directory>]
+                [--keep-cosmic-files]
+
+Goodman CCD Reduction - CCDreductions for Goodman spectroscopic data
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c, --cosmic          Clean cosmic rays from science data.
+  --ignore-bias         Ignore bias correction
+  --auto-clean          Automatically clean reduced data directory
+  --saturation <Value>  Saturation limit. Default to 55.000 ADU (counts)
+  --raw-path raw_path   Path to raw data.
+  --red-path red_path   Path to reduced data.
+  --debug               Show detailed information of the process.
+  --log-to-file         Write log to a file.
+  --flat-normalize <Normalization Method>
+                        Choose a method to normalize the master flat
+                        forspectroscoy. Choices are: mean, simple (model)and
+                        full (fits model to each line).
+  --flat-norm-order <Order>
+                        Defines the order of the model to be fitted.
+  --dcr-par-dir <dcr.par directory>
+                        Directory of default dcr.par file.
+  --keep-cosmic-files   After cleaning cosmic rays with dcr, do not remove the
+                        input file and the cosmic rays file.
+
   ```
 
 And for `redspec`:
 
-   ```shell
-     $ redspec --help
-     usage: redspec [-h] [-p <Source Path>] [-d <Destination Path>]
-                    [-s <Search Pattern>] [-m <Processing Mode>]
-                    [-r <Reference Lamp>] [-l <Lamp File>] [-o <Out Prefix>]
-                    [-R <Reference Dir>] [-i] [--debug] [--log-to-file]
-     
-     Extracts goodman spectra and does wavelength calibration.
-     
-     Supported Processing Modes are:
-         <0>: (Default) reads lamps taken at the begining or end of the night.
-         <1>: one or more lamps around science exposure.
-     
-     optional arguments:
-       -h, --help            show this help message and exit
-       -p <Source Path>, --data-path <Source Path>
-                             Path for location of raw data. Default <./>
-       -d <Destination Path>, --proc-path <Destination Path>
-                             Path for destination of processed data. Default <./>
-       -s <Search Pattern>, --search-pattern <Search Pattern>
-                             Pattern for matching the goodman's reduced data.
-       -m <Processing Mode>, --proc-mode <Processing Mode>
-                             Defines the mode of matching lamps to science targets.
-       -r <Reference Lamp>, --reference-lamp <Reference Lamp>
-                             Name of reference lamp file for mode 0. If not
-                             present, the first one in the list will be selected
-       -l <Lamp File>        Name of an ASCII file describing which science target
-                             uses which lamp. default <lamp.txt>
-       -o <Out Prefix>, --output-prefix <Out Prefix>
-                             Prefix to add to calibrated spectrum.
-       -R <Reference Dir>, --reference-files <Reference Dir>
-                             Directory of Reference files location
-       -i, --non-interactive
-                             Interactive wavelength solution. Enabled by default.
-       --debug               Debugging Mode
-       --log-to-file         Write log to a file
-     
+```shell
+$ redspec --help
+  usage: redspec [-h] [--data-path <Source Path>]
+                 [--proc-path <Destination Path>]
+                 [--search-pattern <Search Pattern>]
+                 [--output-prefix <Out Prefix>] [--extraction <Extraction Type>]
+                 [--reference-files <Reference Dir>] [--interactive] [--debug]
+                 [--log-to-file] [--save-plots] [--plot-results]
+
+Extracts goodman spectra and does wavelength calibration.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --data-path <Source Path>
+                        Path for location of raw data. Default <./>
+  --proc-path <Destination Path>
+                        Path for destination of processed data. Default <./>
+  --search-pattern <Search Pattern>
+                        Pattern for matching the goodman's reduced data.
+  --output-prefix <Out Prefix>
+                        Prefix to add to calibrated spectrum.
+  --extraction <Extraction Type>
+                        Choose a which extraction to perform. Simple is a sum
+                        across the spatial direction after the background has
+                        been removed. Optimal is a more advanced method that
+                        considers weights and profilefitting.
+  --reference-files <Reference Dir>
+                        Directory of Reference files location
+  --interactive         Interactive wavelength solution.Disbled by default.
+  --debug               Debugging Mode
+  --log-to-file         Write log to a file
+  --save-plots          Save all plots in a directory
+  --plot-results        Show wavelength calibrated spectrum at the end.
+
    ```
 
 You should always run `redccd` first and then `redspec`. There are certain
@@ -165,10 +243,12 @@ defaults values
     --auto-clean          False
     --debug               False
     --log-to-file         False
+    --keep-cosmic-files   False
     --saturation          55000
     --raw-path            ./
     --red-path            ./RED/
     --flat-normalize      simple
+    --dcr-par-dir         files/
     --flat-norm-order     15
 ```
 ### redspec Defaults
@@ -177,12 +257,13 @@ defaults values
     --data-path         ./
     --proc-path         ./
     --search-pattern    cfzsto
-    --proc-mode         0
-    --reference-lamp    (empty string)
-    --lamp-file         lamps.txt
-    --output-prefix     g
+    --extraction        simple
     --reference-files   refdata
+    --reference-lamp    (empty string)
+    --output-prefix     g
     --interactive       False
     --debug             False
     --log-to-file       False
+    --save-plots        False
+    --plot-results      False
 ```
