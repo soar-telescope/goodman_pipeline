@@ -207,8 +207,9 @@ description
 
 .. code:: shell 
 
-   $ redccd --help usage: redccd [-h] [-c] [--ignore-bias] [--auto-clean] [--saturation ]
-                                 [--raw-path raw_path] [--red-path red_path] [--debug]
+   $ redccd --help usage: redccd [-h] [-c] [--ignore-bias] [--auto-clean]
+                                 [--saturation ] [--raw-path raw_path]
+                                 [--red-path red_path] [--debug]
                                  [--log-to-file] [--flat-normalize ]
                                  [--flat-norm-order ] [--dcr-par-dir ]
                                  [--keep-cosmic-files]
@@ -226,8 +227,8 @@ description
       --debug                 Show detailed information of the process.
       --log-to-file           Write log to a file.
       --flat-normalize        Choose a method to normalize the master
-                              flat forspectroscoy. Choices are: mean, simple (model) and
-                              full (fits model to each line).
+                              flat forspectroscoy. Choices are: mean, simple
+                              (model) and full (fits model to each line).
       --flat-norm-order       Defines the order of the model to be fitted.
       --dcr-par-dir           Directory of default dcr.par file.
       --keep-cosmic-files     After cleaning cosmic rays with dcr, do not remove
