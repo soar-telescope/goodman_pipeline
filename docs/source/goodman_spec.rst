@@ -1,59 +1,59 @@
-goodman_spec package
-====================
+goodman\_spec package
+=====================
 
 Submodules
 ----------
 
-goodman_spec.id_and_extract module
-----------------------------------
+goodman\_spec\.id\_and\_extract module
+--------------------------------------
 
 .. automodule:: goodman_spec.id_and_extract
     :members:
     :undoc-members:
     :show-inheritance:
 
-goodman_spec.linelist module
-----------------------------
+goodman\_spec\.linelist module
+------------------------------
 
 .. automodule:: goodman_spec.linelist
     :members:
     :undoc-members:
     :show-inheritance:
 
-goodman_spec.process module
----------------------------
+goodman\_spec\.process module
+-----------------------------
 
 .. automodule:: goodman_spec.process
     :members:
     :undoc-members:
     :show-inheritance:
 
-goodman_spec.redspec module
----------------------------
+goodman\_spec\.redspec module
+-----------------------------
 
 .. automodule:: goodman_spec.redspec
     :members:
     :undoc-members:
     :show-inheritance:
 
-goodman_spec.simulator module
------------------------------
+goodman\_spec\.simulator module
+-------------------------------
 
 .. automodule:: goodman_spec.simulator
     :members:
     :undoc-members:
     :show-inheritance:
 
-goodman_spec.wavelength module
-------------------------------
+goodman\_spec\.wavelength module
+--------------------------------
 
 .. automodule:: goodman_spec.wavelength
     :members:
     :undoc-members:
     :show-inheritance:
 
-goodman_spec.wsbuilder module
------------------------------
+goodman\_spec\.wsbuilder module
+-------------------------------
 
 .. automodule:: goodman_spec.wsbuilder
     :members:

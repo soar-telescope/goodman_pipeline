@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='goodman',
-    version='1.0a1',
+    version='1.0b1',
     packages=['goodman_ccd', 'goodman_spec'],
     package_dir={'goodman_ccd': 'goodman_ccd', 'goodman_spec': 'goodman_spec'},
     package_data={'goodman_ccd': ['files/dcr.par'],

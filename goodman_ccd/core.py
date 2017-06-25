@@ -184,12 +184,12 @@ def get_twilight_time(date_obs):
 
     Returns:
         twilight_evening (str): Evening twilight time in the format
-        'YYYY-MM-DDTHH:MM:SS.SS'
+            'YYYY-MM-DDTHH:MM:SS.SS'
         twilight_morning (str): Morning twilight time in the format
-        'YYYY-MM-DDTHH:MM:SS.SS'
+            'YYYY-MM-DDTHH:MM:SS.SS'
         sun_set_time (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
         sun_rise_time (str): Sun rise time in the format
-        'YYYY-MM-DDTHH:MM:SS.SS'
+            'YYYY-MM-DDTHH:MM:SS.SS'
 
     """
     # observatory(str): Observatory name.
@@ -242,9 +242,9 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
     Args:
         ccd (object): A ccdproc.CCDData instance
         overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]'
-        where x is the spectral axis and y is the spatial axis.
+            where x is the spectral axis and y is the spatial axis.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-        Default False.
+            Default False.
 
     Returns:
         ccd (object): Overscan corrected ccdproc.CCDData instance
@@ -264,9 +264,9 @@ def image_trim(ccd, trim_section, add_keyword=False):
     Args:
         ccd (object): A ccdproc.CCDData instance
         trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
-        where x is the spectral axis and y is the spatial axis.
+            where x is the spectral axis and y is the spatial axis.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-        Default False.
+            Default False.
 
     Returns:
         ccd (object): Trimmed ccdproc.CCDData instance
@@ -293,7 +293,7 @@ def get_slit_trim_section(master_flat):
 
     Returns:
         slit_trim_section (str): Trim section in spatial direction in the format
-        [:,slit_lower_limit:slit_higher_limit]
+            [:,slit_lower_limit:slit_higher_limit]
 
     """
     x, y = master_flat.data.shape
@@ -463,7 +463,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
             log.error(error)
 
 
-
 def cosmicray_rejection(ccd, mask_only=False):
     """Do cosmic ray rejection
 
@@ -480,7 +479,7 @@ def cosmicray_rejection(ccd, mask_only=False):
       Args:
           ccd (object): CCDData Object
           mask_only (bool): In some cases you may want to obtain the cosmic
-          rays mask only
+              rays mask only
 
       Returns:
           ccd (object): A CCDData instance with the mask attribute updated.
@@ -827,7 +826,7 @@ def spectroscopic_extraction(ccd, extraction,
 
     Raises:
         NoTargetException (Exception): A NoTargetException if there is no target
-        found.
+           found.
 
     """
 
@@ -957,8 +956,8 @@ def identify_targets(ccd, plots=False):
 
     Returns:
         profile_model (object): an astropy.modeling.Model instance, it could be
-        a Gaussian1D or CompoundModel (several Gaussian1D). Each of them
-        represent a point source spectrum found.
+            a Gaussian1D or CompoundModel (several Gaussian1D). Each of them
+            represent a point source spectrum found.
 
     """
     if isinstance(ccd, CCDData):
@@ -1047,14 +1046,14 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     Args:
         ccd (object): Instance of ccdproc.CCDData
         profile (object): Instance of astropy.modeling.Model, contains the
-        spatial profile of the 2D spectrum.
+            spatial profile of the 2D spectrum.
         sampling_step (int): Frequency of sampling in pixels
         pol_deg (int): Polynomial degree for fitting the trace
         plots (bool): If True will show plots (debugging)
 
     Returns:
         all_traces (list): List that contains traces that are
-        astropy.modeling.Model instance
+            astropy.modeling.Model instance
 
     """
 
@@ -1208,22 +1207,22 @@ def get_extraction_zone(ccd,
 
     Args:
         ccd (object): A ccdproc.CCDData instance, the image from which the zone
-         will be extracted
+            will be extracted
         extraction (str): Extraction type, 'simple' or 'optimal'
         trace (object): An astropy.modeling.Model instance that correspond to
-        the trace of the spectrum
+            the trace of the spectrum
         model (object): An astropy.modeling.Model instance that was previously
-         fitted to the spatial profile.
+            fitted to the spatial profile.
         n_sigma_extract (int): Total number of sigmas to be extracted.
         plots (bool): If True will show plots, similar to a debugging mode.
         zone (list): Low and high limits to extract
 
     Returns:
         nccd (object): Instance of ccdproc.CCDData that contains only the region
-        extracted from the full image. The header is updated with a new HISTORY
-        keyword that contain the region of the original image extracted.
+            extracted from the full image. The header is updated with a new HISTORY
+            keyword that contain the region of the original image extracted.
         model (object): Instance of astropy.modeling.Model with an updated mean
-        to match the new center in pixel units.
+            to match the new center in pixel units.
         zone (list): Low and high limits of extraction zone
 
     """
@@ -1289,16 +1288,20 @@ def get_extraction_zone(ccd,
 
 def add_wcs_keys(header):
     """Adds generic keyword to the header
+
     Linear wavelength solutions require a set of standard fits keywords. Later
     on they will be updated accordingly
     The main goal of putting them here is to have consistent and nicely ordered
     headers
 
+    Notes:
+        This does NOT add a WCS solution, just the keywords
+
     Args:
         header (object): New header without WCS entries
 
     Returns:
-        header (object): Modified header
+        header (object): Modified header with added WCS keywords
 
     """
     try:
@@ -1344,8 +1347,44 @@ def remove_background(ccd, plots=False):
     return ccd
 
 
-def extract(ccd, trace, spatial_profile, extraction, sampling_step=1,
+def extract(ccd,
+            trace,
+            spatial_profile,
+            extraction,
+            sampling_step=1,
             plots=False):
+    """Performs spectrum extraction
+
+    This function is designed to perform two types of spectrum extraction, a
+    simple sum in the spatial direction and an optimal extraction.
+
+    Notes:
+        For the beta release the optimal extraction is not implemented.
+
+    Args:
+        ccd (object): Instance of ccdproc.CCDData containing a 2D spectrum
+        trace (object): Instance of astropy.modeling.Model, a low order
+            polynomial that defines the trace of the spectrum in the ccd object.
+        spatial_profile (object): Instance of astropy.modeling.Model, a Gaussian
+            model previously fitted to the spatial profile of the 2D spectrum
+            contained in the ccd object.
+        extraction (str): Extraction type, can be 'simple' or 'optimal' for the
+            beta release the optimal extraction is not implemented yet.
+        sampling_step (int): The optimal extraction needs to sample the spatial
+            profile, this value defines the intervals at which get such
+            sampling.
+        plots (bool): Determines whether display plots or not.
+
+    Returns:
+        ccd (object): Instance of ccdproc.CCDData containing a 1D spectrum. The
+            attribute 'data' is replaced by the 1D array resulted from the
+            extraction process.
+
+    Raises:
+        NotImplementedError: When 'extraction' is optimal, this is valid for the
+            beta release
+
+    """
     assert isinstance(ccd, CCDData)
     assert isinstance(trace, Model)
 
@@ -1435,75 +1474,76 @@ def extract(ccd, trace, spatial_profile, extraction, sampling_step=1,
                 plt.show()
 
     elif extraction == 'optimal':
-        out_spectrum = np.empty(dispersion_length)
-        for i in range(0, dispersion_length, sampling_step):
-            # force the model to follow the trace
-            new_model.mean.value = trace(i)
-
-            # warn if the difference of the spectrum position in the trace at the
-            # extremes of the sampling range is larger than 1 pixel.
-            if np.abs(trace(i) - trace(i + sampling_step)) > 1:
-                log.warning('Sampling step might be too large')
-
-            sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)
-            fitted_profile = model_fitter(model=new_model,
-                                          x=range(len(sample)),
-                                          y=sample)
-
-            profile = fitted_profile(range(sample.size))
-
-            # enforce positivity
-            pos_profile = np.array([np.max([0, x]) for x in profile])
-
-            # enforce normalization
-            nor_profile = np.array([x / pos_profile.sum() for x in pos_profile])
-
-            if sampling_step > 1:
-                # TODO (simon): Simplify to Pythonic way
-                right = min((i + sampling_step), dispersion_length)
-
-                for e in range(i, right, 1):
-                    mask = cr_mask[:, e]
-                    data = ma.masked_invalid(ccd.data[:, e])
-                    # print(ma.isMaskedArray(data))
-                    V = variance_2d[:, e]
-                    P = nor_profile
-                    a = [(P[z] / V[z]) / np.sum(P ** 2 / V) for z in
-                         range(P.size)]
-                    weights = (nor_profile / variance_2d[:, e]) / np.sum(
-                        nor_profile ** 2 / variance_2d[:, e])
-                    # print('SUMN ', np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))
-
-
-
-                    # if e in range(5, 4001, 500):
-                    #     plt.plot(nor_profile * data.max()/ nor_profile.max(), label=str(e))
-                    #     plt.plot(data, label='Data')
-                    #     plt.legend(loc='best')
-                    #     plt.show()
-
-                    out_spectrum[e] = np.sum(data * mask * nor_profile)
-        ccd.data = out_spectrum
-        if plots:
-            fig = plt.figure()
-            fig.canvas.set_window_title('Optimal Extraction')
-            # ax = fig.add_subplot(111)
-            manager = plt.get_current_fig_manager()
-            manager.window.maximize()
-
-            plt.title(ccd.header['OBJECT'])
-            plt.xlabel('Dispersion Axis (Pixels)')
-            plt.ylabel('Intensity (Counts)')
-            # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
-            plt.plot(ccd.data, color='k',
-                     label='Optimal Extracted')
-            plt.xlim((0, len(ccd.data)))
-            plt.legend(loc='best')
-            if plt.isinteractive():
-                plt.draw()
-                plt.pause(1)
-            else:
-                plt.show()
+        raise NotImplementedError
+        # out_spectrum = np.empty(dispersion_length)
+        # for i in range(0, dispersion_length, sampling_step):
+        #     # force the model to follow the trace
+        #     new_model.mean.value = trace(i)
+        #
+        #     # warn if the difference of the spectrum position in the trace at the
+        #     # extremes of the sampling range is larger than 1 pixel.
+        #     if np.abs(trace(i) - trace(i + sampling_step)) > 1:
+        #         log.warning('Sampling step might be too large')
+        #
+        #     sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)
+        #     fitted_profile = model_fitter(model=new_model,
+        #                                   x=range(len(sample)),
+        #                                   y=sample)
+        #
+        #     profile = fitted_profile(range(sample.size))
+        #
+        #     # enforce positivity
+        #     pos_profile = np.array([np.max([0, x]) for x in profile])
+        #
+        #     # enforce normalization
+        #     nor_profile = np.array([x / pos_profile.sum() for x in pos_profile])
+        #
+        #     if sampling_step > 1:
+        #         # TODO (simon): Simplify to Pythonic way
+        #         right = min((i + sampling_step), dispersion_length)
+        #
+        #         for e in range(i, right, 1):
+        #             mask = cr_mask[:, e]
+        #             data = ma.masked_invalid(ccd.data[:, e])
+        #             # print(ma.isMaskedArray(data))
+        #             V = variance_2d[:, e]
+        #             P = nor_profile
+        #             a = [(P[z] / V[z]) / np.sum(P ** 2 / V) for z in
+        #                  range(P.size)]
+        #             weights = (nor_profile / variance_2d[:, e]) / np.sum(
+        #                 nor_profile ** 2 / variance_2d[:, e])
+        #             # print('SUMN ', np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))
+        #
+        #
+        #
+        #             # if e in range(5, 4001, 500):
+        #             #     plt.plot(nor_profile * data.max()/ nor_profile.max(), label=str(e))
+        #             #     plt.plot(data, label='Data')
+        #             #     plt.legend(loc='best')
+        #             #     plt.show()
+        #
+        #             out_spectrum[e] = np.sum(data * mask * nor_profile)
+        # ccd.data = out_spectrum
+        # if plots:
+        #     fig = plt.figure()
+        #     fig.canvas.set_window_title('Optimal Extraction')
+        #     # ax = fig.add_subplot(111)
+        #     manager = plt.get_current_fig_manager()
+        #     manager.window.maximize()
+        #
+        #     plt.title(ccd.header['OBJECT'])
+        #     plt.xlabel('Dispersion Axis (Pixels)')
+        #     plt.ylabel('Intensity (Counts)')
+        #     # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
+        #     plt.plot(ccd.data, color='k',
+        #              label='Optimal Extracted')
+        #     plt.xlim((0, len(ccd.data)))
+        #     plt.legend(loc='best')
+        #     if plt.isinteractive():
+        #         plt.draw()
+        #         plt.pause(1)
+        #     else:
+        #         plt.show()
 
     # ccd.data = out_spectrum
     return ccd
@@ -1524,9 +1564,9 @@ class NightDataContainer(object):
         Args:
             path (str): Full path to the directory where raw data is located
             instrument (str): 'Red' or 'Blue' stating whether the data was taken
-            using the Red or Blue Goodman Camera.
+                using the Red or Blue Goodman Camera.
             technique (str): 'Spectroscopy' or 'Imaging' stating what kind of
-            data was taken.
+                data was taken.
         """
 
         self.full_path = path
@@ -1550,7 +1590,7 @@ class NightDataContainer(object):
 
         Args:
             bias_group (pandas.DataFrame): Contains a set of keyword values of
-            grouped image metadata
+                grouped image metadata
 
         """
 
@@ -1575,7 +1615,7 @@ class NightDataContainer(object):
 
         Args:
             day_flats (pandas.DataFrame): Contains a set of keyword values of
-            grouped image metadata
+                grouped image metadata
 
         """
 
@@ -1591,7 +1631,7 @@ class NightDataContainer(object):
 
         Args:
             data_group (pandas.DataFrame): Contains a set of keyword values of
-            grouped image metadata
+                grouped image metadata
 
         """
 
@@ -1607,7 +1647,7 @@ class NightDataContainer(object):
 
         Args:
             spec_group (pandas.DataFrame): Contains a set of keyword values of
-            grouped image metadata
+                grouped image metadata
 
         """
 
@@ -1635,9 +1675,9 @@ class NightDataContainer(object):
 
         Args:
             evening (str): Evening twilight time in the format
-            'YYYY-MM-DDTHH:MM:SS.SS'
+                'YYYY-MM-DDTHH:MM:SS.SS'
             morning (str): Morning twilight time in the format
-            'YYYY-MM-DDTHH:MM:SS.SS'
+                'YYYY-MM-DDTHH:MM:SS.SS'
 
         """
 
