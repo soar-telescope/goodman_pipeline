@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -48,7 +48,7 @@
           <div class="body" role="main">
             
   <h1>Source code for goodman_spec.redspec</h1><div class="highlight"><pre>
-<span></span><span class="ch">#!/usr/bin/env python2</span>
+<span class="ch">#!/usr/bin/env python2</span>
 <span class="c1"># -*- coding: utf8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Pipeline for GOODMAN spectra Extraction.</span>
 
@@ -105,22 +105,22 @@
 
 <span class="sd">    The possible arguments to be used are:</span>
 
-<span class="sd">        --data-path: has to be the source directory, where the data (images) is.</span>
-<span class="sd">            The location is `self.source` and the default value is ./</span>
-<span class="sd">        --proc-path: is the destination where all new files/data will be</span>
-<span class="sd">            placed. The location is `self.destiny` and the default value is ./</span>
-<span class="sd">        --search-pattern: the pattern that matches the reduced data that</span>
-<span class="sd">            will be processed. The location is `self.pattern` default value is</span>
-<span class="sd">            fc\_</span>
-<span class="sd">        --interactive: Interactive Wavelength Solution. Enabled by default</span>
-<span class="sd">        --output-prefix: Prefix to use to name wavelength calibrated spectrum</span>
-<span class="sd">        --extraction: Spectrum extraction type. Simple or optimal.</span>
-<span class="sd">        --reference-files: Directory of reference files location</span>
-<span class="sd">        --debug: Show plots for intermediate steps. Also prints more messages.</span>
-<span class="sd">        --log-to-file: Write the log to a file.</span>
-<span class="sd">        --save-plots: Save all plots ina directory</span>
-<span class="sd">        --plot-results: Show a plot of the wavelength calibrated data at the</span>
-<span class="sd">            end.</span>
+<span class="sd">    --data-path: has to be the source directory, where the data (images) is.</span>
+<span class="sd">        The location is `self.source` and the default value is ./</span>
+<span class="sd">    --proc-path: is the destination where all new files/data will be</span>
+<span class="sd">        placed. The location is `self.destiny` and the default value is ./</span>
+<span class="sd">    --search-pattern: the pattern that matches the reduced data that</span>
+<span class="sd">        will be processed. The location is `self.pattern` default value is</span>
+<span class="sd">        fc\_</span>
+<span class="sd">    --interactive: Interactive Wavelength Solution. Enabled by default</span>
+<span class="sd">    --output-prefix: Prefix to use to name wavelength calibrated spectrum</span>
+<span class="sd">    --extraction: Spectrum extraction type. Simple or optimal.</span>
+<span class="sd">    --reference-files: Directory of reference files location</span>
+<span class="sd">    --debug: Show plots for intermediate steps. Also prints more messages.</span>
+<span class="sd">    --log-to-file: Write the log to a file.</span>
+<span class="sd">    --save-plots: Save all plots ina directory</span>
+<span class="sd">    --plot-results: Show a plot of the wavelength calibrated data at the</span>
+<span class="sd">        end.</span>
 
 
 <span class="sd">    Returns:</span>
@@ -215,7 +215,7 @@
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">arguments</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">log_to_file</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Logging to file </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">LOG_FILENAME</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Logging to file {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">LOG_FILENAME</span><span class="p">))</span>
         <span class="n">file_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">LOG_FILENAME</span><span class="p">)</span>
         <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">FORMAT</span><span class="p">,</span> <span class="n">datefmt</span><span class="o">=</span><span class="n">DATE_FORMAT</span><span class="p">)</span>
         <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">formatter</span><span class="p">)</span>
@@ -344,7 +344,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Simon Torres.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
     </div>
   </body>
 </html>

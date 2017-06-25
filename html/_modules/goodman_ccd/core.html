@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -48,7 +48,7 @@
           <div class="body" role="main">
             
   <h1>Source code for goodman_ccd.core</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
                         <span class="n">unicode_literals</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
@@ -119,12 +119,12 @@
                 <span class="k">if</span> <span class="n">keyword</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">multiple_keys</span><span class="p">:</span>
                     <span class="n">multiple_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keyword</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">multiple_keys</span> <span class="o">!=</span> <span class="p">[]:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Found </span><span class="si">{:d}</span><span class="s1"> duplicated keyword &#39;</span>
-                 <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">multiple_keys</span><span class="p">),</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Found {:d} duplicated keyword &#39;</span>
+                 <span class="s1">&#39;{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">multiple_keys</span><span class="p">),</span>
                                <span class="s1">&#39;s&#39;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">multiple_keys</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">image_file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Processing Image File: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_file</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Processing Image File: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_file</span><span class="p">))</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">image_file</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">keyword</span> <span class="ow">in</span> <span class="n">multiple_keys</span><span class="p">:</span>
@@ -216,9 +216,9 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">current</span> <span class="o">==</span> <span class="n">total</span><span class="p">:</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Progress </span><span class="si">{:.2%}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">current</span> <span class="o">/</span> <span class="n">total</span><span class="p">))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Progress {:.2%}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">current</span> <span class="o">/</span> <span class="n">total</span><span class="p">))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Progress </span><span class="si">{:.2%}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">current</span> <span class="o">/</span> <span class="n">total</span><span class="p">))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">Progress {:.2%}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">current</span> <span class="o">/</span> <span class="n">total</span><span class="p">))</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
     <span class="k">return</span></div>
 
@@ -234,12 +234,12 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        twilight_evening (str): Evening twilight time in the format</span>
-<span class="sd">        &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
+<span class="sd">            &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
 <span class="sd">        twilight_morning (str): Morning twilight time in the format</span>
-<span class="sd">        &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
+<span class="sd">            &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
 <span class="sd">        sun_set_time (str): Sun set time in the format &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
 <span class="sd">        sun_rise_time (str): Sun rise time in the format</span>
-<span class="sd">        &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
+<span class="sd">            &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># observatory(str): Observatory name.</span>
@@ -292,9 +292,9 @@
 <span class="sd">    Args:</span>
 <span class="sd">        ccd (object): A ccdproc.CCDData instance</span>
 <span class="sd">        overscan_region (str): The overscan region in the format &#39;[x1:x2,y1:y2]&#39;</span>
-<span class="sd">        where x is the spectral axis and y is the spatial axis.</span>
+<span class="sd">            where x is the spectral axis and y is the spatial axis.</span>
 <span class="sd">        add_keyword (bool): Tells ccdproc whether to add a keyword or not.</span>
-<span class="sd">        Default False.</span>
+<span class="sd">            Default False.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        ccd (object): Overscan corrected ccdproc.CCDData instance</span>
@@ -314,9 +314,9 @@
 <span class="sd">    Args:</span>
 <span class="sd">        ccd (object): A ccdproc.CCDData instance</span>
 <span class="sd">        trim_section (str): The trimming section in the format &#39;[x1:x2,y1:y2]&#39;</span>
-<span class="sd">        where x is the spectral axis and y is the spatial axis.</span>
+<span class="sd">            where x is the spectral axis and y is the spatial axis.</span>
 <span class="sd">        add_keyword (bool): Tells ccdproc whether to add a keyword or not.</span>
-<span class="sd">        Default False.</span>
+<span class="sd">            Default False.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        ccd (object): Trimmed ccdproc.CCDData instance</span>
@@ -343,7 +343,7 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        slit_trim_section (str): Trim section in spatial direction in the format</span>
-<span class="sd">        [:,slit_lower_limit:slit_higher_limit]</span>
+<span class="sd">            [:,slit_lower_limit:slit_higher_limit]</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">master_flat</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span>
@@ -377,15 +377,15 @@
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="c1"># This is the ideal case, when the two edges of the slit are found.</span>
             <span class="n">low</span><span class="p">,</span> <span class="n">high</span> <span class="o">=</span> <span class="n">peaks</span>
-            <span class="n">slit_trim_section</span> <span class="o">=</span> <span class="s1">&#39;[:,</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span>
+            <span class="n">slit_trim_section</span> <span class="o">=</span> <span class="s1">&#39;[:,{:d}:{:d}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># when only one peak is found it will choose the largest region from</span>
             <span class="c1"># the spatial axis center to one edge.</span>
             <span class="k">if</span> <span class="n">peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">spatial_half</span><span class="p">:</span>
-                <span class="n">slit_trim_section</span> <span class="o">=</span> <span class="s1">&#39;[:,</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">]&#39;</span> \
+                <span class="n">slit_trim_section</span> <span class="o">=</span> <span class="s1">&#39;[:,{:d}:{:d}]&#39;</span> \
                                     <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">ccd_section_median</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">slit_trim_section</span> <span class="o">=</span> <span class="s1">&#39;[:,</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">slit_trim_section</span> <span class="o">=</span> <span class="s1">&#39;[:,{:d}:{:d}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">slit_trim_section</span></div>
 
 
@@ -422,7 +422,7 @@
     <span class="n">full_path_cosmic</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">cosmic_file</span><span class="p">)</span>
 
     <span class="c1"># this is the command for running dcr, all arguments are required</span>
-    <span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;dcr </span><span class="si">{:s}</span><span class="s1"> </span><span class="si">{:s}</span><span class="s1"> </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path_in</span><span class="p">,</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;dcr {:s} {:s} {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path_in</span><span class="p">,</span>
                                           <span class="n">full_path_out</span><span class="p">,</span>
                                           <span class="n">full_path_cosmic</span><span class="p">)</span>
 
@@ -442,7 +442,7 @@
 
         <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;File dcr.par does not exist. Copying default one.&#39;</span><span class="p">)</span>
         <span class="n">dcr_par_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dcr_par_dir</span><span class="p">,</span> <span class="s1">&#39;dcr.par&#39;</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;dcr.par full path: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dcr_par_path</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;dcr.par full path: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dcr_par_path</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">dcr_par_path</span><span class="p">):</span>
             <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">dcr_par_path</span><span class="p">,</span> <span class="n">data_path</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -500,18 +500,17 @@
     <span class="c1"># delete extra files only if the execution ended without error</span>
     <span class="k">if</span> <span class="n">delete</span> <span class="ow">and</span> <span class="n">stderr</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span> <span class="ow">and</span> <span class="s1">&#39;USAGE:&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stdout</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Removing input file: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path_in</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Removing input file: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path_in</span><span class="p">))</span>
             <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">full_path_in</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s1">&#39;Removing cosmic rays file: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path_cosmic</span><span class="p">))</span>
+                <span class="s1">&#39;Removing cosmic rays file: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path_cosmic</span><span class="p">))</span>
             <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">full_path_cosmic</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span></div>
-
 
 
 <div class="viewcode-block" id="cosmicray_rejection"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.core.cosmicray_rejection">[docs]</a><span class="k">def</span> <span class="nf">cosmicray_rejection</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">mask_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -530,7 +529,7 @@
 <span class="sd">      Args:</span>
 <span class="sd">          ccd (object): CCDData Object</span>
 <span class="sd">          mask_only (bool): In some cases you may want to obtain the cosmic</span>
-<span class="sd">          rays mask only</span>
+<span class="sd">              rays mask only</span>
 
 <span class="sd">      Returns:</span>
 <span class="sd">          ccd (object): A CCDData instance with the mask attribute updated.</span>
@@ -562,7 +561,7 @@
             <span class="k">return</span> <span class="n">ccd</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Skipping cosmic ray rejection for image of datatype: &#39;</span>
-                 <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OBSTYPE&#39;</span><span class="p">]))</span>
+                 <span class="s1">&#39;{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OBSTYPE&#39;</span><span class="p">]))</span>
         <span class="k">return</span> <span class="n">ccd</span></div>
 
 
@@ -588,8 +587,8 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">flat_list</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">flat_name</span><span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Flat base name </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">flat_name</span><span class="p">))</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Matching master flats found: </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flat_list</span><span class="p">)))</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Flat base name {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">flat_name</span><span class="p">))</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Matching master flats found: {:d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">flat_list</span><span class="p">)))</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flat_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">flat_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">master_flat_name</span> <span class="o">=</span> <span class="n">flat_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -599,7 +598,7 @@
         <span class="c1">#     master_flat_name =</span>
 
         <span class="n">master_flat</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Found suitable master flat: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Found suitable master flat: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">master_flat</span><span class="p">,</span> <span class="n">master_flat_name</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;There is no flat available&#39;</span><span class="p">)</span>
@@ -641,7 +640,7 @@
                 <span class="s1">&#39;save_plots&#39;</span><span class="p">:</span> <span class="s1">&#39;--save-plots&#39;</span><span class="p">,</span>
                 <span class="s1">&#39;dcr_par_dir&#39;</span><span class="p">:</span> <span class="s1">&#39;--dcr-par-dir&#39;</span><span class="p">}</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">__dict__</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Default value for </span><span class="si">{:s}</span><span class="s1"> is </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arg_name</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Default value for {:s} is {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">arg_name</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
                                                          <span class="nb">str</span><span class="p">(</span>
                                                              <span class="n">args</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span>
                                                                  <span class="n">key</span><span class="p">))))</span></div>
@@ -686,7 +685,7 @@
         <span class="n">master</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="s1">&#39;Flat Normalized by Mean&#39;</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;simple&#39;</span> <span class="ow">or</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Normalizing flat by </span><span class="si">{:s}</span><span class="s1"> model&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Normalizing flat by {:s} model&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
 
         <span class="c1"># Initialize Fitting models and fitter</span>
         <span class="n">model_init</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Chebyshev1D</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="n">order</span><span class="p">)</span>
@@ -755,7 +754,7 @@
                          <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span><span class="p">)</span> <span class="o">+</span>
                           <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.</span><span class="p">))</span>
 
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Found </span><span class="si">{:.3f}</span><span class="s1"> as central wavelength&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">central_wavelength</span><span class="p">))</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Found {:.3f} as central wavelength&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">central_wavelength</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">central_wavelength</span></div>
 
 
@@ -788,7 +787,7 @@
 
     <span class="k">if</span> <span class="n">file_list</span> <span class="o">==</span> <span class="p">[]:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;No file found using search pattern &#39;</span>
-                  <span class="s1">&#39;&quot;</span><span class="si">{:s}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">search_pattern</span><span class="p">))</span>
+                  <span class="s1">&#39;&quot;{:s}&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">search_pattern</span><span class="p">))</span>
 
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s1">&#39;Please use the argument --search-pattern to define the &#39;</span>
                  <span class="s1">&#39;common prefix for the files to be processed.&#39;</span><span class="p">)</span>
@@ -822,9 +821,9 @@
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pifc</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
         <span class="n">radeg</span><span class="p">,</span> <span class="n">decdeg</span> <span class="o">=</span> <span class="n">ra_dec_to_deg</span><span class="p">(</span><span class="n">pifc</span><span class="o">.</span><span class="n">obsra</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">pifc</span><span class="o">.</span><span class="n">obsdec</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
 
-        <span class="n">pifc</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">pifc</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="s1">&#39;radeg&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radeg</span><span class="p">)</span>
+        <span class="n">pifc</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">pifc</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="s1">&#39;radeg&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;{:.2f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radeg</span><span class="p">)</span>
 
-        <span class="n">pifc</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">pifc</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="s1">&#39;decdeg&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">decdeg</span><span class="p">)</span>
+        <span class="n">pifc</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">pifc</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="s1">&#39;decdeg&#39;</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;{:.2f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">decdeg</span><span class="p">)</span>
         <span class="c1"># now we can compare using degrees</span>
 
     <span class="n">confs</span> <span class="o">=</span> <span class="n">pifc</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;slit&#39;</span><span class="p">,</span>
@@ -877,7 +876,7 @@
 
 <span class="sd">    Raises:</span>
 <span class="sd">        NoTargetException (Exception): A NoTargetException if there is no target</span>
-<span class="sd">        found.</span>
+<span class="sd">           found.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -987,7 +986,7 @@
 
     <span class="k">elif</span> <span class="n">profile_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Didn&#39;t receive identified targets &quot;</span>
-                    <span class="s2">&quot;from </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OFNAME&#39;</span><span class="p">]))</span>
+                    <span class="s2">&quot;from {:s}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OFNAME&#39;</span><span class="p">]))</span>
         <span class="k">raise</span> <span class="n">NoTargetException</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Got wrong input&#39;</span><span class="p">)</span></div>
@@ -1007,8 +1006,8 @@
 
 <span class="sd">    Returns:</span>
 <span class="sd">        profile_model (object): an astropy.modeling.Model instance, it could be</span>
-<span class="sd">        a Gaussian1D or CompoundModel (several Gaussian1D). Each of them</span>
-<span class="sd">        represent a point source spectrum found.</span>
+<span class="sd">            a Gaussian1D or CompoundModel (several Gaussian1D). Each of them</span>
+<span class="sd">            represent a point source spectrum found.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">CCDData</span><span class="p">):</span>
@@ -1046,7 +1045,7 @@
             <span class="n">gaussian</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Gaussian1D</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="n">amplitude</span><span class="p">,</span>
                                          <span class="n">mean</span><span class="o">=</span><span class="n">peaks</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
                                          <span class="n">stddev</span><span class="o">=</span><span class="n">order</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;Gaussian_&#39;</span>
-                                                              <span class="s1">&#39;</span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+                                                              <span class="s1">&#39;{:d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">profile_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">profile_model</span> <span class="o">+=</span> <span class="n">gaussian</span>
             <span class="k">else</span><span class="p">:</span>
@@ -1097,14 +1096,14 @@
 <span class="sd">    Args:</span>
 <span class="sd">        ccd (object): Instance of ccdproc.CCDData</span>
 <span class="sd">        profile (object): Instance of astropy.modeling.Model, contains the</span>
-<span class="sd">        spatial profile of the 2D spectrum.</span>
+<span class="sd">            spatial profile of the 2D spectrum.</span>
 <span class="sd">        sampling_step (int): Frequency of sampling in pixels</span>
 <span class="sd">        pol_deg (int): Polynomial degree for fitting the trace</span>
 <span class="sd">        plots (bool): If True will show plots (debugging)</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        all_traces (list): List that contains traces that are</span>
-<span class="sd">        astropy.modeling.Model instance</span>
+<span class="sd">            astropy.modeling.Model instance</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -1163,7 +1162,7 @@
         <span class="k">if</span> <span class="n">model_fitter</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;ierr&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
                 <span class="s2">&quot;Fitting did not work, fit_info[&#39;ierr&#39;] = </span><span class="se">\</span>
-<span class="s2">                </span><span class="si">{:d}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model_fitter</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;ierr&#39;</span><span class="p">]))</span>
+<span class="s2">                {:d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model_fitter</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;ierr&#39;</span><span class="p">]))</span>
 
         <span class="c1"># alternatively could use fitted_profile.param_names</span>
         <span class="c1"># the mean_keys is another way to tell how many submodels are in the</span>
@@ -1185,7 +1184,7 @@
         <span class="c1"># a low order polynomial</span>
         <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">trace_points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Median Trace&#39;</span>
-                      <span class="s1">&#39; </span><span class="si">{:d}</span><span class="s1">: </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">trace_points</span><span class="p">[</span><span class="n">e</span><span class="p">])))</span>
+                      <span class="s1">&#39; {:d}: {:.3f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">trace_points</span><span class="p">[</span><span class="n">e</span><span class="p">])))</span>
 
             <span class="n">trace_points</span><span class="p">[</span><span class="n">e</span><span class="p">][</span><span class="n">i</span> <span class="o">//</span> <span class="n">sampling_step</span><span class="p">]</span> <span class="o">=</span> \
                 <span class="n">fitted_profile</span><span class="o">.</span><span class="n">__getattribute__</span><span class="p">(</span><span class="n">mean_keys</span><span class="p">[</span><span class="n">e</span><span class="p">])</span><span class="o">.</span><span class="n">value</span>
@@ -1197,7 +1196,7 @@
                                     <span class="n">x</span><span class="o">=</span><span class="n">sampling_axis</span><span class="p">,</span>
                                     <span class="n">y</span><span class="o">=</span><span class="n">trace_points</span><span class="p">[</span><span class="n">trace_num</span><span class="p">])</span>
 
-        <span class="n">fitted_trace</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;Trace_</span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trace_num</span><span class="p">))</span>
+        <span class="n">fitted_trace</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;Trace_{:d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trace_num</span><span class="p">))</span>
 
         <span class="c1"># TODO (simon): Validate which kind of errors are represented here</span>
         <span class="k">if</span> <span class="n">model_fitter</span><span class="o">.</span><span class="n">fit_info</span><span class="p">[</span><span class="s1">&#39;ierr&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]:</span>
@@ -1207,7 +1206,7 @@
             <span class="n">rms_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">fitted_trace</span><span class="p">(</span><span class="n">sampling_axis</span><span class="p">)</span> <span class="o">-</span>
                                  <span class="n">trace_points</span><span class="p">[</span><span class="n">trace_num</span><span class="p">]])</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Trace Fit RMSE: </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rms_error</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Trace Fit RMSE: {:.3f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rms_error</span><span class="p">))</span>
 
             <span class="c1"># append for returning</span>
             <span class="k">if</span> <span class="n">all_traces</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1221,7 +1220,7 @@
                      <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span>
                      <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Data Points&#39;</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fitted_trace</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">dispersion_length</span><span class="p">)),</span>
-                     <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Model RMSE: </span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rms_error</span><span class="p">))</span>
+                     <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Model RMSE: {:.2f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rms_error</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="n">plots</span><span class="p">:</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Targets Trace&#39;</span><span class="p">)</span>
@@ -1258,22 +1257,22 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        ccd (object): A ccdproc.CCDData instance, the image from which the zone</span>
-<span class="sd">         will be extracted</span>
+<span class="sd">            will be extracted</span>
 <span class="sd">        extraction (str): Extraction type, &#39;simple&#39; or &#39;optimal&#39;</span>
 <span class="sd">        trace (object): An astropy.modeling.Model instance that correspond to</span>
-<span class="sd">        the trace of the spectrum</span>
+<span class="sd">            the trace of the spectrum</span>
 <span class="sd">        model (object): An astropy.modeling.Model instance that was previously</span>
-<span class="sd">         fitted to the spatial profile.</span>
+<span class="sd">            fitted to the spatial profile.</span>
 <span class="sd">        n_sigma_extract (int): Total number of sigmas to be extracted.</span>
 <span class="sd">        plots (bool): If True will show plots, similar to a debugging mode.</span>
 <span class="sd">        zone (list): Low and high limits to extract</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        nccd (object): Instance of ccdproc.CCDData that contains only the region</span>
-<span class="sd">        extracted from the full image. The header is updated with a new HISTORY</span>
-<span class="sd">        keyword that contain the region of the original image extracted.</span>
+<span class="sd">            extracted from the full image. The header is updated with a new HISTORY</span>
+<span class="sd">            keyword that contain the region of the original image extracted.</span>
 <span class="sd">        model (object): Instance of astropy.modeling.Model with an updated mean</span>
-<span class="sd">        to match the new center in pixel units.</span>
+<span class="sd">            to match the new center in pixel units.</span>
 <span class="sd">        zone (list): Low and high limits of extraction zone</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1281,13 +1280,13 @@
     <span class="k">if</span> <span class="n">zone</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">extraction</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="p">(</span><span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">n_sigma_extract</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Extracting zone centered at: </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Extracting zone centered at: {:.3f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
         <span class="n">spatial_length</span><span class="p">,</span> <span class="n">dispersion_length</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span>
 
         <span class="c1"># get maximum variation in spatial direction</span>
         <span class="n">trace_array</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">dispersion_length</span><span class="p">))</span>
         <span class="n">trace_inclination</span> <span class="o">=</span> <span class="n">trace_array</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">trace_array</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Trace Min-Max difference: </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trace_inclination</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Trace Min-Max difference: {:.3f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">trace_inclination</span><span class="p">))</span>
 
         <span class="c1"># m_mean = model.mean.value</span>
         <span class="n">m_stddev</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">stddev</span><span class="o">.</span><span class="n">value</span>
@@ -1314,7 +1313,7 @@
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Trimming mask&#39;</span><span class="p">)</span>
             <span class="n">nccd</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">mask</span><span class="p">[</span><span class="n">low_lim</span><span class="p">:</span><span class="n">hig_lim</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">nccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;HISTORY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Subsection of CCD &#39;</span> \
-                                 <span class="s1">&#39;[</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">, :]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">low_lim</span><span class="p">,</span> <span class="n">hig_lim</span><span class="p">)</span>
+                                 <span class="s1">&#39;[{:d}:{:d}, :]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">low_lim</span><span class="p">,</span> <span class="n">hig_lim</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">plots</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -1333,22 +1332,26 @@
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Trimming mask&#39;</span><span class="p">)</span>
             <span class="n">nccd</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">mask</span><span class="p">[</span><span class="n">low_lim</span><span class="p">:</span><span class="n">hig_lim</span><span class="p">,</span> <span class="p">:]</span>
         <span class="n">nccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;HISTORY&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Subsection of CCD &#39;</span> \
-                                 <span class="s1">&#39;[</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">, :]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">low_lim</span><span class="p">,</span> <span class="n">hig_lim</span><span class="p">)</span>
+                                 <span class="s1">&#39;[{:d}:{:d}, :]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">low_lim</span><span class="p">,</span> <span class="n">hig_lim</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">nccd</span></div>
 
 
 <div class="viewcode-block" id="add_wcs_keys"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.core.add_wcs_keys">[docs]</a><span class="k">def</span> <span class="nf">add_wcs_keys</span><span class="p">(</span><span class="n">header</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Adds generic keyword to the header</span>
+
 <span class="sd">    Linear wavelength solutions require a set of standard fits keywords. Later</span>
 <span class="sd">    on they will be updated accordingly</span>
 <span class="sd">    The main goal of putting them here is to have consistent and nicely ordered</span>
 <span class="sd">    headers</span>
 
+<span class="sd">    Notes:</span>
+<span class="sd">        This does NOT add a WCS solution, just the keywords</span>
+
 <span class="sd">    Args:</span>
 <span class="sd">        header (object): New header without WCS entries</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        header (object): Modified header</span>
+<span class="sd">        header (object): Modified header with added WCS keywords</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
@@ -1394,8 +1397,44 @@
     <span class="k">return</span> <span class="n">ccd</span></div>
 
 
-<div class="viewcode-block" id="extract"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.core.extract">[docs]</a><span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trace</span><span class="p">,</span> <span class="n">spatial_profile</span><span class="p">,</span> <span class="n">extraction</span><span class="p">,</span> <span class="n">sampling_step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<div class="viewcode-block" id="extract"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.core.extract">[docs]</a><span class="k">def</span> <span class="nf">extract</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span>
+            <span class="n">trace</span><span class="p">,</span>
+            <span class="n">spatial_profile</span><span class="p">,</span>
+            <span class="n">extraction</span><span class="p">,</span>
+            <span class="n">sampling_step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">plots</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Performs spectrum extraction</span>
+
+<span class="sd">    This function is designed to perform two types of spectrum extraction, a</span>
+<span class="sd">    simple sum in the spatial direction and an optimal extraction.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        For the beta release the optimal extraction is not implemented.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ccd (object): Instance of ccdproc.CCDData containing a 2D spectrum</span>
+<span class="sd">        trace (object): Instance of astropy.modeling.Model, a low order</span>
+<span class="sd">            polynomial that defines the trace of the spectrum in the ccd object.</span>
+<span class="sd">        spatial_profile (object): Instance of astropy.modeling.Model, a Gaussian</span>
+<span class="sd">            model previously fitted to the spatial profile of the 2D spectrum</span>
+<span class="sd">            contained in the ccd object.</span>
+<span class="sd">        extraction (str): Extraction type, can be &#39;simple&#39; or &#39;optimal&#39; for the</span>
+<span class="sd">            beta release the optimal extraction is not implemented yet.</span>
+<span class="sd">        sampling_step (int): The optimal extraction needs to sample the spatial</span>
+<span class="sd">            profile, this value defines the intervals at which get such</span>
+<span class="sd">            sampling.</span>
+<span class="sd">        plots (bool): Determines whether display plots or not.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ccd (object): Instance of ccdproc.CCDData containing a 1D spectrum. The</span>
+<span class="sd">            attribute &#39;data&#39; is replaced by the 1D array resulted from the</span>
+<span class="sd">            extraction process.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        NotImplementedError: When &#39;extraction&#39; is optimal, this is valid for the</span>
+<span class="sd">            beta release</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">CCDData</span><span class="p">)</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trace</span><span class="p">,</span> <span class="n">Model</span><span class="p">)</span>
 
@@ -1404,7 +1443,7 @@
     <span class="c1"># create variance model</span>
     <span class="n">rdnoise</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;RDNOISE&#39;</span><span class="p">])</span>
     <span class="n">gain</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;GAIN&#39;</span><span class="p">])</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Original Name </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OFNAME&#39;</span><span class="p">]))</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Original Name {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OFNAME&#39;</span><span class="p">]))</span>
 
     <span class="n">variance_2d</span> <span class="o">=</span> <span class="p">(</span><span class="n">rdnoise</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">*</span> <span class="n">gain</span><span class="p">)</span> <span class="o">/</span> <span class="n">gain</span>
     <span class="k">if</span> <span class="n">ccd</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OBSTYPE&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;OBJECT&#39;</span><span class="p">:</span>
@@ -1434,7 +1473,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
     <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;ccd.data is a masked array: &#39;</span>
-              <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">isMaskedArray</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">))))</span>
+              <span class="s1">&#39;{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">isMaskedArray</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">))))</span>
 
     <span class="n">ccd</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
     <span class="c1"># print(np.ma.isMaskedArray(ccd.data))</span>
@@ -1485,75 +1524,76 @@
                 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
     <span class="k">elif</span> <span class="n">extraction</span> <span class="o">==</span> <span class="s1">&#39;optimal&#39;</span><span class="p">:</span>
-        <span class="n">out_spectrum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">dispersion_length</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dispersion_length</span><span class="p">,</span> <span class="n">sampling_step</span><span class="p">):</span>
-            <span class="c1"># force the model to follow the trace</span>
-            <span class="n">new_model</span><span class="o">.</span><span class="n">mean</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-
-            <span class="c1"># warn if the difference of the spectrum position in the trace at the</span>
-            <span class="c1"># extremes of the sampling range is larger than 1 pixel.</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">trace</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">-</span> <span class="n">trace</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">sampling_step</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Sampling step might be too large&#39;</span><span class="p">)</span>
-
-            <span class="n">sample</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="n">sampling_step</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">fitted_profile</span> <span class="o">=</span> <span class="n">model_fitter</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">new_model</span><span class="p">,</span>
-                                          <span class="n">x</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="p">)),</span>
-                                          <span class="n">y</span><span class="o">=</span><span class="n">sample</span><span class="p">)</span>
-
-            <span class="n">profile</span> <span class="o">=</span> <span class="n">fitted_profile</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">size</span><span class="p">))</span>
-
-            <span class="c1"># enforce positivity</span>
-            <span class="n">pos_profile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="n">x</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">profile</span><span class="p">])</span>
-
-            <span class="c1"># enforce normalization</span>
-            <span class="n">nor_profile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x</span> <span class="o">/</span> <span class="n">pos_profile</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">pos_profile</span><span class="p">])</span>
-
-            <span class="k">if</span> <span class="n">sampling_step</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="c1"># TODO (simon): Simplify to Pythonic way</span>
-                <span class="n">right</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="n">sampling_step</span><span class="p">),</span> <span class="n">dispersion_length</span><span class="p">)</span>
-
-                <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
-                    <span class="n">mask</span> <span class="o">=</span> <span class="n">cr_mask</span><span class="p">[:,</span> <span class="n">e</span><span class="p">]</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">ma</span><span class="o">.</span><span class="n">masked_invalid</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">[:,</span> <span class="n">e</span><span class="p">])</span>
-                    <span class="c1"># print(ma.isMaskedArray(data))</span>
-                    <span class="n">V</span> <span class="o">=</span> <span class="n">variance_2d</span><span class="p">[:,</span> <span class="n">e</span><span class="p">]</span>
-                    <span class="n">P</span> <span class="o">=</span> <span class="n">nor_profile</span>
-                    <span class="n">a</span> <span class="o">=</span> <span class="p">[(</span><span class="n">P</span><span class="p">[</span><span class="n">z</span><span class="p">]</span> <span class="o">/</span> <span class="n">V</span><span class="p">[</span><span class="n">z</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">P</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">V</span><span class="p">)</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span>
-                         <span class="nb">range</span><span class="p">(</span><span class="n">P</span><span class="o">.</span><span class="n">size</span><span class="p">)]</span>
-                    <span class="n">weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">nor_profile</span> <span class="o">/</span> <span class="n">variance_2d</span><span class="p">[:,</span> <span class="n">e</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-                        <span class="n">nor_profile</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">variance_2d</span><span class="p">[:,</span> <span class="n">e</span><span class="p">])</span>
-                    <span class="c1"># print(&#39;SUMN &#39;, np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))</span>
-
-
-
-                    <span class="c1"># if e in range(5, 4001, 500):</span>
-                    <span class="c1">#     plt.plot(nor_profile * data.max()/ nor_profile.max(), label=str(e))</span>
-                    <span class="c1">#     plt.plot(data, label=&#39;Data&#39;)</span>
-                    <span class="c1">#     plt.legend(loc=&#39;best&#39;)</span>
-                    <span class="c1">#     plt.show()</span>
-
-                    <span class="n">out_spectrum</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">data</span> <span class="o">*</span> <span class="n">mask</span> <span class="o">*</span> <span class="n">nor_profile</span><span class="p">)</span>
-        <span class="n">ccd</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">out_spectrum</span>
-        <span class="k">if</span> <span class="n">plots</span><span class="p">:</span>
-            <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-            <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">set_window_title</span><span class="p">(</span><span class="s1">&#39;Optimal Extraction&#39;</span><span class="p">)</span>
-            <span class="c1"># ax = fig.add_subplot(111)</span>
-            <span class="n">manager</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_current_fig_manager</span><span class="p">()</span>
-            <span class="n">manager</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">maximize</span><span class="p">()</span>
-
-            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">])</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Dispersion Axis (Pixels)&#39;</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Intensity (Counts)&#39;</span><span class="p">)</span>
-            <span class="c1"># plt.plot(simple_sum, label=&#39;Simple Sum&#39;, color=&#39;k&#39;, alpha=0.5)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
-                     <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Optimal Extracted&#39;</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="p">)))</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">plt</span><span class="o">.</span><span class="n">isinteractive</span><span class="p">():</span>
-                <span class="n">plt</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
-                <span class="n">plt</span><span class="o">.</span><span class="n">pause</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="c1"># out_spectrum = np.empty(dispersion_length)</span>
+        <span class="c1"># for i in range(0, dispersion_length, sampling_step):</span>
+        <span class="c1">#     # force the model to follow the trace</span>
+        <span class="c1">#     new_model.mean.value = trace(i)</span>
+        <span class="c1">#</span>
+        <span class="c1">#     # warn if the difference of the spectrum position in the trace at the</span>
+        <span class="c1">#     # extremes of the sampling range is larger than 1 pixel.</span>
+        <span class="c1">#     if np.abs(trace(i) - trace(i + sampling_step)) &gt; 1:</span>
+        <span class="c1">#         log.warning(&#39;Sampling step might be too large&#39;)</span>
+        <span class="c1">#</span>
+        <span class="c1">#     sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)</span>
+        <span class="c1">#     fitted_profile = model_fitter(model=new_model,</span>
+        <span class="c1">#                                   x=range(len(sample)),</span>
+        <span class="c1">#                                   y=sample)</span>
+        <span class="c1">#</span>
+        <span class="c1">#     profile = fitted_profile(range(sample.size))</span>
+        <span class="c1">#</span>
+        <span class="c1">#     # enforce positivity</span>
+        <span class="c1">#     pos_profile = np.array([np.max([0, x]) for x in profile])</span>
+        <span class="c1">#</span>
+        <span class="c1">#     # enforce normalization</span>
+        <span class="c1">#     nor_profile = np.array([x / pos_profile.sum() for x in pos_profile])</span>
+        <span class="c1">#</span>
+        <span class="c1">#     if sampling_step &gt; 1:</span>
+        <span class="c1">#         # TODO (simon): Simplify to Pythonic way</span>
+        <span class="c1">#         right = min((i + sampling_step), dispersion_length)</span>
+        <span class="c1">#</span>
+        <span class="c1">#         for e in range(i, right, 1):</span>
+        <span class="c1">#             mask = cr_mask[:, e]</span>
+        <span class="c1">#             data = ma.masked_invalid(ccd.data[:, e])</span>
+        <span class="c1">#             # print(ma.isMaskedArray(data))</span>
+        <span class="c1">#             V = variance_2d[:, e]</span>
+        <span class="c1">#             P = nor_profile</span>
+        <span class="c1">#             a = [(P[z] / V[z]) / np.sum(P ** 2 / V) for z in</span>
+        <span class="c1">#                  range(P.size)]</span>
+        <span class="c1">#             weights = (nor_profile / variance_2d[:, e]) / np.sum(</span>
+        <span class="c1">#                 nor_profile ** 2 / variance_2d[:, e])</span>
+        <span class="c1">#             # print(&#39;SUMN &#39;, np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))</span>
+        <span class="c1">#</span>
+        <span class="c1">#</span>
+        <span class="c1">#</span>
+        <span class="c1">#             # if e in range(5, 4001, 500):</span>
+        <span class="c1">#             #     plt.plot(nor_profile * data.max()/ nor_profile.max(), label=str(e))</span>
+        <span class="c1">#             #     plt.plot(data, label=&#39;Data&#39;)</span>
+        <span class="c1">#             #     plt.legend(loc=&#39;best&#39;)</span>
+        <span class="c1">#             #     plt.show()</span>
+        <span class="c1">#</span>
+        <span class="c1">#             out_spectrum[e] = np.sum(data * mask * nor_profile)</span>
+        <span class="c1"># ccd.data = out_spectrum</span>
+        <span class="c1"># if plots:</span>
+        <span class="c1">#     fig = plt.figure()</span>
+        <span class="c1">#     fig.canvas.set_window_title(&#39;Optimal Extraction&#39;)</span>
+        <span class="c1">#     # ax = fig.add_subplot(111)</span>
+        <span class="c1">#     manager = plt.get_current_fig_manager()</span>
+        <span class="c1">#     manager.window.maximize()</span>
+        <span class="c1">#</span>
+        <span class="c1">#     plt.title(ccd.header[&#39;OBJECT&#39;])</span>
+        <span class="c1">#     plt.xlabel(&#39;Dispersion Axis (Pixels)&#39;)</span>
+        <span class="c1">#     plt.ylabel(&#39;Intensity (Counts)&#39;)</span>
+        <span class="c1">#     # plt.plot(simple_sum, label=&#39;Simple Sum&#39;, color=&#39;k&#39;, alpha=0.5)</span>
+        <span class="c1">#     plt.plot(ccd.data, color=&#39;k&#39;,</span>
+        <span class="c1">#              label=&#39;Optimal Extracted&#39;)</span>
+        <span class="c1">#     plt.xlim((0, len(ccd.data)))</span>
+        <span class="c1">#     plt.legend(loc=&#39;best&#39;)</span>
+        <span class="c1">#     if plt.isinteractive():</span>
+        <span class="c1">#         plt.draw()</span>
+        <span class="c1">#         plt.pause(1)</span>
+        <span class="c1">#     else:</span>
+        <span class="c1">#         plt.show()</span>
 
     <span class="c1"># ccd.data = out_spectrum</span>
     <span class="k">return</span> <span class="n">ccd</span></div>
@@ -1574,9 +1614,9 @@
 <span class="sd">        Args:</span>
 <span class="sd">            path (str): Full path to the directory where raw data is located</span>
 <span class="sd">            instrument (str): &#39;Red&#39; or &#39;Blue&#39; stating whether the data was taken</span>
-<span class="sd">            using the Red or Blue Goodman Camera.</span>
+<span class="sd">                using the Red or Blue Goodman Camera.</span>
 <span class="sd">            technique (str): &#39;Spectroscopy&#39; or &#39;Imaging&#39; stating what kind of</span>
-<span class="sd">            data was taken.</span>
+<span class="sd">                data was taken.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">full_path</span> <span class="o">=</span> <span class="n">path</span>
@@ -1600,7 +1640,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            bias_group (pandas.DataFrame): Contains a set of keyword values of</span>
-<span class="sd">            grouped image metadata</span>
+<span class="sd">                grouped image metadata</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1625,7 +1665,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            day_flats (pandas.DataFrame): Contains a set of keyword values of</span>
-<span class="sd">            grouped image metadata</span>
+<span class="sd">                grouped image metadata</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1641,7 +1681,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            data_group (pandas.DataFrame): Contains a set of keyword values of</span>
-<span class="sd">            grouped image metadata</span>
+<span class="sd">                grouped image metadata</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1657,7 +1697,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            spec_group (pandas.DataFrame): Contains a set of keyword values of</span>
-<span class="sd">            grouped image metadata</span>
+<span class="sd">                grouped image metadata</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1685,9 +1725,9 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            evening (str): Evening twilight time in the format</span>
-<span class="sd">            &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
+<span class="sd">                &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
 <span class="sd">            morning (str): Morning twilight time in the format</span>
-<span class="sd">            &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
+<span class="sd">                &#39;YYYY-MM-DDTHH:MM:SS.SS&#39;</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1734,7 +1774,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Simon Torres.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
     </div>
   </body>
 </html>

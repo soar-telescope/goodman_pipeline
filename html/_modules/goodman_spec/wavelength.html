@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -48,7 +48,7 @@
           <div class="body" role="main">
             
   <h1>Source code for goodman_spec.wavelength</h1><div class="highlight"><pre>
-<span></span><span class="c1"># -*- coding: utf8 -*-</span>
+<span class="c1"># -*- coding: utf8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Contains the tools to produce a wavelength solution</span>
 
 <span class="sd">This module gets the extracted data to produce a wavelength solution, linearize</span>
@@ -127,7 +127,7 @@
             <span class="n">object_group</span> <span class="o">=</span> <span class="n">spec_group</span><span class="p">[</span><span class="n">spec_group</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;OBJECT&#39;</span><span class="p">]</span>
             <span class="c1"># print(object_group)</span>
         <span class="k">for</span> <span class="n">spec_file</span> <span class="ow">in</span> <span class="n">object_group</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">tolist</span><span class="p">():</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Science File: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">spec_file</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Science File: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">spec_file</span><span class="p">))</span>
             <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">full_path</span><span class="p">,</span> <span class="n">spec_file</span><span class="p">)</span>
             <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
             <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OFNAME&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">spec_file</span><span class="p">,</span> <span class="s1">&#39;Original File Name&#39;</span><span class="p">)</span>
@@ -305,7 +305,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">i_fig</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Science Target: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">]))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Science Target: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">]))</span>
         <span class="k">if</span> <span class="n">comp_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">lamp_ccd</span> <span class="ow">in</span> <span class="n">comp_list</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">calibration_lamp</span> <span class="o">=</span> <span class="n">lamp_ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OFNAME&#39;</span><span class="p">]</span>
@@ -316,7 +316,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">lamp_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamp_header</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">]</span>
 
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Comparison Lamp: &#39;</span>
-                         <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_name</span><span class="p">))</span>
+                         <span class="s1">&#39;{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_name</span><span class="p">))</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">data1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_data</span><span class="p">)</span>
                 <span class="c1"># self.lines_limits = self.get_line_limits()</span>
@@ -372,7 +372,7 @@
                         <span class="n">grating</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;GRATING&#39;</span><span class="p">]</span>
 
                         <span class="n">fig_title</span> <span class="o">=</span> <span class="s1">&#39;Wavelength Calibrated Data : &#39;</span> \
-                                    <span class="s1">&#39;</span><span class="si">{:s}</span><span class="se">\n</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">object_name</span><span class="p">,</span> <span class="n">grating</span><span class="p">)</span>
+                                    <span class="s1">&#39;{:s}</span><span class="se">\n</span><span class="s1">{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">object_name</span><span class="p">,</span> <span class="n">grating</span><span class="p">)</span>
 
                         <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
                         <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">set_window_title</span><span class="p">(</span><span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OFNAME&#39;</span><span class="p">])</span>
@@ -514,7 +514,7 @@
             <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lamp_header</span><span class="p">[</span><span class="s1">&#39;CCDSUM&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()]</span>
 
         <span class="n">new_order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">slit_size</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">0.15</span> <span class="o">*</span> <span class="n">serial_binning</span><span class="p">)))</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;New Order:  </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_order</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;New Order:  {:d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_order</span><span class="p">))</span>
 
         <span class="c1"># print(round(new_order))</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">argrelmax</span><span class="p">(</span><span class="n">filtered_data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">new_order</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
@@ -532,7 +532,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
             <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="n">fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">set_window_title</span><span class="p">(</span><span class="s1">&#39;Lines Detected&#39;</span><span class="p">)</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Lines detected in Lamp</span><span class="se">\n</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lamp_header</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">]))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Lines detected in Lamp</span><span class="se">\n</span><span class="s1">{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lamp_header</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">]))</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Pixel Axis&#39;</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Intensity (counts)&#39;</span><span class="p">)</span>
 
@@ -758,8 +758,8 @@
 
         <span class="n">pixel_one</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">pixel_two</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Center Wavelength : </span><span class="si">{:.3f}</span><span class="s1"> Blue Limit : &#39;</span>
-                  <span class="s1">&#39;</span><span class="si">{:.3f}</span><span class="s1"> Red Limit : </span><span class="si">{:.3f}</span><span class="s1"> &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center_wavelength</span><span class="p">,</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Center Wavelength : {:.3f} Blue Limit : &#39;</span>
+                  <span class="s1">&#39;{:.3f} Red Limit : {:.3f} &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">center_wavelength</span><span class="p">,</span>
                                                       <span class="bp">self</span><span class="o">.</span><span class="n">blue_limit</span><span class="p">,</span>
                                                       <span class="bp">self</span><span class="o">.</span><span class="n">red_limit</span><span class="p">))</span>
         
@@ -1028,10 +1028,10 @@
         <span class="n">correlation_values</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">angstrom_differences</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Length </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_data</span><span class="p">)))</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;NLines </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lamp_lines_pixel</span><span class="p">)))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Length {:d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_data</span><span class="p">)))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;NLines {:d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lamp_lines_pixel</span><span class="p">)))</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Length / NLines </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Length / NLines {:.3f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_data</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lamp_lines_pixel</span><span class="p">))))</span>
 
         <span class="n">half_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_data</span><span class="p">)</span> <span class="o">/</span>
@@ -1056,7 +1056,7 @@
 
             <span class="n">correlation_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_correlation</span><span class="p">(</span><span class="n">ref_sample</span><span class="p">,</span> <span class="n">lamp_sample</span><span class="p">)</span>
             <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Cross correlation value &#39;</span>
-                      <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">correlation_value</span><span class="p">)))</span>
+                      <span class="s1">&#39;{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">correlation_value</span><span class="p">)))</span>
 
             <span class="sd">&quot;&quot;&quot;record value for reference wavelength&quot;&quot;&quot;</span>
             <span class="n">angstrom_value_model</span> <span class="o">=</span> <span class="n">read_wsolution</span><span class="o">.</span><span class="n">math_model</span><span class="p">(</span>
@@ -1211,7 +1211,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Automatic Wavelength Solution</span><span class="se">\n</span><span class="s1">&#39;</span>
                                <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamp_header</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">]</span>
                                <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">wavmode</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
-                               <span class="o">+</span> <span class="s1">&#39;RMS Error: </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rms_error</span><span class="p">))</span>
+                               <span class="o">+</span> <span class="s1">&#39;RMS Error: {:.3f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rms_error</span><span class="p">))</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">i_fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 
@@ -1220,7 +1220,7 @@
             <span class="n">file_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">,</span>
                                                     <span class="n">out_file_name</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span><span class="p">)))</span>
 
-            <span class="n">out_file_name</span> <span class="o">+=</span> <span class="s1">&#39;_</span><span class="si">{:04d}</span><span class="s1">.pdf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_count</span><span class="p">)</span>
+            <span class="n">out_file_name</span> <span class="o">+=</span> <span class="s1">&#39;_{:04d}.pdf&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">file_count</span><span class="p">)</span>
             <span class="n">pdf_pages</span> <span class="o">=</span> <span class="n">PdfPages</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">,</span> <span class="n">out_file_name</span><span class="p">))</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">pdf_pages</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">)</span>
             <span class="n">pdf_pages</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -1258,7 +1258,7 @@
             <span class="n">box_width</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
                 <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[A-Za-z&quot; ]&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lamp_header</span><span class="p">[</span><span class="s1">&#39;SLIT&#39;</span><span class="p">]))</span> <span class="o">/</span> <span class="mf">0.15</span>
 
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;BOX WIDTH: </span><span class="si">{:f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">box_width</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;BOX WIDTH: {:f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">box_width</span><span class="p">))</span>
             <span class="n">box_kernel</span> <span class="o">=</span> <span class="n">Box1DKernel</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="n">box_width</span><span class="p">)</span>
             <span class="n">max_before</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span>
             <span class="n">cyaxis1</span> <span class="o">=</span> <span class="n">convolve</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">box_kernel</span><span class="p">)</span>
@@ -1347,7 +1347,7 @@
         <span class="c1">#     self.lamp_name)</span>
 
         <span class="k">if</span> <span class="n">reference_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Using reference file: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">reference_file</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Using reference file: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">reference_file</span><span class="p">))</span>
             <span class="n">reference_plots_enabled</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">ref_data</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getdata</span><span class="p">(</span><span class="n">reference_file</span><span class="p">)</span>
             <span class="n">ref_header</span> <span class="o">=</span> <span class="n">fits</span><span class="o">.</span><span class="n">getheader</span><span class="p">(</span><span class="n">reference_file</span><span class="p">)</span>
@@ -1363,13 +1363,13 @@
                          <span class="mi">2</span><span class="p">,</span>
                          <span class="n">gridspec_kw</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;width_ratios&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">]})</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">i_fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">set_window_title</span><span class="p">(</span><span class="s1">&#39;Science Target: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">set_window_title</span><span class="p">(</span><span class="s1">&#39;Science Target: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">science_object</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
 
         <span class="n">manager</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">get_current_fig_manager</span><span class="p">()</span>
         <span class="n">manager</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">maximize</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Raw Data - </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ax1</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Raw Data - {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_name</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Pixels&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Intensity (counts)&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Detected Lines&#39;</span><span class="p">)</span>
@@ -1392,7 +1392,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ax1</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">((</span><span class="n">ax1_ylim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">ax1_y_range</span><span class="p">,</span>
                            <span class="n">ax1_ylim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="n">ax1_y_range</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Reference Data - </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_name</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ax3</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Reference Data - {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lamp_name</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ax3</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Wavelength (Angstrom)&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ax3</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Intensity (counts)&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ax3</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">blue_limit</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">red_limit</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
@@ -1689,7 +1689,7 @@
             <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No action for key pressed: </span><span class="si">{:s}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;No action for key pressed: {:s}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">key</span><span class="p">))</span>
             <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="WavelengthCalibration.register_mark"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wavelength.WavelengthCalibration.register_mark">[docs]</a>    <span class="k">def</span> <span class="nf">register_mark</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
@@ -1725,7 +1725,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">raw_data_marks_y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">ydata</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">update_marks_plot</span><span class="p">(</span><span class="s1">&#39;raw_data&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:f}</span><span class="s1"> </span><span class="si">{:f}</span><span class="s1"> Are not contained&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">figure_x</span><span class="p">,</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;{:f} {:f} Are not contained&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">figure_x</span><span class="p">,</span>
                                                                <span class="n">figure_y</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Clicked Region is out of boundaries&#39;</span><span class="p">)</span></div>
@@ -1834,7 +1834,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">ax3</span><span class="o">.</span><span class="n">relim</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">i_fig</span><span class="o">.</span><span class="n">canvas</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Unknown Action </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">action</span><span class="p">))</span></div>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Unknown Action {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">action</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="WavelengthCalibration.plot_raw_over_reference"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wavelength.WavelengthCalibration.plot_raw_over_reference">[docs]</a>    <span class="k">def</span> <span class="nf">plot_raw_over_reference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">remove</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Overplot raw data over reference lamp using current wavelength</span>
@@ -1933,7 +1933,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">rms_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">square_differences</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">square_differences</span><span class="p">))</span>
 
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;RMS Error : </span><span class="si">{:.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rms_error</span><span class="p">))</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;RMS Error : {:.3f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rms_error</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="n">plots</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax4_plots</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> \
@@ -1946,8 +1946,8 @@
                     <span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
                         <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">ax4</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;RMS Error </span><span class="si">{:.3f}</span><span class="s1"> </span><span class="se">\n</span><span class="s1">&#39;</span>
-                                   <span class="s1">&#39;</span><span class="si">{:d}</span><span class="s1"> points (</span><span class="si">{:d}</span><span class="s1"> &#39;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ax4</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;RMS Error {:.3f} </span><span class="se">\n</span><span class="s1">&#39;</span>
+                                   <span class="s1">&#39;{:d} points ({:d} &#39;</span>
                                    <span class="s1">&#39;rejected)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rms_error</span><span class="p">,</span>
                                                       <span class="n">npoints</span><span class="p">,</span>
                                                       <span class="n">n_rejections</span><span class="p">))</span>
@@ -1970,7 +1970,7 @@
                                                 <span class="n">color</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
                                                 <span class="n">alpha</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
                                                 <span class="n">edgecolor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">{:.1f}</span><span class="s1"> Sigma&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;{:.1f} Sigma&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                                                     <span class="n">clipping_sigma</span><span class="p">))</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">ax4_plots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ax4</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lines_center</span><span class="p">,</span>
@@ -1988,7 +1988,7 @@
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">increment_color</span> <span class="o">=</span> <span class="s1">&#39;white&#39;</span>
 
-                    <span class="n">message</span> <span class="o">=</span> <span class="s1">r&#39;$\Delta$ RMSE </span><span class="si">{:+.3f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">message</span> <span class="o">=</span> <span class="s1">r&#39;$\Delta$ RMSE {:+.3f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                         <span class="n">rms_error_difference</span><span class="p">)</span>
 
                     <span class="c1"># self.display_onscreen_message(message=message,</span>
@@ -2046,17 +2046,17 @@
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_marks_x</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data_marks_x</span><span class="p">):</span>
                     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data_marks_x</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_marks_x</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                        <span class="n">message_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:d}</span><span class="s1"> Reference Click is &#39;</span> \
+                        <span class="n">message_text</span> <span class="o">=</span> <span class="s1">&#39;{:d} Reference Click is &#39;</span> \
                                        <span class="s1">&#39;missing!.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">message_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:d}</span><span class="s1"> Reference Clicks are &#39;</span> \
+                        <span class="n">message_text</span> <span class="o">=</span> <span class="s1">&#39;{:d} Reference Clicks are &#39;</span> \
                                        <span class="s1">&#39;missing!.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reference_marks_x</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data_marks_x</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                        <span class="n">message_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:d}</span><span class="s1"> Raw Click is missing!.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+                        <span class="n">message_text</span> <span class="o">=</span> <span class="s1">&#39;{:d} Raw Click is missing!.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="n">message_text</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:d}</span><span class="s1"> Raw Clicks are missing!.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+                        <span class="n">message_text</span> <span class="o">=</span> <span class="s1">&#39;{:d} Raw Clicks are missing!.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">display_onscreen_message</span><span class="p">(</span><span class="n">message_text</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">pixel</span> <span class="o">=</span> <span class="p">[]</span>
@@ -2185,9 +2185,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">evaluation_comment</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">rms_error</span><span class="p">,</span> <span class="n">n_points</span><span class="p">,</span> <span class="n">n_rejections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_solution</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">evaluation_comment</span> <span class="o">=</span> <span class="s1">&#39;Lamp Solution RMSE = </span><span class="si">{:.3f}</span><span class="s1"> &#39;</span> \
-                                      <span class="s1">&#39;Npoints = </span><span class="si">{:d}</span><span class="s1">, &#39;</span> \
-                                      <span class="s1">&#39;NRej = </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rms_error</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">evaluation_comment</span> <span class="o">=</span> <span class="s1">&#39;Lamp Solution RMSE = {:.3f} &#39;</span> \
+                                      <span class="s1">&#39;Npoints = {:d}, &#39;</span> \
+                                      <span class="s1">&#39;NRej = {:d}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rms_error</span><span class="p">,</span>
                                                            <span class="n">n_points</span><span class="p">,</span>
                                                            <span class="n">n_rejections</span><span class="p">)</span>
 
@@ -2212,13 +2212,13 @@
         <span class="n">new_header</span><span class="p">[</span><span class="s1">&#39;WAT0_001&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;system=equispec&#39;</span>
         <span class="n">new_header</span><span class="p">[</span><span class="s1">&#39;WAT1_001&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;wtype=linear label=Wavelength units=angstroms&#39;</span>
         <span class="n">new_header</span><span class="p">[</span><span class="s1">&#39;DC-FLAG&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">new_header</span><span class="p">[</span><span class="s1">&#39;DCLOG1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;REFSPEC1 = </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calibration_lamp</span><span class="p">)</span>
+        <span class="n">new_header</span><span class="p">[</span><span class="s1">&#39;DCLOG1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;REFSPEC1 = {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calibration_lamp</span><span class="p">)</span>
 
         <span class="c1"># print(new_header[&#39;APNUM*&#39;])</span>
         <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">f_end</span> <span class="o">=</span> <span class="s1">&#39;.fits&#39;</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">f_end</span> <span class="o">=</span> <span class="s1">&#39;_</span><span class="si">{:d}</span><span class="s1">.fits&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">f_end</span> <span class="o">=</span> <span class="s1">&#39;_{:d}.fits&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
         <span class="c1"># idea</span>
         <span class="c1">#  remove .fits from original_filename</span>
         <span class="c1"># define a base original name</span>
@@ -2237,7 +2237,7 @@
         <span class="c1"># print(len(spectrum))</span>
 
         <span class="n">fits</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="n">new_filename</span><span class="p">,</span> <span class="n">spectrum</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">new_header</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created new file: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_filename</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created new file: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">new_filename</span><span class="p">))</span>
         <span class="c1"># print new_header</span>
         <span class="k">return</span> <span class="n">new_header</span></div>
 
@@ -2421,8 +2421,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_spectral_features</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">solution_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_solution_name</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="WavelengthSolution.set_spectral_features"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wavelength.WavelengthSolution.set_spectral_features">[docs]</a>    <span class="k">def</span> <span class="nf">set_spectral_features</span><span class="p">(</span><span class="n">header</span><span class="p">):</span>
+<div class="viewcode-block" id="WavelengthSolution.set_spectral_features"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wavelength.WavelengthSolution.set_spectral_features">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">set_spectral_features</span><span class="p">(</span><span class="n">header</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Creates dictionary that defines the instrument configuration</span>
 
 <span class="sd">        Both Blue and Red Camera produce slightly different FITS headers being</span>
@@ -2495,9 +2495,9 @@
                     <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;grating&#39;</span><span class="p">,</span> <span class="s1">&#39;roi&#39;</span><span class="p">,</span> <span class="s1">&#39;instconf&#39;</span><span class="p">,</span> <span class="s1">&#39;wavmode&#39;</span><span class="p">]</span> <span class="ow">and</span> \
                                     <span class="n">new_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
 
-                        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Keyword: </span><span class="si">{:s}</span><span class="s1"> does not Match&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Keyword: {:s} does not Match&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
 
-                        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1"> - Solution: </span><span class="si">{:s}</span><span class="s1"> - New Data: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="p">,</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;{:s} - Solution: {:s} - New Data: {:s}&#39;</span><span class="p">,</span>
                                  <span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
                                  <span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
                                  <span class="n">new_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
@@ -2508,7 +2508,7 @@
                                     <span class="nb">abs</span><span class="p">(</span><span class="n">new_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">-</span>
                                                 <span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
 
-                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Keyword: </span><span class="si">{:s}</span><span class="s1"> Lamp: </span><span class="si">{:s}</span><span class="s1"> Data: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="p">,</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Keyword: {:s} Lamp: {:s} Data: {:s}&#39;</span><span class="p">,</span>
                                   <span class="n">key</span><span class="p">,</span>
                                   <span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
                                   <span class="n">new_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
@@ -2526,9 +2526,9 @@
                                <span class="s1">&#39;parallel_bin&#39;</span><span class="p">]</span> <span class="ow">and</span> \
                                     <span class="n">new_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
 
-                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Keyword: </span><span class="si">{:s}</span><span class="s1"> does not Match&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Keyword: {:s} does not Match&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
 
-                        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1"> - Solution: </span><span class="si">{:s}</span><span class="s1"> - New Data: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="p">,</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;{:s} - Solution: {:s} - New Data: {:s}&#39;</span><span class="p">,</span>
                                  <span class="n">key</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
                                  <span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
                                  <span class="n">new_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
@@ -2540,7 +2540,7 @@
                                 <span class="nb">float</span><span class="p">(</span><span class="n">new_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">-</span>
                                 <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]))</span><span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
 
-                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Keyword: </span><span class="si">{:s}</span><span class="s1"> Lamp: </span><span class="si">{:s}</span><span class="s1"> Data: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="p">,</span>
+                        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Keyword: {:s} Lamp: {:s} Data: {:s}&#39;</span><span class="p">,</span>
                                   <span class="n">key</span><span class="p">,</span>
                                   <span class="bp">self</span><span class="o">.</span><span class="n">spectral_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
                                   <span class="n">new_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
@@ -2591,9 +2591,9 @@
 
                     <span class="n">name_text</span> <span class="o">+=</span> <span class="s1">&#39;_&#39;</span> <span class="o">+</span> \
                                  <span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> \
-                                 <span class="s1">&#39;_</span><span class="si">{:d}</span><span class="s1">nm&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">center_wavelength</span><span class="p">)))</span>
+                                 <span class="s1">&#39;_{:d}nm&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">center_wavelength</span><span class="p">)))</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;WAVMODE: </span><span class="si">{:s}</span><span class="s1"> not supported&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;WAVMODE: {:s} not supported&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
 
         <span class="c1"># First filter wheel part of the flat name</span>
         <span class="k">if</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;filter&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;&lt;NO FILTER&gt;&#39;</span><span class="p">:</span>
@@ -2651,7 +2651,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Simon Torres.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
     </div>
   </body>
 </html>

@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -48,7 +48,7 @@
           <div class="body" role="main">
             
   <h1>Source code for goodman_spec.wsbuilder</h1><div class="highlight"><pre>
-<span></span><span class="c1"># -*- coding: utf8 -*-</span>
+<span class="c1"># -*- coding: utf8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Set of class and method to handle wavelength solutions</span>
 
 
@@ -313,8 +313,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Not Implemented&#39;</span><span class="p">)</span>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="ReadMathFunctions.none"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.none">[docs]</a>    <span class="k">def</span> <span class="nf">none</span><span class="p">():</span>
+<div class="viewcode-block" id="ReadMathFunctions.none"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.none">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">none</span><span class="p">():</span>
         <span class="k">return</span> <span class="mi">0</span></div>
 
 <div class="viewcode-block" id="ReadMathFunctions.linear_solution"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.linear_solution">[docs]</a>    <span class="k">def</span> <span class="nf">linear_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -323,8 +323,8 @@
         <span class="n">linear</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Linear1D</span><span class="p">(</span><span class="n">slope</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;cdelt&#39;</span><span class="p">],</span> <span class="n">intercept</span><span class="o">=</span><span class="n">intercept</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">linear</span></div>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="ReadMathFunctions.log_linear"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.log_linear">[docs]</a>    <span class="k">def</span> <span class="nf">log_linear</span><span class="p">():</span>
+<div class="viewcode-block" id="ReadMathFunctions.log_linear"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.log_linear">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">log_linear</span><span class="p">():</span>
         <span class="k">return</span> <span class="kc">False</span></div>
 
 <div class="viewcode-block" id="ReadMathFunctions.chebyshev"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.chebyshev">[docs]</a>    <span class="k">def</span> <span class="nf">chebyshev</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -388,7 +388,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Simon Torres.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
     </div>
   </body>
 </html>

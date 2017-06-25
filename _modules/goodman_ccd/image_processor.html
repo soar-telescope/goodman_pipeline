@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -48,7 +48,7 @@
           <div class="body" role="main">
             
   <h1>Source code for goodman_ccd.image_processor</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
                         <span class="n">unicode_literals</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">ccdproc</span>
@@ -206,7 +206,7 @@
                     <span class="c1">#top</span>
                     <span class="n">t</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1896</span> <span class="o">/</span> <span class="n">parallel_binning</span><span class="p">)</span>
                     <span class="c1"># TODO (simon): Need testing</span>
-                    <span class="n">trim_section</span> <span class="o">=</span> <span class="s1">&#39;[</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">,</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+                    <span class="n">trim_section</span> <span class="o">=</span> <span class="s1">&#39;[{:d}:{:d},{:d}:{:d}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
                     <span class="n">trim_section</span> <span class="o">=</span> <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;TRIMSEC&#39;</span><span class="p">]</span>
@@ -300,7 +300,7 @@
                         <span class="c1"># top</span>
                         <span class="n">t</span> <span class="o">=</span> <span class="n">h</span>
 
-                    <span class="n">overscan_region</span> <span class="o">=</span> <span class="s1">&#39;[</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">,</span><span class="si">{:d}</span><span class="s1">:</span><span class="si">{:d}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
+                    <span class="n">overscan_region</span> <span class="o">=</span> <span class="s1">&#39;[{:d}:{:d},{:d}:{:d}]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
 
                 <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">==</span> <span class="s1">&#39;Imaging&#39;</span><span class="p">:</span>
                     <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Imaging mode doesn&#39;t have overscan region. &quot;</span>
@@ -328,7 +328,7 @@
         <span class="n">n_bias</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">search_bias_name</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">n_bias</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">new_bias_name</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;.fits&#39;</span><span class="p">,</span>
-                                   <span class="s1">&#39;_</span><span class="si">{:d}</span><span class="s1">.fits&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_bias</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
+                                   <span class="s1">&#39;_{:d}.fits&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_bias</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span>
                                    <span class="n">default_bias_name</span><span class="p">)</span>
 
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;New name for master bias: &#39;</span> <span class="o">+</span> <span class="n">new_bias_name</span><span class="p">)</span>
@@ -342,7 +342,7 @@
             <span class="k">for</span> <span class="n">image_file</span> <span class="ow">in</span> <span class="n">bias_file_list</span><span class="p">:</span>
                 <span class="c1"># print(image_file)</span>
                 <span class="n">image_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">image_file</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Overscan Region: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">overscan_region</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Overscan Region: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">overscan_region</span><span class="p">))</span>
                 <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Loading bias image: &#39;</span> <span class="o">+</span> <span class="n">image_full_path</span><span class="p">)</span>
                 <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_overscan</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">overscan_region</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">overscan_region</span><span class="p">)</span>
@@ -367,7 +367,7 @@
             <span class="k">for</span> <span class="n">image_file</span> <span class="ow">in</span> <span class="n">bias_file_list</span><span class="p">:</span>
                 <span class="n">image_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span> <span class="n">image_file</span><span class="p">)</span>
                 <span class="n">ccd</span> <span class="o">=</span> <span class="n">CCDData</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="n">u</span><span class="o">.</span><span class="n">adu</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Loading bias image: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Loading bias image: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_full_path</span><span class="p">))</span>
                 <span class="n">ccd</span> <span class="o">=</span> <span class="n">image_trim</span><span class="p">(</span><span class="n">ccd</span><span class="p">,</span> <span class="n">trim_section</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">trim_section</span><span class="p">)</span>
                 <span class="n">master_bias_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ccd</span><span class="p">)</span>
 
@@ -430,7 +430,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Unknown observation technique: &#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">ccd</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">saturation_limit</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Removing saturated image </span><span class="si">{:s}</span><span class="s1">. Use --saturation &#39;</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;Removing saturated image {:s}. Use --saturation &#39;</span>
                             <span class="s1">&#39;to change saturation level&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">flat_file</span><span class="p">))</span>
                 <span class="c1"># plt.plot(ccd.data[802,:])</span>
                 <span class="c1"># plt.show()</span>
@@ -562,9 +562,9 @@
                 <span class="n">target_name</span> <span class="o">=</span> <span class="n">science_group</span><span class="o">.</span><span class="n">object</span><span class="p">[</span><span class="n">science_group</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span>
                                                    <span class="s1">&#39;OBJECT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
 
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Science Target: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_name</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Science Target: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_name</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Comparison Lamp: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_name</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Processing Comparison Lamp: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">target_name</span><span class="p">))</span>
 
             <span class="k">if</span> <span class="s1">&#39;FLAT&#39;</span> <span class="ow">in</span> <span class="n">obstype</span><span class="p">:</span>
                 <span class="n">flat_sub_group</span> <span class="o">=</span> <span class="n">science_group</span><span class="p">[</span><span class="n">science_group</span><span class="o">.</span><span class="n">obstype</span> <span class="o">==</span> <span class="s1">&#39;FLAT&#39;</span><span class="p">]</span>
@@ -662,7 +662,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;z&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
                     <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="s1">&#39;Bias subtracted image&#39;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">master_flat</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">master_flat_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;The file </span><span class="si">{:s}</span><span class="s1"> will not be &#39;</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;The file {:s} will not be &#39;</span>
                                 <span class="s1">&#39;flatfielded&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">science_image</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">norm_master_flat</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -680,12 +680,12 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">=</span> <span class="s1">&#39;f&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span>
 
                     <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span><span class="s1">&#39;master flat norm_&#39;</span>
-                                           <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">))</span>
+                                           <span class="s1">&#39;{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">))</span>
 
                 <span class="n">full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">red_path</span><span class="p">,</span>
                                          <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="n">science_image</span><span class="p">)</span>
                 <span class="n">ccd</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">full_path</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created science image: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created science image: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">full_path</span><span class="p">))</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">clean_cosmic</span><span class="p">:</span>
 
@@ -732,7 +732,7 @@
                                                   <span class="n">group</span><span class="o">=</span><span class="n">imaging_group</span><span class="p">,</span>
                                                   <span class="n">get</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Got </span><span class="si">{:s}</span><span class="s1"> for master flat name&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Got {:s} for master flat name&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="p">))</span>
 
         <span class="n">master_flat</span><span class="p">,</span> <span class="n">master_flat_name</span> <span class="o">=</span> <span class="n">get_best_flat</span><span class="p">(</span>
             <span class="n">flat_name</span><span class="o">=</span><span class="n">master_flat_name</span><span class="p">)</span>
@@ -767,7 +767,7 @@
 
                 <span class="n">ccd</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">add_history</span><span class="p">(</span>
                     <span class="s1">&#39;Flat corrected &#39;</span>
-                    <span class="s1">&#39;</span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                    <span class="s1">&#39;{:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">master_flat_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
 
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">clean_cosmic</span><span class="p">:</span>
                     <span class="n">ccd</span> <span class="o">=</span> <span class="n">cosmicray_rejection</span><span class="p">(</span><span class="n">ccd</span><span class="o">=</span><span class="n">ccd</span><span class="p">)</span>
@@ -778,7 +778,7 @@
                 <span class="n">final_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">red_path</span><span class="p">,</span>
                                           <span class="bp">self</span><span class="o">.</span><span class="n">out_prefix</span> <span class="o">+</span> <span class="n">image_file</span><span class="p">)</span>
                 <span class="n">ccd</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">final_name</span><span class="p">,</span> <span class="n">clobber</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created science file: </span><span class="si">{:s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">final_name</span><span class="p">))</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Created science file: {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">final_name</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Can not process data without a master flat&#39;</span><span class="p">)</span></div></div>
 
@@ -822,7 +822,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Simon Torres.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
     </div>
   </body>
 </html>

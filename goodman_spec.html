@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -88,7 +88,7 @@ CuAr: Copper Argon</div></blockquote>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> &#8211; </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> – </td>
 </tr>
 </tbody>
 </table>
@@ -98,14 +98,14 @@ CuAr: Copper Argon</div></blockquote>
 <dl class="method">
 <dt id="goodman_spec.linelist.ReferenceData.get_line_list_by_name">
 <code class="descname">get_line_list_by_name</code><span class="sig-paren">(</span><em>lamp_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/linelist.html#ReferenceData.get_line_list_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.linelist.ReferenceData.get_line_list_by_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the reference lines for elements in the lamp&#8217;s name</p>
+<dd><p>Get the reference lines for elements in the lamp’s name</p>
 <p>Splits the name in chunks of two characters assuming each one of them represents an element in the comparison
 lamp, then fetches the list of line positions available and appends it to a list that will be return ordered.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Lamp&#8217;s name as in the header keyword OBJECT</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Lamp’s name as in the header keyword OBJECT</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Sorted line list</td>
 </tr>
@@ -126,9 +126,9 @@ by blue and red</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>blue</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Blue limit for lines required</li>
-<li><strong>red</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; Red limit for lines required</li>
-<li><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Lamp&#8217;s name as in the header keyword OBJECT</li>
+<li><strong>blue</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Blue limit for lines required</li>
+<li><strong>red</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Red limit for lines required</li>
+<li><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Lamp’s name as in the header keyword OBJECT</li>
 </ul>
 </td>
 </tr>
@@ -152,13 +152,13 @@ by blue and red</p>
 <dl class="method">
 <dt id="goodman_spec.linelist.ReferenceData.get_reference_lamps_by_name">
 <code class="descname">get_reference_lamps_by_name</code><span class="sig-paren">(</span><em>lamp_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/linelist.html#ReferenceData.get_reference_lamps_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.linelist.ReferenceData.get_reference_lamps_by_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get lamp&#8217;s template by element</p>
+<dd><p>Get lamp’s template by element</p>
 <p>Some lamp templates are available for selected configurations.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Lamp&#8217;s name as in the header keyword OBJECT</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Lamp’s name as in the header keyword OBJECT</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Full path to reference lamps</td>
 </tr>
@@ -210,7 +210,7 @@ used for the science targets since it would not make sense to do it for lamps.</
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traces</strong> (<em>list</em>) &#8211; Contains a list per each science target previously detected. Every list has two elements
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traces</strong> (<em>list</em>) – Contains a list per each science target previously detected. Every list has two elements
 that are: Chebyshev fitted to spectrum peaks along the full extension of the spectrum or along the
 full length of the dispersion axis.</td>
 </tr>
@@ -257,9 +257,9 @@ interfere with another science target they will be ignored.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>mask_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Starting point to the region to be masked</li>
-<li><strong>mask_max</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Ending point to the region to be masked</li>
-<li><strong>value</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Value to be replaced. -1 is for science targets and 0 for background regions.</li>
+<li><strong>mask_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Starting point to the region to be masked</li>
+<li><strong>mask_max</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Ending point to the region to be masked</li>
+<li><strong>value</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Value to be replaced. -1 is for science targets and 0 for background regions.</li>
 </ul>
 </td>
 </tr>
@@ -288,7 +288,7 @@ True. Once there is a list of maximum locations a Chebyshev 1D of second order i
 The Chebyshev function is defined for all the range of pixels in the dispersion direction of the image.
 This method also mask the regions that will be extracted as science target (or spectrum) and the regions
 that will be used for background subtractions. At first two regions are defined for each science target
-at each side by an offset defined by the background_offset variable and the same width as the science target&#8217;s
+at each side by an offset defined by the background_offset variable and the same width as the science target’s
 aperture. If there are background subtraction regions that fall into a science target they will be ignored.
 In that case only one background region will be used.
 If both subtraction regions are valid they will be averaged and then subtracted.
@@ -302,7 +302,7 @@ this might be useful is the case when someone does an interpolation along the sp
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targets</strong> (<em>list</em>) &#8211; Each element is a class that stores the parameters of the gaussian fitted to the data in
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targets</strong> (<em>list</em>) – Each element is a class that stores the parameters of the gaussian fitted to the data in
 previous steps. This data tells the location in the image of the target or targets.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
@@ -386,27 +386,25 @@ smooth working in all the other modules.</p>
 <code class="descclassname">goodman_spec.redspec.</code><code class="descname">get_args</code><span class="sig-paren">(</span><em>arguments=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/redspec.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.redspec.get_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Handles the argparse library and returns the arguments</p>
 <p>The possible arguments to be used are:</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>&#8211;data-path: has to be the source directory, where the data (images) is.</dt>
+<dl class="docutils">
+<dt>–data-path: has to be the source directory, where the data (images) is.</dt>
 <dd>The location is <cite>self.source</cite> and the default value is ./</dd>
-<dt>&#8211;proc-path: is the destination where all new files/data will be</dt>
+<dt>–proc-path: is the destination where all new files/data will be</dt>
 <dd>placed. The location is <cite>self.destiny</cite> and the default value is ./</dd>
-<dt>&#8211;search-pattern: the pattern that matches the reduced data that</dt>
+<dt>–search-pattern: the pattern that matches the reduced data that</dt>
 <dd>will be processed. The location is <cite>self.pattern</cite> default value is
 fc_</dd>
 </dl>
-<p>&#8211;interactive: Interactive Wavelength Solution. Enabled by default
-&#8211;output-prefix: Prefix to use to name wavelength calibrated spectrum
-&#8211;extraction: Spectrum extraction type. Simple or optimal.
-&#8211;reference-files: Directory of reference files location
-&#8211;debug: Show plots for intermediate steps. Also prints more messages.
-&#8211;log-to-file: Write the log to a file.
-&#8211;save-plots: Save all plots ina directory
-&#8211;plot-results: Show a plot of the wavelength calibrated data at the</p>
+<p>–interactive: Interactive Wavelength Solution. Enabled by default
+–output-prefix: Prefix to use to name wavelength calibrated spectrum
+–extraction: Spectrum extraction type. Simple or optimal.
+–reference-files: Directory of reference files location
+–debug: Show plots for intermediate steps. Also prints more messages.
+–log-to-file: Write the log to a file.
+–save-plots: Save all plots ina directory
+–plot-results: Show a plot of the wavelength calibrated data at the</p>
 <blockquote>
 <div>end.</div></blockquote>
-</div></blockquote>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -442,7 +440,7 @@ system</td>
 <span id="goodman-spec-wavelength-module"></span><h2>goodman_spec.wavelength module<a class="headerlink" href="#module-goodman_spec.wavelength" title="Permalink to this headline">¶</a></h2>
 <p>Contains the tools to produce a wavelength solution</p>
 <p>This module gets the extracted data to produce a wavelength solution, linearize
-the spectrum and write the solution to the image&#8217;s header following the FITS
+the spectrum and write the solution to the image’s header following the FITS
 standard.</p>
 <dl class="class">
 <dt id="goodman_spec.wavelength.WavelengthCalibration">
@@ -450,7 +448,7 @@ standard.</p>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Wavelength Calibration Class</p>
 <p>The WavelengthCalibration class is instantiated for each of the science
-images, which are treated as a &#8220;science object&#8221;. In this first release it
+images, which are treated as a “science object”. In this first release it
 can find a wavelength solution for a given comparison lamp using an
 interactive GUI based on Matplotlib. Although it works very good, for the
 next release there is a plan for creating an independent GUI based on QT in
@@ -475,14 +473,14 @@ in separated methods to have more control on either process.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>new_header</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; An Astropy header object</li>
-<li><strong>spectrum</strong> (<em>Array</em>) &#8211; A numpy array that corresponds to the processed</li>
-<li><strong>data</strong> &#8211; </li>
-<li><strong>original_filename</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Original Image file name</li>
-<li><strong>evaluation_comment</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; A comment with information regarding the</li>
-<li><strong>of the wavelength solution</strong> (<em>quality</em>) &#8211; </li>
-<li><strong>index</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; If in one 2D image there are more than one target the</li>
-<li><strong>represents the target number.</strong> (<em>index</em>) &#8211; </li>
+<li><strong>new_header</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – An Astropy header object</li>
+<li><strong>spectrum</strong> (<em>Array</em>) – A numpy array that corresponds to the processed</li>
+<li><strong>data</strong> – </li>
+<li><strong>original_filename</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Original Image file name</li>
+<li><strong>evaluation_comment</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A comment with information regarding the</li>
+<li><strong>of the wavelength solution</strong> (<em>quality</em>) – </li>
+<li><strong>index</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – If in one 2D image there are more than one target the</li>
+<li><strong>represents the target number.</strong> (<em>index</em>) – </li>
 </ul>
 </td>
 </tr>
@@ -511,7 +509,7 @@ will identify the lines in the lamp we want to calibrate, there is no
 need to load this lamp since is an attribute of the class and has been
 already extracted. For each identified line will cut sub-samples of the
 template reference lamp and the new lamp and then will do a cross
-correlation to find the shift in pixels. The line&#8217;s pixel value will be
+correlation to find the shift in pixels. The line’s pixel value will be
 stored as well as the wavelength value of pixel_value +
 cross_correlation_value using the mathematical model of the template
 comparison lamp. The cross correlation value will also be stored and
@@ -539,16 +537,16 @@ and finally a new solution will be calculated.</p>
 
 <dl class="method">
 <dt id="goodman_spec.wavelength.WavelengthCalibration.cross_correlation">
-<code class="descname">cross_correlation</code><span class="sig-paren">(</span><em>reference</em>, <em>new_array</em>, <em>mode=u'full'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.cross_correlation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.cross_correlation" title="Permalink to this definition">¶</a></dt>
+<code class="descname">cross_correlation</code><span class="sig-paren">(</span><em>reference</em>, <em>new_array</em>, <em>mode=u’full’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.cross_correlation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.cross_correlation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Do cross correlation to two arrays</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>reference</strong> (<em>Numpy.Array</em>) &#8211; Reference array.</li>
-<li><strong>new_array</strong> (<em>Numpy.Array</em>) &#8211; Array to be matched.</li>
-<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Correlation mode for <cite>scipy.signal.correlate</cite>.</li>
+<li><strong>reference</strong> (<em>Numpy.Array</em>) – Reference array.</li>
+<li><strong>new_array</strong> (<em>Numpy.Array</em>) – Array to be matched.</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Correlation mode for <cite>scipy.signal.correlate</cite>.</li>
 </ul>
 </td>
 </tr>
@@ -575,7 +573,7 @@ to have probably richer formatted text on the screen.</p>
 
 <dl class="method">
 <dt id="goodman_spec.wavelength.WavelengthCalibration.display_onscreen_message">
-<code class="descname">display_onscreen_message</code><span class="sig-paren">(</span><em>message=u''</em>, <em>color=u'red'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.display_onscreen_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.display_onscreen_message" title="Permalink to this definition">¶</a></dt>
+<code class="descname">display_onscreen_message</code><span class="sig-paren">(</span><em>message=u”</em>, <em>color=u’red’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.display_onscreen_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.display_onscreen_message" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses the fourth subplot to display a message</p>
 <p>Displays a warning message on the bottom right subplot of the
 interactive window. It is capable to break down the message in more
@@ -585,8 +583,8 @@ than one line if necessary.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>message</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The message to be displayed</li>
-<li><strong>color</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Color name for the font&#8217;s color</li>
+<li><strong>message</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The message to be displayed</li>
+<li><strong>color</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Color name for the font’s color</li>
 </ul>
 </td>
 </tr>
@@ -612,7 +610,7 @@ quality of the fit.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Whether to create the plot or not</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Whether to create the plot or not</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Contains three elements: rms_error (float),
 npoints (int), n_rejections (int)</td>
@@ -633,7 +631,7 @@ If a wavelength solution exist it uses the line centers in pixels to
 estimate their respective wavelength and then search for the closest
 value in the list of reference lines for the elements in the comparison
 lamp. Then it filters the worst of them by doing sigma clipping.
-Finally it adds them to the class&#8217; attributes that contains the list of
+Finally it adds them to the class’ attributes that contains the list of
 reference points.</p>
 <p>Better results are obtained if the solution is already decent. Visual
 inspection also improves final result.</p>
@@ -648,7 +646,7 @@ and angstrom) it calculates the fit using a Chebyshev model of third
 degree. This was chosen because it worked better compared to the rest.
 There is a slight deviation from linearity in all Goodman data,
 therefore a linear model could not be used, also is said that a Spline
-of third degree is &#8220;too flexible&#8221; which I also experienced and since the
+of third degree is “too flexible” which I also experienced and since the
 deviation from linearity is not extreme it seemed that it was not
 necessary to implement.</p>
 <p>This method checks that the data that will be used as input to calculate
@@ -691,7 +689,7 @@ wavelength solution</td>
 <dd><p>Identify peaks in a lamp spectrum</p>
 <p>Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission
 lines then it calls the recenter_lines method that will recenter them
-using a &#8220;center of mass&#8221;, because, not always the maximum value (peak)
+using a “center of mass”, because, not always the maximum value (peak)
 is the center of the line.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -712,7 +710,7 @@ is the center of the line.</p>
 <dl class="method">
 <dt id="goodman_spec.wavelength.WavelengthCalibration.get_spectral_characteristics">
 <code class="descname">get_spectral_characteristics</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.get_spectral_characteristics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.get_spectral_characteristics" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculates some Goodman&#8217;s specific spectroscopic values.</p>
+<dd><p>Calculates some Goodman’s specific spectroscopic values.</p>
 <p>From the Header value for Grating, Grating Angle and Camera Angle it is
 possible to estimate what are the limits wavelength values and central
 wavelength. It was necessary to add offsets though, since the formulas
@@ -806,8 +804,8 @@ precisely. The default interpolation size is 200 (two hundred) points.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>spectrum</strong> (<a class="reference external" href="https://docs.python.org/2/library/array.html#module-array" title="(in Python v2.7)"><em>array</em></a>) &#8211; an uncalibrated spectrum or any unidimensional</li>
-<li><strong>array.</strong> &#8211; </li>
+<li><strong>spectrum</strong> (<a class="reference external" href="https://docs.python.org/2/library/array.html#module-array" title="(in Python v2.7)"><em>array</em></a>) – an uncalibrated spectrum or any unidimensional</li>
+<li><strong>array.</strong> – </li>
 </ul>
 </td>
 </tr>
@@ -843,7 +841,7 @@ Shift+Enter: Close the program with sys.exit(0)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; Key pressed event</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Key pressed event</td>
 </tr>
 </tbody>
 </table>
@@ -873,8 +871,8 @@ the original data is too steep.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data</strong> (<em>Array</em>) &#8211; The non-linear spectrum</li>
-<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Whether to show the plots or not</li>
+<li><strong>data</strong> (<em>Array</em>) – The non-linear spectrum</li>
+<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Whether to show the plots or not</li>
 </ul>
 </td>
 </tr>
@@ -898,7 +896,7 @@ and the smoothed linearized data itself.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; Click event</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Click event</td>
 </tr>
 </tbody>
 </table>
@@ -924,8 +922,8 @@ how far or close the solution is.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>remove</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; True or False depending whether you want to remove</li>
-<li><strong>overplotted lamp</strong><strong> or </strong><strong>not</strong> (<em>the</em>) &#8211; </li>
+<li><strong>remove</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – True or False depending whether you want to remove</li>
+<li><strong>overplotted lamp</strong><strong> or </strong><strong>not</strong> (<em>the</em>) – </li>
 </ul>
 </td>
 </tr>
@@ -946,10 +944,10 @@ how far or close the solution is.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>lamp_data</strong> &#8211; </li>
-<li><strong>lines</strong> &#8211; </li>
-<li><strong>slit_size</strong> &#8211; </li>
-<li><strong>order</strong> &#8211; </li>
+<li><strong>lamp_data</strong> – </li>
+<li><strong>lines</strong> – </li>
+<li><strong>slit_size</strong> – </li>
+<li><strong>order</strong> – </li>
 </ul>
 </td>
 </tr>
@@ -981,9 +979,9 @@ at the fourth subplot, bottom right corner.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; &#8216;reference&#8217; or &#8216;raw-data&#8217; is where the click was</li>
-<li><strong>done</strong> &#8211; </li>
-<li><strong>x_data</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; click x-axis value in data coordinates</li>
+<li><strong>data_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘reference’ or ‘raw-data’ is where the click was</li>
+<li><strong>done</strong> – </li>
+<li><strong>x_data</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – click x-axis value in data coordinates</li>
 </ul>
 </td>
 </tr>
@@ -1010,9 +1008,9 @@ scan right until it stops decreasing too. Defined those limits it will</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>data</strong> &#8211; </li>
-<li><strong>lines</strong> &#8211; </li>
-<li><strong>plots</strong> &#8211; </li>
+<li><strong>data</strong> – </li>
+<li><strong>lines</strong> – </li>
+<li><strong>plots</strong> – </li>
 </ul>
 </td>
 </tr>
@@ -1042,7 +1040,7 @@ correspondent line positions, raw (pixels) and reference (angstrom)</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; Click or m-key pressed event</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Click or m-key pressed event</td>
 </tr>
 </tbody>
 </table>
@@ -1055,15 +1053,15 @@ correspondent line positions, raw (pixels) and reference (angstrom)</p>
 <p>When you mark a line a red dot marks the position of the line at the
 exact y location of the click, for the x location it will use the value
 obtained by means of the recentering method. There are three possible
-actions: Update the reference plot&#8217;s click, the raw data marks or
+actions: Update the reference plot’s click, the raw data marks or
 delete them all.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>action</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; A string that could be &#8216;reference&#8217;, &#8216;raw_data&#8217; or</li>
-<li><strong>depending on the action desired</strong> (<em>'delete'</em>) &#8211; </li>
+<li><strong>action</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A string that could be ‘reference’, ‘raw_data’ or</li>
+<li><strong>depending on the action desired</strong> (<em>'delete'</em>) – </li>
 </ul>
 </td>
 </tr>
@@ -1075,7 +1073,7 @@ delete them all.</p>
 
 <dl class="class">
 <dt id="goodman_spec.wavelength.WavelengthSolution">
-<em class="property">class </em><code class="descclassname">goodman_spec.wavelength.</code><code class="descname">WavelengthSolution</code><span class="sig-paren">(</span><em>solution_type=None</em>, <em>model_name=None</em>, <em>model_order=0</em>, <em>model=None</em>, <em>ref_lamp=None</em>, <em>eval_comment=u''</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthSolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthSolution" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">goodman_spec.wavelength.</code><code class="descname">WavelengthSolution</code><span class="sig-paren">(</span><em>solution_type=None</em>, <em>model_name=None</em>, <em>model_order=0</em>, <em>model=None</em>, <em>ref_lamp=None</em>, <em>eval_comment=u”</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthSolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthSolution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Contains all relevant information of a given wavelength solution</p>
 <dl class="method">
@@ -1091,7 +1089,7 @@ to be parsed and then the parameters are compared in a hierarchic way.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; FITS header object from astropy.io.fits</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – FITS header object from astropy.io.fits</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True or False</td>
 </tr>
@@ -1116,7 +1114,7 @@ dictionary accordingly.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> &#8211; </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> – </td>
 </tr>
 </tbody>
 </table>
@@ -1127,15 +1125,15 @@ dictionary accordingly.</p>
 
 <dl class="function">
 <dt id="goodman_spec.wavelength.process_spectroscopy_data">
-<code class="descclassname">goodman_spec.wavelength.</code><code class="descname">process_spectroscopy_data</code><span class="sig-paren">(</span><em>data_container</em>, <em>args</em>, <em>extraction_type=u'simple'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#process_spectroscopy_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.process_spectroscopy_data" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">goodman_spec.wavelength.</code><code class="descname">process_spectroscopy_data</code><span class="sig-paren">(</span><em>data_container</em>, <em>args</em>, <em>extraction_type=u’simple’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#process_spectroscopy_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.process_spectroscopy_data" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>data_container</strong> &#8211; </li>
-<li><strong>args</strong> &#8211; </li>
-<li><strong>extraction_type</strong> &#8211; </li>
+<li><strong>data_container</strong> – </li>
+<li><strong>args</strong> – </li>
+<li><strong>extraction_type</strong> – </li>
 </ul>
 </td>
 </tr>
@@ -1197,7 +1195,7 @@ dictionary accordingly.</p>
 
 <dl class="class">
 <dt id="goodman_spec.wsbuilder.ReadWavelengthSolution">
-<em class="property">class </em><code class="descclassname">goodman_spec.wsbuilder.</code><code class="descname">ReadWavelengthSolution</code><span class="sig-paren">(</span><em>header</em>, <em>data</em>, <em>reference=u''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadWavelengthSolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadWavelengthSolution" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">goodman_spec.wsbuilder.</code><code class="descname">ReadWavelengthSolution</code><span class="sig-paren">(</span><em>header</em>, <em>data</em>, <em>reference=u”</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadWavelengthSolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadWavelengthSolution" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Read wavelength solutions from a fits header</p>
 <dl class="method">
@@ -1227,7 +1225,7 @@ dictionary accordingly.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Solutions can be multi-dimensionals, this method is called for each one of them.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Solutions can be multi-dimensionals, this method is called for each one of them.</td>
 </tr>
 </tbody>
 </table>
@@ -1238,7 +1236,7 @@ dictionary accordingly.</p>
 
 <dl class="class">
 <dt id="goodman_spec.wsbuilder.WavelengthFitter">
-<em class="property">class </em><code class="descclassname">goodman_spec.wsbuilder.</code><code class="descname">WavelengthFitter</code><span class="sig-paren">(</span><em>model=u'chebyshev'</em>, <em>degree=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#WavelengthFitter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.WavelengthFitter" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">goodman_spec.wsbuilder.</code><code class="descname">WavelengthFitter</code><span class="sig-paren">(</span><em>model=u’chebyshev’</em>, <em>degree=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#WavelengthFitter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.WavelengthFitter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Contains methods to do pixel to angstrom fit</p>
 <dl class="method">
@@ -1333,7 +1331,7 @@ the mathematical model defined with the class.</p>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Simon Torres.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
     </div>
   </body>
 </html>

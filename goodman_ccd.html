@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -57,7 +57,7 @@
 <dt id="goodman_ccd.core.NightDataContainer">
 <em class="property">class </em><code class="descclassname">goodman_ccd.core.</code><code class="descname">NightDataContainer</code><span class="sig-paren">(</span><em>path</em>, <em>instrument</em>, <em>technique</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#NightDataContainer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.NightDataContainer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
-<p>This class is designed to be the organized data container. It doesn&#8217;t
+<p>This class is designed to be the organized data container. It doesn’t
 store image data but list of pandas.DataFrame objects. Also it stores
 critical variables such as sunrise and sunset times.</p>
 <dl class="method">
@@ -68,11 +68,8 @@ critical variables such as sunrise and sunset times.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>bias_group</strong> (<em>pandas.DataFrame</em>) &#8211; Contains a set of keyword values of</li>
-<li><strong>image metadata</strong> (<em>grouped</em>) &#8211; </li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bias_group</strong> (<em>pandas.DataFrame</em>) – Contains a set of keyword values of
+grouped image metadata</td>
 </tr>
 </tbody>
 </table>
@@ -86,11 +83,8 @@ critical variables such as sunrise and sunset times.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>data_group</strong> (<em>pandas.DataFrame</em>) &#8211; Contains a set of keyword values of</li>
-<li><strong>image metadata</strong> (<em>grouped</em>) &#8211; </li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data_group</strong> (<em>pandas.DataFrame</em>) – Contains a set of keyword values of
+grouped image metadata</td>
 </tr>
 </tbody>
 </table>
@@ -99,16 +93,13 @@ critical variables such as sunrise and sunset times.</p>
 <dl class="method">
 <dt id="goodman_ccd.core.NightDataContainer.add_day_flats">
 <code class="descname">add_day_flats</code><span class="sig-paren">(</span><em>day_flats</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#NightDataContainer.add_day_flats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.NightDataContainer.add_day_flats" title="Permalink to this definition">¶</a></dt>
-<dd><p>&#8220;Adds a daytime flat group</p>
+<dd><p>“Adds a daytime flat group</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>day_flats</strong> (<em>pandas.DataFrame</em>) &#8211; Contains a set of keyword values of</li>
-<li><strong>image metadata</strong> (<em>grouped</em>) &#8211; </li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>day_flats</strong> (<em>pandas.DataFrame</em>) – Contains a set of keyword values of
+grouped image metadata</td>
 </tr>
 </tbody>
 </table>
@@ -122,11 +113,8 @@ critical variables such as sunrise and sunset times.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>spec_group</strong> (<em>pandas.DataFrame</em>) &#8211; Contains a set of keyword values of</li>
-<li><strong>image metadata</strong> (<em>grouped</em>) &#8211; </li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>spec_group</strong> (<em>pandas.DataFrame</em>) – Contains a set of keyword values of
+grouped image metadata</td>
 </tr>
 </tbody>
 </table>
@@ -141,8 +129,8 @@ critical variables such as sunrise and sunset times.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>sun_set</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Sun set time in the format &#8216;YYYY-MM-DDTHH:MM:SS.SS&#8217;</li>
-<li><strong>sun_rise</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Sun rise time in the format &#8216;YYYY-MM-DDTHH:MM:SS.SS&#8217;</li>
+<li><strong>sun_set</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Sun set time in the format ‘YYYY-MM-DDTHH:MM:SS.SS’</li>
+<li><strong>sun_rise</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Sun rise time in the format ‘YYYY-MM-DDTHH:MM:SS.SS’</li>
 </ul>
 </td>
 </tr>
@@ -159,10 +147,10 @@ critical variables such as sunrise and sunset times.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>evening</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Evening twilight time in the format</li>
-<li><strong>'YYYY-MM-DDTHH</strong> &#8211; MM:SS.SS&#8217;</li>
-<li><strong>morning</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Morning twilight time in the format</li>
-<li><strong>'YYYY-MM-DDTHH</strong> &#8211; MM:SS.SS&#8217;</li>
+<li><strong>evening</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Evening twilight time in the format
+‘YYYY-MM-DDTHH:MM:SS.SS’</li>
+<li><strong>morning</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Morning twilight time in the format
+‘YYYY-MM-DDTHH:MM:SS.SS’</li>
 </ul>
 </td>
 </tr>
@@ -181,18 +169,20 @@ critical variables such as sunrise and sunset times.</p>
 <dl class="function">
 <dt id="goodman_ccd.core.add_wcs_keys">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">add_wcs_keys</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#add_wcs_keys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.add_wcs_keys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Adds generic keyword to the header
-Linear wavelength solutions require a set of standard fits keywords. Later
+<dd><p>Adds generic keyword to the header</p>
+<p>Linear wavelength solutions require a set of standard fits keywords. Later
 on they will be updated accordingly
 The main goal of putting them here is to have consistent and nicely ordered
 headers</p>
+<p class="rubric">Notes</p>
+<p>This does NOT add a WCS solution, just the keywords</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; New header without WCS entries</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – New header without WCS entries</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Modified header</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Modified header with added WCS keywords</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">header (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)">object</a>)</td>
 </tr>
@@ -216,8 +206,8 @@ in groups that are pandas.DataFrame instances.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Path to data location</li>
-<li><strong>search_pattern</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Prefix to match files.</li>
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Path to data location</li>
+<li><strong>search_pattern</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Prefix to match files.</li>
 </ul>
 </td>
 </tr>
@@ -239,7 +229,7 @@ in groups that are pandas.DataFrame instances.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>in_time</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; time obtained from header&#8217;s keyword DATE-OBS</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>in_time</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – time obtained from header’s keyword DATE-OBS</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">time in seconds since epoch</td>
 </tr>
@@ -258,13 +248,15 @@ The attribute mask is used later as a mask for the pixels hit by cosmic rays</p>
 <div><dl class="docutils">
 <dt>Notes:</dt>
 <dd>OBS: cosmic ray rejection is working pretty well by defining gain = 1.
-It&#8217;s not working when we use the real gain of the image. In this case
+It’s not working when we use the real gain of the image. In this case
 the sky level changes by a factor equal the gain.
 Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2</dd>
 <dt>Args:</dt>
-<dd>ccd (object): CCDData Object
-mask_only (bool): In some cases you may want to obtain the cosmic
-rays mask only</dd>
+<dd><p class="first">ccd (object): CCDData Object
+mask_only (bool): In some cases you may want to obtain the cosmic</p>
+<blockquote class="last">
+<div>rays mask only</div></blockquote>
+</dd>
 <dt>Returns:</dt>
 <dd>ccd (object): A CCDData instance with the mask attribute updated.</dd>
 </dl>
@@ -282,11 +274,11 @@ rays mask only</dd>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>data_path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Data location</li>
-<li><strong>in_file</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Name of the file to have its cosmic rays removed</li>
-<li><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Prefix to add to the file with the cosmic rays removed</li>
-<li><strong>dcr_par_dir</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Directory of default dcr.par file</li>
-<li><strong>delete</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; True for deleting the input and cosmic ray file.</li>
+<li><strong>data_path</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Data location</li>
+<li><strong>in_file</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Name of the file to have its cosmic rays removed</li>
+<li><strong>prefix</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Prefix to add to the file with the cosmic rays removed</li>
+<li><strong>dcr_par_dir</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Directory of default dcr.par file</li>
+<li><strong>delete</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – True for deleting the input and cosmic ray file.</li>
 </ul>
 </td>
 </tr>
@@ -298,7 +290,50 @@ rays mask only</dd>
 <dl class="function">
 <dt id="goodman_ccd.core.extract">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">extract</code><span class="sig-paren">(</span><em>ccd</em>, <em>trace</em>, <em>spatial_profile</em>, <em>extraction</em>, <em>sampling_step=1</em>, <em>plots=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#extract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.extract" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Performs spectrum extraction</p>
+<p>This function is designed to perform two types of spectrum extraction, a
+simple sum in the spatial direction and an optimal extraction.</p>
+<p class="rubric">Notes</p>
+<p>For the beta release the optimal extraction is not implemented.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Instance of ccdproc.CCDData containing a 2D spectrum</li>
+<li><strong>trace</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Instance of astropy.modeling.Model, a low order
+polynomial that defines the trace of the spectrum in the ccd object.</li>
+<li><strong>spatial_profile</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Instance of astropy.modeling.Model, a Gaussian
+model previously fitted to the spatial profile of the 2D spectrum
+contained in the ccd object.</li>
+<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Extraction type, can be ‘simple’ or ‘optimal’ for the
+beta release the optimal extraction is not implemented yet.</li>
+<li><strong>sampling_step</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The optimal extraction needs to sample the spatial
+profile, this value defines the intervals at which get such
+sampling.</li>
+<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Determines whether display plots or not.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>Instance of ccdproc.CCDData containing a 1D spectrum. The</dt>
+<dd><p class="first last">attribute ‘data’ is replaced by the 1D array resulted from the
+extraction process.</p>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">ccd (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)">object</a>)</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code> – When ‘extraction’ is optimal, this is valid for the
+beta release</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="function">
 <dt id="goodman_ccd.core.fix_duplicated_keywords">
@@ -311,7 +346,7 @@ duplicated keywords and the remove all but one from the end backwards.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>night_dir</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The full path for the raw data location</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>night_dir</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The full path for the raw data location</td>
 </tr>
 </tbody>
 </table>
@@ -334,7 +369,7 @@ None instead of master_flat_name.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>flat_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Full path of masterflat basename. Ends in &#8216;<a href="#id1"><span class="problematic" id="id2">*</span></a>.fits&#8217;.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>flat_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Full path of masterflat basename. Ends in ‘<a href="#id1"><span class="problematic" id="id2">*</span></a>.fits’.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A ccdproc.CCDData instance
 master_flat_name (str): Full path to the chosen masterflat.</td>
@@ -382,7 +417,7 @@ cam_ang:</dd>
 background subtraction.</p>
 <p class="rubric">Notes</p>
 <p>For Goodman HTS the alignment of the spectrum with the detector lines
-is quite good, that&#8217;s why this function does not consider the trace.
+is quite good, that’s why this function does not consider the trace.
 Also because the <cite>model</cite> argument is based on the median throughout all
 the detector along the dispersion axis, so if there is a strong
 misalignment it will result in a wider Gaussian Profile</p>
@@ -391,25 +426,30 @@ misalignment it will result in a wider Gaussian Profile</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; A ccdproc.CCDData instance, the image from which the zone
+<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – A ccdproc.CCDData instance, the image from which the zone
 will be extracted</li>
-<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Extraction type, &#8216;simple&#8217; or &#8216;optimal&#8217;</li>
-<li><strong>trace</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; An astropy.modeling.Model instance that correspond to</li>
-<li><strong>trace of the spectrum</strong> (<em>the</em>) &#8211; </li>
-<li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; An astropy.modeling.Model instance that was previously
+<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Extraction type, ‘simple’ or ‘optimal’</li>
+<li><strong>trace</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – An astropy.modeling.Model instance that correspond to
+the trace of the spectrum</li>
+<li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – An astropy.modeling.Model instance that was previously
 fitted to the spatial profile.</li>
-<li><strong>n_sigma_extract</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Total number of sigmas to be extracted.</li>
-<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; If True will show plots, similar to a debugging mode.</li>
-<li><strong>zone</strong> (<em>list</em>) &#8211; Low and high limits to extract</li>
+<li><strong>n_sigma_extract</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Total number of sigmas to be extracted.</li>
+<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True will show plots, similar to a debugging mode.</li>
+<li><strong>zone</strong> (<em>list</em>) – Low and high limits to extract</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Instance of ccdproc.CCDData that contains only the region
-extracted from the full image. The header is updated with a new HISTORY
-keyword that contain the region of the original image extracted.
-model (object): Instance of astropy.modeling.Model with an updated mean
-to match the new center in pixel units.
-zone (list): Low and high limits of extraction zone</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>Instance of ccdproc.CCDData that contains only the region</dt>
+<dd><p class="first last">extracted from the full image. The header is updated with a new HISTORY
+keyword that contain the region of the original image extracted.</p>
+</dd>
+<dt>model (object): Instance of astropy.modeling.Model with an updated mean</dt>
+<dd><p class="first last">to match the new center in pixel units.</p>
+</dd>
+</dl>
+<p>zone (list): Low and high limits of extraction zone</p>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">nccd (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)">object</a>)</p>
@@ -432,10 +472,13 @@ such as NaNs -INF +INF, etc.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>master_flat</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; A ccdproc.CCDData instance</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>master_flat</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – A ccdproc.CCDData instance</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Trim section in spatial direction in the format
-[:,slit_lower_limit:slit_higher_limit]</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>Trim section in spatial direction in the format</dt>
+<dd>[:,slit_lower_limit:slit_higher_limit]</dd>
+</dl>
+</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">slit_trim_section (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)">str</a>)</td>
 </tr>
@@ -448,20 +491,24 @@ such as NaNs -INF +INF, etc.</p>
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">get_twilight_time</code><span class="sig-paren">(</span><em>date_obs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#get_twilight_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.get_twilight_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get end/start time of evening/morning twilight</p>
 <p class="rubric">Notes</p>
-<p>Taken from David Sanmartim&#8217;s development</p>
+<p>Taken from David Sanmartim’s development</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>date_obs</strong> (<em>list</em>) &#8211; List of all the dates from data.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>date_obs</strong> (<em>list</em>) – List of all the dates from data.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Evening twilight time in the format
-&#8216;YYYY-MM-DDTHH:MM:SS.SS&#8217;
-twilight_morning (str): Morning twilight time in the format
-&#8216;YYYY-MM-DDTHH:MM:SS.SS&#8217;
-sun_set_time (str): Sun set time in the format &#8216;YYYY-MM-DDTHH:MM:SS.SS&#8217;
-sun_rise_time (str): Sun rise time in the format
-&#8216;YYYY-MM-DDTHH:MM:SS.SS&#8217;</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>Evening twilight time in the format</dt>
+<dd>’YYYY-MM-DDTHH:MM:SS.SS’</dd>
+<dt>twilight_morning (str): Morning twilight time in the format</dt>
+<dd>’YYYY-MM-DDTHH:MM:SS.SS’</dd>
+</dl>
+<p>sun_set_time (str): Sun set time in the format ‘YYYY-MM-DDTHH:MM:SS.SS’
+sun_rise_time (str): Sun rise time in the format</p>
+<blockquote>
+<div>’YYYY-MM-DDTHH:MM:SS.SS’</div></blockquote>
+</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">twilight_evening (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)">str</a>)</td>
 </tr>
@@ -482,11 +529,14 @@ variation from one configuration to another but in general is acceptable.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; a ccdproc.CCDData instance</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – a ccdproc.CCDData instance</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">an astropy.modeling.Model instance, it could be
-a Gaussian1D or CompoundModel (several Gaussian1D). Each of them
-represent a point source spectrum found.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>an astropy.modeling.Model instance, it could be</dt>
+<dd>a Gaussian1D or CompoundModel (several Gaussian1D). Each of them
+represent a point source spectrum found.</dd>
+</dl>
+</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">profile_model (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)">object</a>)</td>
 </tr>
@@ -503,11 +553,11 @@ represent a point source spectrum found.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; A ccdproc.CCDData instance</li>
-<li><strong>overscan_region</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The overscan region in the format &#8216;[x1:x2,y1:y2]&#8217;</li>
-<li><strong>x is the spectral axis and y is the spatial axis.</strong> (<em>where</em>) &#8211; </li>
-<li><strong>add_keyword</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Tells ccdproc whether to add a keyword or not.</li>
-<li><strong>False.</strong> (<em>Default</em>) &#8211; </li>
+<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – A ccdproc.CCDData instance</li>
+<li><strong>overscan_region</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The overscan region in the format ‘[x1:x2,y1:y2]’
+where x is the spectral axis and y is the spatial axis.</li>
+<li><strong>add_keyword</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Tells ccdproc whether to add a keyword or not.
+Default False.</li>
 </ul>
 </td>
 </tr>
@@ -530,11 +580,11 @@ represent a point source spectrum found.</td>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; A ccdproc.CCDData instance</li>
-<li><strong>trim_section</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The trimming section in the format &#8216;[x1:x2,y1:y2]&#8217;</li>
-<li><strong>x is the spectral axis and y is the spatial axis.</strong> (<em>where</em>) &#8211; </li>
-<li><strong>add_keyword</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; Tells ccdproc whether to add a keyword or not.</li>
-<li><strong>False.</strong> (<em>Default</em>) &#8211; </li>
+<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – A ccdproc.CCDData instance</li>
+<li><strong>trim_section</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The trimming section in the format ‘[x1:x2,y1:y2]’
+where x is the spectral axis and y is the spatial axis.</li>
+<li><strong>add_keyword</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Tells ccdproc whether to add a keyword or not.
+Default False.</li>
 </ul>
 </td>
 </tr>
@@ -550,7 +600,7 @@ represent a point source spectrum found.</td>
 
 <dl class="function">
 <dt id="goodman_ccd.core.normalize_master_flat">
-<code class="descclassname">goodman_ccd.core.</code><code class="descname">normalize_master_flat</code><span class="sig-paren">(</span><em>master</em>, <em>name</em>, <em>method=u'simple'</em>, <em>order=15</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#normalize_master_flat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.normalize_master_flat" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">goodman_ccd.core.</code><code class="descname">normalize_master_flat</code><span class="sig-paren">(</span><em>master</em>, <em>name</em>, <em>method=u’simple’</em>, <em>order=15</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#normalize_master_flat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.normalize_master_flat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Master flat normalization method</p>
 <dl class="docutils">
 <dt>This function normalize a master flat in three possible ways:</dt>
@@ -569,10 +619,10 @@ unless you have a good reason as well as a powerful computer.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>master</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; Master flat. Has to be a ccdproc.CCDData instance</li>
-<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Full path of master flat prior to normalization</li>
-<li><strong>method</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Normalization method, &#8216;mean&#8217;, &#8216;simple&#8217; or &#8216;full&#8217;</li>
-<li><strong>order</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Order of the polinomial to be fitted.</li>
+<li><strong>master</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Master flat. Has to be a ccdproc.CCDData instance</li>
+<li><strong>name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Full path of master flat prior to normalization</li>
+<li><strong>method</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Normalization method, ‘mean’, ‘simple’ or ‘full’</li>
+<li><strong>order</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Order of the polinomial to be fitted.</li>
 </ul>
 </td>
 </tr>
@@ -598,7 +648,7 @@ might find it useful as well</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; An argparse instance</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – An argparse instance</td>
 </tr>
 </tbody>
 </table>
@@ -615,8 +665,8 @@ Prints to the standard output.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>current</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Current value in the range of the loop.</li>
-<li><strong>total</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; The length of the loop.</li>
+<li><strong>current</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Current value in the range of the loop.</li>
+<li><strong>total</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The length of the loop.</li>
 </ul>
 </td>
 </tr>
@@ -632,14 +682,14 @@ Prints to the standard output.</p>
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">print_spacers</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#print_spacers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.print_spacers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Miscelaneous function to print uniform spacers</p>
 <p>Prints a spacer of 80 columns with  and 3 rows height. The first and last
-rows contains the symbol &#8220;=&#8221; repeated 80 times. The middle row contains the
-message centered and the extremes has one single &#8220;=&#8221; symbol.
+rows contains the symbol “=” repeated 80 times. The middle row contains the
+message centered and the extremes has one single “=” symbol.
 The only functionality of this is aesthetic.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; A message to be printed</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A message to be printed</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A True value</td>
 </tr>
@@ -658,8 +708,8 @@ The only functionality of this is aesthetic.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>right_ascension</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Right ascension in the format hh:mm:ss.sss</li>
-<li><strong>declination</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Declination in the format dd:mm:ss.sss</li>
+<li><strong>right_ascension</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Right ascension in the format hh:mm:ss.sss</li>
+<li><strong>declination</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Declination in the format dd:mm:ss.sss</li>
 </ul>
 </td>
 </tr>
@@ -682,7 +732,7 @@ declination_deg (float): Declination in degrees</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; A ccdproc.CCDData instance.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – A ccdproc.CCDData instance.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The modified</td>
 </tr>
@@ -701,11 +751,11 @@ declination_deg (float): Declination in degrees</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; A ccdproc.CCDData Instance</li>
-<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; Extraction type name. _simple_ or _optimal_</li>
-<li><strong>comp_list</strong> (<em>list</em>) &#8211; List of ccdproc.CCDData instances of COMP lamps data</li>
-<li><strong>n_sigma_extract</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Number of sigmas to be used for extraction</li>
-<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; If plots will be shown or not.</li>
+<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – A ccdproc.CCDData Instance</li>
+<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Extraction type name. _simple_ or _optimal_</li>
+<li><strong>comp_list</strong> (<em>list</em>) – List of ccdproc.CCDData instances of COMP lamps data</li>
+<li><strong>n_sigma_extract</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Number of sigmas to be used for extraction</li>
+<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If plots will be shown or not.</li>
 </ul>
 </td>
 </tr>
@@ -716,10 +766,8 @@ comp_zones (list): List of ccdproc.CCDData instances</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">extracted (list)</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><ul class="first last simple">
-<li><em>NoTargetException (Exception)</em> &#8211; A NoTargetException if there is no target</li>
-<li><code class="xref py py-exc docutils literal"><span class="pre">found.</span></code></li>
-</ul>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><em>NoTargetException (Exception)</em> – A NoTargetException if there is no target
+found.</p>
 </td>
 </tr>
 </tbody>
@@ -729,7 +777,7 @@ comp_zones (list): List of ccdproc.CCDData instances</p>
 <dl class="function">
 <dt id="goodman_ccd.core.trace_targets">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">trace_targets</code><span class="sig-paren">(</span><em>ccd</em>, <em>profile</em>, <em>sampling_step=5</em>, <em>pol_deg=2</em>, <em>plots=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#trace_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.trace_targets" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find the trace of the target&#8217;s spectrum on the image</p>
+<dd><p>Find the trace of the target’s spectrum on the image</p>
 <p>This function defines a low order polynomial that trace the location of the
 spectrum. The attributes pol_deg and sampling_step define the polynomial
 degree and the spacing in pixels for the samples. For every sample a
@@ -737,23 +785,27 @@ gaussian model is fitted and the center (mean) is recorded and since
 spectrum traces vary smoothly this value is used as a new center for the
 base model used to fit the spectrum profile.</p>
 <p class="rubric">Notes</p>
-<p>This doesn&#8217;t work for extended sources.</p>
+<p>This doesn’t work for extended sources.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; Instance of ccdproc.CCDData</li>
-<li><strong>profile</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) &#8211; Instance of astropy.modeling.Model, contains the</li>
-<li><strong>profile of the 2D spectrum.</strong> (<em>spatial</em>) &#8211; </li>
-<li><strong>sampling_step</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Frequency of sampling in pixels</li>
-<li><strong>pol_deg</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) &#8211; Polynomial degree for fitting the trace</li>
-<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; If True will show plots (debugging)</li>
+<li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Instance of ccdproc.CCDData</li>
+<li><strong>profile</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Instance of astropy.modeling.Model, contains the
+spatial profile of the 2D spectrum.</li>
+<li><strong>sampling_step</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Frequency of sampling in pixels</li>
+<li><strong>pol_deg</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Polynomial degree for fitting the trace</li>
+<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – If True will show plots (debugging)</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List that contains traces that are
-astropy.modeling.Model instance</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>List that contains traces that are</dt>
+<dd><p class="first last">astropy.modeling.Model instance</p>
+</dd>
+</dl>
+</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">all_traces (list)</p>
@@ -777,7 +829,7 @@ regarding the process to be used.</p>
 <dl class="method">
 <dt id="goodman_ccd.data_classifier.DataClassifier.get_instrument">
 <code class="descname">get_instrument</code><span class="sig-paren">(</span><em>night_folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/data_classifier.html#DataClassifier.get_instrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.data_classifier.DataClassifier.get_instrument" title="Permalink to this definition">¶</a></dt>
-<dd><p>Identify Goodman&#8217;s Camera</p>
+<dd><p>Identify Goodman’s Camera</p>
 <p>Goodman has two camera, a blue one and another optimized for redder
 wavelength. Their headers are differents so this methods uses that to
 discover which camera the data belong to. The red camera has an specific
@@ -786,7 +838,7 @@ keyword that says which camera is but the blue does not.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>night_folder</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; The full path for the raw data location</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>night_folder</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The full path for the raw data location</td>
 </tr>
 </tbody>
 </table>
@@ -855,7 +907,7 @@ need to have backups of raw data.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bias_group</strong> &#8211; </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>bias_group</strong> – </td>
 </tr>
 </tbody>
 </table>
@@ -864,14 +916,14 @@ need to have backups of raw data.</p>
 
 <dl class="method">
 <dt id="goodman_ccd.image_processor.ImageProcessor.create_master_flats">
-<code class="descname">create_master_flats</code><span class="sig-paren">(</span><em>flat_group</em>, <em>target_name=u''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/image_processor.html#ImageProcessor.create_master_flats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.image_processor.ImageProcessor.create_master_flats" title="Permalink to this definition">¶</a></dt>
+<code class="descname">create_master_flats</code><span class="sig-paren">(</span><em>flat_group</em>, <em>target_name=u”</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/image_processor.html#ImageProcessor.create_master_flats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.image_processor.ImageProcessor.create_master_flats" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>flat_group</strong> &#8211; </li>
-<li><strong>target_name</strong> &#8211; </li>
+<li><strong>flat_group</strong> – </li>
+<li><strong>target_name</strong> – </li>
 </ul>
 </td>
 </tr>
@@ -907,7 +959,7 @@ IRAF V3 convention oppsoite to Python (poner en returns)</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Region for overscan in the format
-&#8216;[min:max,:]&#8217; where min is the starting point and max is the end
+‘[min:max,:]’ where min is the starting point and max is the end
 point of the overscan region.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">overscan_region (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)">str</a>)</td>
@@ -918,16 +970,16 @@ point of the overscan region.</td>
 
 <dl class="method">
 <dt id="goodman_ccd.image_processor.ImageProcessor.name_master_flats">
-<code class="descname">name_master_flats</code><span class="sig-paren">(</span><em>header</em>, <em>group</em>, <em>target_name=u''</em>, <em>get=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/image_processor.html#ImageProcessor.name_master_flats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.image_processor.ImageProcessor.name_master_flats" title="Permalink to this definition">¶</a></dt>
+<code class="descname">name_master_flats</code><span class="sig-paren">(</span><em>header</em>, <em>group</em>, <em>target_name=u”</em>, <em>get=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/image_processor.html#ImageProcessor.name_master_flats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.image_processor.ImageProcessor.name_master_flats" title="Permalink to this definition">¶</a></dt>
 <dd><table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>header</strong> &#8211; </li>
-<li><strong>group</strong> &#8211; </li>
-<li><strong>target_name</strong> &#8211; </li>
-<li><strong>get</strong> &#8211; </li>
+<li><strong>header</strong> – </li>
+<li><strong>group</strong> – </li>
+<li><strong>target_name</strong> – </li>
+<li><strong>get</strong> – </li>
 </ul>
 </td>
 </tr>
@@ -943,7 +995,7 @@ point of the overscan region.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>imaging_group</strong> &#8211; </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>imaging_group</strong> – </td>
 </tr>
 </tbody>
 </table>
@@ -957,7 +1009,7 @@ point of the overscan region.</td>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>science_group</strong> &#8211; </td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>science_group</strong> – </td>
 </tr>
 </tbody>
 </table>
@@ -1018,10 +1070,10 @@ A data group is an instance of a Pandas DataFrame.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>grating</strong> &#8211; </li>
-<li><strong>camera_targ</strong> &#8211; </li>
-<li><strong>grating_targ</strong> &#8211; </li>
-<li><strong>blocking_filter</strong> &#8211; </li>
+<li><strong>grating</strong> – </li>
+<li><strong>camera_targ</strong> – </li>
+<li><strong>grating_targ</strong> – </li>
+<li><strong>blocking_filter</strong> – </li>
 </ul>
 </td>
 </tr>
@@ -1095,7 +1147,7 @@ A data group is an instance of a Pandas DataFrame.</p>
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Simon Torres.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
     </div>
   </body>
 </html>

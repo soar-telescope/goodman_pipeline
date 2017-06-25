@@ -1,6 +1,6 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
@@ -27,7 +27,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
   </head>
-  <body role="document">
+  <body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
@@ -48,7 +48,7 @@
           <div class="body" role="main">
             
   <h1>Source code for goodman_ccd.night_organizer</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
                         <span class="n">unicode_literals</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -141,11 +141,11 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
                 <span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="s1">&#39;radeg&#39;</span><span class="p">)]</span> <span class="o">=</span> \
-                <span class="s1">&#39;</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radeg</span><span class="p">)</span>
+                <span class="s1">&#39;{:.2f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radeg</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span>
                 <span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="s1">&#39;decdeg&#39;</span><span class="p">)]</span> <span class="o">=</span> \
-                <span class="s1">&#39;</span><span class="si">{:.2f}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">decdeg</span><span class="p">)</span>
+                <span class="s1">&#39;{:.2f}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">decdeg</span><span class="p">)</span>
             <span class="c1"># now we can compare using degrees</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_checks</span><span class="p">()</span>
@@ -167,14 +167,14 @@
         <span class="n">readout_confs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_collection</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s1">&#39;gain&#39;</span><span class="p">,</span> <span class="s1">&#39;rdnoise&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">readout_confs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
 
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;There are </span><span class="si">{:d}</span><span class="s1"> different readout modes in the &#39;</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s1">&#39;There are {:d} different readout modes in the &#39;</span>
                         <span class="s1">&#39;data.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">readout_confs</span><span class="p">)))</span>
 
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Sleeping 10 seconds&#39;</span><span class="p">)</span>
             <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></div>
 
-    <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="NightOrganizer.spectroscopy_night"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.night_organizer.NightOrganizer.spectroscopy_night">[docs]</a>    <span class="k">def</span> <span class="nf">spectroscopy_night</span><span class="p">(</span><span class="n">file_collection</span><span class="p">,</span> <span class="n">data_container</span><span class="p">):</span>
+<div class="viewcode-block" id="NightOrganizer.spectroscopy_night"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.night_organizer.NightOrganizer.spectroscopy_night">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">spectroscopy_night</span><span class="p">(</span><span class="n">file_collection</span><span class="p">,</span> <span class="n">data_container</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Organizes data for spectroscopy</span>
 
 <span class="sd">        This method identifies all combinations of nine **key** keywords that</span>
@@ -374,7 +374,7 @@
     </div>
     <div class="footer" role="contentinfo">
         &#169; Copyright 2017, Simon Torres.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.1.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
     </div>
   </body>
 </html>
