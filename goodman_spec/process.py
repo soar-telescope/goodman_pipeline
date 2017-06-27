@@ -8,16 +8,17 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 
+import logging
 import os
+
 import numpy as np
 import matplotlib
 matplotlib.use('GTK3Agg')
-import matplotlib.pyplot as plt
-import logging
+
 from astropy.io import fits
 from astropy.modeling import models, fitting
 from goodman_ccd.core import add_wcs_keys
-
+from matplotlib import pyplot as plt
 
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: %(message)s'

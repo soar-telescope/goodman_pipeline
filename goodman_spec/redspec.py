@@ -12,28 +12,26 @@ Simon Torres 2016-06-28
 # TODO (simon): Change all astropy.io.fits to astropy.CCDData.read
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import sys
-import os
-import numpy as np
-import time
-import textwrap
-import ccdproc as ccd
-import pandas as pd
-import argparse
+
 import logging
-import matplotlib
-matplotlib.use('GTK3Agg')
-import matplotlib.pyplot as plt
-# from astropy import log
+import os
+import sys
+import textwrap
+import time
 import warnings
+
+import argparse
+import ccdproc as ccd
+import matplotlib
+import numpy as np
+import pandas as pd
+matplotlib.use('GTK3Agg')
+
 from ccdproc import CCDData
-from .process import Process, SciencePack
-from .wavelength import WavelengthCalibration, process_spectroscopy_data
-from goodman_ccd.core import (print_spacers,
-                              ra_dec_to_deg,
-                              convert_time,
-                              print_default_args,
-                              classify_spectroscopic_data)
+from matplotlib import pyplot as plt
+
+from goodman_ccd.core import classify_spectroscopic_data
+from .wavelength import process_spectroscopy_data
 
 
 warnings.filterwarnings('ignore')

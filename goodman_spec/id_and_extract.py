@@ -1,23 +1,27 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import glob
+import logging
 import os
+import re
 
 import matplotlib
-# matplotlib.use('Qt4Agg')
 matplotlib.use('GTK3Agg')
+# matplotlib.use('Qt4Agg')
 
 import astropy.units as u
-import logging
 import numpy as np
 import matplotlib.pyplot as plt
-import re
-import glob
 import pandas
 
 from astropy.modeling import (models, fitting, Model)
 from ccdproc import CCDData
 from ccdproc import ImageFileCollection
+from numpy import ma
+from scipy import signal
+
+# TODO @simontorres: use relative import?
 from goodman_ccd.core import NightDataContainer
 from goodman_ccd.core import cosmicray_rejection
 from goodman_ccd.core import identify_targets
@@ -28,20 +32,12 @@ from goodman_ccd.core import ra_dec_to_deg
 from goodman_ccd.core import classify_spectroscopic_data
 from goodman_spec.wavelength import process_spectroscopy_data
 from goodman_spec.redspec import get_args
-from numpy import ma
-from scipy import signal
+
 
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('goodmanccd')
 
 # log.setLevel(level=logging.DEBUG)
-
-
-
-
-
-
-
 
 # def process_spectroscopy_data(data_container, extraction_type='simple'):
 #

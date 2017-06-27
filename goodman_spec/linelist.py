@@ -15,11 +15,13 @@ The current elements present are:
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+
 import logging
-import pandas
 import os
-import ccdproc as ccd
 import re
+
+import ccdproc as ccd
+import pandas
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.DEBUG, format=FORMAT)

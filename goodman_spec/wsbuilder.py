@@ -5,10 +5,12 @@
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import shlex
+
 import logging
+import shlex
+
 from astropy.modeling import models, fitting
-import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
 
 
 # log.basicConfig(level=log.DEBUG)
