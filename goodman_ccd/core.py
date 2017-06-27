@@ -633,7 +633,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
      `full`_: This is for experimental purposes only because it takes a lot of
      time to process. It will fit a model to each line along the dispersion axis
      and then divide it by the fitted model. I do not recommend this method
-     unless you have a good reason as well as a powerful computer.
+     unless you have a good reason as well as a powerful computer..
 
     Args:
         master (object): Master flat. Has to be a ccdproc.CCDData instance
