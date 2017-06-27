@@ -624,13 +624,13 @@ def normalize_master_flat(master, name, method='simple', order=15):
     """ Master flat normalization method
 
     This function normalize a master flat in three possible ways:
-     `mean`_: simply divide the data by its mean
+     *mean*: simply divide the data by its mean
 
-     `simple`_: Calculates the median along the spatial axis in order to obtain
+     *simple*: Calculates the median along the spatial axis in order to obtain
      the dispersion profile. Then fits a Chebyshev1D model and apply this to all
      the data.
 
-     `full`_: This is for experimental purposes only because it takes a lot of
+     *full*: This is for experimental purposes only because it takes a lot of
      time to process. It will fit a model to each line along the dispersion axis
      and then divide it by the fitted model. I do not recommend this method
      unless you have a good reason as well as a powerful computer..
@@ -707,16 +707,19 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
     The equation used to calculate the central wavelength is the following
 
 
-    $$\lambda_{central} = \frac{1e6}{GRAT}
-    \sin\left(\frac{\alpha \pi}{180}\right) +
-    \sin\left(\frac{\beta \pi}{180}\right)$$
+    .. math::
+        \\lambda_{central} = \\frac{1e6}{GRAT}
+        \\sin\\left(\\frac{\\alpha \\pi}{180}\\right) +
+        \\sin\\left(\\frac{\\beta \\pi}{180}\\right)
+
 
     Args:
-        grating:
-        grt_ang:
-        cam_ang:
+        grating (str): Grating frequency as a string. Example '400'.
+        grt_ang (str): Grating Angle as a string. Example '12.0'.
+        cam_ang (str): Camera Angle as a string. Example '20.0'
 
     Returns:
+        central_wavelength (float): Central wavelength as a float value.
 
     """
 
@@ -729,6 +732,7 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
                           np.sin(beta * np.pi / 180.))
 
     log.debug('Found {:.3f} as central wavelength'.format(central_wavelength))
+
     return central_wavelength
 
 
@@ -738,12 +742,12 @@ def classify_spectroscopic_data(path, search_pattern):
     """Classify data by grouping them as pandas.DataFrame instances
 
     This functions uses ImageFileCollection from ccdproc. First it creates a
-    collection of information regarding the images located in _path_ that match
-    the pattern _search_pattern_
-    The information obtained are all keywords listed in the list _keywords_
+    collection of information regarding the images located in *path* that match
+    the pattern *search_pattern*
+    The information obtained are all keywords listed in the list *keywords*
     The ImageFileCollection is translated into pandas.DataFrame and then is used
-    much like SQL database to select and filter values and in that way put them
-    in groups that are pandas.DataFrame instances.
+    much like an SQL database to select and filter values and in that way put
+    them in groups that are pandas.DataFrame instances.
 
 
     Args:
@@ -1219,7 +1223,7 @@ def get_extraction_zone(ccd,
                         plots=False):
     """Get the minimum rectangular CCD zone that fully contains the spectrum
 
-    In this context, _fully contained_ means the spectrum plus some region for
+    In this context, *fully contained* means the spectrum plus some region for
     background subtraction.
 
     Notes:
@@ -1232,7 +1236,7 @@ def get_extraction_zone(ccd,
     Args:
         ccd (object): A ccdproc.CCDData instance, the image from which the zone
             will be extracted
-        extraction (str): Extraction type, 'simple' or 'optimal'
+        extraction (str): Extraction type, `simple` or `optimal`
         trace (object): An astropy.modeling.Model instance that correspond to
             the trace of the spectrum
         model (object): An astropy.modeling.Model instance that was previously
@@ -1392,7 +1396,7 @@ def extract(ccd,
         spatial_profile (object): Instance of astropy.modeling.Model, a Gaussian
             model previously fitted to the spatial profile of the 2D spectrum
             contained in the ccd object.
-        extraction (str): Extraction type, can be 'simple' or 'optimal' for the
+        extraction (str): Extraction type, can be `simple` or `optimal` for the
             beta release the optimal extraction is not implemented yet.
         sampling_step (int): The optimal extraction needs to sample the spatial
             profile, this value defines the intervals at which get such
@@ -1405,7 +1409,7 @@ def extract(ccd,
             extraction process.
 
     Raises:
-        NotImplementedError: When 'extraction' is optimal, this is valid for the
+        NotImplementedError: When `extraction` is optimal, this is valid for the
             beta release
 
     """
@@ -1587,9 +1591,9 @@ class NightDataContainer(object):
 
         Args:
             path (str): Full path to the directory where raw data is located
-            instrument (str): 'Red' or 'Blue' stating whether the data was taken
+            instrument (str): `Red` or `Blue` stating whether the data was taken
                 using the Red or Blue Goodman Camera.
-            technique (str): 'Spectroscopy' or 'Imaging' stating what kind of
+            technique (str): `Spectroscopy` or `Imaging` stating what kind of
                 data was taken.
         """
 
