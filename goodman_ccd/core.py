@@ -121,7 +121,7 @@ def ra_dec_to_deg(right_ascension, declination):
 
 
 def print_spacers(message):
-    """Miscelaneous function to print uniform spacers
+    """Miscellaneous function to print uniform spacers
 
     Prints a spacer of 80 columns with  and 3 rows height. The first and last
     rows contains the symbol "=" repeated 80 times. The middle row contains the
@@ -135,17 +135,23 @@ def print_spacers(message):
         True (bool): A True value
 
     """
-
+    # define the width of the message
     columns = 80
     if len(message) % 2 == 1 and int(columns) % 2 != 1:
         message += " "
+
     bar_length = int(columns)
+
+    #compose bars top and bottom
     spacer_bar = "=" * bar_length
+
     blanks = bar_length - 2
     space_length = int((blanks - len(message)) / 2)
-    message_bar = "=" + " " * space_length + message + " " * space_length + "="
-    print(spacer_bar)
 
+    # compose the message
+    message_bar = "=" + " " * space_length + message + " " * space_length + "="
+
+    print(spacer_bar)
     print(message_bar)
     print(spacer_bar)
     return True
@@ -239,6 +245,12 @@ def get_twilight_time(date_obs):
 def image_overscan(ccd, overscan_region, add_keyword=False):
     """Apply overscan to data
 
+    Uses ccdproc.subtract_overscan to perform the task.
+
+    Notes:
+        The overscan_region argument uses FITS convention, just like IRAF,
+        therefore is 1 based. i.e. t starts in 1 not 0.
+
     Args:
         ccd (object): A ccdproc.CCDData instance
         overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]'
@@ -254,12 +266,17 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
                                     median=True,
                                     fits_section=overscan_region,
                                     add_keyword=add_keyword)
+
     ccd.header.add_history('Applied overscan correction ' + overscan_region)
     return ccd
 
 
 def image_trim(ccd, trim_section, add_keyword=False):
     """Trim image to a given section
+
+    Notes:
+        The overscan_region argument uses FITS convention, just like IRAF,
+        therefore is 1 based. i.e. t starts in 1 not 0.
 
     Args:
         ccd (object): A ccdproc.CCDData instance
@@ -344,7 +361,21 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     """Runs an external code for cosmic ray rejection
 
     DCR was created by Wojtek Pych and the code can be obtained from
-    http://users.camk.edu.pl/pych/DCR/ and is written in C
+    http://users.camk.edu.pl/pych/DCR/ and is written in C. Contrary to
+    ccdproc's LACosmic it actually applies the correction, and also doesn't
+    update the mask attribute since it doesn't work with CCDData instances.
+
+    The binary takes three positional arguments, they are: 1. input image,
+    2. output image and 3. cosmic rays images. Also it needs that a dcr.par file
+    is located in the directory. All this is implemented in this function if
+    delete is True it will remove the original image and the cosmic rays image.
+    The removal of the original image is absolutely safe when used in the
+    context of the goodman pipeline, however if you want to implement it
+    somewhere else, be careful.
+
+    Notes:
+        This function operates an external code therefore it doesn't return
+        anything, instead it creates a new image.
 
     Args:
         data_path (str): Data location
@@ -352,8 +383,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         prefix (str): Prefix to add to the file with the cosmic rays removed
         dcr_par_dir (str): Directory of default dcr.par file
         delete (bool): True for deleting the input and cosmic ray file.
-
-    Returns:
 
     """
 
@@ -432,10 +461,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     # go back to the original directory. Could be the same.
     os.chdir(cwd)
 
-    # read stdout and stderr
-    # stdout = dcr.stdout.read()
-    # stderr = dcr.stderr.read()
-
     # If no error stderr is an empty string
     if stderr != '':
         log.error(stderr)
@@ -464,7 +489,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
 
 def cosmicray_rejection(ccd, mask_only=False):
-    """Do cosmic ray rejection
+    """Do cosmic ray rejection using ccdproc.LACosmic
 
     This function in fact does not apply any correction, it detects the cosmic
     rays and updates the attribute mask of the ccd object (CCDData instance).
@@ -590,26 +615,25 @@ def print_default_args(args):
                 'save_plots': '--save-plots',
                 'dcr_par_dir': '--dcr-par-dir'}
     for key in args.__dict__:
-        log.info('Default value for {:s} is {:s}'.format(arg_name[key],
-                                                         str(
-                                                             args.__getattribute__(
-                                                                 key))))
+        log.info('Default value for {:s} is {:s}'.format(
+            arg_name[key],
+            str(args.__getattribute__(key))))
 
 
 def normalize_master_flat(master, name, method='simple', order=15):
     """ Master flat normalization method
 
     This function normalize a master flat in three possible ways:
-     _mean_: simply divide the data by its mean
+     `mean`_: simply divide the data by its mean
 
-     _simple_: Calculates the median along the spatial axis in order to obtain
+     `simple`_: Calculates the median along the spatial axis in order to obtain
      the dispersion profile. Then fits a Chebyshev1D model and apply this to all
      the data.
 
-     _full_: This is for experimental purposes only because it takes a lot of
+     `full`_: This is for experimental purposes only because it takes a lot of
      time to process. It will fit a model to each line along the dispersion axis
      and then divide it by the fitted model. I do not recommend this method
-     unless you have a good reason as well as a powerful computer.
+     unless you have a good reason as well as a powerful computer..
 
     Args:
         master (object): Master flat. Has to be a ccdproc.CCDData instance
