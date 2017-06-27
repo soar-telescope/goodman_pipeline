@@ -43,8 +43,8 @@ extensions = ['sphinx.ext.autodoc',
 
 # Add source directory to PATH (where the modules are)
 import sys
-sys.path.append('/home/simon/development/soar/goodman/bin')
-sys.path.append('/home/simon/development/soar/goodman')
+sys.path.append('/data/simon/development/soar/goodman/bin')
+sys.path.append('/data/simon/development/soar/goodman')
 
 # Napoleon settings
 napoleon_google_docstring = True
