@@ -2,30 +2,17 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import ccdproc
-import numpy as np
-import matplotlib.pyplot as plt
-import astropy.units as u
+import datetime
+import glob
 import logging
+import numpy as np
 import random
 import re
 import os
-import glob
-import datetime
 import pandas
-from .wavmode_translator import SpectroscopicMode
-import sys
+
+from astropy import units as u
 from ccdproc import CCDData
-from scipy import interpolate
-from scipy import signal
-
-from astropy.convolution import (convolve,
-                                 convolve_fft,
-                                 Gaussian2DKernel,
-                                 Tophat2DKernel)
-
-from astropy.modeling import (models,
-                              fitting)
-
 from .core import (image_overscan,
                    image_trim,
                    get_slit_trim_section,
@@ -33,6 +20,8 @@ from .core import (image_overscan,
                    get_best_flat,
                    normalize_master_flat,
                    dcr_cosmicray_rejection)
+
+from .wavmode_translator import SpectroscopicMode
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
