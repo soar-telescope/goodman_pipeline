@@ -195,12 +195,12 @@ headers</p>
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">classify_spectroscopic_data</code><span class="sig-paren">(</span><em>path</em>, <em>search_pattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#classify_spectroscopic_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.classify_spectroscopic_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Classify data by grouping them as pandas.DataFrame instances</p>
 <p>This functions uses ImageFileCollection from ccdproc. First it creates a
-collection of information regarding the images located in _path_ that match
-the pattern _search_pattern_
-The information obtained are all keywords listed in the list _keywords_
+collection of information regarding the images located in <em>path</em> that match
+the pattern <em>search_pattern</em>
+The information obtained are all keywords listed in the list <em>keywords</em>
 The ImageFileCollection is translated into pandas.DataFrame and then is used
-much like SQL database to select and filter values and in that way put them
-in groups that are pandas.DataFrame instances.</p>
+much like an SQL database to select and filter values and in that way put
+them in groups that are pandas.DataFrame instances.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -240,7 +240,7 @@ in groups that are pandas.DataFrame instances.</p>
 <dl class="function">
 <dt id="goodman_ccd.core.cosmicray_rejection">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">cosmicray_rejection</code><span class="sig-paren">(</span><em>ccd</em>, <em>mask_only=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#cosmicray_rejection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.cosmicray_rejection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do cosmic ray rejection</p>
+<dd><p>Do cosmic ray rejection using ccdproc.LACosmic</p>
 <p>This function in fact does not apply any correction, it detects the cosmic
 rays and updates the attribute mask of the ccd object (CCDData instance).
 The attribute mask is used later as a mask for the pixels hit by cosmic rays</p>
@@ -268,7 +268,19 @@ mask_only (bool): In some cases you may want to obtain the cosmic</p>
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">dcr_cosmicray_rejection</code><span class="sig-paren">(</span><em>data_path</em>, <em>in_file</em>, <em>prefix</em>, <em>dcr_par_dir</em>, <em>delete=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#dcr_cosmicray_rejection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.dcr_cosmicray_rejection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs an external code for cosmic ray rejection</p>
 <p>DCR was created by Wojtek Pych and the code can be obtained from
-<a class="reference external" href="http://users.camk.edu.pl/pych/DCR/">http://users.camk.edu.pl/pych/DCR/</a> and is written in C</p>
+<a class="reference external" href="http://users.camk.edu.pl/pych/DCR/">http://users.camk.edu.pl/pych/DCR/</a> and is written in C. Contrary to
+ccdproc’s LACosmic it actually applies the correction, and also doesn’t
+update the mask attribute since it doesn’t work with CCDData instances.</p>
+<p>The binary takes three positional arguments, they are: 1. input image,
+2. output image and 3. cosmic rays images. Also it needs that a dcr.par file
+is located in the directory. All this is implemented in this function if
+delete is True it will remove the original image and the cosmic rays image.
+The removal of the original image is absolutely safe when used in the
+context of the goodman pipeline, however if you want to implement it
+somewhere else, be careful.</p>
+<p class="rubric">Notes</p>
+<p>This function operates an external code therefore it doesn’t return
+anything, instead it creates a new image.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -284,7 +296,6 @@ mask_only (bool): In some cases you may want to obtain the cosmic</p>
 </tr>
 </tbody>
 </table>
-<p>Returns:</p>
 </dd></dl>
 
 <dl class="function">
@@ -306,7 +317,7 @@ polynomial that defines the trace of the spectrum in the ccd object.</li>
 <li><strong>spatial_profile</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Instance of astropy.modeling.Model, a Gaussian
 model previously fitted to the spatial profile of the 2D spectrum
 contained in the ccd object.</li>
-<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Extraction type, can be ‘simple’ or ‘optimal’ for the
+<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Extraction type, can be <cite>simple</cite> or <cite>optimal</cite> for the
 beta release the optimal extraction is not implemented yet.</li>
 <li><strong>sampling_step</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – The optimal extraction needs to sample the spatial
 profile, this value defines the intervals at which get such
@@ -327,7 +338,7 @@ extraction process.</p>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">ccd (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)">object</a>)</p>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code> – When ‘extraction’ is optimal, this is valid for the
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first last"><code class="xref py py-exc docutils literal"><span class="pre">NotImplementedError</span></code> – When <cite>extraction</cite> is optimal, this is valid for the
 beta release</p>
 </td>
 </tr>
@@ -384,36 +395,37 @@ master_flat_name (str): Full path to the chosen masterflat.</td>
 <dt id="goodman_ccd.core.get_central_wavelength">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">get_central_wavelength</code><span class="sig-paren">(</span><em>grating</em>, <em>grt_ang</em>, <em>cam_ang</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#get_central_wavelength"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.get_central_wavelength" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the central wavelength for a given spectroscopic mode</p>
-<blockquote>
-<div><p>The equation used to calculate the central wavelength is the following</p>
-<p>$$lambda_{central} =</p>
-</div></blockquote>
-<dl class="docutils">
-<dt>rac{1e6}{GRAT}</dt>
-<dd>sinleft(</dd>
-</dl>
-<p>rac{lpha pi}{180}
-ight) +</p>
-<blockquote>
-<div>sinleft(</div></blockquote>
-<p>rac{eta pi}{180}
-ight)$$</p>
-<blockquote>
-<div><dl class="docutils">
-<dt>Args:</dt>
-<dd>grating:
-grt_ang:
-cam_ang:</dd>
-</dl>
-<p>Returns:</p>
-</div></blockquote>
+<p>The equation used to calculate the central wavelength is the following</p>
+<div class="math">
+<p><img src="_images/math/ff0f9ad06510de37579502a5dc620291a31f4ee1.png" alt="\lambda_{central} = \frac{1e6}{GRAT}
+\sin\left(\frac{\alpha \pi}{180}\right) +
+\sin\left(\frac{\beta \pi}{180}\right)"/></p>
+</div><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>grating</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Grating frequency as a string. Example ‘400’.</li>
+<li><strong>grt_ang</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Grating Angle as a string. Example ‘12.0’.</li>
+<li><strong>cam_ang</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Camera Angle as a string. Example ‘20.0’</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Central wavelength as a float value.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">central_wavelength (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)">float</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="goodman_ccd.core.get_extraction_zone">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">get_extraction_zone</code><span class="sig-paren">(</span><em>ccd</em>, <em>extraction=None</em>, <em>trace=None</em>, <em>model=None</em>, <em>n_sigma_extract=None</em>, <em>zone=None</em>, <em>plots=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#get_extraction_zone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.get_extraction_zone" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the minimum rectangular CCD zone that fully contains the spectrum</p>
-<p>In this context, _fully <a href="#id3"><span class="problematic" id="id4">contained_</span></a> means the spectrum plus some region for
+<p>In this context, <em>fully contained</em> means the spectrum plus some region for
 background subtraction.</p>
 <p class="rubric">Notes</p>
 <p>For Goodman HTS the alignment of the spectrum with the detector lines
@@ -428,7 +440,7 @@ misalignment it will result in a wider Gaussian Profile</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>ccd</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – A ccdproc.CCDData instance, the image from which the zone
 will be extracted</li>
-<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Extraction type, ‘simple’ or ‘optimal’</li>
+<li><strong>extraction</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Extraction type, <cite>simple</cite> or <cite>optimal</cite></li>
 <li><strong>trace</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – An astropy.modeling.Model instance that correspond to
 the trace of the spectrum</li>
 <li><strong>model</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – An astropy.modeling.Model instance that was previously
@@ -548,6 +560,10 @@ represent a point source spectrum found.</dd>
 <dt id="goodman_ccd.core.image_overscan">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">image_overscan</code><span class="sig-paren">(</span><em>ccd</em>, <em>overscan_region</em>, <em>add_keyword=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#image_overscan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.image_overscan" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply overscan to data</p>
+<p>Uses ccdproc.subtract_overscan to perform the task.</p>
+<p class="rubric">Notes</p>
+<p>The overscan_region argument uses FITS convention, just like IRAF,
+therefore is 1 based. i.e. t starts in 1 not 0.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -575,6 +591,9 @@ Default False.</li>
 <dt id="goodman_ccd.core.image_trim">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">image_trim</code><span class="sig-paren">(</span><em>ccd</em>, <em>trim_section</em>, <em>add_keyword=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#image_trim"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.image_trim" title="Permalink to this definition">¶</a></dt>
 <dd><p>Trim image to a given section</p>
+<p class="rubric">Notes</p>
+<p>The overscan_region argument uses FITS convention, just like IRAF,
+therefore is 1 based. i.e. t starts in 1 not 0.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -604,14 +623,14 @@ Default False.</li>
 <dd><p>Master flat normalization method</p>
 <dl class="docutils">
 <dt>This function normalize a master flat in three possible ways:</dt>
-<dd><p class="first">_mean_: simply divide the data by its mean</p>
-<p>_simple_: Calculates the median along the spatial axis in order to obtain
+<dd><p class="first"><em>mean</em>: simply divide the data by its mean</p>
+<p><em>simple</em>: Calculates the median along the spatial axis in order to obtain
 the dispersion profile. Then fits a Chebyshev1D model and apply this to all
 the data.</p>
-<p class="last">_full_: This is for experimental purposes only because it takes a lot of
+<p class="last"><em>full</em>: This is for experimental purposes only because it takes a lot of
 time to process. It will fit a model to each line along the dispersion axis
 and then divide it by the fitted model. I do not recommend this method
-unless you have a good reason as well as a powerful computer.</p>
+unless you have a good reason as well as a powerful computer..</p>
 </dd>
 </dl>
 <table class="docutils field-list" frame="void" rules="none">
@@ -680,7 +699,7 @@ Prints to the standard output.</p>
 <dl class="function">
 <dt id="goodman_ccd.core.print_spacers">
 <code class="descclassname">goodman_ccd.core.</code><code class="descname">print_spacers</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/core.html#print_spacers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.core.print_spacers" title="Permalink to this definition">¶</a></dt>
-<dd><p>Miscelaneous function to print uniform spacers</p>
+<dd><p>Miscellaneous function to print uniform spacers</p>
 <p>Prints a spacer of 80 columns with  and 3 rows height. The first and last
 rows contains the symbol “=” repeated 80 times. The middle row contains the
 message centered and the extremes has one single “=” symbol.

@@ -52,30 +52,17 @@
                         <span class="n">unicode_literals</span><span class="p">)</span>
 
 <span class="kn">import</span> <span class="nn">ccdproc</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">astropy.units</span> <span class="k">as</span> <span class="nn">u</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">glob</span>
-<span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">pandas</span>
-<span class="kn">from</span> <span class="nn">.wavmode_translator</span> <span class="k">import</span> <span class="n">SpectroscopicMode</span>
-<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">astropy</span> <span class="k">import</span> <span class="n">units</span> <span class="k">as</span> <span class="n">u</span>
 <span class="kn">from</span> <span class="nn">ccdproc</span> <span class="k">import</span> <span class="n">CCDData</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">interpolate</span>
-<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">signal</span>
-
-<span class="kn">from</span> <span class="nn">astropy.convolution</span> <span class="k">import</span> <span class="p">(</span><span class="n">convolve</span><span class="p">,</span>
-                                 <span class="n">convolve_fft</span><span class="p">,</span>
-                                 <span class="n">Gaussian2DKernel</span><span class="p">,</span>
-                                 <span class="n">Tophat2DKernel</span><span class="p">)</span>
-
-<span class="kn">from</span> <span class="nn">astropy.modeling</span> <span class="k">import</span> <span class="p">(</span><span class="n">models</span><span class="p">,</span>
-                              <span class="n">fitting</span><span class="p">)</span>
-
 <span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="p">(</span><span class="n">image_overscan</span><span class="p">,</span>
                    <span class="n">image_trim</span><span class="p">,</span>
                    <span class="n">get_slit_trim_section</span><span class="p">,</span>
@@ -83,6 +70,8 @@
                    <span class="n">get_best_flat</span><span class="p">,</span>
                    <span class="n">normalize_master_flat</span><span class="p">,</span>
                    <span class="n">dcr_cosmicray_rejection</span><span class="p">)</span>
+
+<span class="kn">from</span> <span class="nn">.wavmode_translator</span> <span class="k">import</span> <span class="n">SpectroscopicMode</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;goodmanccd.imageprocessor&#39;</span><span class="p">)</span>
 
