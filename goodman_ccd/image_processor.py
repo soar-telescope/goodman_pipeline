@@ -1,38 +1,32 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import ccdproc
-import numpy as np
-import matplotlib.pyplot as plt
-import astropy.units as u
 import logging
+import datetime
+import glob
+import os
 import random
 import re
-import os
-import glob
-import datetime
-import pandas
-from .wavmode_translator import SpectroscopicMode
 import sys
+
+import astropy.units as u
+import ccdproc
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas
+
 from ccdproc import CCDData
 from scipy import interpolate
 from scipy import signal
-
-from astropy.convolution import (convolve,
-                                 convolve_fft,
-                                 Gaussian2DKernel,
+from astropy.convolution import (convolve, convolve_fft, Gaussian2DKernel,
                                  Tophat2DKernel)
+from astropy.modeling import models, fitting
 
-from astropy.modeling import (models,
-                              fitting)
+from .core import (cosmicray_rejection, dcr_cosmicray_rejection,
+                   get_slit_trim_section, get_best_flat, image_overscan,
+                   image_trim, normalize_master_flat)
+from .wavmode_translator import SpectroscopicMode
 
-from .core import (image_overscan,
-                   image_trim,
-                   get_slit_trim_section,
-                   cosmicray_rejection,
-                   get_best_flat,
-                   normalize_master_flat,
-                   dcr_cosmicray_rejection)
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
@@ -109,6 +103,149 @@ class ImageProcessor(object):
             print(self.queue)
             for sub_group in self.queue:
                 print(sub_group)
+
+    def create_master_bias(self, bias_group):
+        """
+
+        Args:
+            bias_group:
+
+        Returns:
+
+        """
+        bias_file_list = bias_group.file.tolist()
+        default_bias_name =os.path.join(self.args.red_path, 'master_bias.fits')
+        search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
+        n_bias = len(glob.glob(search_bias_name))
+        if n_bias > 0:
+            new_bias_name = re.sub('.fits',
+                                   '_{:d}.fits'.format(n_bias + 1),
+                                   default_bias_name)
+
+            log.info('New name for master bias: ' + new_bias_name)
+        else:
+            new_bias_name = default_bias_name
+        # TODO (simon): Review whether it is necessary to discriminate by
+        # TODO technique
+        if self.technique == 'Spectroscopy':
+            master_bias_list = []
+            log.info('Creating master bias')
+            for image_file in bias_file_list:
+                # print(image_file)
+                image_full_path = os.path.join(self.args.raw_path, image_file)
+                log.debug('Overscan Region: {:s}'.format(self.overscan_region))
+                ccd = CCDData.read(image_full_path, unit=u.adu)
+                log.debug('Loading bias image: ' + image_full_path)
+                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
+                ccd = image_trim(ccd, trim_section=self.trim_section)
+                master_bias_list.append(ccd)
+
+            # combine bias for spectroscopy
+            self.master_bias = ccdproc.combine(master_bias_list,
+                                               method='median',
+                                               sigma_clip=True,
+                                               sigma_clip_low_thresh=3.0,
+                                               sigma_clip_high_thresh=3.0,
+                                               add_keyword=False)
+
+            # write master bias to file
+            self.master_bias.write(new_bias_name, clobber=True)
+            log.info('Created master bias: ' + new_bias_name)
+
+        elif self.technique == 'Imaging':
+            master_bias_list = []
+            log.info('Creating master bias')
+            for image_file in bias_file_list:
+                image_full_path = os.path.join(self.args.raw_path, image_file)
+                ccd = CCDData.read(image_full_path, unit=u.adu)
+                log.debug('Loading bias image: {:s}'.format(image_full_path))
+                ccd = image_trim(ccd, trim_section=self.trim_section)
+                master_bias_list.append(ccd)
+
+            # combine bias for imaging
+            self.master_bias = ccdproc.combine(master_bias_list,
+                                               method='median',
+                                               sigma_clip=True,
+                                               sigma_clip_low_thresh=3.0,
+                                               sigma_clip_high_thresh=3.0,
+                                               add_keyword=False)
+
+            # write master bias to file
+            self.master_bias.write(new_bias_name, clobber=True)
+            log.info('Created master bias: ' + new_bias_name)
+
+    def create_master_flats(self, flat_group, target_name=''):
+        """
+
+        Args:
+            flat_group:
+            target_name:
+
+        Returns:
+
+        """
+
+        flat_file_list = flat_group.file.tolist()
+        master_flat_list = []
+        master_flat_name = None
+        log.info('Creating Master Flat')
+        for flat_file in flat_file_list:
+            # print(f_file)
+            image_full_path = os.path.join(self.args.raw_path, flat_file)
+            ccd = CCDData.read(image_full_path, unit=u.adu)
+            log.debug('Loading flat image: ' + image_full_path)
+            if master_flat_name is None:
+
+                master_flat_name = self.name_master_flats(
+                    header=ccd.header,
+                    group=flat_group,
+                    target_name=target_name)
+
+            if self.technique == 'Spectroscopy':
+                # plt.title('Before Overscan')
+                # plt.imshow(ccd.data, clim=(-100, 0))
+                # plt.show()
+                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
+                # plt.title('After Overscan')
+                # plt.imshow(ccd.data, clim=(-100, 0))
+                # plt.show()
+                ccd = image_trim(ccd, trim_section=self.trim_section)
+                # plt.title('After Trimming')
+                # plt.imshow(ccd.data, clim=(-100, 0))
+                # plt.show()
+            elif self.technique == 'Imaging':
+                ccd = image_trim(ccd, trim_section=self.trim_section)
+                ccd = ccdproc.subtract_bias(ccd,
+                                            self.master_bias,
+                                            add_keyword=False)
+            else:
+                log.error('Unknown observation technique: ' + self.technique)
+            if ccd.data.max() > self.args.saturation_limit:
+                log.warning('Removing saturated image {:s}. Use --saturation '
+                            'to change saturation level'.format(flat_file))
+                # plt.plot(ccd.data[802,:])
+                # plt.show()
+                # print(ccd.data.max())
+                continue
+            else:
+                master_flat_list.append(ccd)
+        if master_flat_list != []:
+            master_flat = ccdproc.combine(master_flat_list,
+                                          method='median',
+                                          sigma_clip=True,
+                                          sigma_clip_low_thresh=1.0,
+                                          sigma_clip_high_thresh=1.0,
+                                          add_keyword=False)
+            master_flat.write(master_flat_name, clobber=True)
+            # plt.imshow(master_flat.data, clim=(-100,0))
+            # plt.show()
+            log.info('Created Master Flat: ' + master_flat_name)
+            return master_flat, master_flat_name
+            # print(master_flat_name)
+        else:
+            log.error('Empty flat list. Probably they exceed the '
+                      'saturation limit.')
+            return None, None
 
     def define_trim_section(self, technique=None):
         """
@@ -262,149 +399,6 @@ class ImageProcessor(object):
                     overscan_region = None
                 log.info('Overscan Region: %s', overscan_region)
                 return overscan_region
-
-    def create_master_bias(self, bias_group):
-        """
-
-        Args:
-            bias_group:
-
-        Returns:
-
-        """
-        bias_file_list = bias_group.file.tolist()
-        default_bias_name =os.path.join(self.args.red_path, 'master_bias.fits')
-        search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
-        n_bias = len(glob.glob(search_bias_name))
-        if n_bias > 0:
-            new_bias_name = re.sub('.fits',
-                                   '_{:d}.fits'.format(n_bias + 1),
-                                   default_bias_name)
-
-            log.info('New name for master bias: ' + new_bias_name)
-        else:
-            new_bias_name = default_bias_name
-        # TODO (simon): Review whether it is necessary to discriminate by
-        # TODO technique
-        if self.technique == 'Spectroscopy':
-            master_bias_list = []
-            log.info('Creating master bias')
-            for image_file in bias_file_list:
-                # print(image_file)
-                image_full_path = os.path.join(self.args.raw_path, image_file)
-                log.debug('Overscan Region: {:s}'.format(self.overscan_region))
-                ccd = CCDData.read(image_full_path, unit=u.adu)
-                log.debug('Loading bias image: ' + image_full_path)
-                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                ccd = image_trim(ccd, trim_section=self.trim_section)
-                master_bias_list.append(ccd)
-
-            # combine bias for spectroscopy
-            self.master_bias = ccdproc.combine(master_bias_list,
-                                               method='median',
-                                               sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0,
-                                               sigma_clip_high_thresh=3.0,
-                                               add_keyword=False)
-
-            # write master bias to file
-            self.master_bias.write(new_bias_name, clobber=True)
-            log.info('Created master bias: ' + new_bias_name)
-
-        elif self.technique == 'Imaging':
-            master_bias_list = []
-            log.info('Creating master bias')
-            for image_file in bias_file_list:
-                image_full_path = os.path.join(self.args.raw_path, image_file)
-                ccd = CCDData.read(image_full_path, unit=u.adu)
-                log.debug('Loading bias image: {:s}'.format(image_full_path))
-                ccd = image_trim(ccd, trim_section=self.trim_section)
-                master_bias_list.append(ccd)
-
-            # combine bias for imaging
-            self.master_bias = ccdproc.combine(master_bias_list,
-                                               method='median',
-                                               sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0,
-                                               sigma_clip_high_thresh=3.0,
-                                               add_keyword=False)
-
-            # write master bias to file
-            self.master_bias.write(new_bias_name, clobber=True)
-            log.info('Created master bias: ' + new_bias_name)
-
-    def create_master_flats(self, flat_group, target_name=''):
-        """
-
-        Args:
-            flat_group:
-            target_name:
-
-        Returns:
-
-        """
-
-        flat_file_list = flat_group.file.tolist()
-        master_flat_list = []
-        master_flat_name = None
-        log.info('Creating Master Flat')
-        for flat_file in flat_file_list:
-            # print(f_file)
-            image_full_path = os.path.join(self.args.raw_path, flat_file)
-            ccd = CCDData.read(image_full_path, unit=u.adu)
-            log.debug('Loading flat image: ' + image_full_path)
-            if master_flat_name is None:
-
-                master_flat_name = self.name_master_flats(
-                    header=ccd.header,
-                    group=flat_group,
-                    target_name=target_name)
-
-            if self.technique == 'Spectroscopy':
-                # plt.title('Before Overscan')
-                # plt.imshow(ccd.data, clim=(-100, 0))
-                # plt.show()
-                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                # plt.title('After Overscan')
-                # plt.imshow(ccd.data, clim=(-100, 0))
-                # plt.show()
-                ccd = image_trim(ccd, trim_section=self.trim_section)
-                # plt.title('After Trimming')
-                # plt.imshow(ccd.data, clim=(-100, 0))
-                # plt.show()
-            elif self.technique == 'Imaging':
-                ccd = image_trim(ccd, trim_section=self.trim_section)
-                ccd = ccdproc.subtract_bias(ccd,
-                                            self.master_bias,
-                                            add_keyword=False)
-            else:
-                log.error('Unknown observation technique: ' + self.technique)
-            if ccd.data.max() > self.args.saturation_limit:
-                log.warning('Removing saturated image {:s}. Use --saturation '
-                            'to change saturation level'.format(flat_file))
-                # plt.plot(ccd.data[802,:])
-                # plt.show()
-                # print(ccd.data.max())
-                continue
-            else:
-                master_flat_list.append(ccd)
-        if master_flat_list != []:
-            master_flat = ccdproc.combine(master_flat_list,
-                                          method='median',
-                                          sigma_clip=True,
-                                          sigma_clip_low_thresh=1.0,
-                                          sigma_clip_high_thresh=1.0,
-                                          add_keyword=False)
-            master_flat.write(master_flat_name, clobber=True)
-            # plt.imshow(master_flat.data, clim=(-100,0))
-            # plt.show()
-            log.info('Created Master Flat: ' + master_flat_name)
-            return master_flat, master_flat_name
-            # print(master_flat_name)
-        else:
-            log.error('Empty flat list. Probably they exceed the '
-                      'saturation limit.')
-            return None, None
 
 
     def name_master_flats(self, header, group, target_name='', get=False):

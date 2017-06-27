@@ -1,13 +1,18 @@
 # translate from camera angle to wavmode
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import re
-import pandas
+
 import logging
+import re
+
 import numpy as np
-from ccdproc import CCDData
+import pandas
+
 from astropy import units as u
+from ccdproc import CCDData
+
 from .core import get_central_wavelength
+
 
 log = logging.getLogger('goodmanccd.wavmodetranslator')
 

@@ -1,21 +1,24 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import os
-from ccdproc import ImageFileCollection
-import matplotlib
-matplotlib.use('GTK3Agg')
-import matplotlib.pyplot as plt
-import time
-import numpy as np
-# from mpl_toolkits.mplot3d import Axes3D
-import re
+
 import glob
 import logging
+import os
+import re
+import time
+
 import argparse
+import numpy as np
+import matplotlib
+matplotlib.use('GTK3Agg')
+
+from ccdproc import ImageFileCollection
+from matplotlib import pyplot as plt
+
+from .core import print_default_args
 from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
-from .core import print_default_args
 
 __author__ = 'David Sanmartim'
 __date__ = '2016-07-15'

@@ -1,13 +1,16 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import logging
 import os
 import glob
 import re
 import random
-from ccdproc import ImageFileCollection
-import logging
+
 import numpy as np
+
+from ccdproc import ImageFileCollection
 from astropy.io import fits
+
 from .core import fix_duplicated_keywords
 
 log = logging.getLogger('goodmanccd.dataclassifier')

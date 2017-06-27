@@ -1,21 +1,26 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+
 import os
+import logging
+import re
 import sys
 import time
-import re
+
 import pandas
-import logging
 import matplotlib.pyplot as plt
 import numpy as np
-from ccdproc import ImageFileCollection
-from mpl_toolkits.mplot3d import Axes3D
-from astropy.coordinates import EarthLocation
-from astropy.time import Time, TimeDelta
+
 from astroplan import Observer
 from astropy import units as u
+from astropy.coordinates import EarthLocation
+from astropy.time import Time, TimeDelta
+from ccdproc import ImageFileCollection
+from mpl_toolkits.mplot3d import Axes3D
+
 from .core import convert_time, get_twilight_time, ra_dec_to_deg
 from .core import NightDataContainer
+
 
 log = logging.getLogger('goodmanccd.nightorganizer')
 
@@ -123,6 +128,84 @@ class NightOrganizer(object):
             log.info('Sleeping 10 seconds')
             time.sleep(10)
 
+    def imaging_night(self):
+        """Organizes data for imaging
+
+        For imaging there is no discrimination regarding night data since the
+        process is simpler. It is a three stage process classifying BIAS, FLAT
+        and OBJECT datatype. The data is packed in groups that are
+        pandas.DataFrame objects.
+
+        """
+
+        # bias data group
+        date_obs_list = self.file_collection['date-obs'].tolist()
+
+        afternoon_twilight, morning_twilight, sun_set, sun_rise = \
+            get_twilight_time(date_obs=date_obs_list)
+
+        self.data_container.set_sun_times(sun_set=sun_set,
+                                          sun_rise=sun_rise)
+
+        self.data_container.set_twilight_times(evening=afternoon_twilight,
+                                               morning=morning_twilight)
+
+        bias_group = self.file_collection[
+            self.file_collection.obstype == 'BIAS'] # .tolist()
+
+        if len(bias_group) > 2:
+
+            bias_confs = bias_group.groupby(
+                ['gain',
+                 'rdnoise',
+                 'radeg',
+                 'decdeg']).size().reset_index().rename(columns={0: 'count'})
+
+            for i in bias_confs.index:
+
+                bias_group = bias_group[
+                    ((bias_group['gain'] == bias_confs.iloc[i]['gain']) &
+                    (bias_group['rdnoise'] == bias_confs.iloc[i]['rdnoise']) &
+                    (bias_group['radeg'] == bias_confs.iloc[i]['radeg']) &
+                    (bias_group['decdeg'] == bias_confs.iloc[i]['decdeg']))]
+
+                self.data_container.add_bias(bias_group)
+        else:
+            log.error('Not enough bias images.')
+
+        # flats separation
+        flat_data = self.file_collection[self.file_collection.obstype == 'FLAT']
+
+        # confs stands for configurations
+        confs = flat_data.groupby(
+            ['object',
+             'filter']).size().reset_index().rename(columns={0: 'count'})
+
+        for i in confs.index:
+
+            flat_group = flat_data[
+                ((flat_data['object'] == confs.iloc[i]['object']) &
+                (flat_data['filter'] == confs.iloc[i]['filter']))]
+
+            self.data_container.add_day_flats(flat_group)
+
+        # science data separation
+        science_data = self.file_collection[
+            self.file_collection.obstype == 'OBJECT']
+
+        # confs stands for configurations
+        confs = science_data.groupby(
+            ['object',
+             'filter']).size().reset_index().rename(columns={0: 'count'})
+
+        for i in confs.index:
+
+            science_group = science_data[
+                ((science_data['object'] == confs.iloc[i]['object']) &
+                 (science_data['filter'] == confs.iloc[i]['filter']))]
+
+            self.data_container.add_data_group(science_group)
+
     @staticmethod
     def spectroscopy_night(file_collection, data_container):
         """Organizes data for spectroscopy
@@ -205,84 +288,6 @@ class NightOrganizer(object):
 
             data_container.add_data_group(data_group)
         return data_container
-
-    def imaging_night(self):
-        """Organizes data for imaging
-
-        For imaging there is no discrimination regarding night data since the
-        process is simpler. It is a three stage process classifying BIAS, FLAT
-        and OBJECT datatype. The data is packed in groups that are
-        pandas.DataFrame objects.
-
-        """
-
-        # bias data group
-        date_obs_list = self.file_collection['date-obs'].tolist()
-
-        afternoon_twilight, morning_twilight, sun_set, sun_rise = \
-            get_twilight_time(date_obs=date_obs_list)
-
-        self.data_container.set_sun_times(sun_set=sun_set,
-                                          sun_rise=sun_rise)
-
-        self.data_container.set_twilight_times(evening=afternoon_twilight,
-                                               morning=morning_twilight)
-
-        bias_group = self.file_collection[
-            self.file_collection.obstype == 'BIAS'] # .tolist()
-
-        if len(bias_group) > 2:
-
-            bias_confs = bias_group.groupby(
-                ['gain',
-                 'rdnoise',
-                 'radeg',
-                 'decdeg']).size().reset_index().rename(columns={0: 'count'})
-
-            for i in bias_confs.index:
-
-                bias_group = bias_group[
-                    ((bias_group['gain'] == bias_confs.iloc[i]['gain']) &
-                    (bias_group['rdnoise'] == bias_confs.iloc[i]['rdnoise']) &
-                    (bias_group['radeg'] == bias_confs.iloc[i]['radeg']) &
-                    (bias_group['decdeg'] == bias_confs.iloc[i]['decdeg']))]
-
-                self.data_container.add_bias(bias_group)
-        else:
-            log.error('Not enough bias images.')
-
-        # flats separation
-        flat_data = self.file_collection[self.file_collection.obstype == 'FLAT']
-
-        # confs stands for configurations
-        confs = flat_data.groupby(
-            ['object',
-             'filter']).size().reset_index().rename(columns={0: 'count'})
-
-        for i in confs.index:
-
-            flat_group = flat_data[
-                ((flat_data['object'] == confs.iloc[i]['object']) &
-                (flat_data['filter'] == confs.iloc[i]['filter']))]
-
-            self.data_container.add_day_flats(flat_group)
-
-        # science data separation
-        science_data = self.file_collection[
-            self.file_collection.obstype == 'OBJECT']
-
-        # confs stands for configurations
-        confs = science_data.groupby(
-            ['object',
-             'filter']).size().reset_index().rename(columns={0: 'count'})
-
-        for i in confs.index:
-
-            science_group = science_data[
-                ((science_data['object'] == confs.iloc[i]['object']) &
-                 (science_data['filter'] == confs.iloc[i]['filter']))]
-
-            self.data_container.add_data_group(science_group)
 
 
 
