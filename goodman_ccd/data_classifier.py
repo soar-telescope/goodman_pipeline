@@ -1,17 +1,16 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import os
-import glob
-import re
-import random
-from ccdproc import ImageFileCollection
 import logging
 import numpy as np
+import os
+import random
+from ccdproc import ImageFileCollection
 from astropy.io import fits
 from .core import fix_duplicated_keywords
 
 log = logging.getLogger('goodmanccd.dataclassifier')
 
+# TODO (simon): Move methods as functions to goodman_ccd.core.py
 
 class DataClassifier(object):
     """Class Definition
@@ -30,6 +29,7 @@ class DataClassifier(object):
 
         Args:
             args (object): Argparse object
+
         """
         self.args = args
         self.nights_dict = None
@@ -54,6 +54,7 @@ class DataClassifier(object):
         if self.instrument is not None and self.technique is not None:
             # folder name is used as key for the dictionary
             night = self.args.raw_path.split('/')[-1]
+
             self.nights_dict[night] = {'full_path': self.args.raw_path,
                                        'instrument': self.instrument,
                                        'technique': self.technique}
@@ -64,15 +65,20 @@ class DataClassifier(object):
     def get_instrument(self, night_folder):
         """Identify Goodman's Camera
 
-        Goodman has two camera, a blue one and another optimized for redder
-        wavelength. Their headers are differents so this methods uses that to
-        discover which camera the data belong to. The red camera has an specific
-        keyword that says which camera is but the blue does not.
+        Goodman has two camera, *Blue* and *Red*. They are, as the name suggest
+        optimized for bluer and redder wavelength respectively. Their headers
+        are different so this methods uses their differences to discover which
+        camera the data belong to. The red camera has an specific keyword that
+        says which camera is but the blue does not.
+        The result is stored as an attribute of the class.
+
+        Notes:
+            As of April 2017 the blue camera computer was upgraded and as a
+            result the headers where updated too. But we need to keep this
+            feature for *backward compatibility*
 
         Args:
             night_folder (str): The full path for the raw data location
-
-        The result is stored as an attribute of the class.
 
         """
         while True:
@@ -83,14 +89,13 @@ class DataClassifier(object):
                 self.objects_collection = self.image_collection[
                     self.image_collection.obstype != 'ZERO']
 
-                # print(len(self.objects_collection))
                 if len(self.objects_collection) > 0:
 
                     indexes = self.objects_collection.index.tolist()
                     index = random.choice(indexes)
-                    # print('Index: ' + str(index))
+
                     try:
-                        # print(self.objects_collection.instconf[index])
+
                         self.instrument = \
                             self.objects_collection.instconf[index]
 
@@ -143,7 +148,8 @@ class DataClassifier(object):
             if ['<NO GRATING>'] not in gratings:
                 self.technique = 'Spectroscopy'
                 log.info('Detected Spectroscopy Data from BLUE Camera')
-            elif ['<NO GRATING>'] in gratings and int(np.mean(cam_targ)) == 0:
+            elif ['<NO GRATING>'] in gratings and \
+                            int(np.mean(float(cam_targ))) == 0:
                 self.technique = 'Imaging'
                 log.info('Detected Imaging Data from BLUE Camera')
             else:
@@ -155,7 +161,7 @@ class DataClassifier(object):
         """Removes problematic keywords
 
         The blue camera has a set of keywords whose comments contain non-ascii
-        characters, in particular the degree symbol. Those keyords are not
+        characters, in particular the degree symbol. Those keywords are not
         needed in any stage of the data reduction therefore they are removed.
         The data will be overwritten with the keywords removed. The user will
         need to have backups of raw data.
