@@ -50,18 +50,17 @@
   <h1>Source code for goodman_ccd.data_classifier</h1><div class="highlight"><pre>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
                         <span class="n">unicode_literals</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">glob</span>
-<span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">import</span> <span class="nn">random</span>
-<span class="kn">from</span> <span class="nn">ccdproc</span> <span class="k">import</span> <span class="n">ImageFileCollection</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">from</span> <span class="nn">ccdproc</span> <span class="k">import</span> <span class="n">ImageFileCollection</span>
 <span class="kn">from</span> <span class="nn">astropy.io</span> <span class="k">import</span> <span class="n">fits</span>
 <span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">fix_duplicated_keywords</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;goodmanccd.dataclassifier&#39;</span><span class="p">)</span>
 
+<span class="c1"># TODO (simon): Move methods as functions to goodman_ccd.core.py</span>
 
 <div class="viewcode-block" id="DataClassifier"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.data_classifier.DataClassifier">[docs]</a><span class="k">class</span> <span class="nc">DataClassifier</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class Definition</span>
@@ -80,6 +79,7 @@
 
 <span class="sd">        Args:</span>
 <span class="sd">            args (object): Argparse object</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nights_dict</span> <span class="o">=</span> <span class="kc">None</span>
@@ -104,6 +104,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># folder name is used as key for the dictionary</span>
             <span class="n">night</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">nights_dict</span><span class="p">[</span><span class="n">night</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;full_path&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">raw_path</span><span class="p">,</span>
                                        <span class="s1">&#39;instrument&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span><span class="p">,</span>
                                        <span class="s1">&#39;technique&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">technique</span><span class="p">}</span>
@@ -114,15 +115,20 @@
 <div class="viewcode-block" id="DataClassifier.get_instrument"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.data_classifier.DataClassifier.get_instrument">[docs]</a>    <span class="k">def</span> <span class="nf">get_instrument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">night_folder</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Identify Goodman&#39;s Camera</span>
 
-<span class="sd">        Goodman has two camera, a blue one and another optimized for redder</span>
-<span class="sd">        wavelength. Their headers are differents so this methods uses that to</span>
-<span class="sd">        discover which camera the data belong to. The red camera has an specific</span>
-<span class="sd">        keyword that says which camera is but the blue does not.</span>
+<span class="sd">        Goodman has two camera, *Blue* and *Red*. They are, as the name suggest</span>
+<span class="sd">        optimized for bluer and redder wavelength respectively. Their headers</span>
+<span class="sd">        are different so this methods uses their differences to discover which</span>
+<span class="sd">        camera the data belong to. The red camera has an specific keyword that</span>
+<span class="sd">        says which camera is but the blue does not.</span>
+<span class="sd">        The result is stored as an attribute of the class.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            As of April 2017 the blue camera computer was upgraded and as a</span>
+<span class="sd">            result the headers where updated too. But we need to keep this</span>
+<span class="sd">            feature for *backward compatibility*</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            night_folder (str): The full path for the raw data location</span>
-
-<span class="sd">        The result is stored as an attribute of the class.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
@@ -133,14 +139,13 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">objects_collection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="p">[</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">image_collection</span><span class="o">.</span><span class="n">obstype</span> <span class="o">!=</span> <span class="s1">&#39;ZERO&#39;</span><span class="p">]</span>
 
-                <span class="c1"># print(len(self.objects_collection))</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objects_collection</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 
                     <span class="n">indexes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">objects_collection</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
                     <span class="n">index</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">indexes</span><span class="p">)</span>
-                    <span class="c1"># print(&#39;Index: &#39; + str(index))</span>
+
                     <span class="k">try</span><span class="p">:</span>
-                        <span class="c1"># print(self.objects_collection.instconf[index])</span>
+
                         <span class="bp">self</span><span class="o">.</span><span class="n">instrument</span> <span class="o">=</span> \
                             <span class="bp">self</span><span class="o">.</span><span class="n">objects_collection</span><span class="o">.</span><span class="n">instconf</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
@@ -193,7 +198,8 @@
             <span class="k">if</span> <span class="p">[</span><span class="s1">&#39;&lt;NO GRATING&gt;&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">gratings</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">=</span> <span class="s1">&#39;Spectroscopy&#39;</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Detected Spectroscopy Data from BLUE Camera&#39;</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="p">[</span><span class="s1">&#39;&lt;NO GRATING&gt;&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">gratings</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">cam_targ</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="p">[</span><span class="s1">&#39;&lt;NO GRATING&gt;&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">gratings</span> <span class="ow">and</span> \
+                            <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">cam_targ</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">technique</span> <span class="o">=</span> <span class="s1">&#39;Imaging&#39;</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Detected Imaging Data from BLUE Camera&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
@@ -205,7 +211,7 @@
         <span class="sd">&quot;&quot;&quot;Removes problematic keywords</span>
 
 <span class="sd">        The blue camera has a set of keywords whose comments contain non-ascii</span>
-<span class="sd">        characters, in particular the degree symbol. Those keyords are not</span>
+<span class="sd">        characters, in particular the degree symbol. Those keywords are not</span>
 <span class="sd">        needed in any stage of the data reduction therefore they are removed.</span>
 <span class="sd">        The data will be overwritten with the keywords removed. The user will</span>
 <span class="sd">        need to have backups of raw data.</span>

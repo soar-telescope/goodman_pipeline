@@ -50,22 +50,18 @@
   <h1>Source code for goodman_ccd.goodman_ccd</h1><div class="highlight"><pre>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
                         <span class="n">unicode_literals</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">ccdproc</span> <span class="k">import</span> <span class="n">ImageFileCollection</span>
-<span class="kn">import</span> <span class="nn">matplotlib</span>
-<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;GTK3Agg&#39;</span><span class="p">)</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="c1"># from mpl_toolkits.mplot3d import Axes3D</span>
-<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;GTK3Agg&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">print_default_args</span>
 <span class="kn">from</span> <span class="nn">.data_classifier</span> <span class="k">import</span> <span class="n">DataClassifier</span>
 <span class="kn">from</span> <span class="nn">.night_organizer</span> <span class="k">import</span> <span class="n">NightOrganizer</span>
 <span class="kn">from</span> <span class="nn">.image_processor</span> <span class="k">import</span> <span class="n">ImageProcessor</span>
-<span class="kn">from</span> <span class="nn">.core</span> <span class="k">import</span> <span class="n">print_default_args</span>
 
 <span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;David Sanmartim&#39;</span>
 <span class="n">__date__</span> <span class="o">=</span> <span class="s1">&#39;2016-07-15&#39;</span>
@@ -84,17 +80,23 @@
 <div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.goodman_ccd.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">(</span><span class="n">arguments</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Get command line arguments.</span>
 
+<span class="sd">    The list of arguments can be obtained by using the argument ``--help``.</span>
+<span class="sd">    All the arguments start with two dashes and single-character arguments where</span>
+<span class="sd">    avoided in order to eliminate confussion.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        arguments (list): A list containing the arguments as elements.</span>
+
 <span class="sd">    Returns:</span>
-<span class="sd">        args (object): Arparse object. Contains all the arguments as attributes</span>
+<span class="sd">        args (object): Argparse object. Contains all the arguments as attributes</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># global log</span>
-    <span class="c1"># Parsing Arguments ---</span>
+
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Goodman CCD Reduction - CCD&quot;</span>
                                                  <span class="s2">&quot;reductions for &quot;</span>
                                                  <span class="s2">&quot;Goodman spectroscopic data&quot;</span><span class="p">)</span>
 
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;--cosmic&#39;</span><span class="p">,</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--cosmic&#39;</span><span class="p">,</span>
                         <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
                         <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;clean_cosmic&#39;</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Clean cosmic rays from science data.&quot;</span><span class="p">)</span>
@@ -174,7 +176,6 @@
                         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;After cleaning cosmic rays with dcr, do not &quot;</span>
                              <span class="s2">&quot;remove the input file and the cosmic rays file.&quot;</span><span class="p">)</span>
 
-
     <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">arguments</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">log_to_file</span><span class="p">:</span>
@@ -215,13 +216,17 @@
 <div class="viewcode-block" id="MainApp"><a class="viewcode-back" href="../../goodman_ccd.html#goodman_ccd.goodman_ccd.MainApp">[docs]</a><span class="k">class</span> <span class="nc">MainApp</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;This method initalizes the MainApp class</span>
+        <span class="sd">&quot;&quot;&quot;This method initializes the MainApp class</span>
 
 <span class="sd">        The main task of this method is to call the get_args function that</span>
 <span class="sd">        returns an argparse object.</span>
 <span class="sd">        The arguments will be obtained here and they will be available for all</span>
 <span class="sd">        execution of the program.</span>
-<span class="sd">        Other attributes will be initilized as None.</span>
+<span class="sd">        Other attributes will be initialized as None.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            args (list): a list of arguments and values, this is useful when you</span>
+<span class="sd">                want to import the class.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>

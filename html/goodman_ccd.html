@@ -849,10 +849,16 @@ regarding the process to be used.</p>
 <dt id="goodman_ccd.data_classifier.DataClassifier.get_instrument">
 <code class="descname">get_instrument</code><span class="sig-paren">(</span><em>night_folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/data_classifier.html#DataClassifier.get_instrument"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.data_classifier.DataClassifier.get_instrument" title="Permalink to this definition">¶</a></dt>
 <dd><p>Identify Goodman’s Camera</p>
-<p>Goodman has two camera, a blue one and another optimized for redder
-wavelength. Their headers are differents so this methods uses that to
-discover which camera the data belong to. The red camera has an specific
-keyword that says which camera is but the blue does not.</p>
+<p>Goodman has two camera, <em>Blue</em> and <em>Red</em>. They are, as the name suggest
+optimized for bluer and redder wavelength respectively. Their headers
+are different so this methods uses their differences to discover which
+camera the data belong to. The red camera has an specific keyword that
+says which camera is but the blue does not.
+The result is stored as an attribute of the class.</p>
+<p class="rubric">Notes</p>
+<p>As of April 2017 the blue camera computer was upgraded and as a
+result the headers where updated too. But we need to keep this
+feature for <em>backward compatibility</em></p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -861,7 +867,6 @@ keyword that says which camera is but the blue does not.</p>
 </tr>
 </tbody>
 </table>
-<p>The result is stored as an attribute of the class.</p>
 </dd></dl>
 
 <dl class="method">
@@ -879,7 +884,7 @@ keyword that contains that information but the blue does not.</p>
 <code class="descname">remove_conflictive_keywords</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/data_classifier.html#DataClassifier.remove_conflictive_keywords"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.data_classifier.DataClassifier.remove_conflictive_keywords" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes problematic keywords</p>
 <p>The blue camera has a set of keywords whose comments contain non-ascii
-characters, in particular the degree symbol. Those keyords are not
+characters, in particular the degree symbol. Those keywords are not
 needed in any stage of the data reduction therefore they are removed.
 The data will be overwritten with the keywords removed. The user will
 need to have backups of raw data.</p>
@@ -900,13 +905,18 @@ need to have backups of raw data.</p>
 <dt id="goodman_ccd.goodman_ccd.get_args">
 <code class="descclassname">goodman_ccd.goodman_ccd.</code><code class="descname">get_args</code><span class="sig-paren">(</span><em>arguments=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_ccd/goodman_ccd.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_ccd.goodman_ccd.get_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get command line arguments.</p>
+<p>The list of arguments can be obtained by using the argument <code class="docutils literal"><span class="pre">--help</span></code>.
+All the arguments start with two dashes and single-character arguments where
+avoided in order to eliminate confussion.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Arparse object. Contains all the arguments as attributes</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>arguments</strong> (<em>list</em>) – A list containing the arguments as elements.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">args (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)">object</a>)</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Argparse object. Contains all the arguments as attributes</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">args (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)">object</a>)</td>
 </tr>
 </tbody>
 </table>
