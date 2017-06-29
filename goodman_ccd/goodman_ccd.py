@@ -1,21 +1,17 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import os
-from ccdproc import ImageFileCollection
-import matplotlib
-matplotlib.use('GTK3Agg')
-import matplotlib.pyplot as plt
-import time
-import numpy as np
-# from mpl_toolkits.mplot3d import Axes3D
-import re
+import argparse
 import glob
 import logging
-import argparse
+import matplotlib
+matplotlib.use('GTK3Agg')
+import os
+
+
+from .core import print_default_args
 from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
-from .core import print_default_args
 
 __author__ = 'David Sanmartim'
 __date__ = '2016-07-15'
@@ -34,17 +30,23 @@ log = logging.getLogger('goodmanccd')
 def get_args(arguments=None):
     """Get command line arguments.
 
+    The list of arguments can be obtained by using the argument ``--help``.
+    All the arguments start with two dashes and single-character arguments where
+    avoided in order to eliminate confussion.
+
+    Args:
+        arguments (list): A list containing the arguments as elements.
+
     Returns:
-        args (object): Arparse object. Contains all the arguments as attributes
+        args (object): Argparse object. Contains all the arguments as attributes
 
     """
-    # global log
-    # Parsing Arguments ---
+
     parser = argparse.ArgumentParser(description="Goodman CCD Reduction - CCD"
                                                  "reductions for "
                                                  "Goodman spectroscopic data")
 
-    parser.add_argument('-c', '--cosmic',
+    parser.add_argument('--cosmic',
                         action='store_true',
                         dest='clean_cosmic',
                         help="Clean cosmic rays from science data.")
@@ -124,7 +126,6 @@ def get_args(arguments=None):
                         help="After cleaning cosmic rays with dcr, do not "
                              "remove the input file and the cosmic rays file.")
 
-
     args = parser.parse_args(args=arguments)
 
     if args.log_to_file:
@@ -165,13 +166,17 @@ def get_args(arguments=None):
 class MainApp(object):
 
     def __init__(self, args=None):
-        """This method initalizes the MainApp class
+        """This method initializes the MainApp class
 
         The main task of this method is to call the get_args function that
         returns an argparse object.
         The arguments will be obtained here and they will be available for all
         execution of the program.
-        Other attributes will be initilized as None.
+        Other attributes will be initialized as None.
+
+        Args:
+            args (list): a list of arguments and values, this is useful when you
+                want to import the class.
         """
         if args is None:
             self.args = get_args()
