@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: archive
 title: "Install"
 permalink: /install/
 author_profile: false
