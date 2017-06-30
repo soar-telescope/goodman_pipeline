@@ -141,7 +141,9 @@ class DataClassifier(object):
                 self.technique = 'Spectroscopy'
                 log.info('Detected Spectroscopy Data from RED Camera')
         elif self.instrument == 'Blue':
-            self.remove_conflictive_keywords()
+            file_list = self.image_collection.file.tolist()
+            self.remove_conflictive_keywords(path=self.args.raw_path,
+                                             file_list=file_list)
             gratings = self.objects_collection.grating.unique()
             cam_targ = self.objects_collection.cam_targ.unique()
             # print(gratings)
@@ -157,7 +159,8 @@ class DataClassifier(object):
                           'technique')
                 self.technique = 'Unknown'
 
-    def remove_conflictive_keywords(self):
+    @staticmethod
+    def remove_conflictive_keywords(path, file_list):
         """Removes problematic keywords
 
         The blue camera has a set of keywords whose comments contain non-ascii
@@ -169,8 +172,8 @@ class DataClassifier(object):
         """
         log.info('Removing conflictive keywords in Blue Camera Headers')
         log.warning('Files will be overwritten')
-        for blue_file in self.image_collection.file.tolist():
-            full_path = os.path.join(self.args.raw_path, blue_file)
+        for blue_file in file_list:
+            full_path = os.path.join(path, blue_file)
             log.debug('Processing file {:s}'.format(blue_file))
             try:
                 data, header = fits.getdata(full_path,
