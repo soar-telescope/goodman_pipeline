@@ -3,7 +3,7 @@ layout: splash
 permalink: /
 header:
   overlay_color: "#5e616c"
-  overlay_image: "/assets/images/bw500x300.jpg"
+  overlay_image: "/assets/images/9090-an-abstract-blue-background-pv.jpg"
   cta_label: "<i class='fa fa-download'></i> Install Now"
   cta_url: "/install/"
   caption:
