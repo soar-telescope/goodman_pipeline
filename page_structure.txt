@@ -1,0 +1,7 @@
+.
++-- _config.yml  # Main configuration file
++-- assets
+|   +-- images  # store all the images here
++-- _pages  # key pages here
+|   +-- home.md  # main page that is shown when the page is accessed
+|   +-- projects  # store the project pages here
