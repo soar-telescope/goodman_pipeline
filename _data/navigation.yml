@@ -10,6 +10,8 @@ main:
     url: https://b1quint.github.io/goodman/install/
   - title: "Run"
     url: https://b1quint.github.io/goodman/run/
+  - title: "More"
+    url: https://b1quint.github.io/goodman/docs/
   # - title: "Sample Posts"
   #   url: /year-archive/
   # - title: "Sample Collections"

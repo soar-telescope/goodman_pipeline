@@ -3,4 +3,4 @@ layout: default
 permalink: /download
 ---
 
-# Download
+This is the download file.

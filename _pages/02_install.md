@@ -3,4 +3,4 @@ layout: default
 permalink: /install
 ---
 
-# Install
+This is where we should add the install file
