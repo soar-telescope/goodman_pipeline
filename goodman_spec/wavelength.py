@@ -734,11 +734,11 @@ class WavelengthCalibration(object):
 
         Args:
             spectrum (array): an uncalibrated spectrum or any unidimensional
-            array.
+                array.
 
         Returns:
             Two dimensional array containing x-axis and interpolated array.
-            The x-axis preserves original pixel values.
+                The x-axis preserves original pixel values.
 
         """
         x_axis = range(spectrum.size)

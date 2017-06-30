@@ -941,6 +941,7 @@ def spectroscopic_extraction(ccd, extraction,
                     ccd=ccd,
                     extraction=extraction,
                     trace=traces[m],
+                    trace_index=m,
                     model=profile_model[submodel_name],
                     n_sigma_extract=n_sigma_extract,
                     plots=plots)
@@ -949,6 +950,7 @@ def spectroscopic_extraction(ccd, extraction,
                     comp_zone = get_extraction_zone(ccd=comp,
                                                     extraction=extraction,
                                                     trace=trace,
+                                                    trace_index=m,
                                                     zone=zone,
                                                     plots=plots)
                     # since a comparison lamp only needs only the relative line
@@ -978,6 +980,7 @@ def spectroscopic_extraction(ccd, extraction,
                 ccd=ccd,
                 extraction=extraction,
                 trace=traces[0],
+                trace_index=0,
                 model=profile_model,
                 n_sigma_extract=n_sigma_extract,
                 plots=plots)
@@ -986,6 +989,7 @@ def spectroscopic_extraction(ccd, extraction,
                 comp_zone = get_extraction_zone(ccd=comp,
                                                 extraction=extraction,
                                                 trace=trace,
+                                                trace_index=0,
                                                 zone=zone,
                                                 plots=plots)
 
@@ -1271,6 +1275,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
 def get_extraction_zone(ccd,
                         extraction=None,
                         trace=None,
+                        trace_index=None,
                         model=None,
                         n_sigma_extract=None,
                         zone=None,
@@ -1293,6 +1298,7 @@ def get_extraction_zone(ccd,
         extraction (str): Extraction type, `simple` or `optimal`
         trace (object): An astropy.modeling.Model instance that correspond to
             the trace of the spectrum
+        trace_index (int): The index number of the spectrum. 0 based.
         model (object): An astropy.modeling.Model instance that was previously
             fitted to the spatial profile.
         n_sigma_extract (int): Total number of sigmas to be extracted.
@@ -1331,6 +1337,15 @@ def get_extraction_zone(ccd,
 
         zone = [low_lim, hig_lim]
 
+        # This is to define the APNUM1 Keyword for the header.
+
+        apnum_1 = '{:d} {:d} {:d} {:d}'.format(trace_index + 1,
+                                              1,
+                                              low_lim,
+                                              hig_lim)
+
+        ccd.header['APNUM1'] = apnum_1
+
         # this is necessary since we are cutting a piece of the full ccd.
         trace.c0.value -= low_lim
         log.info('Changing attribute c0 from trace, this is to adjust it to '
@@ -1357,6 +1372,13 @@ def get_extraction_zone(ccd,
     else:
 
         low_lim, hig_lim = zone
+
+        apnum_1 = '{:d} {:d} {:d} {:d}'.format(trace_index + 1,
+                                               1,
+                                               low_lim,
+                                               hig_lim)
+
+        ccd.header['APNUM1'] = apnum_1
 
         nccd = ccd.copy()
         nccd.data = ccd.data[low_lim:hig_lim, :]
