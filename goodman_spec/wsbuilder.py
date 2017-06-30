@@ -5,11 +5,11 @@
 """
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import shlex
 import logging
-from astropy.modeling import models, fitting
 import matplotlib.pyplot as plt
+import shlex
 
+from astropy.modeling import models, fitting
 
 # log.basicConfig(level=log.DEBUG)
 log = logging.getLogger('redspec.wsbuilder')
@@ -208,14 +208,21 @@ class ReadWavelengthSolution(object):
     def linear_solution(self):
         """Linear solution reader
 
-        This method read the apropriate keywords and defines a linear wavelength solution
+        This method read the apropriate keywords and defines a linear wavelength
+        solution
 
         Returns:
             solution (class): Callable wavelength solution model
         """
         crval = float(self.header['CRVAL1'])
         crpix = int(self.header['CRPIX1'])
-        cdelt = float(self.header['CDELT1'])
+
+        # workaround for some notations
+        try:
+            cdelt = float(self.header['CDELT1'])
+        except KeyError:
+            cdelt = float(self.header['CD1_1'])
+
         self.wcs_dict = {'crval': crval,
                          'crpix': crpix,
                          'cdelt': cdelt,
