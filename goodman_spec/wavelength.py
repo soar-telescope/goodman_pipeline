@@ -164,9 +164,6 @@ class WavelengthCalibration(object):
             for next release.
 
         Args:
-            sci_pack (object): Extracted data organized in a Class
-            science_object (object): Class with information regarding the
-                science image being processed
             args (objects): Runtime arguments.
 
         """
@@ -241,6 +238,9 @@ class WavelengthCalibration(object):
         it again.
 
         Args:
+            ccd (object): a CCDData instance
+            comp_list (list):
+            object_number:
             wsolution_obj (object): Mathematical model of the wavelength
                 solution if exist. If it doesnt is a None
 
@@ -1245,7 +1245,7 @@ class WavelengthCalibration(object):
             plt.ioff()
         return correlation_value
 
-    def interactive_wavelength_solution(self):
+    def interactive_wavelength_solution(self, object_name=''):
         """Find the wavelength solution interactively
 
         Using matplotlib graphical interface we developed an interactive method
@@ -1283,10 +1283,6 @@ class WavelengthCalibration(object):
         Notes:
             This method uses the GTK3Agg backend, it will not work with other.
 
-
-
-
-
         """
         plt.switch_backend('GTK3Agg')
 
@@ -1314,7 +1310,7 @@ class WavelengthCalibration(object):
                          gridspec_kw={'width_ratios': [4, 1]})
 
         self.i_fig.canvas.set_window_title('Science Target: {:s}'.format(
-            self.science_object.name))
+            object_name))
 
         manager = plt.get_current_fig_manager()
         manager.window.maximize()
