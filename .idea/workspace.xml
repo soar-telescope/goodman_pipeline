@@ -2,462 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="eb701273-8b95-42f0-a8e8-aa4402cf3d78" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/fonts/FontAwesome.otf" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/fonts/fontawesome-webfont.eot" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/fonts/fontawesome-webfont.svg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/fonts/fontawesome-webfont.ttf" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/fonts/fontawesome-webfont.woff" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/fonts/fontawesome-webfont.woff2" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/images/Banner_background_only_FINAL_1300x433.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/images/SOAR.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/images/amada.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/images/bio-quint.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/images/bw500x300.jpg" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.idx" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.ind" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/CHANGELOG.md" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Gemfile" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/LICENSE.txt" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/README.md" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Rakefile" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_config.yml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_data/navigation.yml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_data/ui-text.yml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/analytics-providers/custom.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/analytics-providers/google-universal.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/analytics-providers/google.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/analytics.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/archive-single.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/author-profile-custom-links.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/author-profile.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/base_path" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/breadcrumbs.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/browser-upgrade.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/category-list.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comment.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comments-providers/custom.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comments-providers/discourse.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comments-providers/disqus.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comments-providers/facebook.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comments-providers/google-plus.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comments-providers/scripts.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comments-providers/staticman.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/comments.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/feature_row" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/figure" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/footer.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/footer/custom.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/gallery" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/group-by-array" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/head.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/head/custom.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/masthead.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/nav_list" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/page__hero.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/page__hero_video.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/page__taxonomy.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/paginator.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/post_pagination.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/read-time.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/scripts.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/seo.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/sidebar.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/social-share.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/tag-list.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/toc" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_includes/video" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_layouts/archive-taxonomy.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_layouts/archive.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_layouts/compress.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_layouts/default.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_layouts/home.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_layouts/single.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_layouts/splash.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_pages/about.md" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_pages/home.md" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_pages/portfolio.html" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_animations.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_archive.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_base.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_buttons.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_footer.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_forms.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_masthead.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_mixins.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_navigation.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_notices.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_page.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_print.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_reset.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_sidebar.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_syntax.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_tables.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_utilities.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/_variables.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/_breakpoint.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/_context.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/_helpers.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/_legacy-settings.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/_no-query.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/_parsers.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/_respond-to.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/_settings.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/_double.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/_query.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/_resolution.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/_single.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/_triple.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/double/_default-pair.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/double/_default.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/double/_double-string.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/resolution/_resolution.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/single/_default.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/breakpoint/parsers/triple/_default.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_animated.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_bordered-pulled.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_core.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_fixed-width.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_font-awesome.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_icons.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_larger.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_list.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_mixins.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_path.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_rotated-flipped.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_screen-reader.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_stacked.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/font-awesome/_variables.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/magnific-popup/_magnific-popup.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/magnific-popup/_settings.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/_su.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/_susy.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/_susyone.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/_su.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/_susy.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/_susyone.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_background.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_bleed.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_box-sizing.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_breakpoint-plugin.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_container.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_context.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_gallery.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_grids.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_gutters.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_isolate.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_margins.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_padding.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_rows.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_settings.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_span.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susy/_validation.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susyone/_background.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susyone/_functions.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susyone/_grid.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susyone/_isolation.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susyone/_margin.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susyone/_media.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susyone/_padding.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/language/susyone/_settings.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/_float.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/_shared.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/_support.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/float/_container.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/float/_end.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/float/_isolate.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/float/_span.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/shared/_background.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/shared/_container.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/shared/_direction.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/shared/_inspect.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/shared/_margins.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/shared/_output.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/shared/_padding.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/support/_background.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/support/_box-sizing.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/support/_clearfix.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/support/_prefix.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/support/_rem.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/output/support/_support.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/su/_grid.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/su/_settings.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/su/_utilities.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/_sass/minimal-mistakes/vendor/susy/susy/su/_validation.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/css/main.scss" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/js/_main.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/js/main.min.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/js/plugins/jquery.fitvids.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/js/plugins/jquery.greedy-navigation.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/js/plugins/jquery.magnific-popup.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/js/plugins/jquery.smooth-scroll.min.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/assets/js/vendor/jquery/jquery-1.12.4.min.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/banner.js" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/dummy.dummy" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/package.json" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/page_structure.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/.nojekyll" afterPath="$PROJECT_DIR$/.Rhistory" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/README.html" afterPath="$PROJECT_DIR$/docs/README.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/README2.html" afterPath="$PROJECT_DIR$/docs/README2.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_images/math/ff0f9ad06510de37579502a5dc620291a31f4ee1.png" afterPath="$PROJECT_DIR$/docs/_images/math/ff0f9ad06510de37579502a5dc620291a31f4ee1.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/core.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/core.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/data_classifier.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/data_classifier.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/fix_header.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/fix_header.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/flat_arcorrection.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/flat_arcorrection.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/goodman_ccd.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/goodman_ccd.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/goodman_ccdreduction.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/goodman_ccdreduction.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/image_processor.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/image_processor.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/night_organizer.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/night_organizer.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_ccd/wavmode_translator.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_ccd/wavmode_translator.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_spec/linelist.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_spec/linelist.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_spec/process.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_spec/process.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_spec/redspec.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_spec/redspec.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_spec/simulator.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_spec/simulator.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_spec/wavelength.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_spec/wavelength.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/goodman_spec/wsbuilder.html" afterPath="$PROJECT_DIR$/docs/_modules/goodman_spec/wsbuilder.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_modules/index.html" afterPath="$PROJECT_DIR$/docs/_modules/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/README.rst.txt" afterPath="$PROJECT_DIR$/docs/_sources/README.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/README.txt" afterPath="$PROJECT_DIR$/docs/_sources/README.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/README2.rst.txt" afterPath="$PROJECT_DIR$/docs/_sources/README2.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/deleted.txt" afterPath="$PROJECT_DIR$/docs/_sources/deleted.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/goodman_ccd.rst.txt" afterPath="$PROJECT_DIR$/docs/_sources/goodman_ccd.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/goodman_spec.rst.txt" afterPath="$PROJECT_DIR$/docs/_sources/goodman_spec.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/index.rst.txt" afterPath="$PROJECT_DIR$/docs/_sources/index.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/index.txt" afterPath="$PROJECT_DIR$/docs/_sources/index.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/interactive-test.txt" afterPath="$PROJECT_DIR$/docs/_sources/interactive-test.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/linelist.txt" afterPath="$PROJECT_DIR$/docs/_sources/linelist.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/modules.rst.txt" afterPath="$PROJECT_DIR$/docs/_sources/modules.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/modules.txt" afterPath="$PROJECT_DIR$/docs/_sources/modules.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/process.txt" afterPath="$PROJECT_DIR$/docs/_sources/process.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/redgoodman.txt" afterPath="$PROJECT_DIR$/docs/_sources/redgoodman.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/redspec.txt" afterPath="$PROJECT_DIR$/docs/_sources/redspec.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/tc_read_IRAF_spec.txt" afterPath="$PROJECT_DIR$/docs/_sources/tc_read_IRAF_spec.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/tc_rms-calculator.txt" afterPath="$PROJECT_DIR$/docs/_sources/tc_rms-calculator.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/tc_test-process.txt" afterPath="$PROJECT_DIR$/docs/_sources/tc_test-process.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/tc_test.txt" afterPath="$PROJECT_DIR$/docs/_sources/tc_test.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/wavelength.txt" afterPath="$PROJECT_DIR$/docs/_sources/wavelength.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_sources/wsbuilder.txt" afterPath="$PROJECT_DIR$/docs/_sources/wsbuilder.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/ajax-loader.gif" afterPath="$PROJECT_DIR$/docs/_static/ajax-loader.gif" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/alabaster.css" afterPath="$PROJECT_DIR$/docs/_static/alabaster.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/basic.css" afterPath="$PROJECT_DIR$/docs/_static/basic.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/classic.css" afterPath="$PROJECT_DIR$/docs/_static/classic.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/comment-bright.png" afterPath="$PROJECT_DIR$/docs/_static/comment-bright.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/comment-close.png" afterPath="$PROJECT_DIR$/docs/_static/comment-close.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/comment.png" afterPath="$PROJECT_DIR$/docs/_static/comment.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/custom.css" afterPath="$PROJECT_DIR$/docs/_static/custom.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/doctools.js" afterPath="$PROJECT_DIR$/docs/_static/doctools.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/down-pressed.png" afterPath="$PROJECT_DIR$/docs/_static/down-pressed.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/down.png" afterPath="$PROJECT_DIR$/docs/_static/down.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/file.png" afterPath="$PROJECT_DIR$/docs/_static/file.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/jquery-1.11.1.js" afterPath="$PROJECT_DIR$/docs/_static/jquery-1.11.1.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/jquery-3.1.0.js" afterPath="$PROJECT_DIR$/docs/_static/jquery-3.1.0.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/jquery.js" afterPath="$PROJECT_DIR$/docs/_static/jquery.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/minus.png" afterPath="$PROJECT_DIR$/docs/_static/minus.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/nature.css" afterPath="$PROJECT_DIR$/docs/_static/nature.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/plus.png" afterPath="$PROJECT_DIR$/docs/_static/plus.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/pygments.css" afterPath="$PROJECT_DIR$/docs/_static/pygments.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/searchtools.js" afterPath="$PROJECT_DIR$/docs/_static/searchtools.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/sidebar.js" afterPath="$PROJECT_DIR$/docs/_static/sidebar.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/underscore-1.3.1.js" afterPath="$PROJECT_DIR$/docs/_static/underscore-1.3.1.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/underscore.js" afterPath="$PROJECT_DIR$/docs/_static/underscore.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/up-pressed.png" afterPath="$PROJECT_DIR$/docs/_static/up-pressed.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/up.png" afterPath="$PROJECT_DIR$/docs/_static/up.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/_static/websupport.js" afterPath="$PROJECT_DIR$/docs/_static/websupport.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/deleted.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/deleted.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/environment.pickle" afterPath="$PROJECT_DIR$/docs/build/doctrees/environment.pickle" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/index.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/index.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/interactive-test.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/interactive-test.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/linelist.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/linelist.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/modules.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/modules.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/process.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/process.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/redgoodman.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/redgoodman.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/redspec.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/redspec.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/tc_read_IRAF_spec.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/tc_read_IRAF_spec.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/tc_rms-calculator.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/tc_rms-calculator.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/tc_test-process.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/tc_test-process.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/tc_test.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/tc_test.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/wavelength.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/wavelength.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/doctrees/wsbuilder.doctree" afterPath="$PROJECT_DIR$/docs/build/doctrees/wsbuilder.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/.buildinfo" afterPath="$PROJECT_DIR$/docs/build/html/.buildinfo" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/.nojekyll" afterPath="$PROJECT_DIR$/.gitignore" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/deleted.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/deleted.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/index.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/index.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/interactive-test.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/interactive-test.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/linelist.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/linelist.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/modules.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/modules.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/process.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/process.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/redgoodman.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/redgoodman.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/redspec.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/redspec.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/tc_read_IRAF_spec.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/tc_read_IRAF_spec.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/tc_rms-calculator.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/tc_rms-calculator.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/tc_test-process.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/tc_test-process.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/tc_test.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/tc_test.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/wavelength.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/wavelength.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_sources/wsbuilder.txt" afterPath="$PROJECT_DIR$/docs/build/html/_sources/wsbuilder.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/ajax-loader.gif" afterPath="$PROJECT_DIR$/docs/build/html/_static/ajax-loader.gif" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/alabaster.css" afterPath="$PROJECT_DIR$/docs/build/html/_static/alabaster.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/basic.css" afterPath="$PROJECT_DIR$/docs/build/html/_static/basic.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/classic.css" afterPath="$PROJECT_DIR$/docs/build/html/_static/classic.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/comment-bright.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/comment-bright.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/comment-close.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/comment-close.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/comment.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/comment.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/custom.css" afterPath="$PROJECT_DIR$/docs/build/html/_static/custom.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/doctools.js" afterPath="$PROJECT_DIR$/docs/build/html/_static/doctools.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/down-pressed.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/down-pressed.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/down.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/down.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/file.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/file.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/jquery-1.11.1.js" afterPath="$PROJECT_DIR$/docs/build/html/_static/jquery-1.11.1.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/jquery.js" afterPath="$PROJECT_DIR$/docs/build/html/_static/jquery.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/minus.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/minus.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/nature.css" afterPath="$PROJECT_DIR$/docs/build/html/_static/nature.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/plus.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/plus.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/pygments.css" afterPath="$PROJECT_DIR$/docs/build/html/_static/pygments.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/searchtools.js" afterPath="$PROJECT_DIR$/docs/build/html/_static/searchtools.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/sidebar.js" afterPath="$PROJECT_DIR$/docs/build/html/_static/sidebar.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/underscore-1.3.1.js" afterPath="$PROJECT_DIR$/docs/build/html/_static/underscore-1.3.1.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/underscore.js" afterPath="$PROJECT_DIR$/docs/build/html/_static/underscore.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/up-pressed.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/up-pressed.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/up.png" afterPath="$PROJECT_DIR$/docs/build/html/_static/up.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/_static/websupport.js" afterPath="$PROJECT_DIR$/docs/build/html/_static/websupport.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/deleted.html" afterPath="$PROJECT_DIR$/docs/build/html/deleted.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/genindex.html" afterPath="$PROJECT_DIR$/docs/build/html/genindex.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/index.html" afterPath="$PROJECT_DIR$/docs/build/html/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/interactive-test.html" afterPath="$PROJECT_DIR$/docs/build/html/interactive-test.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/linelist.html" afterPath="$PROJECT_DIR$/docs/build/html/linelist.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/modules.html" afterPath="$PROJECT_DIR$/docs/build/html/modules.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/objects.inv" afterPath="$PROJECT_DIR$/docs/build/html/objects.inv" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/process.html" afterPath="$PROJECT_DIR$/docs/build/html/process.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/py-modindex.html" afterPath="$PROJECT_DIR$/docs/build/html/py-modindex.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/redgoodman.html" afterPath="$PROJECT_DIR$/docs/build/html/redgoodman.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/redspec.html" afterPath="$PROJECT_DIR$/docs/build/html/redspec.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/search.html" afterPath="$PROJECT_DIR$/docs/build/html/search.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/searchindex.js" afterPath="$PROJECT_DIR$/docs/build/html/searchindex.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/tc_read_IRAF_spec.html" afterPath="$PROJECT_DIR$/docs/build/html/tc_read_IRAF_spec.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/tc_rms-calculator.html" afterPath="$PROJECT_DIR$/docs/build/html/tc_rms-calculator.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/tc_test-process.html" afterPath="$PROJECT_DIR$/docs/build/html/tc_test-process.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/tc_test.html" afterPath="$PROJECT_DIR$/docs/build/html/tc_test.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/wavelength.html" afterPath="$PROJECT_DIR$/docs/build/html/wavelength.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/build/html/wsbuilder.html" afterPath="$PROJECT_DIR$/docs/build/html/wsbuilder.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/README.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/README.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/README2.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/README2.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/dev.display.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/dev.display.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/dev.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/dev.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/environment.pickle" afterPath="$PROJECT_DIR$/docs/doctrees/environment.pickle" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/goodman_ccd.display.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/goodman_ccd.display.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/goodman_ccd.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/goodman_ccd.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/goodman_spec.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/goodman_spec.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/index.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/index.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/linelist.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/linelist.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/modules.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/modules.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/process.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/process.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/redgoodman.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/redgoodman.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/redspec.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/redspec.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/setup.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/setup.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/wavelength.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/wavelength.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/doctrees/wsbuilder.doctree" afterPath="$PROJECT_DIR$/docs/doctrees/wsbuilder.doctree" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/genindex.html" afterPath="$PROJECT_DIR$/docs/genindex.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/goodman_ccd.html" afterPath="$PROJECT_DIR$/docs/goodman_ccd.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/goodman_spec.html" afterPath="$PROJECT_DIR$/docs/goodman_spec.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/.buildinfo" afterPath="$PROJECT_DIR$/docs/html/.buildinfo" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/.nojekyll" afterPath="$PROJECT_DIR$/docs/.nojekyll" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/README.html" afterPath="$PROJECT_DIR$/docs/html/README.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/README2.html" afterPath="$PROJECT_DIR$/docs/html/README2.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_images/math/ff0f9ad06510de37579502a5dc620291a31f4ee1.png" afterPath="$PROJECT_DIR$/docs/html/_images/math/ff0f9ad06510de37579502a5dc620291a31f4ee1.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/core.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/core.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/data_classifier.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/data_classifier.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/fix_header.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/fix_header.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/flat_arcorrection.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/flat_arcorrection.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/goodman_ccd.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/goodman_ccd.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/goodman_ccdreduction.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/goodman_ccdreduction.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/image_processor.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/image_processor.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/night_organizer.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/night_organizer.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_ccd/wavmode_translator.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_ccd/wavmode_translator.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_spec/linelist.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_spec/linelist.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_spec/process.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_spec/process.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_spec/redspec.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_spec/redspec.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_spec/simulator.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_spec/simulator.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_spec/wavelength.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_spec/wavelength.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/goodman_spec/wsbuilder.html" afterPath="$PROJECT_DIR$/docs/html/_modules/goodman_spec/wsbuilder.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_modules/index.html" afterPath="$PROJECT_DIR$/docs/html/_modules/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_sources/README.rst.txt" afterPath="$PROJECT_DIR$/docs/html/_sources/README.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_sources/README2.rst.txt" afterPath="$PROJECT_DIR$/docs/html/_sources/README2.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_sources/goodman_ccd.rst.txt" afterPath="$PROJECT_DIR$/docs/html/_sources/goodman_ccd.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_sources/goodman_spec.rst.txt" afterPath="$PROJECT_DIR$/docs/html/_sources/goodman_spec.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_sources/index.rst.txt" afterPath="$PROJECT_DIR$/docs/html/_sources/index.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_sources/modules.rst.txt" afterPath="$PROJECT_DIR$/docs/html/_sources/modules.rst.txt" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/ajax-loader.gif" afterPath="$PROJECT_DIR$/docs/html/_static/ajax-loader.gif" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/basic.css" afterPath="$PROJECT_DIR$/docs/html/_static/basic.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/classic.css" afterPath="$PROJECT_DIR$/docs/html/_static/classic.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/comment-bright.png" afterPath="$PROJECT_DIR$/docs/html/_static/comment-bright.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/comment-close.png" afterPath="$PROJECT_DIR$/docs/html/_static/comment-close.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/comment.png" afterPath="$PROJECT_DIR$/docs/html/_static/comment.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/doctools.js" afterPath="$PROJECT_DIR$/docs/html/_static/doctools.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/down-pressed.png" afterPath="$PROJECT_DIR$/docs/html/_static/down-pressed.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/down.png" afterPath="$PROJECT_DIR$/docs/html/_static/down.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/file.png" afterPath="$PROJECT_DIR$/docs/html/_static/file.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/jquery-3.1.0.js" afterPath="$PROJECT_DIR$/docs/html/_static/jquery-3.1.0.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/jquery.js" afterPath="$PROJECT_DIR$/docs/html/_static/jquery.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/minus.png" afterPath="$PROJECT_DIR$/docs/html/_static/minus.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/plus.png" afterPath="$PROJECT_DIR$/docs/html/_static/plus.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/pygments.css" afterPath="$PROJECT_DIR$/docs/html/_static/pygments.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/searchtools.js" afterPath="$PROJECT_DIR$/docs/html/_static/searchtools.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/sidebar.js" afterPath="$PROJECT_DIR$/docs/html/_static/sidebar.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/underscore-1.3.1.js" afterPath="$PROJECT_DIR$/docs/html/_static/underscore-1.3.1.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/underscore.js" afterPath="$PROJECT_DIR$/docs/html/_static/underscore.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/up-pressed.png" afterPath="$PROJECT_DIR$/docs/html/_static/up-pressed.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/up.png" afterPath="$PROJECT_DIR$/docs/html/_static/up.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/_static/websupport.js" afterPath="$PROJECT_DIR$/docs/html/_static/websupport.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/genindex.html" afterPath="$PROJECT_DIR$/docs/html/genindex.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/goodman_ccd.html" afterPath="$PROJECT_DIR$/docs/html/goodman_ccd.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/goodman_spec.html" afterPath="$PROJECT_DIR$/docs/html/goodman_spec.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/index.html" afterPath="$PROJECT_DIR$/docs/html/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/modules.html" afterPath="$PROJECT_DIR$/docs/html/modules.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/objects.inv" afterPath="$PROJECT_DIR$/docs/html/objects.inv" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/py-modindex.html" afterPath="$PROJECT_DIR$/docs/html/py-modindex.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/search.html" afterPath="$PROJECT_DIR$/docs/html/search.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/html/searchindex.js" afterPath="$PROJECT_DIR$/docs/html/searchindex.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/images/body-bg.jpg" afterPath="$PROJECT_DIR$/docs/images/body-bg.jpg" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/images/download-button.png" afterPath="$PROJECT_DIR$/docs/images/download-button.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/images/github-button.png" afterPath="$PROJECT_DIR$/docs/images/github-button.png" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/images/header-bg.jpg" afterPath="$PROJECT_DIR$/docs/images/header-bg.jpg" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/images/highlight-bg.jpg" afterPath="$PROJECT_DIR$/docs/images/highlight-bg.jpg" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/images/sidebar-bg.jpg" afterPath="$PROJECT_DIR$/docs/images/sidebar-bg.jpg" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/index.html" afterPath="$PROJECT_DIR$/docs/index.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/javascripts/main.js" afterPath="$PROJECT_DIR$/docs/javascripts/main.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.aux" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.aux" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.idx" afterPath="$PROJECT_DIR$/docs/build/html/.nojekyll" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.ilg" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.ilg" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.ind" afterPath="$PROJECT_DIR$/docs/html/.nojekyll" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.log" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.log" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.out" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.out" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.pdf" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.pdf" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.tex" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.tex" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/GoodmanSpectroscopicTools.toc" afterPath="$PROJECT_DIR$/docs/latex/GoodmanSpectroscopicTools.toc" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/Makefile" afterPath="$PROJECT_DIR$/docs/latex/Makefile" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/fncychap.sty" afterPath="$PROJECT_DIR$/docs/latex/fncychap.sty" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/iftex.sty" afterPath="$PROJECT_DIR$/docs/latex/iftex.sty" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/needspace.sty" afterPath="$PROJECT_DIR$/docs/latex/needspace.sty" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/newfloat.sty" afterPath="$PROJECT_DIR$/docs/latex/newfloat.sty" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/python.ist" afterPath="$PROJECT_DIR$/docs/latex/python.ist" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/sphinx.sty" afterPath="$PROJECT_DIR$/docs/latex/sphinx.sty" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/sphinxhowto.cls" afterPath="$PROJECT_DIR$/docs/latex/sphinxhowto.cls" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/sphinxmanual.cls" afterPath="$PROJECT_DIR$/docs/latex/sphinxmanual.cls" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/latex/tabulary.sty" afterPath="$PROJECT_DIR$/docs/latex/tabulary.sty" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/linelist.html" afterPath="$PROJECT_DIR$/docs/linelist.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/modules.html" afterPath="$PROJECT_DIR$/docs/modules.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/objects.inv" afterPath="$PROJECT_DIR$/docs/objects.inv" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/process.html" afterPath="$PROJECT_DIR$/docs/process.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/py-modindex.html" afterPath="$PROJECT_DIR$/docs/py-modindex.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/redgoodman.html" afterPath="$PROJECT_DIR$/docs/redgoodman.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/redspec.html" afterPath="$PROJECT_DIR$/docs/redspec.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/search.html" afterPath="$PROJECT_DIR$/docs/search.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/searchindex.js" afterPath="$PROJECT_DIR$/docs/searchindex.js" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/stylesheets/github-light.css" afterPath="$PROJECT_DIR$/docs/stylesheets/github-light.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/stylesheets/normalize.css" afterPath="$PROJECT_DIR$/docs/stylesheets/normalize.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/stylesheets/print.css" afterPath="$PROJECT_DIR$/docs/stylesheets/print.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/stylesheets/stylesheet.css" afterPath="$PROJECT_DIR$/docs/stylesheets/stylesheet.css" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/wavelength.html" afterPath="$PROJECT_DIR$/docs/wavelength.html" />
-      <change type="MOVED" beforePath="$PROJECT_DIR$/wsbuilder.html" afterPath="$PROJECT_DIR$/docs/wsbuilder.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.gitignore" afterPath="$PROJECT_DIR$/.gitignore" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/_pages/home.md" afterPath="$PROJECT_DIR$/_pages/home.md" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -482,11 +29,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="false">
+      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/.gitignore">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="15">
+              <caret line="1" column="0" lean-forward="true" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -505,19 +52,19 @@
       <file leaf-file-name="_config.yml" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/_config.yml">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="600">
+            <state relative-caret-position="-570">
               <caret line="40" column="32" lean-forward="false" selection-start-line="40" selection-start-column="32" selection-end-line="40" selection-end-column="32" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="home.md" pinned="false" current-in-tab="true">
+      <file leaf-file-name="home.md" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/_pages/home.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-            <state split_layout="SPLIT">
-              <first_editor relative-caret-position="120">
-                <caret line="8" column="10" lean-forward="false" selection-start-line="8" selection-start-column="10" selection-end-line="8" selection-end-column="10" />
+            <state split_layout="FIRST">
+              <first_editor relative-caret-position="165">
+                <caret line="11" column="56" lean-forward="true" selection-start-line="11" selection-start-column="56" selection-end-line="11" selection-end-column="56" />
                 <folding />
               </first_editor>
               <second_editor />
@@ -547,12 +94,14 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/_config.yml" />
+        <option value="$PROJECT_DIR$/_pages/home.md" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
     <option name="x" value="-1" />
-    <option name="width" value="2562" />
+    <option name="width" value="1281" />
     <option name="height" value="1415" />
   </component>
   <component name="ProjectView">
@@ -724,10 +273,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1" y="0" width="2562" height="1415" extended-state="6" />
+    <frame x="-1" y="0" width="1281" height="1415" extended-state="4" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15234686" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18491484" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32936507" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -818,14 +367,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.gitignore">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -853,7 +394,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/_config.yml">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="600">
+        <state relative-caret-position="-570">
           <caret line="40" column="32" lean-forward="false" selection-start-line="40" selection-start-column="32" selection-end-line="40" selection-end-column="32" />
           <folding />
         </state>
@@ -867,12 +408,20 @@
         </state>
       </provider>
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
-          <first_editor relative-caret-position="120">
-            <caret line="8" column="10" lean-forward="false" selection-start-line="8" selection-start-column="10" selection-end-line="8" selection-end-column="10" />
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="165">
+            <caret line="11" column="56" lean-forward="true" selection-start-line="11" selection-start-column="56" selection-end-line="11" selection-end-column="56" />
             <folding />
           </first_editor>
           <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="1" column="0" lean-forward="true" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
