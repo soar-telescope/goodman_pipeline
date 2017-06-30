@@ -37,7 +37,7 @@
        x2="-30.110889"
        y2="-13.017083"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.4640099,0,0,0.517916,64.750325,-14.227332)" />
+       gradientTransform="matrix(0.4640099,0,0,0.517916,64.65839,-13.012182)" />
     <linearGradient
        inkscape:collect="always"
        id="linearGradient4142">
@@ -60,27 +60,28 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="724"
-     inkscape:window-height="480"
+     inkscape:window-width="1083"
+     inkscape:window-height="692"
      id="namedview6"
      showgrid="false"
      inkscape:zoom="4.9166667"
-     inkscape:cx="24"
+     inkscape:cx="-6.8135592"
      inkscape:cy="24"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
+     inkscape:window-x="167"
+     inkscape:window-y="428"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg2" />
   <path
      d="M18 32.34L9.66 24l-2.83 2.83L18 38l24-24-2.83-2.83z"
-     id="path4" />
+     id="path4"
+     style="fill:#1e61c5;fill-opacity:1" />
   <rect
      style="opacity:1;fill:url(#linearGradient4148);fill-opacity:1;stroke:none;stroke-width:10;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
      id="rect4140"
      width="44.450577"
      height="43.820957"
-     x="3.5953951"
-     y="-44.564915"
+     x="3.5034604"
+     y="-43.349766"
      ry="0"
      transform="matrix(0.09398925,0.99557321,-0.99715925,0.07532215,0,0)" />
 </svg>

@@ -37,7 +37,7 @@
        x2="-30.110889"
        y2="-13.017083"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.48217748,0,0,0.55437704,64.083817,-14.89511)" />
+       gradientTransform="matrix(0.48217748,0,0,0.55437704,64.789588,-14.981496)" />
     <linearGradient
        inkscape:collect="always"
        id="linearGradient4142">
@@ -60,27 +60,28 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="2560"
-     inkscape:window-height="1388"
+     inkscape:window-width="1212"
+     inkscape:window-height="1064"
      id="namedview6"
      showgrid="false"
      inkscape:zoom="11.313708"
-     inkscape:cx="29.432956"
-     inkscape:cy="14.427854"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
+     inkscape:cx="16.218897"
+     inkscape:cy="14.251077"
+     inkscape:window-x="235"
+     inkscape:window-y="249"
+     inkscape:window-maximized="0"
      inkscape:current-layer="svg2" />
   <path
      d="M42 6H6c-2.21 0-4 1.79-4 4v24c0 2.21 1.79 4 4 4h10v4h16v-4h10c2.21 0 3.98-1.79 3.98-4L46 10c0-2.21-1.79-4-4-4zm0 28H6V10h36v24zM32 22l-14 8V14z"
-     id="path4" />
+     id="path4"
+     style="fill:#1e61a7;fill-opacity:1" />
   <rect
      style="opacity:1;fill:url(#linearGradient4148);fill-opacity:1;stroke:none;stroke-width:10;stroke-miterlimit:0;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
      id="rect4140"
      width="46.190968"
      height="46.90593"
-     x="0.53446066"
-     y="-47.36845"
+     x="1.2402315"
+     y="-47.454838"
      ry="0"
      transform="matrix(0.00285233,0.99999593,-0.99987989,-0.01549886,0,0)" />
 </svg>
