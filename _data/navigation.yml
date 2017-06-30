@@ -3,13 +3,13 @@ main:
   #- title: "Quick-Start Guide"
   #  url: https://mmistakes.github.io/minimal-mistakes/docs/quick-start-guide/
   - title: "About"
-    url: https://mmistakes.github.io/minimal-mistakes/about/
+    url: https://b1quint.github.io/goodman/about/
   - title: "Download"
-    url: https://mmistakes.github.io/minimal-mistakes/download/
+    url: https://b1quint.github.io/goodman/download/
   - title: "Install"
-    url: https://mmistakes.github.io/minimal-mistakes/install/
+    url: https://b1quint.github.io/goodman/install/
   - title: "Run"
-    url: https://mmistakes.github.io/minimal-mistakes/run/
+    url: https://b1quint.github.io/goodman/run/
   # - title: "Sample Posts"
   #   url: /year-archive/
   # - title: "Sample Collections"
