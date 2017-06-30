@@ -308,7 +308,8 @@ class WavelengthCalibration(object):
                         eval_comment=self.evaluation_comment,
                         header=self.header)
 
-                    if self.args.plot_results or self.args.debug_mode:
+                    if self.args.plot_results or self.args.debug_mode or \
+                            self.args.save_plots:
 
                         if not self.args.debug_mode:
                             plt.ion()
@@ -351,8 +352,11 @@ class WavelengthCalibration(object):
                                                '.png',
                                                ccd.header['OFNAME'])
                             plot_path = os.path.join(plots_dir, plot_name)
-                            print(plot_path)
+                            # print(plot_path)
                             plt.savefig(plot_path, dpi=300)
+                            log.info('Saved plot as {:s} file '
+                                     'DPI=300'.format(plot_name))
+
                         if self.args.debug_mode:
                             plt.show()
                         else:
