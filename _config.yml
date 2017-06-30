@@ -11,7 +11,7 @@ title                    : "Goodman Data-Reduction Pipeline"
 title_separator          : "-"
 name                     : "GDRP"
 description              : "A data-reduction pipeline for the SOAR's GOODMAN Instrument."
-url                      : "https://b1quint.github.io/" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
+url                      : "https://b1quint.github.io" # the base hostname & protocol for your site e.g. "https://mmistakes.github.io"
 baseurl                  : # the subpath of your site, e.g. "/blog"
 repository               : "b1quint/goodman" # GitHub username/repo-name e.g. "mmistakes/minimal-mistakes"
 teaser                   : # path of fallback teaser image, e.g. "/assets/images/500x300.png"
@@ -246,4 +246,4 @@ defaults:
       related: true
 
 # Adding the pages directory
-include: ['_pages']
+include: ['_pages', 'docs']
