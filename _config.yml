@@ -246,4 +246,15 @@ defaults:
       related: true
 
 # Adding the pages directory
-include: ['_pages', 'docs']
+include: ['_pages']
+
+# Add a collection with the documents
+collections:
+  - scope:
+      path: "docs/"
+    values:
+      author_profile: false
+      read_time: false
+      comments: false
+      related: false
+
