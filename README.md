@@ -1,2 +1,2 @@
-# b1quint.github.io
+# Goodman Data-Reduction Pipeline
 My custom github page.
