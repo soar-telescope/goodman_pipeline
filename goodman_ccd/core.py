@@ -23,8 +23,8 @@ from astropy.time import Time, TimeDelta
 from astropy.stats import sigma_clip
 from astroplan import Observer
 from astropy import units as u
+from astropy.io import fits
 from astropy.modeling import (models, fitting, Model)
-
 from scipy import signal
 
 log = logging.getLogger('goodmanccd.core')
@@ -734,6 +734,60 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
     log.debug('Found {:.3f} as central wavelength'.format(central_wavelength))
 
     return central_wavelength
+
+
+def remove_conflictive_keywords(path, file_list):
+    """Removes problematic keywords
+
+    The blue camera has a set of keywords whose comments contain non-ascii
+    characters, in particular the degree symbol. Those keywords are not
+    needed in any stage of the data reduction therefore they are removed.
+    The data will be overwritten with the keywords removed. The user will
+    need to have backups of raw data.
+
+    Args:
+        path (str): Path to the folder containing the files
+        file_list (list): List of files to remove keywords
+
+    """
+    log.info('Removing conflictive keywords in Blue Camera Headers')
+    log.warning('Files will be overwritten')
+    for blue_file in file_list:
+        full_path = os.path.join(path, blue_file)
+        log.debug('Processing file {:s}'.format(blue_file))
+        try:
+            data, header = fits.getdata(full_path,
+                                        header=True,
+                                        ignore_missing_end=True)
+
+            keys_to_remove = ['PARAM0',
+                              'PARAM61',
+                              'PARAM62',
+                              'PARAM63',
+                              'NAXIS3']
+
+            if data.ndim == 3:
+                header['NAXIS'] = 2
+                data = data[0]
+
+                log.debug('Modified file to be 2D instead of 3D '
+                          '(problematic)')
+
+            for keyword in keys_to_remove:
+                header.remove(keyword)
+
+                log.debug('Removed conflictive keyword '
+                          '{:s}'.format(keyword))
+
+            log.debug('Updated headers')
+
+            fits.writeto(full_path,
+                         data,
+                         header,
+                         clobber=True)
+
+        except KeyError as error:
+            log.debug(error)
 
 
 # spectroscopy specific functions

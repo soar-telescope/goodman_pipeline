@@ -5,8 +5,7 @@ import numpy as np
 import os
 import random
 from ccdproc import ImageFileCollection
-from astropy.io import fits
-from .core import fix_duplicated_keywords
+from .core import fix_duplicated_keywords, remove_conflictive_keywords
 
 log = logging.getLogger('goodmanccd.dataclassifier')
 
@@ -142,8 +141,8 @@ class DataClassifier(object):
                 log.info('Detected Spectroscopy Data from RED Camera')
         elif self.instrument == 'Blue':
             file_list = self.image_collection.file.tolist()
-            self.remove_conflictive_keywords(path=self.args.raw_path,
-                                             file_list=file_list)
+            remove_conflictive_keywords(path=self.args.raw_path,
+                                        file_list=file_list)
             gratings = self.objects_collection.grating.unique()
             cam_targ = self.objects_collection.cam_targ.unique()
             # print(gratings)
@@ -158,56 +157,6 @@ class DataClassifier(object):
                 log.error('It was not possible to determine observing '
                           'technique')
                 self.technique = 'Unknown'
-
-    @staticmethod
-    def remove_conflictive_keywords(path, file_list):
-        """Removes problematic keywords
-
-        The blue camera has a set of keywords whose comments contain non-ascii
-        characters, in particular the degree symbol. Those keywords are not
-        needed in any stage of the data reduction therefore they are removed.
-        The data will be overwritten with the keywords removed. The user will
-        need to have backups of raw data.
-
-        """
-        log.info('Removing conflictive keywords in Blue Camera Headers')
-        log.warning('Files will be overwritten')
-        for blue_file in file_list:
-            full_path = os.path.join(path, blue_file)
-            log.debug('Processing file {:s}'.format(blue_file))
-            try:
-                data, header = fits.getdata(full_path,
-                                            header=True,
-                                            ignore_missing_end=True)
-
-                keys_to_remove = ['PARAM0',
-                                  'PARAM61',
-                                  'PARAM62',
-                                  'PARAM63',
-                                  'NAXIS3']
-
-                if data.ndim == 3:
-                    header['NAXIS'] = 2
-                    data = data[0]
-
-                    log.debug('Modified file to be 2D instead of 3D '
-                              '(problematic)')
-
-                for keyword in keys_to_remove:
-                    header.remove(keyword)
-
-                    log.debug('Removed conflictive keyword '
-                              '{:s}'.format(keyword))
-
-                log.debug('Updated headers')
-
-                fits.writeto(full_path,
-                             data,
-                             header,
-                             clobber=True)
-
-            except KeyError as error:
-                log.debug(error)
 
 
 if __name__ == '__main__':
