@@ -1,6 +1,6 @@
 ---
 layout: default
-permalink: /requirements
+title: "Requirements"
+permalink: /requirements/
+author_profile: false
 ---
-
-# Requirements
