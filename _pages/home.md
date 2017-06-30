@@ -3,9 +3,9 @@ layout: splash
 permalink: /
 header:
   overlay_color: "#5e616c"
-  overlay_image: "/assets/images/Banner_background_only_FINAL_1300x433.jpg"
+  overlay_image: "/assets/images/bw500x300.jpg"
   cta_label: "<i class='fa fa-download'></i> Install Now"
-  cta_url: "/docs/quick-start-guide/"
+  cta_url: "/install/"
   caption:
 excerpt: 'A group created aiming for a friendly environment and designed to develop 
           of a new family of tools for data exploration in cosmology.<br /> <small>
