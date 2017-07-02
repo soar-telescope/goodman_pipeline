@@ -1,0 +1,394 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>goodman_spec.wsbuilder &#8212; Goodman Pipelines 1.0b1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 1.0b1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for goodman_spec.wsbuilder</h1><div class="highlight"><pre>
+<span class="c1"># -*- coding: utf8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Set of class and method to handle wavelength solutions</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">shlex</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">astropy.modeling</span> <span class="k">import</span> <span class="n">models</span><span class="p">,</span> <span class="n">fitting</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+
+<span class="c1"># log.basicConfig(level=log.DEBUG)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;redspec.wsbuilder&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="WavelengthFitter"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.WavelengthFitter">[docs]</a><span class="k">class</span> <span class="nc">WavelengthFitter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Contains methods to do pixel to angstrom fit&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="s1">&#39;chebyshev&#39;</span><span class="p">,</span> <span class="n">degree</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes the class</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            model (str): Name of the model to fit, Chebyshev (default) or Linear</span>
+<span class="sd">            degree (int): Degree of the model. Only needed by Chebyshev model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">degree</span> <span class="o">=</span> <span class="n">degree</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_fit</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_constructor</span><span class="p">()</span>
+
+<div class="viewcode-block" id="WavelengthFitter.model_constructor"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.WavelengthFitter.model_constructor">[docs]</a>    <span class="k">def</span> <span class="nf">model_constructor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generates callable mathematical model</span>
+
+<span class="sd">        It can do chebyshev and linear model only but is easy to implement others.</span>
+<span class="sd">        Chebyshev 3rd degree is by default since provided the best results for Goodman data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;chebyshev&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Chebyshev1D</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">degree</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_fit</span> <span class="o">=</span> <span class="n">fitting</span><span class="o">.</span><span class="n">LevMarLSQFitter</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;linear&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Linear1D</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_fit</span> <span class="o">=</span> <span class="n">fitting</span><span class="o">.</span><span class="n">LinearLSQFitter</span><span class="p">()</span></div>
+        <span class="c1"># return model</span>
+
+<div class="viewcode-block" id="WavelengthFitter.ws_fit"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.WavelengthFitter.ws_fit">[docs]</a>    <span class="k">def</span> <span class="nf">ws_fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">physical</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Wavelength solution fit</span>
+
+<span class="sd">        Takes a list of pixel values and its respective wavelength values to do a fit to</span>
+<span class="sd">        the mathematical model defined with the class.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            fitted_model (class): Fitted model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_fit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c1"># print(physical)</span>
+                <span class="c1"># print(wavelength)</span>
+                <span class="n">fitted_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">physical</span><span class="p">,</span> <span class="n">wavelength</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">fitted_model</span>
+            <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Please add more data points.&#39;</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;TypeError: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Either model or model fitter were not constructed&#39;</span><span class="p">)</span></div></div>
+
+
+<div class="viewcode-block" id="ReadWavelengthSolution"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadWavelengthSolution">[docs]</a><span class="k">class</span> <span class="nc">ReadWavelengthSolution</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read wavelength solutions from a fits header&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">header</span> <span class="o">=</span> <span class="n">header</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reference_file_name</span> <span class="o">=</span> <span class="n">reference</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wcs_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wave_intens</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">math_model</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;call method</span>
+
+<span class="sd">        Discriminates from header&#39;s keywords what kind of solution is present</span>
+<span class="sd">        and call the appropriate method for linear or non-linear solutions.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            self.wave_intens (list): Returns the class attribute which is a two dimension list</span>
+<span class="sd">            the first element is the x_axis in angstrom and the second is the y_axis in intensity</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">wcsdim</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;WCSDIM&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">wcsdim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">ctypen</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CTYPE</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">dim</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">ctypen</span> <span class="o">==</span> <span class="s1">&#39;LINEAR&#39;</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Reading Linear Solution&#39;</span><span class="p">)</span>
+                <span class="c1"># self.wcs_dict = {&#39;dtype&#39;: 0}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">math_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_solution</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">ctypen</span> <span class="o">==</span> <span class="s1">&#39;MULTISPE&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">non_linear_solution</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">wave_intens</span>
+
+<div class="viewcode-block" id="ReadWavelengthSolution.non_linear_solution"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadWavelengthSolution.non_linear_solution">[docs]</a>    <span class="k">def</span> <span class="nf">non_linear_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dimension</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Non linear solutions reader</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            Not all kind of non-linear solutions are implemented</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            dimension (int): Solutions can be multi-dimensionals, this method is called for each one of them.</span>
+
+<span class="sd">        Returns:</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">header</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">header</span>
+        <span class="n">ctypen</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;CTYPE</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">dimension</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ctypen</span> <span class="o">==</span> <span class="s1">&#39;MULTISPE&#39;</span><span class="p">:</span>
+            <span class="n">wat_head</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="s1">&#39;WAT</span><span class="si">%s</span><span class="s1">*&#39;</span> <span class="o">%</span> <span class="n">dimension</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wat_head</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s1">&#39;Get units&#39;</span><span class="p">)</span>
+                <span class="n">wat_array</span> <span class="o">=</span> <span class="n">wat_head</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">wat_array</span><span class="p">:</span>
+                    <span class="n">split_pair</span> <span class="o">=</span> <span class="n">pair</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span><span class="p">[</span><span class="n">split_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">split_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="c1"># print(wat_head[0].split(&#39; &#39;))</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">wat_head</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">wat_string</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">wat_head</span><span class="p">:</span>
+                    <span class="n">wat_string</span> <span class="o">+=</span> <span class="n">header</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="n">wat_array</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">wat_string</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">wat_array</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">wat_array</span><span class="p">),</span> <span class="mi">2</span><span class="p">):</span>
+                        <span class="c1"># if wat_array[i] not in self.wcs_dict.keys():</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span><span class="p">[</span><span class="n">wat_array</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">wat_array</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                        <span class="c1"># print(wat_array[i], wat_array[i + 1])</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> -</span><span class="si">%s</span><span class="s2">- </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dimension</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">if</span> <span class="s1">&#39;spec1&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># print(self.wat_wcs_dict[&#39;spec1&#39;])</span>
+            <span class="n">spec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span><span class="p">[</span><span class="s1">&#39;spec1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">aperture</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">beam</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">disp_type</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">disp_start</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="n">disp_del_av</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+            <span class="n">pix_num</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+            <span class="n">dopp_fact</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">6</span><span class="p">])</span>
+            <span class="n">aper_low</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">7</span><span class="p">]))</span>
+            <span class="n">aper_high</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">8</span><span class="p">]))</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
+            <span class="n">zeropoint</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span>
+            <span class="n">function_type</span> <span class="o">=</span> <span class="n">spec</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">12</span><span class="p">]))</span>
+            <span class="n">min_pix_val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">13</span><span class="p">]))</span>
+            <span class="n">max_pix_val</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="mi">14</span><span class="p">]))</span>
+            <span class="c1"># resto = list(spec[9:])</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">spec</span><span class="p">[</span><span class="mi">15</span><span class="p">:]]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wcs_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;aperture&#39;</span><span class="p">:</span> <span class="n">aperture</span><span class="p">,</span>
+                             <span class="s1">&#39;beam&#39;</span><span class="p">:</span> <span class="n">beam</span><span class="p">,</span>
+                             <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="n">disp_type</span><span class="p">,</span>
+                             <span class="s1">&#39;dstart&#39;</span><span class="p">:</span> <span class="n">disp_start</span><span class="p">,</span>
+                             <span class="s1">&#39;avdelt&#39;</span><span class="p">:</span> <span class="n">disp_del_av</span><span class="p">,</span>
+                             <span class="s1">&#39;pnum&#39;</span><span class="p">:</span> <span class="n">pix_num</span><span class="p">,</span>
+                             <span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="n">dopp_fact</span><span class="p">,</span>
+                             <span class="s1">&#39;alow&#39;</span><span class="p">:</span> <span class="n">aper_low</span><span class="p">,</span>
+                             <span class="s1">&#39;ahigh&#39;</span><span class="p">:</span> <span class="n">aper_high</span><span class="p">,</span>
+                             <span class="s1">&#39;weight&#39;</span><span class="p">:</span> <span class="n">weight</span><span class="p">,</span>
+                             <span class="s1">&#39;zeropoint&#39;</span><span class="p">:</span> <span class="n">zeropoint</span><span class="p">,</span>
+                             <span class="s1">&#39;ftype&#39;</span><span class="p">:</span> <span class="n">function_type</span><span class="p">,</span>
+                             <span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="n">order</span><span class="p">,</span>
+                             <span class="s1">&#39;pmin&#39;</span><span class="p">:</span> <span class="n">min_pix_val</span><span class="p">,</span>
+                             <span class="s1">&#39;pmax&#39;</span><span class="p">:</span> <span class="n">max_pix_val</span><span class="p">,</span>
+                             <span class="s1">&#39;fpar&#39;</span><span class="p">:</span> <span class="n">params</span><span class="p">}</span>
+
+            <span class="n">function</span> <span class="o">=</span> <span class="n">ReadMathFunctions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs_dict</span><span class="p">)</span>
+            <span class="n">solution</span> <span class="o">=</span> <span class="n">function</span><span class="o">.</span><span class="n">get_solution</span><span class="p">()</span>
+            <span class="c1"># print(solution)</span>
+            <span class="c1"># print(&quot;%s %s&quot; % (params, len(params)))</span>
+            <span class="n">wav1</span> <span class="o">=</span> <span class="p">[</span><span class="mf">4545.0519</span><span class="p">,</span>
+                    <span class="mf">4579.3495</span><span class="p">,</span>
+                    <span class="mf">4589.8978</span><span class="p">,</span>
+                    <span class="mf">4609.5673</span><span class="p">,</span>
+                    <span class="mf">4726.8683</span><span class="p">,</span>
+                    <span class="mf">4735.9058</span><span class="p">,</span>
+                    <span class="mf">4764.8646</span><span class="p">,</span>
+                    <span class="mf">4806.0205</span><span class="p">,</span>
+                    <span class="mf">4847.8095</span><span class="p">,</span>
+                    <span class="mf">5495.8738</span><span class="p">,</span>
+                    <span class="mf">5506.1128</span><span class="p">,</span>
+                    <span class="mf">5558.702</span><span class="p">,</span>
+                    <span class="mf">5572.5413</span><span class="p">,</span>
+                    <span class="mf">5606.733</span><span class="p">,</span>
+                    <span class="mf">5650.7043</span><span class="p">]</span>
+            <span class="c1"># data = fits.getdata(&#39;/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear600nonlinearli.fits&#39;)</span>
+            <span class="n">x_axis</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># x0 = range(len(self.data))</span>
+            <span class="c1"># print(&#39;x data&#39;, x_axis[0], x_axis[-1], len(self.data))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;OBJECT&#39;</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wat_wcs_dict</span><span class="p">[</span><span class="s1">&#39;units&#39;</span><span class="p">]))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">solution</span><span class="p">(</span><span class="n">x_axis</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+            <span class="c1"># plt.plot(solution(x0), self.data, color=&#39;g&#39;)</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">wav1</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+            <span class="c1"># print(spec)</span>
+
+<div class="viewcode-block" id="ReadWavelengthSolution.linear_solution"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadWavelengthSolution.linear_solution">[docs]</a>    <span class="k">def</span> <span class="nf">linear_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Linear solution reader</span>
+
+<span class="sd">        This method read the apropriate keywords and defines a linear wavelength solution</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            solution (class): Callable wavelength solution model</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">crval</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CRVAL1&#39;</span><span class="p">])</span>
+        <span class="n">crpix</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CRPIX1&#39;</span><span class="p">])</span>
+        <span class="n">cdelt</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;CDELT1&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wcs_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;crval&#39;</span><span class="p">:</span> <span class="n">crval</span><span class="p">,</span>
+                         <span class="s1">&#39;crpix&#39;</span><span class="p">:</span> <span class="n">crpix</span><span class="p">,</span>
+                         <span class="s1">&#39;cdelt&#39;</span><span class="p">:</span> <span class="n">cdelt</span><span class="p">,</span>
+                         <span class="s1">&#39;dtype&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">function</span> <span class="o">=</span> <span class="n">ReadMathFunctions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs_dict</span><span class="p">)</span>
+        <span class="n">solution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="o">.</span><span class="n">get_solution</span><span class="p">()</span>
+        <span class="c1"># data = fits.getdata(&#39;/data/simon/data/soar/work/goodman/test/extraction-tests/CuHeAr_600.fits&#39;)</span>
+        <span class="c1"># x_axis = range(1, len(self.data) + 1)</span>
+        <span class="n">x_axis</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">))</span>
+
+        <span class="c1"># plt.xlabel(&quot;%s (%s)&quot; % (self.wat_wcs_dict[&#39;label&#39;], self.wat_wcs_dict[&#39;units&#39;]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wave_intens</span> <span class="o">=</span> <span class="p">[</span><span class="n">solution</span><span class="p">(</span><span class="n">x_axis</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">solution</span></div></div>
+
+
+
+<div class="viewcode-block" id="ReadMathFunctions"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions">[docs]</a><span class="k">class</span> <span class="nc">ReadMathFunctions</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wcs_dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span> <span class="o">=</span> <span class="n">wcs_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">solution</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;dtype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">none</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;dtype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">solution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_solution</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;dtype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_linear</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;dtype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;ftype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">solution</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chebyshev</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;ftype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">non_linear_legendre</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;ftype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;3&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">non_linear_cspline</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;ftype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;4&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">non_linear_lspline</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;ftype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;5&#39;</span><span class="p">:</span>
+                <span class="c1"># pixel coordinates</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;ftype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;6&#39;</span><span class="p">:</span>
+                <span class="c1"># sampled coordinate array</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Not Implemented&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Not Implemented&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ReadMathFunctions.none"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.none">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">none</span><span class="p">():</span>
+        <span class="k">return</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="ReadMathFunctions.linear_solution"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.linear_solution">[docs]</a>    <span class="k">def</span> <span class="nf">linear_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">intercept</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;crval&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;crpix&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;cdelt&#39;</span><span class="p">]</span>
+        <span class="c1"># intercept = self.wcs[&#39;crval&#39;] - self.wcs[&#39;crpix&#39;] * self.wcs[&#39;cdelt&#39;]</span>
+        <span class="n">linear</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Linear1D</span><span class="p">(</span><span class="n">slope</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;cdelt&#39;</span><span class="p">],</span> <span class="n">intercept</span><span class="o">=</span><span class="n">intercept</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">linear</span></div>
+
+<div class="viewcode-block" id="ReadMathFunctions.log_linear"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.log_linear">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">log_linear</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+<div class="viewcode-block" id="ReadMathFunctions.chebyshev"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.chebyshev">[docs]</a>    <span class="k">def</span> <span class="nf">chebyshev</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cheb</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">Chebyshev1D</span><span class="p">(</span><span class="n">degree</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">],</span> <span class="n">domain</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;pmin&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;pmax&#39;</span><span class="p">]],</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">param_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;order&#39;</span><span class="p">]):</span>
+            <span class="n">cheb</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param_index</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wcs</span><span class="p">[</span><span class="s1">&#39;fpar&#39;</span><span class="p">][</span><span class="n">param_index</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cheb</span></div>
+
+<div class="viewcode-block" id="ReadMathFunctions.non_linear_legendre"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.non_linear_legendre">[docs]</a>    <span class="k">def</span> <span class="nf">non_linear_legendre</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="ReadMathFunctions.non_linear_lspline"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.non_linear_lspline">[docs]</a>    <span class="k">def</span> <span class="nf">non_linear_lspline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="ReadMathFunctions.non_linear_cspline"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.non_linear_cspline">[docs]</a>    <span class="k">def</span> <span class="nf">non_linear_cspline</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cubic Spline&quot;&quot;&quot;</span>
+        <span class="c1"># cubic_spline = models.</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="ReadMathFunctions.get_solution"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.wsbuilder.ReadMathFunctions.get_solution">[docs]</a>    <span class="k">def</span> <span class="nf">get_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">solution</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">solution</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;The solution hasn&#39;t been found&quot;</span><span class="p">)</span></div></div>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">pass</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 1.0b1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Simon Torres.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

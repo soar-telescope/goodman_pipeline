@@ -1,0 +1,350 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>goodman_spec.redspec &#8212; Goodman Pipelines 1.0b1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 1.0b1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for goodman_spec.redspec</h1><div class="highlight"><pre>
+<span class="ch">#!/usr/bin/env python2</span>
+<span class="c1"># -*- coding: utf8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Pipeline for GOODMAN spectra Extraction.</span>
+
+<span class="sd">This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded,</span>
+<span class="sd">etc. that match the &lt;pattern&gt; in the source folder, then classify them in two</span>
+<span class="sd">groups: Science or Lamps. For science images, finds the spectrum or spectra and</span>
+<span class="sd">traces it doing some fit.</span>
+<span class="sd">Simon Torres 2016-06-28</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># TODO (simon): Change all astropy.io.fits to astropy.CCDData.read</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="p">(</span><span class="n">absolute_import</span><span class="p">,</span> <span class="n">division</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span>
+                        <span class="n">unicode_literals</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">import</span> <span class="nn">ccdproc</span> <span class="k">as</span> <span class="nn">ccd</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;GTK3Agg&#39;</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="c1"># from astropy import log</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">ccdproc</span> <span class="k">import</span> <span class="n">CCDData</span>
+<span class="kn">from</span> <span class="nn">.process</span> <span class="k">import</span> <span class="n">Process</span><span class="p">,</span> <span class="n">SciencePack</span>
+<span class="kn">from</span> <span class="nn">.wavelength</span> <span class="k">import</span> <span class="n">WavelengthCalibration</span><span class="p">,</span> <span class="n">process_spectroscopy_data</span>
+<span class="kn">from</span> <span class="nn">goodman_ccd.core</span> <span class="k">import</span> <span class="p">(</span><span class="n">print_spacers</span><span class="p">,</span>
+                              <span class="n">ra_dec_to_deg</span><span class="p">,</span>
+                              <span class="n">convert_time</span><span class="p">,</span>
+                              <span class="n">print_default_args</span><span class="p">,</span>
+                              <span class="n">classify_spectroscopic_data</span><span class="p">)</span>
+
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+<span class="n">FORMAT</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(levelname)s</span><span class="s1">: </span><span class="si">%(asctime)s</span><span class="s1">:</span><span class="si">%(module)s</span><span class="s1">.</span><span class="si">%(funcName)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
+<span class="n">DATE_FORMAT</span> <span class="o">=</span> <span class="s1">&#39;%I:%M:%S%p&#39;</span>
+<span class="n">LOG_FILENAME</span> <span class="o">=</span> <span class="s1">&#39;goodman_spec.log&#39;</span>
+<span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="n">FORMAT</span><span class="p">,</span> <span class="n">datefmt</span><span class="o">=</span><span class="n">DATE_FORMAT</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;redspec&#39;</span><span class="p">)</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Simon Torres&#39;</span>
+<span class="n">__date__</span> <span class="o">=</span> <span class="s1">&#39;2016-06-28&#39;</span>
+<span class="n">__version__</span> <span class="o">=</span> <span class="s2">&quot;0.1&quot;</span>
+<span class="n">__email__</span> <span class="o">=</span> <span class="s2">&quot;storres@ctio.noao.edu&quot;</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s2">&quot;Development&quot;</span>
+
+
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">(</span><span class="n">arguments</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handles the argparse library and returns the arguments</span>
+
+<span class="sd">    The possible arguments to be used are:</span>
+
+<span class="sd">    --data-path: has to be the source directory, where the data (images) is.</span>
+<span class="sd">        The location is `self.source` and the default value is ./</span>
+<span class="sd">    --proc-path: is the destination where all new files/data will be</span>
+<span class="sd">        placed. The location is `self.destiny` and the default value is ./</span>
+<span class="sd">    --search-pattern: the pattern that matches the reduced data that</span>
+<span class="sd">        will be processed. The location is `self.pattern` default value is</span>
+<span class="sd">        fc\_</span>
+<span class="sd">    --interactive: Interactive Wavelength Solution. Enabled by default</span>
+<span class="sd">    --output-prefix: Prefix to use to name wavelength calibrated spectrum</span>
+<span class="sd">    --extraction: Spectrum extraction type. Simple or optimal.</span>
+<span class="sd">    --reference-files: Directory of reference files location</span>
+<span class="sd">    --debug: Show plots for intermediate steps. Also prints more messages.</span>
+<span class="sd">    --log-to-file: Write the log to a file.</span>
+<span class="sd">    --save-plots: Save all plots ina directory</span>
+<span class="sd">    --plot-results: Show a plot of the wavelength calibrated data at the</span>
+<span class="sd">        end.</span>
+
+
+<span class="sd">    Returns:</span>
+<span class="sd">        An object that contains all the variables parsed through the argument</span>
+<span class="sd">        system</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">leave</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span>
+            <span class="sd">&#39;&#39;&#39;Extracts goodman spectra and does wavelength calibration.&#39;&#39;&#39;</span><span class="p">))</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--data-path&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Source Path&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;source&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path for location of raw data. Default &lt;./&gt;&#39;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--proc-path&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Destination Path&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;destiny&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Path for destination of processed data. Default &#39;</span>
+                             <span class="s1">&#39;&lt;./&gt;&#39;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--search-pattern&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;cfzsto&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Search Pattern&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;pattern&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Pattern for matching the goodman&#39;s reduced data.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--output-prefix&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;g&#39;</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Out Prefix&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;output_prefix&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Prefix to add to calibrated spectrum.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--extraction&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;simple&#39;</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Extraction Type&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;extraction_type&#39;</span><span class="p">,</span>
+                        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;simple&#39;</span><span class="p">,</span> <span class="s1">&#39;optimal&#39;</span><span class="p">],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Choose a which extraction to perform. Simple is a &#39;</span>
+                             <span class="s1">&#39;sum across the spatial direction after the &#39;</span>
+                             <span class="s1">&#39;background has been removed. Optimal is a more &#39;</span>
+                             <span class="s1">&#39;advanced method that considers weights and profile&#39;</span>
+                             <span class="s1">&#39;fitting.&#39;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--reference-files&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;refdata/&#39;</span><span class="p">,</span>
+                        <span class="n">metavar</span><span class="o">=</span><span class="s1">&#39;&lt;Reference Dir&gt;&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;reference_dir&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory of Reference files location&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--interactive&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;interactive_ws&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Interactive wavelength solution.&quot;</span>
+                             <span class="s2">&quot;Disbled by default.&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--debug&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;debug_mode&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Debugging Mode&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--log-to-file&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;log_to_file&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Write log to a file&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--save-plots&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;save_plots&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Save all plots in a directory&quot;</span><span class="p">)</span>
+
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--plot-results&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;plot_results&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Show wavelength calibrated spectrum at the end.&quot;</span><span class="p">)</span>
+
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">arguments</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">log_to_file</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Logging to file {:s}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">LOG_FILENAME</span><span class="p">))</span>
+        <span class="n">file_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">LOG_FILENAME</span><span class="p">)</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">FORMAT</span><span class="p">,</span> <span class="n">datefmt</span><span class="o">=</span><span class="n">DATE_FORMAT</span><span class="p">)</span>
+        <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="n">formatter</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">debug_mode</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Changing log level to DEBUG.&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+
+    <span class="c1"># get full path for reference files directory</span>
+    <span class="n">ref_full_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span>
+                                 <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">ref_full_path</span><span class="p">):</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Reference files directory doesn&#39;t exist.&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">ref_full_path</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Reference Files Directory is: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ref_full_path</span><span class="p">)</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span> <span class="o">=</span> <span class="n">ref_full_path</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">reference_dir</span> <span class="o">=</span> <span class="n">ref_full_path</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">):</span>
+        <span class="n">leave</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Source Directory doesn&#39;t exist.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">):</span>
+        <span class="n">leave</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Destination folder doesn&#39;t exist.&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Destination folder created: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">destiny</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">leave</span><span class="p">:</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s2">&quot;Leaving the Program.&quot;</span><span class="p">)</span>
+    <span class="c1"># print_default_args(args)</span>
+    <span class="k">return</span> <span class="n">args</span></div>
+
+
+<div class="viewcode-block" id="MainApp"><a class="viewcode-back" href="../../goodman_spec.html#goodman_spec.redspec.MainApp">[docs]</a><span class="k">class</span> <span class="nc">MainApp</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Defines and initialize all important variables for processing the data</span>
+
+<span class="sd">    The MainApp class controls the way the night is organize to its further</span>
+<span class="sd">    processing. It also sets the appropriate parameters that will allow for a</span>
+<span class="sd">    smooth working in all the other modules.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># data_container instance of NightDataContainer defined in core</span>
+        <span class="n">data_container</span> <span class="o">=</span> <span class="n">classify_spectroscopic_data</span><span class="p">(</span>
+            <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+            <span class="n">search_pattern</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
+
+        <span class="c1"># print(&#39;data_container.bias&#39;)</span>
+        <span class="c1"># print(data_container.bias)</span>
+        <span class="c1"># print(&#39;data_container.day_flats&#39;)</span>
+        <span class="c1"># print(data_container.day_flats)</span>
+        <span class="c1"># print(&#39;data_container.dome_flats&#39;)</span>
+        <span class="c1"># print(data_container.dome_flats)</span>
+        <span class="c1"># print(&#39;data_container.sky_flats&#39;)</span>
+        <span class="c1"># print(data_container.sky_flats)</span>
+        <span class="c1"># print(&#39;data_container.data_groups&#39;)</span>
+        <span class="c1"># print(data_container.data_groups)</span>
+        <span class="c1"># print(&#39;data_container.spec_groups&#39;)</span>
+        <span class="c1"># print(data_container.spec_groups)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">wavelength_solution_obj</span> <span class="o">=</span> <span class="n">process_spectroscopy_data</span><span class="p">(</span>
+            <span class="n">data_container</span><span class="o">=</span><span class="n">data_container</span><span class="p">,</span>
+            <span class="n">args</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span>
+            <span class="n">extraction_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">extraction_type</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">MAIN_APP</span> <span class="o">=</span> <span class="n">MainApp</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">MAIN_APP</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Goodman Pipelines 1.0b1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Simon Torres.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

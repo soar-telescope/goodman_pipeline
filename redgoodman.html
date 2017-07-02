@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>redgoodman module &mdash; Goodman Spectroscopic Tools 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Goodman Spectroscopic Tools 0.1 documentation" href="index.html" /> 
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Goodman Spectroscopic Tools 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-redgoodman">
+<span id="redgoodman-module"></span><h1>redgoodman module<a class="headerlink" href="#module-redgoodman" title="Permalink to this headline">¶</a></h1>
+<p>Simon Torres 2016-06-28
+pipeline for GOODMAN spectra reduction.</p>
+<dl class="function">
+<dt id="redgoodman.bias_correction">
+<code class="descclassname">redgoodman.</code><code class="descname">bias_correction</code><span class="sig-paren">(</span><em>night</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.bias_correction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.create_master_bias">
+<code class="descclassname">redgoodman.</code><code class="descname">create_master_bias</code><span class="sig-paren">(</span><em>bias_list</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.create_master_bias" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.create_master_flat">
+<code class="descclassname">redgoodman.</code><code class="descname">create_master_flat</code><span class="sig-paren">(</span><em>flat_list</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.create_master_flat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.fit_func">
+<code class="descclassname">redgoodman.</code><code class="descname">fit_func</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>func='polynomial'</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.fit_func" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.flat_correction">
+<code class="descclassname">redgoodman.</code><code class="descname">flat_correction</code><span class="sig-paren">(</span><em>night</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.flat_correction" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.get_data_header">
+<code class="descclassname">redgoodman.</code><code class="descname">get_data_header</code><span class="sig-paren">(</span><em>file_name</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.get_data_header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.get_file_list">
+<code class="descclassname">redgoodman.</code><code class="descname">get_file_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.get_file_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="redgoodman.night">
+<em class="property">class </em><code class="descclassname">redgoodman.</code><code class="descname">night</code><span class="sig-paren">(</span><em>date</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="redgoodman.night.add_bias">
+<code class="descname">add_bias</code><span class="sig-paren">(</span><em>inbias</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.add_bias" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.add_flat_ng">
+<code class="descname">add_flat_ng</code><span class="sig-paren">(</span><em>inflat</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.add_flat_ng" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.add_flat_wg">
+<code class="descname">add_flat_wg</code><span class="sig-paren">(</span><em>inflat</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.add_flat_wg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.add_lamp">
+<code class="descname">add_lamp</code><span class="sig-paren">(</span><em>inlamp</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.add_lamp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.add_sci">
+<code class="descname">add_sci</code><span class="sig-paren">(</span><em>insci</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.add_sci" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.get_all">
+<code class="descname">get_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.get_all" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.get_bias">
+<code class="descname">get_bias</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.get_bias" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.get_flats_ng">
+<code class="descname">get_flats_ng</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.get_flats_ng" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.get_flats_wg">
+<code class="descname">get_flats_wg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.get_flats_wg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.get_lamp">
+<code class="descname">get_lamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.get_lamp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.get_sci">
+<code class="descname">get_sci</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.get_sci" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.set_last_prefix">
+<code class="descname">set_last_prefix</code><span class="sig-paren">(</span><em>prefix</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.set_last_prefix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.set_master_bias">
+<code class="descname">set_master_bias</code><span class="sig-paren">(</span><em>master</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.set_master_bias" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="redgoodman.night.set_master_flat">
+<code class="descname">set_master_flat</code><span class="sig-paren">(</span><em>master</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.night.set_master_flat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.normalize_flat">
+<code class="descclassname">redgoodman.</code><code class="descname">normalize_flat</code><span class="sig-paren">(</span><em>master</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.normalize_flat" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.overscan_trim_corr">
+<code class="descclassname">redgoodman.</code><code class="descname">overscan_trim_corr</code><span class="sig-paren">(</span><em>list_all</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.overscan_trim_corr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.poly2">
+<code class="descclassname">redgoodman.</code><code class="descname">poly2</code><span class="sig-paren">(</span><em>x</em>, <em>a</em>, <em>b</em>, <em>c</em>, <em>x0</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.poly2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.poly3">
+<code class="descclassname">redgoodman.</code><code class="descname">poly3</code><span class="sig-paren">(</span><em>x</em>, <em>a</em>, <em>b</em>, <em>c</em>, <em>d</em>, <em>x0</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.poly3" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.print_progress">
+<code class="descclassname">redgoodman.</code><code class="descname">print_progress</code><span class="sig-paren">(</span><em>current</em>, <em>total</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.print_progress" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="redgoodman.print_spacers">
+<code class="descclassname">redgoodman.</code><code class="descname">print_spacers</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#redgoodman.print_spacers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/redgoodman.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Goodman Spectroscopic Tools 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &copy; Copyright 2016, Simon Torres R..
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.4.5.
+    </div>
+  </body>
+</html>

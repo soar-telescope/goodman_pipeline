@@ -1,0 +1,1337 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>goodman_spec package &#8212; Goodman Pipelines 1.0b1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0b1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Goodman Pipelines 1.0b1 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="goodman-spec-package">
+<h1>goodman_spec package<a class="headerlink" href="#goodman-spec-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-goodman_spec.id_and_extract">
+<span id="goodman-spec-id-and-extract-module"></span><h2>goodman_spec.id_and_extract module<a class="headerlink" href="#module-goodman_spec.id_and_extract" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-goodman_spec.linelist">
+<span id="goodman-spec-linelist-module"></span><h2>goodman_spec.linelist module<a class="headerlink" href="#module-goodman_spec.linelist" title="Permalink to this headline">¶</a></h2>
+<p>Line list per elements</p>
+<p>This contains a dictionary of elements used for comparison lamps with their main emission lines</p>
+<p>The current elements present are:</p>
+<blockquote>
+<div>Hg: Mercury
+Ar: Argon
+Cu: Copper
+Ne: Neon
+He: Helium
+CuAr: Copper Argon</div></blockquote>
+<dl class="class">
+<dt id="goodman_spec.linelist.ReferenceData">
+<em class="property">class </em><code class="descclassname">goodman_spec.linelist.</code><code class="descname">ReferenceData</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/linelist.html#ReferenceData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.linelist.ReferenceData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Contains spectroscopic reference lines values and filename to templates.</p>
+<dl class="docutils">
+<dt>This class stores:</dt>
+<dd><ul class="first last simple">
+<li>file names for reference fits spectrum</li>
+<li>file names for CSV tables with reference lines and relative intensities</li>
+<li>line positions only for the elements used in SOAR comparison lamps</li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="goodman_spec.linelist.ReferenceData.get_best_reference_lamp">
+<code class="descname">get_best_reference_lamp</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/linelist.html#ReferenceData.get_best_reference_lamp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.linelist.ReferenceData.get_best_reference_lamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds a suitable template lamp from the catalog</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> – </td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.linelist.ReferenceData.get_line_list_by_name">
+<code class="descname">get_line_list_by_name</code><span class="sig-paren">(</span><em>lamp_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/linelist.html#ReferenceData.get_line_list_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.linelist.ReferenceData.get_line_list_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the reference lines for elements in the lamp’s name</p>
+<p>Splits the name in chunks of two characters assuming each one of them represents an element in the comparison
+lamp, then fetches the list of line positions available and appends it to a list that will be return ordered.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Lamp’s name as in the header keyword OBJECT</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Sorted line list</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">line_list(list)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.linelist.ReferenceData.get_lines_in_range">
+<code class="descname">get_lines_in_range</code><span class="sig-paren">(</span><em>blue</em>, <em>red</em>, <em>lamp_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/linelist.html#ReferenceData.get_lines_in_range"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.linelist.ReferenceData.get_lines_in_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the reference lines for a given comparison lamp in a wavelength range</p>
+<p>Select the reference lines available for all the elements in the comparison lamp in the spectral range specified
+by blue and red</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>blue</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Blue limit for lines required</li>
+<li><strong>red</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – Red limit for lines required</li>
+<li><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Lamp’s name as in the header keyword OBJECT</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Sorted line list</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">lines(list)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.linelist.ReferenceData.get_ref_spectrum_from_linelist">
+<code class="descname">get_ref_spectrum_from_linelist</code><span class="sig-paren">(</span><em>blue</em>, <em>red</em>, <em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/linelist.html#ReferenceData.get_ref_spectrum_from_linelist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.linelist.ReferenceData.get_ref_spectrum_from_linelist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Experimental not working at the moment</p>
+<p>Builds a unidimensional spectrum to be used as a template for finding an automatic wavelength solution</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.linelist.ReferenceData.get_reference_lamps_by_name">
+<code class="descname">get_reference_lamps_by_name</code><span class="sig-paren">(</span><em>lamp_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/linelist.html#ReferenceData.get_reference_lamps_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.linelist.ReferenceData.get_reference_lamps_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get lamp’s template by element</p>
+<p>Some lamp templates are available for selected configurations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>lamp_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Lamp’s name as in the header keyword OBJECT</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Full path to reference lamps</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">reference_lamp(<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)">str</a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-goodman_spec.process">
+<span id="goodman-spec-process-module"></span><h2>goodman_spec.process module<a class="headerlink" href="#module-goodman_spec.process" title="Permalink to this headline">¶</a></h2>
+<p>Module that handles intermediate processess</p>
+<p>This module performs intermediate steps in the process to obtain a wavelength calibrated spectrum
+the __call__ method returns a list contained uni-dimensional data extracted and the modified instance of ScienceObject</p>
+<dl class="class">
+<dt id="goodman_spec.process.IdentifiedTarget">
+<em class="property">class </em><code class="descclassname">goodman_spec.process.</code><code class="descname">IdentifiedTarget</code><span class="sig-paren">(</span><em>amplitude</em>, <em>mean</em>, <em>stddev</em>, <em>fwhmg=0</em>, <em>raw_width=None</em>, <em>sample_loc=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#IdentifiedTarget"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.IdentifiedTarget" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Allows for easy storage and manipulation of the targets found.</p>
+<dl class="method">
+<dt id="goodman_spec.process.IdentifiedTarget.print_all">
+<code class="descname">print_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#IdentifiedTarget.print_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.IdentifiedTarget.print_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints all the attributes of the identified target</p>
+<p>This is mostly for debugging purposes.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="goodman_spec.process.Process">
+<em class="property">class </em><code class="descclassname">goodman_spec.process.</code><code class="descname">Process</code><span class="sig-paren">(</span><em>sci_obj</em>, <em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#Process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.Process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Set of tools for extracting Goodman High Throughput Spectrograph data.</p>
+<p>This class needs a path parsed as an attribute of args (arguments object) and a ScienceObject object.
+The ScienceObject class is defined in the module redspec.py and in principle the current module was made to service
+it. This class has been tested to work very well independently given that you successfully provide the previously
+mentioned ScienceObject and respective path to the data location.</p>
+<dl class="method">
+<dt id="goodman_spec.process.Process.extract">
+<code class="descname">extract</code><span class="sig-paren">(</span><em>traces</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#Process.extract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.Process.extract" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts the spectra and returns an stack of science data and lamps</p>
+<p>Apart of traces this function makes use of the class attribute region which contains a mask for the extraction
+zones identified different for science targets and for background zones. The background subtraction is only
+used for the science targets since it would not make sense to do it for lamps.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>traces</strong> (<em>list</em>) – Contains a list per each science target previously detected. Every list has two elements
+that are: Chebyshev fitted to spectrum peaks along the full extension of the spectrum or along the
+full length of the dispersion axis.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">The sci_pack is list that contains two main elements. The first contains all the data and
+the second contains the headers in the same order. In the first element, the first is always the science
+target and the following are lamps that are not calibrated yet. Again, the same order for the headers.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">sci_pack (list)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.process.Process.identify_spectra">
+<code class="descname">identify_spectra</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#Process.identify_spectra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.Process.identify_spectra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify spectra in 2D (image) data</p>
+<p>This method takes a sample of the image and averages it in the dispersion direction, then analyze the spatial
+direction in search for peaks and count them as candidates to targets. In order to validate the target it will
+do a Voigt profile fit and if the new center deviates too much from the original location it will be discarded.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Each element being and IdentifiedTarget instance</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">identified_targets (list)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.process.Process.mask">
+<code class="descname">mask</code><span class="sig-paren">(</span><em>mask_min</em>, <em>mask_max</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#Process.mask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.Process.mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>Masks the region that will be extracted</p>
+<p>The class Process has the attribute region (self.region) which is a section across the spatial direction of the
+image being processed. It is filled with ones (1) meaning that is _free <a href="#id1"><span class="problematic" id="id2">zone_</span></a>. Every time a new science
+target is found a mask will be created with -1 values. This type of mask has priority over all the rest.
+For every science target two background extraction zones are defined and masked with 0 but if they
+interfere with another science target they will be ignored.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mask_min</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Starting point to the region to be masked</li>
+<li><strong>mask_max</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Ending point to the region to be masked</li>
+<li><strong>value</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Value to be replaced. -1 is for science targets and 0 for background regions.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if the masking suceeds or false if it fails.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/2/library/constants.html#True" title="(in Python v2.7)">True</a> or <a class="reference external" href="https://docs.python.org/2/library/constants.html#False" title="(in Python v2.7)">False</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.process.Process.trace">
+<code class="descname">trace</code><span class="sig-paren">(</span><em>targets</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#Process.trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.Process.trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the trace of a spectrum given an initial location</p>
+<p>From the input data it finds the location of the spectrum in the image and an approximate width of six sigmas,
+with that information it takes a sample of the data just covering those limits to speed up the process.
+It takes about fifty sub-samples along the dispersion direction with a width of fifty pixels each.
+All the parameters can be changed with the variables half_n_sigma, ends_pix_spacing, n_samples and
+sample_width variables. The sub-samples are flattened along the dispersion direction using numpy.median and
+the location of the maximum value is recorded. Alternatively is possible to do a gaussian fit but my tests
+suggest is not much what you earn with this now is disabled by default. Enable it by changing do_gaussian_fit to
+True. Once there is a list of maximum locations a Chebyshev 1D of second order is fitted to define the trace.
+The Chebyshev function is defined for all the range of pixels in the dispersion direction of the image.
+This method also mask the regions that will be extracted as science target (or spectrum) and the regions
+that will be used for background subtractions. At first two regions are defined for each science target
+at each side by an offset defined by the background_offset variable and the same width as the science target’s
+aperture. If there are background subtraction regions that fall into a science target they will be ignored.
+In that case only one background region will be used.
+If both subtraction regions are valid they will be averaged and then subtracted.
+If no background region are valid, no background subtraction will happen.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It is not worth doing gaussian fits to the sub samples since it will not improve the result. The only case
+this might be useful is the case when someone does an interpolation along the spatial direction.</p>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>targets</strong> (<em>list</em>) – Each element is a class that stores the parameters of the gaussian fitted to the data in
+previous steps. This data tells the location in the image of the target or targets.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>Every element is a list with two elements. The first is the fitted Chebyshev and the</dt>
+<dd>second and last is the width to be extracted.</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">traces (list)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="goodman_spec.process.SciencePack">
+<em class="property">class </em><code class="descclassname">goodman_spec.process.</code><code class="descname">SciencePack</code><a class="reference internal" href="_modules/goodman_spec/process.html#SciencePack"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.SciencePack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Science data packaging</p>
+<p>This class is designed to work as a packer of extracted data. The attributes are separated list for data, headers
+lamps data and lamps header. Their only matching mechanism is their index. therefore if you have added three science
+spectra and two comparison lamps, in order to get, say, de second one, you would have to get SciencePack.data[1]
+SciencePack.headers[1]. The same thing for the lamps.</p>
+<dl class="method">
+<dt id="goodman_spec.process.SciencePack.add_data">
+<code class="descname">add_data</code><span class="sig-paren">(</span><em>new_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#SciencePack.add_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.SciencePack.add_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends science data</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.process.SciencePack.add_header">
+<code class="descname">add_header</code><span class="sig-paren">(</span><em>new_header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#SciencePack.add_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.SciencePack.add_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends science header</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.process.SciencePack.add_lamp">
+<code class="descname">add_lamp</code><span class="sig-paren">(</span><em>new_lamp</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#SciencePack.add_lamp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.SciencePack.add_lamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends comparison lamp data</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.process.SciencePack.add_lamp_header">
+<code class="descname">add_lamp_header</code><span class="sig-paren">(</span><em>new_lamp_header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#SciencePack.add_lamp_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.SciencePack.add_lamp_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends comparison lamp header</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.process.SciencePack.check_consistency">
+<code class="descname">check_consistency</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/process.html#SciencePack.check_consistency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.process.SciencePack.check_consistency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that all stored data is consistent</p>
+<p>There should be the same number of _data_ and their respective
+_headers_, the same for _lamps_data_ and _lamps_headers_</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-goodman_spec.redspec">
+<span id="goodman-spec-redspec-module"></span><h2>goodman_spec.redspec module<a class="headerlink" href="#module-goodman_spec.redspec" title="Permalink to this headline">¶</a></h2>
+<p>Pipeline for GOODMAN spectra Extraction.</p>
+<p>This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded,
+etc. that match the &lt;pattern&gt; in the source folder, then classify them in two
+groups: Science or Lamps. For science images, finds the spectrum or spectra and
+traces it doing some fit.
+Simon Torres 2016-06-28</p>
+<dl class="class">
+<dt id="goodman_spec.redspec.MainApp">
+<em class="property">class </em><code class="descclassname">goodman_spec.redspec.</code><code class="descname">MainApp</code><span class="sig-paren">(</span><em>args=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/redspec.html#MainApp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.redspec.MainApp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Defines and initialize all important variables for processing the data</p>
+<p>The MainApp class controls the way the night is organize to its further
+processing. It also sets the appropriate parameters that will allow for a
+smooth working in all the other modules.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="goodman_spec.redspec.get_args">
+<code class="descclassname">goodman_spec.redspec.</code><code class="descname">get_args</code><span class="sig-paren">(</span><em>arguments=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/redspec.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.redspec.get_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles the argparse library and returns the arguments</p>
+<p>The possible arguments to be used are:</p>
+<dl class="docutils">
+<dt>–data-path: has to be the source directory, where the data (images) is.</dt>
+<dd>The location is <cite>self.source</cite> and the default value is ./</dd>
+<dt>–proc-path: is the destination where all new files/data will be</dt>
+<dd>placed. The location is <cite>self.destiny</cite> and the default value is ./</dd>
+<dt>–search-pattern: the pattern that matches the reduced data that</dt>
+<dd>will be processed. The location is <cite>self.pattern</cite> default value is
+fc_</dd>
+</dl>
+<p>–interactive: Interactive Wavelength Solution. Enabled by default
+–output-prefix: Prefix to use to name wavelength calibrated spectrum
+–extraction: Spectrum extraction type. Simple or optimal.
+–reference-files: Directory of reference files location
+–debug: Show plots for intermediate steps. Also prints more messages.
+–log-to-file: Write the log to a file.
+–save-plots: Save all plots ina directory
+–plot-results: Show a plot of the wavelength calibrated data at the</p>
+<blockquote>
+<div>end.</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An object that contains all the variables parsed through the argument
+system</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-goodman_spec.simulator">
+<span id="goodman-spec-simulator-module"></span><h2>goodman_spec.simulator module<a class="headerlink" href="#module-goodman_spec.simulator" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="goodman_spec.simulator.DataSimulator">
+<em class="property">class </em><code class="descclassname">goodman_spec.simulator.</code><code class="descname">DataSimulator</code><span class="sig-paren">(</span><em>data_dimensions=1</em>, <em>x_size=None</em>, <em>y_size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/simulator.html#DataSimulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.simulator.DataSimulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="goodman_spec.simulator.intensity">
+<code class="descclassname">goodman_spec.simulator.</code><code class="descname">intensity</code><span class="sig-paren">(</span><em>axis</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/simulator.html#intensity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.simulator.intensity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="goodman_spec.simulator.make_2d_spectra">
+<code class="descclassname">goodman_spec.simulator.</code><code class="descname">make_2d_spectra</code><span class="sig-paren">(</span><em>separation_fwhm=0</em>, <em>n_targets=1</em>, <em>fwhm=8.0</em>, <em>intens=0.0</em>, <em>noise_level=1.0</em>, <em>plots=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/simulator.html#make_2d_spectra"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.simulator.make_2d_spectra" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-goodman_spec.wavelength">
+<span id="goodman-spec-wavelength-module"></span><h2>goodman_spec.wavelength module<a class="headerlink" href="#module-goodman_spec.wavelength" title="Permalink to this headline">¶</a></h2>
+<p>Contains the tools to produce a wavelength solution</p>
+<p>This module gets the extracted data to produce a wavelength solution, linearize
+the spectrum and write the solution to the image’s header following the FITS
+standard.</p>
+<dl class="class">
+<dt id="goodman_spec.wavelength.WavelengthCalibration">
+<em class="property">class </em><code class="descclassname">goodman_spec.wavelength.</code><code class="descname">WavelengthCalibration</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Wavelength Calibration Class</p>
+<p>The WavelengthCalibration class is instantiated for each of the science
+images, which are treated as a “science object”. In this first release it
+can find a wavelength solution for a given comparison lamp using an
+interactive GUI based on Matplotlib. Although it works very good, for the
+next release there is a plan for creating an independent GUI based on QT in
+order to work better in different screen sizes and other topic such as
+showing warnings, messages and help.</p>
+<p>This class takes 1D spectrum with no wavelength calibration and returns fits
+files with wavelength solutions using the FITS standard for linear
+solutions. Goodman spectra are slightly non-linear therefore they are
+linearized and smoothed before they are returned for the user.</p>
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.add_wavelength_solution">
+<code class="descname">add_wavelength_solution</code><span class="sig-paren">(</span><em>new_header</em>, <em>spectrum</em>, <em>original_filename</em>, <em>evaluation_comment=None</em>, <em>index=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.add_wavelength_solution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.add_wavelength_solution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add wavelength solution to the new FITS header</p>
+<p>Defines FITS header keyword values that will represent the wavelength
+solution in the header so that the image can be read in any other
+astronomical tool. (e.g. IRAF)</p>
+<p class="rubric">Notes</p>
+<p>This method also saves the data to a new FITS file, This should be
+in separated methods to have more control on either process.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>new_header</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – An Astropy header object</li>
+<li><strong>spectrum</strong> (<em>Array</em>) – A numpy array that corresponds to the processed</li>
+<li><strong>data</strong> – </li>
+<li><strong>original_filename</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Original Image file name</li>
+<li><strong>evaluation_comment</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A comment with information regarding the</li>
+<li><strong>of the wavelength solution</strong> (<em>quality</em>) – </li>
+<li><strong>index</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – If in one 2D image there are more than one target the</li>
+<li><strong>represents the target number.</strong> (<em>index</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">An Astropy header object. Although not
+necessary since there is no further processing</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">new_header (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)">object</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.automatic_wavelength_solution">
+<code class="descname">automatic_wavelength_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.automatic_wavelength_solution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.automatic_wavelength_solution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds a Wavelength Solution Automatically</p>
+<p>The pipeline includes a set of comparison lamps already wavelength
+calibrated that will be used as templates for cross-matching incoming
+comparison lamps taken in the same conditions (i.e. same elements,
+grating, mode and ideally slit).</p>
+<p>It will first find the suitable comparison lamp and if it succeeds it
+will load its wavelength solution creating a wavelength axis. Then it
+will identify the lines in the lamp we want to calibrate, there is no
+need to load this lamp since is an attribute of the class and has been
+already extracted. For each identified line will cut sub-samples of the
+template reference lamp and the new lamp and then will do a cross
+correlation to find the shift in pixels. The line’s pixel value will be
+stored as well as the wavelength value of pixel_value +
+cross_correlation_value using the mathematical model of the template
+comparison lamp. The cross correlation value will also be stored and
+will be used as a first order filter by doing a sigma clip discarding
+large mismatch but this is not enough since there are some cases where
+the cross correlation collection does not have a clear distribution and
+sigma clip does not work so after this first order filtering it will
+create a wavelength solution. Using the new wavelength solution a new
+list of the difference in Angstrom will be created as the difference of
+the reference Angstrom value minus the Angstrom value corresponding to
+the line center using the mathematical model of the first solution.
+This will be sigma clipped once more and the values left out removed
+and finally a new solution will be calculated.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">In case it is not possible to find a suitable template lamp.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)">None</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.cross_correlation">
+<code class="descname">cross_correlation</code><span class="sig-paren">(</span><em>reference</em>, <em>new_array</em>, <em>mode=u’full’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.cross_correlation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.cross_correlation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do cross correlation to two arrays</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>reference</strong> (<em>Numpy.Array</em>) – Reference array.</li>
+<li><strong>new_array</strong> (<em>Numpy.Array</em>) – Array to be matched.</li>
+<li><strong>mode</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Correlation mode for <cite>scipy.signal.correlate</cite>.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Shift value in pixels.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">correlation_value (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)">int</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.display_help_text">
+<code class="descname">display_help_text</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.display_help_text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.display_help_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows static text on the top right subplot</p>
+<p>This will print static help text on the top right subplot of the
+interactive window.</p>
+<p class="rubric">Notes</p>
+<p>This is really hard to format and having a proper GUI should help
+to have probably richer formatted text on the screen.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.display_onscreen_message">
+<code class="descname">display_onscreen_message</code><span class="sig-paren">(</span><em>message=u”</em>, <em>color=u’red’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.display_onscreen_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.display_onscreen_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses the fourth subplot to display a message</p>
+<p>Displays a warning message on the bottom right subplot of the
+interactive window. It is capable to break down the message in more
+than one line if necessary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>message</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The message to be displayed</li>
+<li><strong>color</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – Color name for the font’s color</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.evaluate_solution">
+<code class="descname">evaluate_solution</code><span class="sig-paren">(</span><em>plots=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.evaluate_solution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.evaluate_solution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate the Root Mean Square Error of the solution</p>
+<p>Once the wavelength solution is obtained it has to be evaluated. The
+line centers found for the raw comparison lamp will be converted to,
+according to the new solution, angstrom. Then for each line the closest
+reference line value is obtained. The difference is stored. Then this
+differences are cleaned by means of a sigma clipping method that will
+rule out any outlier or any line that is not well matched. Then, using
+the sigma clipped differences the Root Mean Square error is calculated.</p>
+<p>It also creates a plot in the bottom right subplot of the interactive
+window, showing an scatter plot plus some information regarding the
+quality of the fit.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Whether to create the plot or not</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Contains three elements: rms_error (float),
+npoints (int), n_rejections (int)</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">results (list)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.find_more_lines">
+<code class="descname">find_more_lines</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.find_more_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.find_more_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to add more lines given that a wavelength solution already
+exists</p>
+<p>This method is part of the interactive wavelength solution mechanism.
+If a wavelength solution exist it uses the line centers in pixels to
+estimate their respective wavelength and then search for the closest
+value in the list of reference lines for the elements in the comparison
+lamp. Then it filters the worst of them by doing sigma clipping.
+Finally it adds them to the class’ attributes that contains the list of
+reference points.</p>
+<p>Better results are obtained if the solution is already decent. Visual
+inspection also improves final result.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.fit_pixel_to_wavelength">
+<code class="descname">fit_pixel_to_wavelength</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.fit_pixel_to_wavelength"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.fit_pixel_to_wavelength" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does the fit to find the wavelength solution</p>
+<p>Once you have four data points on each side (raw and reference or pixel
+and angstrom) it calculates the fit using a Chebyshev model of third
+degree. This was chosen because it worked better compared to the rest.
+There is a slight deviation from linearity in all Goodman data,
+therefore a linear model could not be used, also is said that a Spline
+of third degree is “too flexible” which I also experienced and since the
+deviation from linearity is not extreme it seemed that it was not
+necessary to implement.</p>
+<p>This method checks that the data that will be used as input to calculate
+the fit have the same dimensions and warns the user in case is not.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">An empty return is created to finish the execution of
+the method when a fit will not be possible</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)">None</a> (<a class="reference external" href="https://docs.python.org/2/library/constants.html#None" title="(in Python v2.7)">None</a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.get_calibration_lamp">
+<code class="descname">get_calibration_lamp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.get_calibration_lamp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.get_calibration_lamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the name of the calibration lamp used for obtain the solution</p>
+<p>The filename of the lamp used to obtain must go to the header for
+documentation</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Filename of calibration lamp used to obtain
+wavelength solution</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">calibration_lamp (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)">str</a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.get_lines_in_lamp">
+<code class="descname">get_lines_in_lamp</code><span class="sig-paren">(</span><em>ccddata_lamp=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.get_lines_in_lamp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.get_lines_in_lamp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Identify peaks in a lamp spectrum</p>
+<p>Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission
+lines then it calls the recenter_lines method that will recenter them
+using a “center of mass”, because, not always the maximum value (peak)
+is the center of the line.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>A common list containing pixel values at</dt>
+<dd>approximate location of lines.</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">lines_candidates (list)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.get_spectral_characteristics">
+<code class="descname">get_spectral_characteristics</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.get_spectral_characteristics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.get_spectral_characteristics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates some Goodman’s specific spectroscopic values.</p>
+<p>From the Header value for Grating, Grating Angle and Camera Angle it is
+possible to estimate what are the limits wavelength values and central
+wavelength. It was necessary to add offsets though, since the formulas
+provided are slightly off. The values are only an estimate.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>Contains the following parameters:</dt>
+<dd>center: Center Wavelength
+blue: Blue limit in Angstrom
+red: Red limit in Angstrom
+alpha: Angle
+beta: Angle
+pix1: Pixel One
+pix2: Pixel Two</dd>
+</dl>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">spectral_characteristics (<a class="reference external" href="https://docs.python.org/2/library/stdtypes.html#dict" title="(in Python v2.7)">dict</a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.get_wsolution">
+<code class="descname">get_wsolution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.get_wsolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.get_wsolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the mathematical model of the wavelength solution</p>
+<p>The wavelength solution is a callable mathematical function from
+astropy.modeling.models By obtaining this solution it can be applied to
+a pixel axis.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">A callable mathematical function</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">wsolution (<a class="reference external" href="https://docs.python.org/2/library/functions.html#callable" title="(in Python v2.7)">callable</a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.interactive_wavelength_solution">
+<code class="descname">interactive_wavelength_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.interactive_wavelength_solution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.interactive_wavelength_solution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the wavelength solution interactively</p>
+<p>Using matplotlib graphical interface we developed an interactive method
+to find the wavelength solution. It is capable of tracing the slight
+deviation from linearity of the data. It uses a combination of
+previously wavelength calibrated comparison lamp and laboratory line
+centers. Those two are combined in a single plot, bottom left, to help
+to visually identify their counterparts in the raw data and viceversa.
+In the other hand, raw data is previously processed to find the lines
+present. They are stored as a list and used as the correct center of
+the line. Once you select a line, the centroid will be calculated and
+the closest line will be returned.</p>
+<p>This method generates a GUI like plot using matplolib, capable of
+handling keyboard and click events. The window consist of four plots:</p>
+<p>In the top left side will be a wide plot named raw data. This is the
+uncalibrated comparison lamp associated to the science image that is
+being processed.</p>
+<p>Then in the bottom left, there is the reference plot, where a previously
+calibrated lamp is displayed along with the reference line values.</p>
+<p>In the top right side there is a permanent help text with the basic
+functions plus a short description.</p>
+<p>And finally in the bottom right side you will find a more dynamic plot.
+It will show a zoomed line when you mark one with a click, a scatter
+plot when you do a fit to the recorded marks and also will show warnings
+in case something is going wrong.</p>
+<p>For future release there is the plan to put all this method as a new
+class even with an indepentend QT GUI.</p>
+<p class="rubric">Notes</p>
+<p>This method uses the GTK3Agg backend, it will not work with other.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.interpolate">
+<code class="descname">interpolate</code><span class="sig-paren">(</span><em>spectrum</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.interpolate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.interpolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an interpolated version of the input spectrum</p>
+<p>This method creates an interpolated version of the input array, it is
+used mainly for a spectrum but it can also be used with any
+unidimensional array, assuming you are happy with the interpolation_size
+attribute defined for this class. The reason for doing interpolation is
+that it allows to find the lines and its respective center more
+precisely. The default interpolation size is 200 (two hundred) points.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>spectrum</strong> (<a class="reference external" href="https://docs.python.org/2/library/array.html#module-array" title="(in Python v2.7)"><em>array</em></a>) – an uncalibrated spectrum or any unidimensional</li>
+<li><strong>array.</strong> – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Two dimensional array containing x-axis and interpolated array.
+The x-axis preserves original pixel values.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.key_pressed">
+<code class="descname">key_pressed</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.key_pressed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.key_pressed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Key event handler</p>
+<p>There are several key events that need to be taken care of.
+See a brief description of each one of them below:</p>
+<p>F1 or ?: Prints a help message
+F2 or f: Fit wavelength solution model.
+F3 or a: Find new lines.
+F4: Evaluate solution
+F6 or l: Linearize data although this is done automatically after the
+wavelength function is fit
+d: deletes closest point
+ctrl+d: deletes all recorded marks
+ctrl+z: Reverts the action of F3 or a.
+Middle Button Click or m: records data location.
+Enter: Close figure and apply solution if exists.
+Shift+Enter: Close the program with sys.exit(0)</p>
+<p class="rubric">Notes</p>
+<p>This method must be simplified</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Key pressed event</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.line_search_method">
+<code class="descname">line_search_method</code><em class="property"> = None</em><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.line_search_method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instrument configuration and spectral characteristics</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.linearize_spectrum">
+<code class="descname">linearize_spectrum</code><span class="sig-paren">(</span><em>data</em>, <em>plots=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.linearize_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.linearize_spectrum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produces a linearized version of the spectrum</p>
+<p>Storing wavelength solutions in a FITS header is not simple at all for
+non-linear solutions therefore is easier for the final user and for the
+development code to have the spectrum linearized. It first finds a
+spline representation of the data, then creates a linear wavelength axis
+(angstrom) and finally it resamples the data from the spline
+representation to the linear wavelength axis.</p>
+<p>It also applies a median filter of kernel size three to smooth the
+linearized spectrum. Sometimes the splines produce funny things when
+the original data is too steep.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data</strong> (<em>Array</em>) – The non-linear spectrum</li>
+<li><strong>plots</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – Whether to show the plots or not</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Contains two elements: Linear wavelength axis
+and the smoothed linearized data itself.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">linear_data (list)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.on_click">
+<code class="descname">on_click</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.on_click"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.on_click" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handles Click events for Interactive Mode</p>
+<p>Calls the method register_mark</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Click event</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.pixelcenter">
+<code class="descname">pixelcenter</code><em class="property"> = None</em><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.pixelcenter" title="Permalink to this definition">¶</a></dt>
+<dd><p>this data must come parsed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.plot_raw_over_reference">
+<code class="descname">plot_raw_over_reference</code><span class="sig-paren">(</span><em>remove=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.plot_raw_over_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.plot_raw_over_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Overplot raw data over reference lamp using current wavelength
+solution model</p>
+<p>Once the wavelength solution is obtained this method is called to apply
+the already mentioned solution to the raw data and then overplot it on
+the reference lamp plot. This is very useful to have a visual idea of
+how far or close the solution is.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>remove</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) – True or False depending whether you want to remove</li>
+<li><strong>overplotted lamp</strong><strong> or </strong><strong>not</strong> (<em>the</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.predicted_wavelength">
+<code class="descname">predicted_wavelength</code><span class="sig-paren">(</span><em>pixel</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.predicted_wavelength"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.predicted_wavelength" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.recenter_broad_lines">
+<code class="descname">recenter_broad_lines</code><span class="sig-paren">(</span><em>lamp_data</em>, <em>lines</em>, <em>slit_size</em>, <em>order</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.recenter_broad_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.recenter_broad_lines" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>lamp_data</strong> – </li>
+<li><strong>lines</strong> – </li>
+<li><strong>slit_size</strong> – </li>
+<li><strong>order</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.recenter_line_by_data">
+<code class="descname">recenter_line_by_data</code><span class="sig-paren">(</span><em>data_name</em>, <em>x_data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.recenter_line_by_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.recenter_line_by_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds a better center for a click-selected line</p>
+<p>This method is called by another method that handles click events. An
+argument is parsed that will tell which plot was the clicked and what is
+the x-value in data coordinates. Then the closest pixel center will be
+found and from there will extract a 20 pixel wide sample of the data
+(this could be a future improvement the width of the extraction should
+depend on the FWHM of the lines). The sample of the data is used to
+calculate a centroid (center of mass) which is a good approximation but
+could be influenced by data shape or if the click was too far
+(unquantified yet). That is why for the reference data, a database of
+laboratory line center will be
+used and for raw data the line centers are calculated earlier in the
+process, independently of any human input.</p>
+<p>It also will plot the sample, the centroid and the reference line center
+at the fourth subplot, bottom right corner.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data_name</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – ‘reference’ or ‘raw-data’ is where the click was</li>
+<li><strong>done</strong> – </li>
+<li><strong>x_data</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) – click x-axis value in data coordinates</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The value the line center that will
+be used later to do the wavelength fit</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">reference_line_value (<a class="reference external" href="https://docs.python.org/2/library/functions.html#float" title="(in Python v2.7)">float</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.recenter_lines">
+<code class="descname">recenter_lines</code><span class="sig-paren">(</span><em>data</em>, <em>lines</em>, <em>plots=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.recenter_lines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.recenter_lines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the centroid of an emission line</p>
+<p>For every line center (pixel value) it will scan left first until the
+data stops decreasing, it assumes it is an emission line and then will
+scan right until it stops decreasing too. Defined those limits it will</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> – </li>
+<li><strong>lines</strong> – </li>
+<li><strong>plots</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.red_limit">
+<code class="descname">red_limit</code><em class="property"> = None</em><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.red_limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interactive wavelength finding</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.register_mark">
+<code class="descname">register_mark</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.register_mark"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.register_mark" title="Permalink to this definition">¶</a></dt>
+<dd><p>Marks a line</p>
+<p>Detects where the click was done or m-key was pressed and calls the
+corresponding method. It handles the middle button click and m-key being
+pressed. There are two regions of interest as for where a click was
+done. The raw and reference data respectively. For any of such regions
+it will call the method that recenter the line and once the desired
+value is returned it will be appended to the list that contains all the
+correspondent line positions, raw (pixels) and reference (angstrom)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>event</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – Click or m-key pressed event</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthCalibration.update_marks_plot">
+<code class="descname">update_marks_plot</code><span class="sig-paren">(</span><em>action=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthCalibration.update_marks_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthCalibration.update_marks_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the points that represent marks on lamp plots</p>
+<p>When you mark a line a red dot marks the position of the line at the
+exact y location of the click, for the x location it will use the value
+obtained by means of the recentering method. There are three possible
+actions: Update the reference plot’s click, the raw data marks or
+delete them all.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>action</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – A string that could be ‘reference’, ‘raw_data’ or</li>
+<li><strong>depending on the action desired</strong> (<em>'delete'</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="goodman_spec.wavelength.WavelengthSolution">
+<em class="property">class </em><code class="descclassname">goodman_spec.wavelength.</code><code class="descname">WavelengthSolution</code><span class="sig-paren">(</span><em>solution_type=None</em>, <em>model_name=None</em>, <em>model_order=0</em>, <em>model=None</em>, <em>ref_lamp=None</em>, <em>eval_comment=u”</em>, <em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthSolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthSolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Contains all relevant information of a given wavelength solution</p>
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthSolution.check_compatibility">
+<code class="descname">check_compatibility</code><span class="sig-paren">(</span><em>header=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthSolution.check_compatibility"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthSolution.check_compatibility" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks compatibility of new data</p>
+<p>A wavelength solution is stored as an object (this class). As an
+attribute of this class there is a dictionary that contains critical
+parameters of the spectrum with which the wavelength solution was found.
+In order to apply the same solution to another spectrum its header has
+to be parsed and then the parameters are compared in a hierarchic way.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><em>object</em></a>) – FITS header object from astropy.io.fits</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True or False</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wavelength.WavelengthSolution.set_solution_name">
+<code class="descname">set_solution_name</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthSolution.set_solution_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthSolution.set_solution_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="goodman_spec.wavelength.WavelengthSolution.set_spectral_features">
+<em class="property">static </em><code class="descname">set_spectral_features</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#WavelengthSolution.set_spectral_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.WavelengthSolution.set_spectral_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates dictionary that defines the instrument configuration</p>
+<p>Both Blue and Red Camera produce slightly different FITS headers being
+the red camera the one that provides more precise and better
+information. This method will recognize the camera and create the
+dictionary accordingly.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>header</strong> – </td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="goodman_spec.wavelength.process_spectroscopy_data">
+<code class="descclassname">goodman_spec.wavelength.</code><code class="descname">process_spectroscopy_data</code><span class="sig-paren">(</span><em>data_container</em>, <em>args</em>, <em>extraction_type=u’simple’</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wavelength.html#process_spectroscopy_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wavelength.process_spectroscopy_data" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data_container</strong> – </li>
+<li><strong>args</strong> – </li>
+<li><strong>extraction_type</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-goodman_spec.wsbuilder">
+<span id="goodman-spec-wsbuilder-module"></span><h2>goodman_spec.wsbuilder module<a class="headerlink" href="#module-goodman_spec.wsbuilder" title="Permalink to this headline">¶</a></h2>
+<p>Set of class and method to handle wavelength solutions</p>
+<dl class="class">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions">
+<em class="property">class </em><code class="descclassname">goodman_spec.wsbuilder.</code><code class="descname">ReadMathFunctions</code><span class="sig-paren">(</span><em>wcs_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions.chebyshev">
+<code class="descname">chebyshev</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions.chebyshev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions.chebyshev" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions.get_solution">
+<code class="descname">get_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions.get_solution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions.get_solution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions.linear_solution">
+<code class="descname">linear_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions.linear_solution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions.linear_solution" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions.log_linear">
+<em class="property">static </em><code class="descname">log_linear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions.log_linear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions.log_linear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions.non_linear_cspline">
+<code class="descname">non_linear_cspline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions.non_linear_cspline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions.non_linear_cspline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cubic Spline</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions.non_linear_legendre">
+<code class="descname">non_linear_legendre</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions.non_linear_legendre"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions.non_linear_legendre" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions.non_linear_lspline">
+<code class="descname">non_linear_lspline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions.non_linear_lspline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions.non_linear_lspline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="goodman_spec.wsbuilder.ReadMathFunctions.none">
+<em class="property">static </em><code class="descname">none</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadMathFunctions.none"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadMathFunctions.none" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="goodman_spec.wsbuilder.ReadWavelengthSolution">
+<em class="property">class </em><code class="descclassname">goodman_spec.wsbuilder.</code><code class="descname">ReadWavelengthSolution</code><span class="sig-paren">(</span><em>header</em>, <em>data</em>, <em>reference=u”</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadWavelengthSolution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadWavelengthSolution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Read wavelength solutions from a fits header</p>
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.ReadWavelengthSolution.linear_solution">
+<code class="descname">linear_solution</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadWavelengthSolution.linear_solution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadWavelengthSolution.linear_solution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Linear solution reader</p>
+<p>This method read the apropriate keywords and defines a linear wavelength solution</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Callable wavelength solution model</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">solution (class)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.ReadWavelengthSolution.non_linear_solution">
+<code class="descname">non_linear_solution</code><span class="sig-paren">(</span><em>dimension</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#ReadWavelengthSolution.non_linear_solution"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.ReadWavelengthSolution.non_linear_solution" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non linear solutions reader</p>
+<p class="rubric">Notes</p>
+<p>Not all kind of non-linear solutions are implemented</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dimension</strong> (<a class="reference external" href="https://docs.python.org/2/library/functions.html#int" title="(in Python v2.7)"><em>int</em></a>) – Solutions can be multi-dimensionals, this method is called for each one of them.</td>
+</tr>
+</tbody>
+</table>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="goodman_spec.wsbuilder.WavelengthFitter">
+<em class="property">class </em><code class="descclassname">goodman_spec.wsbuilder.</code><code class="descname">WavelengthFitter</code><span class="sig-paren">(</span><em>model=u’chebyshev’</em>, <em>degree=3</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#WavelengthFitter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.WavelengthFitter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/2/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Contains methods to do pixel to angstrom fit</p>
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.WavelengthFitter.model_constructor">
+<code class="descname">model_constructor</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#WavelengthFitter.model_constructor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.WavelengthFitter.model_constructor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates callable mathematical model</p>
+<p>It can do chebyshev and linear model only but is easy to implement others.
+Chebyshev 3rd degree is by default since provided the best results for Goodman data.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="goodman_spec.wsbuilder.WavelengthFitter.ws_fit">
+<code class="descname">ws_fit</code><span class="sig-paren">(</span><em>physical</em>, <em>wavelength</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/goodman_spec/wsbuilder.html#WavelengthFitter.ws_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#goodman_spec.wsbuilder.WavelengthFitter.ws_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wavelength solution fit</p>
+<p>Takes a list of pixel values and its respective wavelength values to do a fit to
+the mathematical model defined with the class.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Fitted model</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">fitted_model (class)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-goodman_spec">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-goodman_spec" title="Permalink to this headline">¶</a></h2>
+<p>Goodman Spectroscopic Tools</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">goodman_spec package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-goodman_spec.id_and_extract">goodman_spec.id_and_extract module</a></li>
+<li><a class="reference internal" href="#module-goodman_spec.linelist">goodman_spec.linelist module</a></li>
+<li><a class="reference internal" href="#module-goodman_spec.process">goodman_spec.process module</a></li>
+<li><a class="reference internal" href="#module-goodman_spec.redspec">goodman_spec.redspec module</a></li>
+<li><a class="reference internal" href="#module-goodman_spec.simulator">goodman_spec.simulator module</a></li>
+<li><a class="reference internal" href="#module-goodman_spec.wavelength">goodman_spec.wavelength module</a></li>
+<li><a class="reference internal" href="#module-goodman_spec.wsbuilder">goodman_spec.wsbuilder module</a></li>
+<li><a class="reference internal" href="#module-goodman_spec">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/goodman_spec.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Goodman Pipelines 1.0b1 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Simon Torres.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>
