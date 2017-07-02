@@ -10,11 +10,5 @@ main:
     url: https://b1quint.github.io/goodman/install/
   - title: "Run"
     url: https://b1quint.github.io/goodman/run/
-  - title: "More"
-    url: https://b1quint.github.io/goodman/html/index.html
-  # - title: "Sample Posts"
-  #   url: /year-archive/
-  # - title: "Sample Collections"
-  #   url: /collection-archive/
-  # - title: "Sitemap"
-  #   url: /sitemap/
+  - title: "Sphix Docs"
+    url: https://b1quint.github.io/goodman/docs.html
