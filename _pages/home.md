@@ -9,7 +9,7 @@ header:
   caption:
 excerpt: 'The new pipeline to reduce data obtained with the Goodman Spectrograph,
           an instrument at the SOAR Telescope.<br /> <small>
-          <a href="/download/">Latest release v0.0.0</a></small><br /><br />
+          <a href="/download/">Latest release v1.0b1</a></small><br /><br />
           {::nomarkdown}
             <iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=b1quint&repo=goodman&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
             <iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=b1quint&repo=goodman&type=watch&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
@@ -48,12 +48,8 @@ Please let us know if you find any.
 My e-mail is storres [at] ctio noao edu.
 
 The Goodman High Throughput Spectrograph is an imaging spectrograph,
- if you wish to know more about the instrument please check the
- [SOAR website](http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph)
-
-To see full documentation please go to the GitHub hosted site for
-[Goodman](https://soar-telescope.github.io/goodman/)
-
+if you wish to know more about the instrument please check the
+[Goodman Page at the SOAR website](http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph).
 
 {% include feature_row id="intro" type="center" %}
 
