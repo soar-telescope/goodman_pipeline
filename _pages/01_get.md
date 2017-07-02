@@ -1,6 +1,6 @@
 ---
-layout: default
-permalink: /get/
+layout: archive
+permalink: /download/
 author_profile: false
 ---
 

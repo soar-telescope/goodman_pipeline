@@ -246,7 +246,7 @@ defaults:
       related: true
 
 # Adding the pages directory
-include: ['_pages']
+include: ['_pages','html']
 
 # Add a collection with the documents
 # collections:
