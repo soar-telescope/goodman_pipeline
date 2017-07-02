@@ -7,8 +7,8 @@ header:
   cta_label: "<i class='fa fa-download'></i> Install Now"
   cta_url: "/install/"
   caption:
-excerpt: 'A group created aiming for a friendly environment and designed to develop
-          of a new family of tools for data exploration in cosmology.<br /> <small>
+excerpt: 'The new pipeline to reduce data obtained with the Goodman Spectrograph,
+          an instrument at the SOAR Telescope.<br /> <small>
           <a href="/download/">Latest release v0.0.0</a></small><br /><br />
           {::nomarkdown}
             <iframe style="display: inline-block;" src="https://ghbtns.com/github-btn.html?user=b1quint&repo=goodman&type=star&count=true&size=large" frameborder="0" scrolling="0" width="160px" height="30px"></iframe>
