@@ -1,7 +1,6 @@
 ---
-layout: archive
-title: "Download"
-permalink: /download/
+layout: default
+permalink: /get/
 author_profile: false
 ---
 
