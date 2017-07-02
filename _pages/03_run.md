@@ -3,4 +3,4 @@ layout: archive
 permalink: /run/
 ---
 
-# Run!
+This is where we describe how to run Goodman Pipeline.
