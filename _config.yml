@@ -249,12 +249,11 @@ defaults:
 include: ['_pages']
 
 # Add a collection with the documents
-collections:
-  - scope:
-      path: "docs/"
-    values:
-      author_profile: false
-      read_time: false
-      comments: false
-      related: false
-
+# collections:
+#   - scope:
+#       path: "docs/"
+#     values:
+#       author_profile: false
+#       read_time: false
+#       comments: false
+#       related: false
