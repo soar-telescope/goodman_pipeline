@@ -6,6 +6,7 @@ import logging
 import matplotlib
 matplotlib.use('GTK3Agg')
 import os
+import shutil
 
 
 from .core import print_default_args
@@ -239,7 +240,15 @@ class MainApp(object):
                     log.warning('Reduced Data Path is not empty')
                     if self.args.auto_clean:
                         for _file in os.listdir(self.args.red_path):
-                            os.unlink(os.path.join(self.args.red_path, _file))
+                            try:
+                                os.unlink(os.path.join(self.args.red_path,
+                                                       _file))
+                            except OSError as error:
+                                log.warning('Removing Directory '
+                                            '{:s}'.format(_file))
+
+                                shutil.rmtree(os.path.join(self.args.red_path,
+                                                           _file))
 
                         log.info('Cleaned Reduced data directory:'
                                  ' {:s}'.format(self.args.red_path))
