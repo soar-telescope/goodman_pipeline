@@ -745,7 +745,9 @@ class ReferenceData(object):
         lamp_name = lamp_name.lower()
         # TODO (simon): Do this using ImageFileCollection
         try:
-            reference_lamp = os.path.join(self.args.reference_dir, self.lamps_file_list[lamp_name])
+            reference_lamp = os.path.join(self.args.reference_dir,
+                                          self.lamps_file_list[lamp_name])
+
             return reference_lamp
         except KeyError:
             log.error('Reference lamp %s does not exist', lamp_name)
@@ -760,8 +762,12 @@ class ReferenceData(object):
         Returns:
 
         """
-        criteria = ['slit', 'cam_targ', 'grt_targ', 'grating','object']
-        lamp_pandas_data_frame = self.ref_lamp_collection[self.ref_lamp_collection['object'] == header['object']]
+        criteria = ['slit', 'cam_targ', 'grt_targ', 'grating', 'object']
+
+        lamp_pandas_data_frame = self.ref_lamp_collection[
+            self.ref_lamp_collection['object'] == header['object']]
+
+        # print(lamp_pandas_data_frame)
         if len(lamp_pandas_data_frame) > 1:
             while len(lamp_pandas_data_frame) > 1:
                 # print(lamp_pandas_data_frame.file)
