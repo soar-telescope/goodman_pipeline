@@ -1,8 +1,7 @@
 # Goodman High Throughput Spectrograph
 **Important** This is a Beta Release Candidate version of this pipeline,
 although we have thoroughly tested it there might (and will) still be bugs.
-Please let us know if you find any.
-My e-mail is storres [at] ctio noao edu.
+Please let us know if you find any, writting to storres [at] ctio noao edu.
 
 The Goodman High Throughput Spectrograph is an imaging spectrograph,
  if you wish to know more about the instrument please check the 
@@ -27,7 +26,7 @@ done by _redspec_ and includes the following features:
 - [x] Trace the target
 - [x] Extract the target with background subtraction
 - [x] Find the wavelength Solution, interactive and automatically
-- [x] Linearize data (resample)
+- [x] Linearize data (resamples)
 - [x] Write wavelength solution to a FITS header
 - [x] Create a new file for the wavelength calibrated 1D spectrum
 
@@ -96,11 +95,13 @@ This pipeline uses [DCR](http://users.camk.edu.pl/pych/DCR/) developed by
 [Wojtek Pych](mailto:pych@camk.edu.pl) instead of `ccdproc.cosmicray_lacosmic` 
 because we got better results with `DCR`. Unfortunately you will have to compile
 it, I have successfully compiled it on Centos 7, Ubuntu 16.04, Linux Mint 18.1, 
-Solaris 11 and MacOS Sierra.
+Solaris 11 and MacOS Sierra. The pre-compiled versions are distributed with
+the package but it is not guaranteed they will work on your running platform.
 
 
 Follow [this link](http://users.camk.edu.pl/pych/DCR/) and you can follow the 
-instructions there. The same instructions are reproduced here.
+instructions there in order to get and compile the `dcr` code. 
+The same instructions are reproduced here.
 
 Download the `dcr.tar` file and untar it.
 ```shell
