@@ -395,7 +395,6 @@ class ImageProcessor(object):
                       'saturation limit.')
             return None, None
 
-
     def name_master_flats(self, header, group, target_name='', get=False):
         """
 

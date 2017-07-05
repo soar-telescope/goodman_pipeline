@@ -203,7 +203,16 @@ class NightOrganizer(object):
                 (data_collection['radeg'] == confs.iloc[i]['radeg']) &
                 (data_collection['decdeg'] == confs.iloc[i]['decdeg']))]
 
-            data_container.add_data_group(data_group)
+            group_obstype = data_group.obstype.unique()
+
+            if 'FLAT' in group_obstype and len(group_obstype) == 1:
+
+                data_container.add_day_flats(data_group)
+
+            else:
+                # Comparison lamps are processed as science data.
+                data_container.add_data_group(data_group)
+
         return data_container
 
     def imaging_night(self):
