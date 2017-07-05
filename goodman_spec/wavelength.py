@@ -1008,7 +1008,7 @@ class WavelengthCalibration(object):
 
             if xmin >= xmax:
                 continue
-            print(xmin, xmax, self.lamp_data.size)
+            # print(xmin, xmax, self.lamp_data.size)
             # TODO (simon): Convolve to match wider lines such as those from
             # TODO (cont): the slit of 5 arseconds
             ref_sample = reference_lamp_data.data[xmin:xmax]
@@ -1212,7 +1212,7 @@ class WavelengthCalibration(object):
             correlation_value (int): Shift value in pixels.
 
         """
-        print(reference, new_array)
+        # print(reference, new_array)
         cyaxis2 = new_array
         if float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) > 3:
 
