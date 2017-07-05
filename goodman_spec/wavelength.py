@@ -258,7 +258,12 @@ class WavelengthCalibration(object):
         log.info('Processing Science Target: {:s}'.format(ccd.header['OBJECT']))
         if comp_list is not None:
             for lamp_ccd in comp_list:
-                self.calibration_lamp = lamp_ccd.header['OFNAME']
+
+                try:
+                    self.calibration_lamp = lamp_ccd.header['OFNAME']
+                except KeyError:
+                    self.calibration_lamp = ''
+
                 self.lamp_data = lamp_ccd.data
                 self.raw_pixel_axis = range(len(self.lamp_data))
                 # self.raw_pixel_axis = range(len(self.lamp_data))
@@ -1001,7 +1006,9 @@ class WavelengthCalibration(object):
             xmax = int(min(round(line_value_pixel + half_width),
                            len(self.lamp_data)))
 
-            # print(xmin, xmax)
+            if xmin >= xmax:
+                continue
+            print(xmin, xmax, self.lamp_data.size)
             # TODO (simon): Convolve to match wider lines such as those from
             # TODO (cont): the slit of 5 arseconds
             ref_sample = reference_lamp_data.data[xmin:xmax]
@@ -1193,7 +1200,6 @@ class WavelengthCalibration(object):
                 plt.close()
                 # plt.close(self.i_fig)
 
-
     def cross_correlation(self, reference, new_array, mode='full'):
         """Do cross correlation to two arrays
 
@@ -1206,6 +1212,7 @@ class WavelengthCalibration(object):
             correlation_value (int): Shift value in pixels.
 
         """
+        print(reference, new_array)
         cyaxis2 = new_array
         if float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) > 3:
 
@@ -1223,12 +1230,15 @@ class WavelengthCalibration(object):
         else:
             gaussian_kernel = Gaussian1DKernel(stddev=2.)
             cyaxis1 = convolve(reference, gaussian_kernel)
-            # cyaxis2 = convolve(new_array, gaussian_kernel)
+            cyaxis2 = convolve(new_array, gaussian_kernel)
         # plt.plot(cyaxis1, color='k', label='Reference')
         # plt.plot(cyaxis2, color='r', label='New Array')
         # plt.plot(reference, color='g')
         # plt.show()
-        ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+        try:
+            ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+        except ValueError:
+            print(cyaxis1, cyaxis2)
         # print('Corr ', ccorr)
         max_index = np.argmax(ccorr)
 
