@@ -5,8 +5,8 @@ Instrument_type_Grating_Mode_filter_Lamp
  - goodman_comp_400_M2_GG455_HgAr.fits
 
 goodman_comp_600_UV_(lamp)
- - goodman_comp_600_BLUE_HgAr.fits
- - goodman_comp_600_BLUE_CuHeAr.fits
+ - goodman_comp_600-old_BLUE_HgAr.fits
+ - goodman_comp_600-old_BLUE_CuHeAr.fits
 goodman_comp_600_MID_GG385_(lamp)
 goodman_comp_600_RED_GG495_(lamp)
 
