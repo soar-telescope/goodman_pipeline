@@ -6,4 +6,3 @@ sandbox/*
 __pycache__/*
 .ipynb_checkpoints/*
 files.txt
-README.rst
