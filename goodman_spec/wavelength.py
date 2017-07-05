@@ -76,6 +76,9 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
         if 'OBJECT' in obstypes:
             object_group = spec_group[spec_group.obstype == 'OBJECT']
             # print(object_group)
+        if object_group is None:
+            log.error('There are no OBJECT files in this group.')
+            continue
         for spec_file in object_group.file.tolist():
             log.info('Processing Science File: {:s}'.format(spec_file))
             file_path = os.path.join(full_path, spec_file)
