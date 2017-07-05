@@ -19,8 +19,8 @@ goodman_comp_930_M6_OG570_(lamp)
 
 goodman_comp_1200_M0_(lamp)
 goodman_comp_1200_M1_(lamp)
-goodman_comp_1200_M2_(lamp)
-goodman_comp_1200_M3_(lamp)
+ - goodman_comp_1200_M2_CuHeAr.fits
+ - goodman_comp_1200_M3_CuHeAr.fits
 goodman_comp_1200_M4_GG455_(lamp)
  - goodman_comp_1200_M5_GG455_HgArNe.fits
 goodman_comp_1200_M6_GG495_(lamp)
