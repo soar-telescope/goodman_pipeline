@@ -104,7 +104,12 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                     fig.canvas.set_window_title('Extracted Data')
 
                     manager = plt.get_current_fig_manager()
-                    manager.window.maximize()
+
+                    if plt.get_backend() == u'GTK3Agg':
+                        manager.window.maximize()
+                    elif plt.get_backend() == u'Qt4Agg':
+                        manager.window.showMaximized()
+
                     for edata in extracted:
                         plt.plot(edata.data, label=edata.header['OBJECT'])
                         if comps != []:
@@ -337,7 +342,10 @@ class WavelengthCalibration(object):
                         fig.canvas.set_window_title(ccd.header['OFNAME'])
                         ax1 = fig.add_subplot(111)
                         manager = plt.get_current_fig_manager()
-                        manager.window.maximize()
+                        if plt.get_backend() == u'GTK3Agg':
+                            manager.window.maximize()
+                        elif plt.get_backend() == u'Qt4Agg':
+                            manager.window.showMaximized()
 
                         ax1.set_title(fig_title)
                         ax1.set_xlabel('Wavelength (Angstrom)')
@@ -1111,7 +1119,7 @@ class WavelengthCalibration(object):
         self.evaluate_solution()
 
         if self.args.plot_results or self.args.debug_mode:
-            plt.switch_backend('GTK3Agg')
+            plt.switch_backend('Qt4Agg')
             if self.i_fig is None:
                 self.i_fig = plt.figure(figsize=(15, 10))
                 self.i_fig.canvas.set_window_title(
@@ -1125,7 +1133,12 @@ class WavelengthCalibration(object):
             else:
                 plt.ioff()
             manager = plt.get_current_fig_manager()
-            manager.window.maximize()
+
+            if plt.get_backend() == u'GTK3Agg':
+                manager.window.maximize()
+            elif plt.get_backend() == u'Qt4Agg':
+                manager.window.showMaximized()
+
             self.ax1 = self.i_fig.add_subplot(111)
 
             self.ax1.plot([], color='m', label='Pixels')
@@ -1298,10 +1311,10 @@ class WavelengthCalibration(object):
         class even with an indepentend QT GUI.
 
         Notes:
-            This method uses the GTK3Agg backend, it will not work with other.
+            This method uses the Qt4Agg backend, it will not work with other.
 
         """
-        plt.switch_backend('GTK3Agg')
+        plt.switch_backend('Qt4Agg')
 
         reference_file = self.reference_data.get_best_reference_lamp(
             header=self.lamp_header)
@@ -1330,7 +1343,10 @@ class WavelengthCalibration(object):
             object_name))
 
         manager = plt.get_current_fig_manager()
-        manager.window.maximize()
+        if plt.get_backend() == u'GTK3Agg':
+            manager.window.maximize()
+        elif plt.get_backend() == u'Qt4Agg':
+            manager.window.showMaximized()
 
         self.ax1.set_title('Raw Data - {:s}'.format(self.lamp_name))
         self.ax1.set_xlabel('Pixels')

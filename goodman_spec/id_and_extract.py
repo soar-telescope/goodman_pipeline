@@ -5,7 +5,7 @@ import os
 
 import matplotlib
 # matplotlib.use('Qt4Agg')
-matplotlib.use('GTK3Agg')
+matplotlib.use('Qt4Agg')
 
 import astropy.units as u
 import logging
@@ -79,7 +79,10 @@ log = logging.getLogger('goodmanccd')
 #                                                  comp_list=comp_ccd_list)
 #             if True:
 #                 manager = plt.get_current_fig_manager()
-#                 manager.window.maximize()
+#                 if plt.get_backend() == u'GTK3Agg':
+#                     manager.window.maximize()
+#                 elif plt.get_backend() == u'Qt4Agg':
+#                     manager.window.showMaximized()
 #                 for edata in extracted:
 #                     plt.plot(edata.data, label=edata.header['OBJECT'])
 #                     if comps != []:

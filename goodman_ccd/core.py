@@ -15,7 +15,7 @@ import shutil
 import subprocess
 from threading import Timer
 
-matplotlib.use('GTK3Agg')
+matplotlib.use('Qt4Agg')
 from matplotlib import pyplot as plt
 from ccdproc import CCDData, ImageFileCollection
 from astropy.coordinates import EarthLocation
@@ -1561,7 +1561,10 @@ def extract(ccd,
             fig.canvas.set_window_title('Simple Extraction')
             # ax = fig.add_subplot(111)
             manager = plt.get_current_fig_manager()
-            manager.window.maximize()
+            if plt.get_backend() == u'GTK3Agg':
+                manager.window.maximize()
+            elif plt.get_backend() == u'Qt4Agg':
+                manager.window.showMaximized()
 
             plt.title(ccd.header['OBJECT'])
             plt.xlabel('Dispersion Axis (Pixels)')
@@ -1633,7 +1636,11 @@ def extract(ccd,
         #     fig.canvas.set_window_title('Optimal Extraction')
         #     # ax = fig.add_subplot(111)
         #     manager = plt.get_current_fig_manager()
-        #     manager.window.maximize()
+        #
+        #     if plt.get_backend() == u'GTK3Agg':
+        #         manager.window.maximize()
+        #     elif plt.get_backend() == u'Qt4Agg':
+        #         manager.window.showMaximized()
         #
         #     plt.title(ccd.header['OBJECT'])
         #     plt.xlabel('Dispersion Axis (Pixels)')

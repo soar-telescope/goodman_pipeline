@@ -22,7 +22,7 @@ import pandas as pd
 import argparse
 import logging
 import matplotlib
-matplotlib.use('GTK3Agg')
+matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 # from astropy import log
 import warnings

@@ -4,7 +4,7 @@ import argparse
 import glob
 import logging
 import matplotlib
-matplotlib.use('GTK3Agg')
+matplotlib.use('Qt4Agg')
 import os
 import shutil
 

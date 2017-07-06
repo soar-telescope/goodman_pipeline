@@ -11,7 +11,7 @@ from __future__ import (absolute_import, division, print_function,
 import os
 import numpy as np
 import matplotlib
-matplotlib.use('GTK3Agg')
+matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 import logging
 from astropy.io import fits
