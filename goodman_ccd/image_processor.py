@@ -492,7 +492,7 @@ class ImageProcessor(object):
         target_name = ''
         slit_trim = None
         obstype = science_group.obstype.unique()
-        # print(obstype)
+        print(science_group)
         if 'OBJECT' in obstype or 'COMP' in obstype:
             object_group = science_group[(science_group.obstype == 'OBJECT') |
                                          (science_group.obstype == 'COMP')]
@@ -528,6 +528,9 @@ class ImageProcessor(object):
                                                           group=object_group,
                                                           get=True)
 
+                log.debug('Defined Master Flat Name as : '
+                          '{:s}'.format(master_flat_name))
+
                 # load the best flat based on the name previously defined
                 master_flat, master_flat_name =\
                     get_best_flat(flat_name=master_flat_name)
@@ -552,9 +555,12 @@ class ImageProcessor(object):
             if master_flat is not None:
                 log.debug('Attempting to find slit trim section')
                 slit_trim = get_slit_trim_section(master_flat=master_flat)
+
             else:
                 log.info('Master flat inexistent, cant find slit trim section')
             if slit_trim is not None:
+
+                log.debug('Slit Trim Section is: {:s}'.format(slit_trim))
 
                 master_flat = image_trim(ccd=master_flat,
                                          trim_section=slit_trim)
@@ -562,6 +568,8 @@ class ImageProcessor(object):
                 master_bias = image_trim(ccd=self.master_bias,
                                          trim_section=slit_trim)
             else:
+                log.debug('Slit Trim Section is: None')
+
                 master_bias = self.master_bias.copy()
 
             norm_master_flat = None
@@ -593,6 +601,7 @@ class ImageProcessor(object):
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
 
+                    log.debug('Applying bias subtraction')
                     ccd = ccdproc.subtract_bias(ccd=ccd,
                                                 master=master_bias,
                                                 add_keyword=False)

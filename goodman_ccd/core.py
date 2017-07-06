@@ -262,6 +262,7 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
         ccd (object): Overscan corrected ccdproc.CCDData instance
 
     """
+    log.debug('Applying overscan Correction: {:s}'.format(overscan_region))
     ccd = ccdproc.subtract_overscan(ccd=ccd,
                                     median=True,
                                     fits_section=overscan_region,
