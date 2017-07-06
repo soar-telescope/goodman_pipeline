@@ -778,6 +778,7 @@ class ReferenceData(object):
 
         else:
             log.error('There is no reference lamp found')
+            raise NotImplementedError('Reference Lamp not found')
         try:
             lamp_name = lamp_pandas_data_frame.file.tolist()[0]
             ref_lamp_full_path = os.path.join(self.args.reference_dir, lamp_name)
