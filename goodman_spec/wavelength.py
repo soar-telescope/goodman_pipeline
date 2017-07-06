@@ -14,10 +14,10 @@ from __future__ import (absolute_import, division, print_function,
 import astropy.units as u
 import glob
 import logging
+import numpy as np
 # import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-import numpy as np
 import os
 import re
 import sys

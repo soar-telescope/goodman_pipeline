@@ -1,7 +1,7 @@
 from astropy.io import fits
 from astropy.modeling import models, fitting
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
 import cPickle as pickle
 
 

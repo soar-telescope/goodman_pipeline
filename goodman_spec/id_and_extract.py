@@ -3,13 +3,13 @@ from __future__ import (absolute_import, division, print_function,
 
 import os
 
+import numpy as np
 import matplotlib
 # matplotlib.use('Qt4Agg')
 matplotlib.use('Qt4Agg')
 
 import astropy.units as u
 import logging
-import numpy as np
 import matplotlib.pyplot as plt
 import re
 import glob
@@ -100,8 +100,4 @@ if __name__ == '__main__':
     args = get_args()
 
     prefix = 'cfzsto'
-    path = '/user/simon/data/soar/work/20161114_eng_3/RED3'
-
-    data_cont = classify_spectroscopic_data(path=path, search_pattern=prefix)
-
-    process_spectroscopy_data(data_container=data_cont, args=args)
+    path = '/user/simon/data/soar/work/201
