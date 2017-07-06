@@ -95,9 +95,4 @@ log = logging.getLogger('goodmanccd')
 
 
 if __name__ == '__main__':
-
-    pandas.set_option('display.expand_frame_repr', False)
-    args = get_args()
-
-    prefix = 'cfzsto'
-    path = '/user/simon/data/soar/work/201
+    pass

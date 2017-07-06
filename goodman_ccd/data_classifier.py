@@ -143,14 +143,13 @@ class DataClassifier(object):
             file_list = self.image_collection.file.tolist()
             remove_conflictive_keywords(path=self.args.raw_path,
                                         file_list=file_list)
-            gratings = self.objects_collection.grating.unique()
+            # gratings = self.objects_collection.grating.unique()
             cam_targ = self.objects_collection.cam_targ.unique()
             # print(gratings)
-            if ['<NO GRATING>'] not in gratings:
+            if int(np.mean(float(cam_targ))) != 0:
                 self.technique = 'Spectroscopy'
                 log.info('Detected Spectroscopy Data from BLUE Camera')
-            elif ['<NO GRATING>'] in gratings and \
-                            int(np.mean(float(cam_targ))) == 0:
+            elif int(np.mean(float(cam_targ))) == 0:
                 self.technique = 'Imaging'
                 log.info('Detected Imaging Data from BLUE Camera')
             else:
