@@ -72,7 +72,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
         obstypes = spec_group.obstype.unique()
         if 'COMP' in obstypes:
             comp_group = spec_group[spec_group.obstype == 'COMP']
-            # print(comp_group)
+            print(comp_group)
         if 'OBJECT' in obstypes:
             object_group = spec_group[spec_group.obstype == 'OBJECT']
             # print(object_group)
@@ -86,6 +86,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
             ccd.header['OFNAME'] = (spec_file, 'Original File Name')
             if comp_group is not None:
                 for comp_file in comp_group.file.tolist():
+                    print(comp_file)
                     comp_path = os.path.join(full_path, comp_file)
                     comp_ccd = CCDData.read(comp_path, unit=u.adu)
                     comp_ccd.header['OFNAME'] = (comp_file,

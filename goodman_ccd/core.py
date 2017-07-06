@@ -882,6 +882,8 @@ def classify_spectroscopic_data(path, search_pattern):
                            (pifc['gain'] == confs.iloc[i]['gain']) &
                            (pifc['rdnoise'] == confs.iloc[i]['rdnoise']))]
 
+        print(spec_group)
+        time.sleep(10)
         data_container.add_spec_group(spec_group=spec_group)
 
     return data_container
@@ -919,6 +921,7 @@ def spectroscopic_extraction(ccd, extraction,
 
     if comp_list is None:
         comp_list = []
+    print(comp_list)
 
     iccd = remove_background(ccd=ccd)
 
@@ -952,7 +955,7 @@ def spectroscopic_extraction(ccd, extraction,
                                                     trace=trace,
                                                     trace_index=m,
                                                     zone=zone,
-                                                    plots=plots)
+                                                    plots=True)
                     # since a comparison lamp only needs only the relative line
                     # center in the dispersion direction, therefore the flux is
                     # not important we are only calculating the median along the
@@ -1500,16 +1503,17 @@ def extract(ccd,
     log.debug('Original Name {:s}'.format(ccd.header['OFNAME']))
 
     variance_2d = (rdnoise + np.absolute(ccd.data) * gain) / gain
-    if ccd.mask is None and ccd.header['OBSTYPE'] == 'OBJECT':
-        log.info('Finding cosmic rays to create mask')
-        cr_mask = cosmicray_rejection(ccd=ccd, mask_only=True)
-        cr_mask = np.logical_not(cr_mask).astype(int)
-    elif ccd.mask is None and ccd.header['OBSTYPE'] != 'OBJECT':
-        log.info('Only OBSTYPE == OBJECT get cosmic ray rejection.')
-        cr_mask = np.ones(ccd.data.shape, dtype=int)
-    else:
-        log.debug('Cosmic ray mask already exists.')
-        cr_mask = np.logical_not(ccd.mask).astype(int)
+    cr_mask = np.ones(ccd.data.shape, dtype=int)
+    # if ccd.mask is None and ccd.header['OBSTYPE'] == 'OBJECT':
+    #     log.info('Finding cosmic rays to create mask')
+    #     cr_mask = cosmicray_rejection(ccd=ccd, mask_only=True)
+    #     cr_mask = np.logical_not(cr_mask).astype(int)
+    # elif ccd.mask is None and ccd.header['OBSTYPE'] != 'OBJECT':
+    #     log.info('Only OBSTYPE == OBJECT get cosmic ray rejection.')
+    #     cr_mask = np.ones(ccd.data.shape, dtype=int)
+    # else:
+    #     log.debug('Cosmic ray mask already exists.')
+    #     cr_mask = np.logical_not(ccd.mask).astype(int)
 
     model_fitter = fitting.LevMarLSQFitter()
 
