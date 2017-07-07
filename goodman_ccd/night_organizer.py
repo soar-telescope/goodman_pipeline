@@ -22,7 +22,8 @@ log = logging.getLogger('goodmanccd.nightorganizer')
 
 class NightOrganizer(object):
 
-    def __init__(self, full_path, instrument, technique, ignore_bias=False):
+    def __init__(self, full_path, instrument, technique, ignore_bias=False,
+                 ignore_flats=False):
         """Initializes the NightOrganizer class
 
         This class contains methods to organize the data for processing. It will
@@ -40,6 +41,7 @@ class NightOrganizer(object):
         self.instrument = instrument
         self.technique = technique
         self.ignore_bias = ignore_bias
+        self.ignore_flats = ignore_flats
         self.keywords = ['date',
                          'slit',
                          'date-obs',
@@ -160,8 +162,8 @@ class NightOrganizer(object):
 
         if not self.ignore_bias:
             if len(bias_collection) == 0:
-                log.critical('There is no BIAS. Use --ignore-bias to continue '
-                             'without BIAS.')
+                log.critical('There is no BIAS images. Use --ignore-bias to '
+                             'continue without BIAS.')
                 sys.exit('CRITICAL ERROR: BIAS not Found.')
             else:
                 bias_conf = bias_collection.groupby(
@@ -187,10 +189,20 @@ class NightOrganizer(object):
         else:
             log.warning('Ignoring BIAS by request.')
 
+        if 'FLAT' not in file_collection.obstype.unique() and \
+                not self.ignore_flats:
+            log.critical('There is no FLAT images. Use --ignore-flats to '
+                         'continue without FLATs.')
+            sys.exit('CRITICAL ERROR: FLAT not Found.')
+        elif self.ignore_flats:
+            log.warning('Ignoring FLAT images on request.')
+            data_collection = file_collection[
+                ((file_collection.obstype != 'BIAS') &
+                 (file_collection.obstype != 'FLAT'))]
+        else:
+            # process non-bias i.e. flats and object ... and comp
+            data_collection = file_collection[file_collection.obstype != 'BIAS']
 
-
-        # process non-bias i.e. flats and object ... and comp
-        data_collection = file_collection[file_collection.obstype != 'BIAS']
 
         confs = data_collection.groupby(
             ['gain',

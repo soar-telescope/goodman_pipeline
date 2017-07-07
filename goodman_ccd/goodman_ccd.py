@@ -59,6 +59,11 @@ def get_args(arguments=None):
                         dest='ignore_bias',
                         help="Ignore bias correction")
 
+    parser.add_argument('--ignore-flats',
+                        action='store_true',
+                        dest='ignore_flats',
+                        help="Ignore flat field correction")
+
     parser.add_argument('--auto-clean',
                         action='store_true',
                         dest='auto_clean',
@@ -277,11 +282,12 @@ class MainApp(object):
                 # nd = Night Dictionary
                 nd = night_sorter.nights_dict[night]
                 log.debug('Initializing NightOrganizer Class')
-                night_organizer = NightOrganizer(full_path=nd['full_path'],
-                                                 instrument=nd['instrument'],
-                                                 technique=nd['technique'],
-                                                 ignore_bias=
-                                                 self.args.ignore_bias)
+                night_organizer = NightOrganizer(
+                    full_path=nd['full_path'],
+                    instrument=nd['instrument'],
+                    technique=nd['technique'],
+                    ignore_bias=self.args.ignore_bias,
+                    ignore_flats=self.args.ignore_flats)
 
                 log.debug('Calling night_organizer instance')
                 self.data_container = night_organizer()

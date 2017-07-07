@@ -80,7 +80,6 @@ class ImageProcessor(object):
                         group_obstype[0] == 'BIAS' and \
                         not self.args.ignore_bias:
 
-                        print(sub_group)
                         log.debug('Creating Master Bias')
                         self.create_master_bias(sub_group)
                     elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
@@ -496,6 +495,8 @@ class ImageProcessor(object):
 
         target_name = ''
         slit_trim = None
+        master_flat = None
+        master_flat_name = None
         obstype = science_group.obstype.unique()
         # print(obstype)
         if 'OBJECT' in obstype or 'COMP' in obstype:
@@ -509,13 +510,18 @@ class ImageProcessor(object):
             else:
                 log.info('Processing Comparison Lamp: {:s}'.format(target_name))
 
-            if 'FLAT' in obstype:
+            if 'FLAT' in obstype and not self.args.ignore_flats:
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']
 
                 master_flat, master_flat_name =\
                     self.create_master_flats(flat_group=flat_sub_group,
                                              target_name=target_name)
+            elif self.args.ignore_flats:
+                log.warning('Ignoring creation of Master Flat by request.')
+                master_flat = None
+                master_flat_name = None
             else:
+                log.info('Attempting to find a suitable Master Flat')
                 object_list = object_group.file.tolist()
 
                 # grab a random image from the list
@@ -528,35 +534,26 @@ class ImageProcessor(object):
                 # read the random chosen file
                 ccd = CCDData.read(random_image_full, unit=u.adu)
 
-                # define the master flat name
-                master_flat_name = self.name_master_flats(header=ccd.header,
-                                                          group=object_group,
-                                                          get=True)
+                if not self.args.ignore_flats:
+                    # define the master flat name
+                    master_flat_name = self.name_master_flats(
+                        header=ccd.header,
+                        group=object_group,
+                        get=True)
 
-                # load the best flat based on the name previously defined
-                master_flat, master_flat_name =\
-                    get_best_flat(flat_name=master_flat_name)
-                if (master_flat is None) and (master_flat_name is None):
-                    # attempt to find a set of flats in all the data
+                    # load the best flat based on the name previously defined
+                    master_flat, master_flat_name = \
+                        get_best_flat(flat_name=master_flat_name)
+                    if (master_flat is None) and (master_flat_name is None):
+                        log.critical('Failed to obtain master flat')
 
-                    if self.queue is None:
-                        self.queue = [science_group]
-                    else:
-                        self.queue.append(science_group)
-                        # for sgroup in self.queue:
-                        #     if isinstance(sgroup, pandas.DataFrame):
-                        #         if sgroup.equals(science_group):
-                        #             log.info('Science group already in queue')
-                        #         else:
-                        #             log.info('Appending science Group')
-                        #             self.queue.append(science_group)
-                        #     else:
-                        #         log.error('Science Group is not an instance of
-                        # pandas.DataFrame')
-                    log.warning('Adding image group to Queue')
-            if master_flat is not None:
+
+            if master_flat is not None and not self.args.ignore_flats:
                 log.debug('Attempting to find slit trim section')
                 slit_trim = get_slit_trim_section(master_flat=master_flat)
+            elif self.args.ignore_flats:
+                log.warning('Slit Trimming will be skipped, --ignore-flats is '
+                            'activated')
             else:
                 log.info('Master flat inexistent, cant find slit trim section')
             if slit_trim is not None:
@@ -613,6 +610,8 @@ class ImageProcessor(object):
                 if master_flat is None or master_flat_name is None:
                     log.warning('The file {:s} will not be '
                                 'flatfielded'.format(science_image))
+                elif self.args.ignore_flats:
+                    log.warning('Ignoring flatfielding by request.')
                 else:
                     if norm_master_flat is None:
 
