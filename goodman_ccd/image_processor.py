@@ -75,8 +75,13 @@ class ImageProcessor(object):
             if group is not None:
                 for sub_group in group:
                     group_obstype = sub_group.obstype.unique()
-                    if len(group_obstype) == 1 and group_obstype[0] == 'BIAS':
-                        log.debug('Create Master Bias')
+
+                    if len(group_obstype) == 1 and \
+                        group_obstype[0] == 'BIAS' and \
+                        not self.args.ignore_bias:
+
+                        print(sub_group)
+                        log.debug('Creating Master Bias')
                         self.create_master_bias(sub_group)
                     elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
                         log.debug('Create Master FLATS')
@@ -559,10 +564,14 @@ class ImageProcessor(object):
                 master_flat = image_trim(ccd=master_flat,
                                          trim_section=slit_trim)
 
-                master_bias = image_trim(ccd=self.master_bias,
-                                         trim_section=slit_trim)
+                if self.master_bias is not None:
+                    master_bias = image_trim(ccd=self.master_bias,
+                                             trim_section=slit_trim)
             else:
-                master_bias = self.master_bias.copy()
+                try:
+                    master_bias = self.master_bias.copy()
+                except AttributeError:
+                    master_bias = None
 
             norm_master_flat = None
             for science_image in object_group.file.tolist():
@@ -599,6 +608,8 @@ class ImageProcessor(object):
 
                     self.out_prefix = 'z' + self.out_prefix
                     ccd.header.add_history('Bias subtracted image')
+                else:
+                    log.warning('Ignoring bias correction by request.')
                 if master_flat is None or master_flat_name is None:
                     log.warning('The file {:s} will not be '
                                 'flatfielded'.format(science_image))
