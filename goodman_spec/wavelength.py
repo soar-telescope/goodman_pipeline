@@ -71,8 +71,8 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     # instantiate wavelength solution class
     get_wsolution = WavelengthCalibration(args=args)
 
-    for sub_container in [data_container.spec_groups,
-                          data_container.object_groups]:
+    for sub_container in [groups for groups in [data_container.spec_groups,
+                          data_container.object_groups] if groups is not None]:
         for group in sub_container:
             # this will contain only obstype == OBJECT
             object_group = group[group.obstype == 'OBJECT']
@@ -416,7 +416,8 @@ class WavelengthCalibration(object):
                     log.error('It was not possible to get a wavelength '
                               'solution from this lamp.')
                     return None
-
+        else:
+            print('Data should be saved anyways')
 
         # else:
         #     self.wsolution = wsolution_obj.wsolution
@@ -979,8 +980,12 @@ class WavelengthCalibration(object):
 
         """
         try:
-            reference_lamp_file = self.reference_data.get_best_reference_lamp(
+            # reference_lamp_file = self.reference_data.get_best_reference_lamp(
+            #     header=self.lamp_header)
+            reference_lamp_file = self.reference_data.get_exact_lamp(
                 header=self.lamp_header)
+
+            log.debug('Found reference lamp: {:s}'.format(reference_lamp_file))
 
             reference_lamp_data = CCDData.read(reference_lamp_file, unit=u.adu)
         except NotImplementedError:
