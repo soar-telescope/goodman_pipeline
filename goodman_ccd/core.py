@@ -884,7 +884,6 @@ def classify_spectroscopic_data(path, search_pattern):
                            (pifc['rdnoise'] == confs.iloc[i]['rdnoise']))]
 
         group_obstype = spec_group.obstype.unique()
-        print('HOLA')
 
         if 'COMP' in group_obstype and len(group_obstype) == 1:
             log_spec.debug('Adding COMP group')
@@ -958,7 +957,7 @@ def spectroscopic_extraction(ccd, extraction,
 
     if comp_list is None:
         comp_list = []
-    print(comp_list)
+    # print(comp_list)
 
     iccd = remove_background(ccd=ccd)
 
@@ -992,7 +991,7 @@ def spectroscopic_extraction(ccd, extraction,
                                                     trace=trace,
                                                     trace_index=m,
                                                     zone=zone,
-                                                    plots=True)
+                                                    plots=plots)
                     # since a comparison lamp only needs only the relative line
                     # center in the dispersion direction, therefore the flux is
                     # not important we are only calculating the median along the
@@ -1052,9 +1051,9 @@ def spectroscopic_extraction(ccd, extraction,
 
             extracted.append(extracted_ccd)
 
-            if plots:
-                plt.imshow(nccd)
-                plt.show()
+            # if plots:
+            #     plt.imshow(nccd.data)
+            #     plt.show()
 
         # print(extracted)
         # print(comp_zones)
@@ -1375,6 +1374,13 @@ def get_extraction_zone(ccd,
         hig_lim = np.min([int(trace_array.max() + extract_width),
                           spatial_length])
 
+        # in some rare cases the low_lim turns out larger than hig_lim which
+        # creates a series of problems regarding extraction, here I just reverse
+        # them
+        if low_lim > hig_lim:
+            low_lim, hig_lim = hig_lim, low_lim
+
+        log_spec.debug('Zone: low {:d}, high {:d}'.format(low_lim, hig_lim))
         zone = [low_lim, hig_lim]
 
         # This is to define the APNUM1 Keyword for the header.

@@ -44,6 +44,8 @@ from goodman_ccd.core import (spectroscopic_extraction,
 # log.basicConfig(level=log.INFO, format=FORMAT)
 log = logging.getLogger('redspec.wavelength')
 
+SHOW_PLOTS = False
+
 
 def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     """
@@ -110,23 +112,22 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 ccd.header['OFNAME'] = (spec_file, 'Original File Name')
                 if comp_group is not None and comp_ccd_list == []:
                     for comp_file in comp_group.file.tolist():
-                        print(comp_file)
                         comp_path = os.path.join(full_path, comp_file)
                         comp_ccd = CCDData.read(comp_path, unit=u.adu)
                         comp_ccd.header['OFNAME'] = (comp_file,
                                                      'Original File Name')
                         comp_ccd_list.append(comp_ccd)
-                        plt.imshow(comp_ccd.data)
-                        plt.show()
+                        # plt.imshow(comp_ccd.data)
+                        # plt.show()
                 else:
-                    print(comp_group)
-                    print(comp_ccd_list)
+                    log.debug('Comp Group is None or comp list already exist')
 
                 try:
                     extracted, comps = spectroscopic_extraction(
                         ccd=ccd,
                         extraction=extraction_type,
-                        comp_list=comp_ccd_list)
+                        comp_list=comp_ccd_list,
+                        plots=SHOW_PLOTS)
 
                     if args.debug_mode:
                         fig = plt.figure(0)
