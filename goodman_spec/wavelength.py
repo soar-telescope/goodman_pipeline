@@ -33,13 +33,18 @@ from scipy import signal
 
 from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
 from .linelist import ReferenceData
-from goodman_ccd.core import spectroscopic_extraction, NoTargetException
+from goodman_ccd.core import (spectroscopic_extraction,
+                              search_comp_group,
+                              NoTargetException,
+                              NoMatchFound)
 
 
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.INFO, format=FORMAT)
 log = logging.getLogger('redspec.wavelength')
+
+SHOW_PLOTS = False
 
 
 def process_spectroscopy_data(data_container, args, extraction_type='simple'):
@@ -60,86 +65,111 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     # to be returned
     extracted = None
     comps = None
+
     full_path = data_container.full_path
 
     # instantiate wavelength solution class
     get_wsolution = WavelengthCalibration(args=args)
 
-    for spec_group in data_container.spec_groups:
-        comp_group = None
-        object_group = None
-        comp_ccd_list = []
-        obstypes = spec_group.obstype.unique()
-        if 'COMP' in obstypes:
-            comp_group = spec_group[spec_group.obstype == 'COMP']
-            print(comp_group)
-        if 'OBJECT' in obstypes:
-            object_group = spec_group[spec_group.obstype == 'OBJECT']
-            # print(object_group)
-        if object_group is None:
-            log.error('There are no OBJECT files in this group.')
-            continue
-        for spec_file in object_group.file.tolist():
-            log.info('Processing Science File: {:s}'.format(spec_file))
-            file_path = os.path.join(full_path, spec_file)
-            ccd = CCDData.read(file_path, unit=u.adu)
-            ccd.header['OFNAME'] = (spec_file, 'Original File Name')
-            if comp_group is not None:
-                for comp_file in comp_group.file.tolist():
-                    print(comp_file)
-                    comp_path = os.path.join(full_path, comp_file)
-                    comp_ccd = CCDData.read(comp_path, unit=u.adu)
-                    comp_ccd.header['OFNAME'] = (comp_file,
-                                                 'Original File Name')
-                    comp_ccd_list.append(comp_ccd)
+    for sub_container in [groups for groups in [data_container.spec_groups,
+                          data_container.object_groups] if groups is not None]:
+        for group in sub_container:
+            # this will contain only obstype == OBJECT
+            object_group = group[group.obstype == 'OBJECT']
+            # this has to be initialized here
+            comp_group = None
+            comp_ccd_list = []
+            if 'COMP' in group.obstype.unique():
+                log.debug('Group has comparison lamps')
+                comp_group = group[group.obstype == 'COMP']
+                log.debug('Adding comparison lamps group to data container')
+                data_container.add_comp_group(comp_group=comp_group)
+            else:
+                log.debug('Group does not have comparison lamps')
+                if data_container.comp_groups is not None:
+                    log.debug('There are comparison lamp group candidates')
 
-            try:
-                extracted, comps = spectroscopic_extraction(
-                    ccd=ccd,
-                    extraction=extraction_type,
-                    comp_list=comp_ccd_list)
+                    try:
 
-                if args.debug_mode:
-                    fig = plt.figure(0)
-                    fig.clf()
-                    fig.canvas.set_window_title('Extracted Data')
+                        comp_group = search_comp_group(
+                            object_group=object_group,
+                            comp_groups=data_container.comp_groups)
 
-                    manager = plt.get_current_fig_manager()
+                        log.warning('This comparison lamp might not be optimal '
+                                    'if you are doing radial velocity studies')
 
-                    if plt.get_backend() == u'GTK3Agg':
-                        manager.window.maximize()
-                    elif plt.get_backend() == u'Qt4Agg':
-                        manager.window.showMaximized()
+                    except NoMatchFound:
 
-                    for edata in extracted:
-                        plt.plot(edata.data, label=edata.header['OBJECT'])
-                        if comps != []:
-                            for comp in comps:
-                                plt.plot(comp.data, label=comp.header['OBJECT'])
-                    plt.legend(loc='best')
-                    if plt.isinteractive():
-                        plt.draw()
-                        plt.pause(1)
-                    else:
-                        plt.show()
+                        log.error('It was not possible to find a comparison '
+                                  'group')
+                else:
+                    log.warning('Data will be extracted but not calibrated')
 
-                object_number = None
-                for i in range(len(extracted)):
-                    extracted_ccd = extracted[i]
+            for spec_file in object_group.file.tolist():
+                log.info('Processing Science File: {:s}'.format(spec_file))
+                file_path = os.path.join(full_path, spec_file)
+                ccd = CCDData.read(file_path, unit=u.adu)
+                ccd.header['OFNAME'] = (spec_file, 'Original File Name')
+                if comp_group is not None and comp_ccd_list == []:
+                    for comp_file in comp_group.file.tolist():
+                        comp_path = os.path.join(full_path, comp_file)
+                        comp_ccd = CCDData.read(comp_path, unit=u.adu)
+                        comp_ccd.header['OFNAME'] = (comp_file,
+                                                     'Original File Name')
+                        comp_ccd_list.append(comp_ccd)
+                        # plt.imshow(comp_ccd.data)
+                        # plt.show()
+                else:
+                    log.debug('Comp Group is None or comp list already exist')
 
-                    # this is for numbering the last file.
-                    if len(extracted) == 1:
-                        object_number = None
-                    else:
-                        object_number = i + 1
+                try:
+                    extracted, comps = spectroscopic_extraction(
+                        ccd=ccd,
+                        extraction=extraction_type,
+                        comp_list=comp_ccd_list,
+                        plots=SHOW_PLOTS)
 
-                    wsolution_obj = get_wsolution(ccd=extracted_ccd,
-                                                  comp_list=comps,
-                                                  object_number=object_number)
-                    # return wsolution_obj
-            except NoTargetException:
-                log.error('No target was identified')
-                break
+                    if args.debug_mode:
+                        fig = plt.figure(0)
+                        fig.clf()
+                        fig.canvas.set_window_title('Extracted Data')
+
+                        manager = plt.get_current_fig_manager()
+
+                        if plt.get_backend() == u'GTK3Agg':
+                            manager.window.maximize()
+                        elif plt.get_backend() == u'Qt4Agg':
+                            manager.window.showMaximized()
+
+                        for edata in extracted:
+                            plt.plot(edata.data, label=edata.header['OBJECT'])
+                            if comps != []:
+                                for comp in comps:
+                                    plt.plot(comp.data, label=comp.header['OBJECT'])
+                        plt.legend(loc='best')
+                        if plt.isinteractive():
+                            plt.draw()
+                            plt.pause(1)
+                        else:
+                            plt.show()
+
+                    object_number = None
+                    for i in range(len(extracted)):
+                        extracted_ccd = extracted[i]
+
+                        # this is for numbering the last file.
+                        if len(extracted) == 1:
+                            object_number = None
+                        else:
+                            object_number = i + 1
+
+                        wsolution_obj = get_wsolution(ccd=extracted_ccd,
+                                                      comp_list=comps,
+                                                      object_number=object_number)
+                        # return wsolution_obj
+                except NoTargetException:
+                    log.error('No target was identified')
+                    break
     return True
 
 
@@ -386,7 +416,8 @@ class WavelengthCalibration(object):
                     log.error('It was not possible to get a wavelength '
                               'solution from this lamp.')
                     return None
-
+        else:
+            print('Data should be saved anyways')
 
         # else:
         #     self.wsolution = wsolution_obj.wsolution
@@ -949,8 +980,12 @@ class WavelengthCalibration(object):
 
         """
         try:
-            reference_lamp_file = self.reference_data.get_best_reference_lamp(
+            # reference_lamp_file = self.reference_data.get_best_reference_lamp(
+            #     header=self.lamp_header)
+            reference_lamp_file = self.reference_data.get_exact_lamp(
                 header=self.lamp_header)
+
+            log.debug('Found reference lamp: {:s}'.format(reference_lamp_file))
 
             reference_lamp_data = CCDData.read(reference_lamp_file, unit=u.adu)
         except NotImplementedError:

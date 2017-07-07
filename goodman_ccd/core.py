@@ -27,7 +27,8 @@ from astropy.io import fits
 from astropy.modeling import (models, fitting, Model)
 from scipy import signal
 
-log = logging.getLogger('goodmanccd.core')
+log_ccd = logging.getLogger('goodmanccd.core')
+log_spec = logging.getLogger('redspec.core')
 
 
 def convert_time(in_time):
@@ -54,8 +55,8 @@ def fix_duplicated_keywords(night_dir):
         night_dir (str): The full path for the raw data location
 
     """
-    log.info('Finding duplicated keywords')
-    log.warning('Files will be overwritten')
+    log_ccd.info('Finding duplicated keywords')
+    log_ccd.warning('Files will be overwritten')
     files = glob.glob(os.path.join(night_dir, '*.fits'))
     # Pick a random file to find duplicated keywords
     random_file = random.choice(files)
@@ -69,23 +70,23 @@ def fix_duplicated_keywords(night_dir):
                 if keyword not in multiple_keys:
                     multiple_keys.append(keyword)
     if multiple_keys != []:
-        log.info('Found {:d} duplicated keyword '
+        log_ccd.info('Found {:d} duplicated keyword '
                  '{:s}'.format(len(multiple_keys),
                                's' if len(multiple_keys) > 1 else ''))
 
         for image_file in files:
-            log.debug('Processing Image File: {:s}'.format(image_file))
+            log_ccd.debug('Processing Image File: {:s}'.format(image_file))
             try:
                 ccd = CCDData.read(image_file)
                 for keyword in multiple_keys:
                     while ccd.header.count(keyword) > 1:
                         ccd.header.remove(keyword,
                                           ccd.header.count(keyword) - 1)
-                log.warning('Overwriting file with duplicated keywords removed')
-                log.debug('File %s overwritten', image_file)
+                log_ccd.warning('Overwriting file with duplicated keywords removed')
+                log_ccd.debug('File %s overwritten', image_file)
                 ccd.write(image_file, clobber=True)
             except IOError as error:
-                log.error(error)
+                log_ccd.error(error)
 
 
 def ra_dec_to_deg(right_ascension, declination):
@@ -236,8 +237,8 @@ def get_twilight_time(date_obs):
     sun_rise_time = soar.sun_rise_time(
         Time(time_last_frame), which='nearest').isot
 
-    log.debug('Sun Set ' + sun_set_time)
-    log.debug('Sun Rise ' + sun_rise_time)
+    log_ccd.debug('Sun Set ' + sun_set_time)
+    log_ccd.debug('Sun Rise ' + sun_rise_time)
 
     return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
 
@@ -340,7 +341,7 @@ def get_slit_trim_section(master_flat):
 
     slit_trim_section = None
     if len(peaks) > 2 or peaks == []:
-        log.debug('No trim section')
+        log_ccd.debug('No trim section')
     else:
         if len(peaks) == 2:
             # This is the ideal case, when the two edges of the slit are found.
@@ -387,8 +388,8 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
     """
 
-    log.info('Removing cosmic rays using DCR by Wojtek Pych')
-    log.info('See http://users.camk.edu.pl/pych/DCR/')
+    log_ccd.info('Removing cosmic rays using DCR by Wojtek Pych')
+    log_ccd.info('See http://users.camk.edu.pl/pych/DCR/')
 
     # add the prefix for the output file
     out_file = prefix + in_file
@@ -406,8 +407,8 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
                                           full_path_out,
                                           full_path_cosmic)
 
-    log.debug('DCR command:')
-    log.debug(command)
+    log_ccd.debug('DCR command:')
+    log_ccd.debug(command)
     # print(command.split(' '))
 
     # get the current working directory to go back to it later in case the
@@ -420,15 +421,15 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     # check if file dcr.par exists
     while not os.path.isfile('dcr.par'):
 
-        log.error('File dcr.par does not exist. Copying default one.')
+        log_ccd.error('File dcr.par does not exist. Copying default one.')
         dcr_par_path = os.path.join(dcr_par_dir, 'dcr.par')
-        log.debug('dcr.par full path: {:s}'.format(dcr_par_path))
+        log_ccd.debug('dcr.par full path: {:s}'.format(dcr_par_path))
         if os.path.isfile(dcr_par_path):
             shutil.copy2(dcr_par_path, data_path)
         else:
-            log.error('Could not find dcr.par file')
+            log_ccd.error('Could not find dcr.par file')
     else:
-        log.info('File dcr.par exists.')
+        log_ccd.info('File dcr.par exists.')
 
     # call dcr
     try:
@@ -438,7 +439,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
                                stderr=subprocess.PIPE)
 
     except OSError as error:
-        log.error(error)
+        log_ccd.error(error)
         sys.exit('Your system can not locate the executable file dcr, try '
                  'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
                  'sudo ln -s /full/path/to/dcr')
@@ -464,29 +465,29 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
     # If no error stderr is an empty string
     if stderr != '':
-        log.error(stderr)
+        log_ccd.error(stderr)
         if 'dcr: not found' in stderr:
             sys.exit('Your system can not locate the executable file dcr, try '
                  'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
                      'sudo ln -s /full/path/to/dcr')
     else:
         for output_line in stdout.split('\n'):
-            log.info(output_line)
+            log_ccd.info(output_line)
 
     # delete extra files only if the execution ended without error
     if delete and stderr == '' and 'USAGE:' not in stdout:
         try:
-            log.warning('Removing input file: {:s}'.format(full_path_in))
+            log_ccd.warning('Removing input file: {:s}'.format(full_path_in))
             os.unlink(full_path_in)
         except OSError as error:
-            log.error(error)
+            log_ccd.error(error)
 
         try:
-            log.warning(
+            log_ccd.warning(
                 'Removing cosmic rays file: {:s}'.format(full_path_cosmic))
             os.unlink(full_path_cosmic)
         except OSError as error:
-            log.error(error)
+            log_ccd.error(error)
 
 
 def cosmicray_rejection(ccd, mask_only=False):
@@ -514,7 +515,7 @@ def cosmicray_rejection(ccd, mask_only=False):
     # TODO (simon): Validate this method
     if ccd.header['OBSTYPE'] == 'OBJECT':
         value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
-        log.info('Cleaning cosmic rays... ')
+        log_ccd.info('Cleaning cosmic rays... ')
 
         ccd = ccdproc.cosmicray_lacosmic(
             ccd,
@@ -530,13 +531,13 @@ def cosmicray_rejection(ccd, mask_only=False):
             verbose=False)
 
         ccd.header.add_history("Cosmic rays rejected with LACosmic")
-        log.info("Cosmic rays rejected with LACosmic")
+        log_ccd.info("Cosmic rays rejected with LACosmic")
         if mask_only:
             return ccd.mask
         else:
             return ccd
     else:
-        log.info('Skipping cosmic ray rejection for image of datatype: '
+        log_ccd.info('Skipping cosmic ray rejection for image of datatype: '
                  '{:s}'.format(ccd.header['OBSTYPE']))
         return ccd
 
@@ -563,8 +564,8 @@ def get_best_flat(flat_name):
 
     """
     flat_list = glob.glob(flat_name)
-    log.debug('Flat base name {:s}'.format(flat_name))
-    log.debug('Matching master flats found: {:d}'.format(len(flat_list)))
+    log_ccd.debug('Flat base name {:s}'.format(flat_name))
+    log_ccd.debug('Matching master flats found: {:d}'.format(len(flat_list)))
     if len(flat_list) > 0:
         if len(flat_list) == 1:
             master_flat_name = flat_list[0]
@@ -574,10 +575,10 @@ def get_best_flat(flat_name):
         #     master_flat_name =
 
         master_flat = CCDData.read(master_flat_name, unit=u.adu)
-        log.info('Found suitable master flat: {:s}'.format(master_flat_name))
+        log_ccd.info('Found suitable master flat: {:s}'.format(master_flat_name))
         return master_flat, master_flat_name
     else:
-        log.error('There is no flat available')
+        log_ccd.error('There is no flat available')
         return None, None
 
 
@@ -616,7 +617,7 @@ def print_default_args(args):
                 'save_plots': '--save-plots',
                 'dcr_par_dir': '--dcr-par-dir'}
     for key in args.__dict__:
-        log.info('Default value for {:s} is {:s}'.format(
+        log_ccd.info('Default value for {:s} is {:s}'.format(
             arg_name[key],
             str(args.__getattribute__(key))))
 
@@ -654,13 +655,13 @@ def normalize_master_flat(master, name, method='simple', order=15):
     norm_name = os.path.join(path, new_name)
 
     if method == 'mean':
-        log.info('Normalizing by mean')
+        log_ccd.info('Normalizing by mean')
         master.data /= master.data.mean()
 
         master.header.add_history('Flat Normalized by Mean')
 
     elif method == 'simple' or method == 'full':
-        log.info('Normalizing flat by {:s} model'.format(method))
+        log_ccd.info('Normalizing flat by {:s} model'.format(method))
 
         # Initialize Fitting models and fitter
         model_init = models.Chebyshev1D(degree=order)
@@ -687,9 +688,9 @@ def normalize_master_flat(master, name, method='simple', order=15):
             master.header.add_history('Flat Normalized by simple model')
 
         elif method == 'full':
-            log.warning('This part of the code was left here for experimental '
+            log_ccd.warning('This part of the code was left here for experimental '
                         'purposes only')
-            log.info('This procedure takes a lot to process, you might want to'
+            log_ccd.info('This procedure takes a lot to process, you might want to'
                      'see other method such as simple or mean.')
             for i in range(x_size):
                 fit = model_fitter(model_init, x_axis, master.data[i])
@@ -732,7 +733,7 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
                          (np.sin(alpha * np.pi / 180.) +
                           np.sin(beta * np.pi / 180.))
 
-    log.debug('Found {:.3f} as central wavelength'.format(central_wavelength))
+    log_spec.debug('Found {:.3f} as central wavelength'.format(central_wavelength))
 
     return central_wavelength
 
@@ -751,11 +752,11 @@ def remove_conflictive_keywords(path, file_list):
         file_list (list): List of files to remove keywords
 
     """
-    log.info('Removing conflictive keywords in Blue Camera Headers')
-    log.warning('Files will be overwritten')
+    log_ccd.info('Removing conflictive keywords in Blue Camera Headers')
+    log_ccd.warning('Files will be overwritten')
     for blue_file in file_list:
         full_path = os.path.join(path, blue_file)
-        log.debug('Processing file {:s}'.format(blue_file))
+        log_ccd.debug('Processing file {:s}'.format(blue_file))
         try:
             data, header = fits.getdata(full_path,
                                         header=True,
@@ -771,16 +772,16 @@ def remove_conflictive_keywords(path, file_list):
                 header['NAXIS'] = 2
                 data = data[0]
 
-                log.debug('Modified file to be 2D instead of 3D '
+                log_ccd.debug('Modified file to be 2D instead of 3D '
                           '(problematic)')
 
             for keyword in keys_to_remove:
                 header.remove(keyword)
 
-                log.debug('Removed conflictive keyword '
+                log_ccd.debug('Removed conflictive keyword '
                           '{:s}'.format(keyword))
 
-            log.debug('Updated headers')
+            log_ccd.debug('Updated headers')
 
             fits.writeto(full_path,
                          data,
@@ -788,7 +789,7 @@ def remove_conflictive_keywords(path, file_list):
                          clobber=True)
 
         except KeyError as error:
-            log.debug(error)
+            log_ccd.debug(error)
 
 
 # spectroscopy specific functions
@@ -819,7 +820,7 @@ def classify_spectroscopic_data(path, search_pattern):
     file_list = glob.glob(search_path)
 
     if file_list == []:
-        log.error('No file found using search pattern '
+        log_spec.error('No file found using search pattern '
                   '"{:s}"'.format(search_pattern))
 
         sys.exit('Please use the argument --search-pattern to define the '
@@ -883,11 +884,46 @@ def classify_spectroscopic_data(path, search_pattern):
                            (pifc['gain'] == confs.iloc[i]['gain']) &
                            (pifc['rdnoise'] == confs.iloc[i]['rdnoise']))]
 
-        print(spec_group)
-        time.sleep(10)
-        data_container.add_spec_group(spec_group=spec_group)
+        group_obstype = spec_group.obstype.unique()
+
+        if 'COMP' in group_obstype and len(group_obstype) == 1:
+            log_spec.debug('Adding COMP group')
+            data_container.add_comp_group(comp_group=spec_group)
+        elif 'OBJECT' in group_obstype and len(group_obstype) == 1:
+            log_spec.debug('Adding OBJECT group')
+            data_container.add_object_group(object_group=spec_group)
+        else:
+            log_spec.debug('Adding OBJECT-COMP group')
+            data_container.add_spec_group(spec_group=spec_group)
 
     return data_container
+
+
+def search_comp_group(object_group, comp_groups):
+
+    log_spec.debug('Finding a suitable comparison lamp group')
+
+    object_confs = object_group.groupby(['slit',
+                                         'grating',
+                                         'cam_targ',
+                                         'grt_targ',
+                                         'filter',
+                                         'filter2']
+                                        ).size().reset_index()# .rename(columns={0: 'count'})
+
+    for comp_group in comp_groups:
+
+        if ((comp_group['slit'] == object_confs.iloc[0]['slit']) &
+                (comp_group['grating'] == object_confs.iloc[0]['grating']) &
+                (comp_group['cam_targ'] == object_confs.iloc[0]['cam_targ']) &
+                (comp_group['grt_targ'] == object_confs.iloc[0]['grt_targ']) &
+                (comp_group['filter'] == object_confs.iloc[0]['filter']) &
+                (comp_group['filter2'] == object_confs.iloc[0]['filter2'])).all():
+            log_spec.debug('Found a matching comparison lamp group')
+
+            return comp_group
+
+    raise NoMatchFound
 
 
 def spectroscopic_extraction(ccd, extraction,
@@ -922,7 +958,7 @@ def spectroscopic_extraction(ccd, extraction,
 
     if comp_list is None:
         comp_list = []
-    print(comp_list)
+    # print(comp_list)
 
     iccd = remove_background(ccd=ccd)
 
@@ -936,7 +972,7 @@ def spectroscopic_extraction(ccd, extraction,
         #         n_sigma_extract=10,
         #         sampling_step=5)
         if 'CompoundModel' in profile_model.__class__.name:
-            log.debug(profile_model.submodel_names)
+            log_spec.debug(profile_model.submodel_names)
             for m in range(len(profile_model.submodel_names)):
 
                 submodel_name = profile_model.submodel_names[m]
@@ -956,7 +992,7 @@ def spectroscopic_extraction(ccd, extraction,
                                                     trace=trace,
                                                     trace_index=m,
                                                     zone=zone,
-                                                    plots=True)
+                                                    plots=plots)
                     # since a comparison lamp only needs only the relative line
                     # center in the dispersion direction, therefore the flux is
                     # not important we are only calculating the median along the
@@ -1016,20 +1052,20 @@ def spectroscopic_extraction(ccd, extraction,
 
             extracted.append(extracted_ccd)
 
-            if plots:
-                plt.imshow(nccd)
-                plt.show()
+            # if plots:
+            #     plt.imshow(nccd.data)
+            #     plt.show()
 
         # print(extracted)
         # print(comp_zones)
         return extracted, comp_zones
 
     elif profile_model is None:
-        log.warning("Didn't receive identified targets "
+        log_spec.warning("Didn't receive identified targets "
                     "from {:s}".format(ccd.header['OFNAME']))
         raise NoTargetException
     else:
-        log.error('Got wrong input')
+        log_spec.error('Got wrong input')
 
 
 def identify_targets(ccd, plots=False):
@@ -1109,14 +1145,14 @@ def identify_targets(ccd, plots=False):
 
         # print(profile_model)
         if fit_gaussian.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log.warning('There is some problem with the fitting.'
+            log_spec.warning('There is some problem with the fitting.'
                         'Returning None.')
             return None
         else:
             return profile_model
 
     else:
-        log.error('Not a ccdproc.CCDData instance')
+        log_spec.error('Not a ccdproc.CCDData instance')
         return None
 
 
@@ -1179,9 +1215,9 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         fitted_profile = model_fitter(model=profile,
                                       x=range(ccd.data[:, i].size),
                                       y=ccd.data[:, i])
-        log.debug('Profile fitted')
+        log_spec.debug('Profile fitted')
 
-        # if plots or log.isEnabledFor(logging.DEBUG):
+        # if plots or log_spec.isEnabledFor(logging.DEBUG):
         #     # print(fitted_profile)
         #     x_axis = range(ccd.data[:, i].size)
         #     plt.ion()
@@ -1200,7 +1236,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         #     plt.ioff()
 
         if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log.error(
+            log_spec.error(
                 "Fitting did not work, fit_info['ierr'] = \
                 {:d}".format(model_fitter.fit_info['ierr']))
 
@@ -1223,7 +1259,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         # store the corresponding value in the proper array for later fitting
         # a low order polynomial
         for e in range(trace_points.shape[0]):
-            log.debug('Median Trace'
+            log_spec.debug('Median Trace'
                       ' {:d}: {:.3f}'.format(e, np.median(trace_points[e])))
 
             trace_points[e][i // sampling_step] = \
@@ -1240,13 +1276,13 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
 
         # TODO (simon): Validate which kind of errors are represented here
         if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log.error(model_fitter.fit_info['ierr'])
+            log_spec.error(model_fitter.fit_info['ierr'])
         else:
             # RMS Error calculation
             rms_error = np.sqrt(
                 np.sum(np.array([fitted_trace(sampling_axis) -
                                  trace_points[trace_num]]) ** 2))
-            log.info('Trace Fit RMSE: {:.3f}'.format(rms_error))
+            log_spec.info('Trace Fit RMSE: {:.3f}'.format(rms_error))
 
             # append for returning
             if all_traces is None:
@@ -1322,13 +1358,13 @@ def get_extraction_zone(ccd,
     if zone is None and extraction is not None:
         assert (model is not None) and (n_sigma_extract is not None)
         assert isinstance(trace, Model)
-        log.info('Extracting zone centered at: {:.3f}'.format(model.mean.value))
+        log_spec.info('Extracting zone centered at: {:.3f}'.format(model.mean.value))
         spatial_length, dispersion_length = ccd.data.shape
 
         # get maximum variation in spatial direction
         trace_array = trace(range(dispersion_length))
         trace_inclination = trace_array.max() - trace_array.min()
-        log.info('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
+        log_spec.info('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
 
         # m_mean = model.mean.value
         m_stddev = model.stddev.value
@@ -1339,6 +1375,13 @@ def get_extraction_zone(ccd,
         hig_lim = np.min([int(trace_array.max() + extract_width),
                           spatial_length])
 
+        # in some rare cases the low_lim turns out larger than hig_lim which
+        # creates a series of problems regarding extraction, here I just reverse
+        # them
+        if low_lim > hig_lim:
+            low_lim, hig_lim = hig_lim, low_lim
+
+        log_spec.debug('Zone: low {:d}, high {:d}'.format(low_lim, hig_lim))
         zone = [low_lim, hig_lim]
 
         # This is to define the APNUM1 Keyword for the header.
@@ -1352,16 +1395,16 @@ def get_extraction_zone(ccd,
 
         # this is necessary since we are cutting a piece of the full ccd.
         trace.c0.value -= low_lim
-        log.info('Changing attribute c0 from trace, this is to adjust it to '
+        log_spec.info('Changing attribute c0 from trace, this is to adjust it to '
                  'the new extraction zone which is smaller that the full CCD.')
 
-        log.info('Changing attribute mean of profile model')
+        log_spec.info('Changing attribute mean of profile model')
         model.mean.value = extract_width
 
         nccd = ccd.copy()
         nccd.data = ccd.data[low_lim:hig_lim, :]
         if nccd.mask is not None:
-            log.debug('Trimming mask')
+            log_spec.debug('Trimming mask')
             nccd.mask = ccd.mask[low_lim:hig_lim, :]
         nccd.header['HISTORY'] = 'Subsection of CCD ' \
                                  '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
@@ -1387,7 +1430,7 @@ def get_extraction_zone(ccd,
         nccd = ccd.copy()
         nccd.data = ccd.data[low_lim:hig_lim, :]
         if nccd.mask is not None:
-            log.debug('Trimming mask')
+            log_spec.debug('Trimming mask')
             nccd.mask = ccd.mask[low_lim:hig_lim, :]
         nccd.header['HISTORY'] = 'Subsection of CCD ' \
                                  '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
@@ -1428,8 +1471,8 @@ def add_wcs_keys(header):
         header['DCLOG1'] = 'REFSPEC1 = non set'
         return header
     except TypeError as err:
-        log.error("Can't add wcs keywords to header")
-        log.debug(err)
+        log_spec.error("Can't add wcs keywords to header")
+        log_spec.debug(err)
 
 
 def remove_background(ccd, plots=False):
@@ -1501,19 +1544,19 @@ def extract(ccd,
     # create variance model
     rdnoise = float(ccd.header['RDNOISE'])
     gain = float(ccd.header['GAIN'])
-    log.debug('Original Name {:s}'.format(ccd.header['OFNAME']))
+    log_spec.debug('Original Name {:s}'.format(ccd.header['OFNAME']))
 
     variance_2d = (rdnoise + np.absolute(ccd.data) * gain) / gain
     cr_mask = np.ones(ccd.data.shape, dtype=int)
     # if ccd.mask is None and ccd.header['OBSTYPE'] == 'OBJECT':
-    #     log.info('Finding cosmic rays to create mask')
+    #     log_spec.info('Finding cosmic rays to create mask')
     #     cr_mask = cosmicray_rejection(ccd=ccd, mask_only=True)
-    #     cr_mask = np.logical_not(cr_mask).astype(int)
+    #     cr_mask = np.log_spec.cal_not(cr_mask).astype(int)
     # elif ccd.mask is None and ccd.header['OBSTYPE'] != 'OBJECT':
-    #     log.info('Only OBSTYPE == OBJECT get cosmic ray rejection.')
+    #     log_spec.info('Only OBSTYPE == OBJECT get cosmic ray rejection.')
     #     cr_mask = np.ones(ccd.data.shape, dtype=int)
     # else:
-    #     log.debug('Cosmic ray mask already exists.')
+    #     log_spec.debug('Cosmic ray mask already exists.')
     #     cr_mask = np.logical_not(ccd.mask).astype(int)
 
     model_fitter = fitting.LevMarLSQFitter()
@@ -1531,7 +1574,7 @@ def extract(ccd,
         # print('Fixed ', new_model.mean.fixed)
     else:
         raise NotImplementedError
-    log.debug('ccd.data is a masked array: '
+    log_spec.debug('ccd.data is a masked array: '
               '{:s}'.format(str(np.ma.isMaskedArray(ccd.data))))
 
     ccd.data = np.ma.masked_invalid(ccd.data)
@@ -1689,13 +1732,32 @@ class NightDataContainer(object):
         self.instrument = instrument
         self.technique = technique
         self.is_empty = True
+
+        """For imaging use"""
         self.bias = None
         self.day_flats = None
         self.dome_flats = None
         self.sky_flats = None
         self.data_groups = None
+
+        """For spectroscopy use"""
+
+        # comp_groups will store pandas.DataFrame (groups) that contain only
+        # OBSTYPE == COMP, they should be requested only when needed, for the
+        # science case when for every science target is observed with comparison
+        # lamps and quartz (if)
+        self.comp_groups = None
+
+        # object_groups will store pandas.DataFrame (groups) with only
+        # OBSTYPE == OBJECT this is the case when the observer takes comparison
+        # lamps only at the beginning or end of the night.
+        self.object_groups = None
+
+        # spec_groups will store pandas.DataFrame (groups) with a set of OBJECT
+        # and COMP, this is usually the case for radial velocity studies.
         self.spec_groups = None
-        # time reference points
+
+        """Time reference points"""
         self.sun_set_time = None
         self.sun_rise_time = None
         self.evening_twilight = None
@@ -1713,11 +1775,11 @@ class NightDataContainer(object):
         if len(bias_group) < 2:
             if self.technique == 'Imaging':
 
-                log.error('Imaging mode needs BIAS to work properly. '
+                log_ccd.error('Imaging mode needs BIAS to work properly. '
                           'Go find some.')
 
             else:
-                log.warning('BIAS are needed for optimal results.')
+                log_ccd.warning('BIAS are needed for optimal results.')
         else:
             if self.bias is None:
                 self.bias = [bias_group]
@@ -1758,8 +1820,40 @@ class NightDataContainer(object):
         if self.data_groups is not None:
             self.is_empty = False
 
+    def add_comp_group(self, comp_group):
+        """Adds a comp-only group
+
+        Args:
+            comp_group (pandas.DataFrame): Contains a set of keyword values of
+                grouped image metadata
+
+        """
+
+        if self.comp_groups is None:
+            self.comp_groups = [comp_group]
+        else:
+            self.comp_groups.append(comp_group)
+        if self.comp_groups is not None:
+            self.is_empty = False
+
+    def add_object_group(self, object_group):
+        """Adds a object-only group
+
+        Args:
+            object_group (pandas.DataFrame): Contains a set of keyword values of
+                grouped image metadata
+
+        """
+
+        if self.object_groups is None:
+            self.object_groups = [object_group]
+        else:
+            self.object_groups.append(object_group)
+        if self.object_groups is not None:
+            self.is_empty = False
+
     def add_spec_group(self, spec_group):
-        """Adds a data group
+        """Adds a data group containing object and comp
 
         Args:
             spec_group (pandas.DataFrame): Contains a set of keyword values of
@@ -1804,3 +1898,8 @@ class NightDataContainer(object):
 class NoTargetException(Exception):
     def __init__(self):
         Exception.__init__(self, 'No targets identified.')
+
+
+class NoMatchFound(Exception):
+    def __init__(self):
+        Exception.__init__(self, 'Did not find a match')

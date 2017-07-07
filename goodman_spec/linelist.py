@@ -772,9 +772,11 @@ class ReferenceData(object):
             while len(lamp_pandas_data_frame) > 1:
                 # print(lamp_pandas_data_frame.file)
                 keyword_to_filter = criteria.pop()
-                # print('Filter: ' + keyword_to_filter)
+                print('Filter: ' + keyword_to_filter)
                 lamp_pandas_data_frame = lamp_pandas_data_frame[
                     (lamp_pandas_data_frame[keyword_to_filter] == header[keyword_to_filter])]
+            else:
+                print(lamp_pandas_data_frame)
 
         else:
             log.error('There is no reference lamp found')
@@ -786,6 +788,30 @@ class ReferenceData(object):
             return ref_lamp_full_path
         except IndexError:
             raise NotImplementedError('No lamp found in reference files.')
+
+    def get_exact_lamp(self, header):
+        """Finds the exact reference lamp
+
+        Args:
+            header:
+
+        Returns:
+
+        """
+        criteria = ['slit', 'cam_targ', 'grt_targ', 'grating', 'object']
+
+        lamp_file_list = self.ref_lamp_collection.file[
+            ((self.ref_lamp_collection['grt_targ'] == header['grt_targ']) &
+             (self.ref_lamp_collection['cam_targ'] == header['cam_targ']) &
+             (self.ref_lamp_collection['grating'] == header['grating']) &
+             (self.ref_lamp_collection['object'] == header['object']))].tolist()
+
+        if len(lamp_file_list) == 1:
+            print(lamp_file_list)
+            return os.path.join(self.args.reference_dir, lamp_file_list[0])
+        else:
+            raise NotImplementedError
+
 
     def get_ref_spectrum_from_linelist(self, blue, red, name):
         """Experimental not working at the moment
