@@ -1352,8 +1352,12 @@ class WavelengthCalibration(object):
         """
         plt.switch_backend('Qt4Agg')
 
-        reference_file = self.reference_data.get_best_reference_lamp(
-            header=self.lamp_header)
+        try:
+            reference_file = self.reference_data.get_best_reference_lamp(
+                header=self.lamp_header)
+        except NotImplementedError:
+            reference_file = None
+            log.critical('Could not find a comparison lamp in the reference.')
 
         # reference_file = self.reference_data.get_reference_lamps_by_name(
         #     self.lamp_name)

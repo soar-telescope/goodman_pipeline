@@ -772,11 +772,11 @@ class ReferenceData(object):
             while len(lamp_pandas_data_frame) > 1:
                 # print(lamp_pandas_data_frame.file)
                 keyword_to_filter = criteria.pop()
-                print('Filter: ' + keyword_to_filter)
+                # print('Filter: ' + keyword_to_filter)
                 lamp_pandas_data_frame = lamp_pandas_data_frame[
                     (lamp_pandas_data_frame[keyword_to_filter] == header[keyword_to_filter])]
-            else:
-                print(lamp_pandas_data_frame)
+            # else:
+            #     print(lamp_pandas_data_frame)
 
         else:
             log.error('There is no reference lamp found')
