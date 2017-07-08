@@ -71,10 +71,10 @@ def get_args(arguments=None):
 
     parser.add_argument('--saturation',
                         action='store',
-                        default=55000.,
+                        default=65000.,
                         dest='saturation_limit',
                         metavar='<Value>',
-                        help="Saturation limit. Default to 55.000 ADU (counts)")
+                        help="Saturation limit. Default to 65.000 ADU (counts)")
 
     parser.add_argument('--raw-path',
                         action='store',

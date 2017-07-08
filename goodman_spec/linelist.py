@@ -812,7 +812,6 @@ class ReferenceData(object):
         else:
             raise NotImplementedError
 
-
     def get_ref_spectrum_from_linelist(self, blue, red, name):
         """Experimental not working at the moment
 

@@ -320,40 +320,51 @@ def get_slit_trim_section(master_flat):
     middle = int(y / 2.)
     ccd_section = master_flat.data[:, middle:middle + 200]
     ccd_section_median = np.median(ccd_section, axis=1)
-    # spatial_axis = range(len(ccd_section_median))
+    spatial_axis = range(len(ccd_section_median))
 
-    # Spatial half will be used later to constrain the detection of the first
-    # edge before the first half.
-    spatial_half = len(ccd_section_median) / 2.
+    # set values for initial box model definition
+    box_max = np.max(ccd_section_median)
+    box_center = len(ccd_section_median) / 2.
+    box_width = .75 * len(ccd_section_median)
 
-    # pseudo-derivative to help finding the edges.
-    pseudo_derivative = np.array(
-        [abs(ccd_section_median[i + 1] - ccd_section_median[i])
-         for i in range(0, len(ccd_section_median) - 1)])
+    # box model definition
+    box_model = models.Box1D(amplitude=box_max, x_0=box_center, width=box_width)
 
-    filtered_data = np.where(
-        np.abs(pseudo_derivative > 0.5 * pseudo_derivative.max()),
-        pseudo_derivative,
-        None)
+    box_fitter = fitting.SimplexLSQFitter()
 
-    peaks = signal.argrelmax(filtered_data, axis=0, order=3)[0]
+    fitted_box = box_fitter(box_model, spatial_axis, ccd_section_median)
 
-    slit_trim_section = None
-    if len(peaks) > 2 or peaks == []:
-        log_ccd.debug('No trim section')
-    else:
-        if len(peaks) == 2:
-            # This is the ideal case, when the two edges of the slit are found.
-            low, high = peaks
-            slit_trim_section = '[:,{:d}:{:d}]'.format(low, high)
-        elif len(peaks) == 1:
-            # when only one peak is found it will choose the largest region from
-            # the spatial axis center to one edge.
-            if peaks[0] <= spatial_half:
-                slit_trim_section = '[:,{:d}:{:d}]' \
-                                    ''.format(peaks[0], len(ccd_section_median))
-            else:
-                slit_trim_section = '[:,{:d}:{:d}]'.format(0, peaks[0])
+    # the number of pixels that will be removed from the detected slit edge
+    offset = 10
+
+    # this defines a preliminary set of slit limit
+    l_lim = fitted_box.x_0.value - fitted_box.width.value / 2. + offset
+
+    h_lim = fitted_box.x_0.value + fitted_box.width.value / 2. - offset
+
+    # Here we force the slit limits within the boundaries of the data (image)
+    low_lim = int(np.max([0 + offset, l_lim]))
+
+    high_lim = int(np.min([h_lim, len(ccd_section_median) - offset]))
+
+    slit_trim_section = '[:,{:d}:{:d}]'.format(low_lim, high_lim)
+
+    if False:
+        manager = plt.get_current_fig_manager()
+        manager.window.showMaximized()
+        plt.title('Slit Edge Detection')
+        plt.plot(box_model(spatial_axis), color='c')
+        plt.plot(fitted_box(spatial_axis), color='k')
+        plt.plot(ccd_section_median, label='Median Along Disp.')
+        # plt.plot(pseudo_derivative, color='g', label='Pseudo Derivative')
+        plt.axvline(None, color='r', label='Detected Edges')
+        plt.axvline(low_lim, color='r')
+        plt.axvline(high_lim, color='r')
+        # for peak in peaks:
+        #     plt.axvline(peak, color='r')
+        plt.legend(loc='best')
+        plt.show()
+
     return slit_trim_section
 
 
