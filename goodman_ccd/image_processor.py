@@ -373,10 +373,14 @@ class ImageProcessor(object):
                                             add_keyword=False)
             else:
                 log.error('Unknown observation technique: ' + self.technique)
+            # TODO (simon): Improve this part. One hot pixel could rule out a
+            # todo (cont): perfectly expososed image.
             if ccd.data.max() > self.args.saturation_limit:
                 log.warning('Removing saturated image {:s}. Use --saturation '
                             'to change saturation level'.format(flat_file))
-                # plt.plot(ccd.data[802,:])
+                # import numpy as np
+                # maximum_flat = np.max(ccd.data, axis=0)
+                # plt.plot(maximum_flat)
                 # plt.show()
                 # print(ccd.data.max())
                 continue
@@ -589,6 +593,7 @@ class ImageProcessor(object):
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match
                     # the size of the other data
+                    # TODO (simon): Potential problem here
                     ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
                     ccd = image_trim(ccd=ccd, trim_section=slit_trim)
                     self.out_prefix = 'st' + self.out_prefix

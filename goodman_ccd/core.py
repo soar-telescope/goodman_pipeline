@@ -334,7 +334,8 @@ def get_slit_trim_section(master_flat):
 
     fitted_box = box_fitter(box_model, spatial_axis, ccd_section_median)
 
-    # the number of pixels that will be removed from the detected slit edge
+    # the number of pixels that will be removed from the detected edge of the
+    # image on each side
     offset = 10
 
     # this defines a preliminary set of slit limit
@@ -557,7 +558,7 @@ def call_cosmic_rejection(ccd, science_image, out_prefix, red_path,
                           dcr_par, keep_files=False, prefix='c', method='dcr'):
 
     if method == 'dcr':
-        log_ccd.warning('DCR does apply the correction to images if you want'
+        log_ccd.warning('DCR does apply the correction to images if you want '
                         'the mask use --keep-cosmic-files')
         full_path = os.path.join(red_path, out_prefix + science_image)
         ccd.write(full_path, clobber=True)
@@ -1189,6 +1190,7 @@ def identify_targets(ccd, plots=False):
                                      y=profile_median)
         # print(fit_gaussian.fit_info)
         if plots:
+            # print(profile_model)
             # plt.plot(cross_corr, label='Cross Correlation', linestyle='--')
             plt.plot(profile_model(range(profile_median.size)),
                      label='Fitted Model')
