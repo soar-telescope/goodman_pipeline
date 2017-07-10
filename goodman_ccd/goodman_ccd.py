@@ -147,9 +147,10 @@ def get_args(arguments=None):
     args = parser.parse_args(args=arguments)
 
     # define log file
-    log_file_path = os.path.join(args.red_path, LOG_FILENAME)
-    log.info('Logging to file {:s}'.format(log_file_path))
-    file_handler = logging.FileHandler(filename=log_file_path)
+    # the log file will be stored in the same directory that the program
+    # is called
+    log.info('Logging to file {:s}'.format(LOG_FILENAME))
+    file_handler = logging.FileHandler(filename=LOG_FILENAME)
     file_handler.setLevel(level=logging.INFO)
     formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
     file_handler.setFormatter(fmt=formatter)
