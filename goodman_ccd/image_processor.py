@@ -376,9 +376,9 @@ class ImageProcessor(object):
             if ccd.data.max() > self.args.saturation_limit:
                 log.warning('Removing saturated image {:s}. Use --saturation '
                             'to change saturation level'.format(flat_file))
-                plt.plot(ccd.data[802,:])
-                plt.show()
-                print(ccd.data.max())
+                # plt.plot(ccd.data[802,:])
+                # plt.show()
+                # print(ccd.data.max())
                 continue
             else:
                 master_flat_list.append(ccd)
