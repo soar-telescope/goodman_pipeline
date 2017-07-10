@@ -347,14 +347,15 @@ def get_slit_trim_section(master_flat):
 
     high_lim = int(np.min([h_lim, len(ccd_section_median) - offset]))
 
+    # define the slit trim section as (IRA
     slit_trim_section = '[:,{:d}:{:d}]'.format(low_lim, high_lim)
 
     if False:
         manager = plt.get_current_fig_manager()
         manager.window.showMaximized()
         plt.title('Slit Edge Detection')
-        plt.plot(box_model(spatial_axis), color='c')
-        plt.plot(fitted_box(spatial_axis), color='k')
+        plt.plot(box_model(spatial_axis), color='c', label='Initial Box1D')
+        plt.plot(fitted_box(spatial_axis), color='k', label='Fitted Box1D')
         plt.plot(ccd_section_median, label='Median Along Disp.')
         # plt.plot(pseudo_derivative, color='g', label='Pseudo Derivative')
         plt.axvline(None, color='r', label='Detected Edges')
@@ -500,7 +501,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
             log_ccd.error(error)
 
 
-def cosmicray_rejection(ccd, mask_only=False):
+def lacosmic_cosmicray_rejection(ccd, mask_only=False):
     """Do cosmic ray rejection using ccdproc.LACosmic
 
     This function in fact does not apply any correction, it detects the cosmic
@@ -550,6 +551,48 @@ def cosmicray_rejection(ccd, mask_only=False):
         log_ccd.info('Skipping cosmic ray rejection for image of datatype: '
                  '{:s}'.format(ccd.header['OBSTYPE']))
         return ccd
+
+
+def call_cosmic_rejection(ccd, science_image, out_prefix, red_path,
+                          dcr_par, keep_files=False, prefix='c', method='dcr'):
+
+    if method == 'dcr':
+        log_ccd.warning('DCR does apply the correction to images if you want'
+                        'the mask use --keep-cosmic-files')
+        full_path = os.path.join(red_path, out_prefix + science_image)
+        ccd.write(full_path, clobber=True)
+        log_ccd.info('Saving image: {:s}'.format(full_path))
+
+        in_file = out_prefix + science_image
+
+        dcr_cosmicray_rejection(data_path=red_path,
+                                in_file=in_file,
+                                prefix=prefix,
+                                dcr_par_dir=dcr_par,
+                                delete=keep_files)
+
+    elif method == 'lacosmic':
+        log_ccd.warning('LACosmic does not apply the correction to images '
+                        'instead it updates the mask attribute for CCDData '
+                        'objects. For saved files the mask is a fits extension')
+
+        ccd = lacosmic_cosmicray_rejection(ccd=ccd)
+
+        out_prefix = prefix + out_prefix
+        full_path = os.path.join(red_path, out_prefix + science_image)
+
+        ccd.write(full_path, clobber=True)
+        log_ccd.info('Saving image: {:s}'.format(full_path))
+
+    elif method == 'none':
+        full_path = os.path.join(red_path, out_prefix + science_image)
+        log_ccd.warning("--cosmic set to 'none'")
+        ccd.write(full_path, clobber=True)
+        log_ccd.info('Saving image: {:s}'.format(full_path))
+
+    else:
+        log_ccd.error('Unrecognized Cosmic Method {:s}'.format(method))
+
 
 
 def get_best_flat(flat_name):
@@ -1717,6 +1760,11 @@ def extract(ccd,
     # ccd.data = out_spectrum
     return ccd
 
+# def save_fits(full_name, clobber=True):
+#     full_path = os.path.join(red_path,
+#                              out_prefix + science_image)
+#     ccd.write(full_path, clobber=True)
+#     log_ccd.info('Created science image: {:s}'.format(full_path))
 
 # classes definition
 

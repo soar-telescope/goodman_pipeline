@@ -16,10 +16,11 @@ from ccdproc import CCDData
 from .core import (image_overscan,
                    image_trim,
                    get_slit_trim_section,
-                   cosmicray_rejection,
+                   lacosmic_cosmicray_rejection,
                    get_best_flat,
                    normalize_master_flat,
-                   dcr_cosmicray_rejection)
+                   dcr_cosmicray_rejection,
+                   call_cosmic_rejection)
 
 from .wavmode_translator import SpectroscopicMode
 
@@ -375,9 +376,9 @@ class ImageProcessor(object):
             if ccd.data.max() > self.args.saturation_limit:
                 log.warning('Removing saturated image {:s}. Use --saturation '
                             'to change saturation level'.format(flat_file))
-                # plt.plot(ccd.data[802,:])
-                # plt.show()
-                # print(ccd.data.max())
+                plt.plot(ccd.data[802,:])
+                plt.show()
+                print(ccd.data.max())
                 continue
             else:
                 master_flat_list.append(ccd)
@@ -630,26 +631,13 @@ class ImageProcessor(object):
                     ccd.header.add_history('master flat norm_'
                                            '{:s}'.format(master_flat_name))
 
-                full_path = os.path.join(self.args.red_path,
-                                         self.out_prefix + science_image)
-                ccd.write(full_path, clobber=True)
-                log.info('Created science image: {:s}'.format(full_path))
-
-                if self.args.clean_cosmic:
-
-                    in_file = self.out_prefix + science_image
-
-                    dcr_cosmicray_rejection(data_path=self.args.red_path,
-                                            in_file=in_file,
-                                            prefix='c',
-                                            dcr_par_dir=self.args.dcr_par_dir,
-                                            delete=self.args.keep_cosmic_files)
-
-                else:
-                    log.warning('Clean Cosmic ' + str(self.args.clean_cosmic))
-
-
-                
+                call_cosmic_rejection(ccd=ccd,
+                                      science_image=science_image,
+                                      out_prefix=self.out_prefix,
+                                      red_path=self.args.red_path,
+                                      dcr_par=self.args.dcr_par_dir,
+                                      keep_files=self.args.keep_cosmic_files,
+                                      method=self.args.clean_cosmic)
 
                 # print(science_group)
         elif 'FLAT' in obstype:
@@ -718,7 +706,7 @@ class ImageProcessor(object):
                     '{:s}'.format(master_flat_name.split('/')[-1]))
 
                 if self.args.clean_cosmic:
-                    ccd = cosmicray_rejection(ccd=ccd)
+                    ccd = lacosmic_cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
                 else:
                     print('Clean Cosmic ' + str(self.args.clean_cosmic))
