@@ -62,31 +62,19 @@ def get_args(arguments=None):
                              "'dcr', 'lacosmic' or 'none'. Default is 'dcr'. "
                              "See manual for full description of dcr.")
 
+    parser.add_argument('--dcr-par-dir',
+                        action='store',
+                        default='files/',
+                        metavar='<dcr.par_directory>',
+                        dest='dcr_par_dir',
+                        help="Directory of default dcr.par file")
+
+    parser.add_argument('--debug',
+                        action='store_true',
+                        dest='debug_mode',
+                        help="Show detailed information of the process.")
+
     # TODO (simon): Add argument to use calibration data from other day
-
-    parser.add_argument('--ignore-bias',
-                        action='store_true',
-                        dest='ignore_bias',
-                        help="Ignore bias correction")
-
-    parser.add_argument('--ignore-flats',
-                        action='store_true',
-                        dest='ignore_flats',
-                        help="Ignore flat field correction")
-
-    parser.add_argument('--raw-path',
-                        action='store',
-                        metavar='<raw_path>',
-                        default='./',
-                        type=str,
-                        help="Path to raw data.")
-
-    parser.add_argument('--red-path',
-                        action='store',
-                        metavar='<red_path>',
-                        type=str,
-                        default='./RED',
-                        help="Path to reduced data.")
 
     parser.add_argument('--flat-normalize',
                         action='store',
@@ -108,25 +96,21 @@ def get_args(arguments=None):
                         help='Defines the order of the model to be fitted. '
                              'Default to 15')
 
-    parser.add_argument('--dcr-par-dir',
-                        action='store',
-                        default='files/',
-                        metavar='<dcr.par_directory>',
-                        dest='dcr_par_dir',
-                        help="Directory of default dcr.par file")
+    parser.add_argument('--ignore-bias',
+                        action='store_true',
+                        dest='ignore_bias',
+                        help="Ignore bias correction")
+
+    parser.add_argument('--ignore-flats',
+                        action='store_true',
+                        dest='ignore_flats',
+                        help="Ignore flat field correction")
 
     parser.add_argument('--keep-cosmic-files',
                         action='store_false',
                         dest='keep_cosmic_files',
                         help="After cleaning cosmic rays with dcr, do not "
                              "remove the input file and the cosmic rays file.")
-
-    parser.add_argument('--saturation',
-                        action='store',
-                        default=65000.,
-                        dest='saturation_limit',
-                        metavar='<value>',
-                        help="Saturation limit. Default to 65.000 ADU (counts)")
 
     parser.add_argument('--log-file',
                         action='store',
@@ -139,10 +123,26 @@ def get_args(arguments=None):
                              "deleted each time you run this "
                              "program".format(LOG_FILENAME))
 
-    parser.add_argument('--debug',
-                        action='store_true',
-                        dest='debug_mode',
-                        help="Show detailed information of the process.")
+    parser.add_argument('--raw-path',
+                        action='store',
+                        metavar='<raw_path>',
+                        default='./',
+                        type=str,
+                        help="Path to raw data.")
+
+    parser.add_argument('--red-path',
+                        action='store',
+                        metavar='<red_path>',
+                        type=str,
+                        default='./RED',
+                        help="Path to reduced data.")
+
+    parser.add_argument('--saturation',
+                        action='store',
+                        default=65000.,
+                        dest='saturation_limit',
+                        metavar='<value>',
+                        help="Saturation limit. Default to 65.000 ADU (counts)")
 
     args = parser.parse_args(args=arguments)
 
