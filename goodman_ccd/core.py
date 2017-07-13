@@ -143,7 +143,7 @@ def print_spacers(message):
 
     bar_length = int(columns)
 
-    #compose bars top and bottom
+    # compose bars top and bottom
     spacer_bar = "=" * bar_length
 
     blanks = bar_length - 2
@@ -202,14 +202,19 @@ def get_twilight_time(date_obs):
     # observatory(str): Observatory name.
     observatory = 'SOAR Telescope'
     geodetic_location = ['-70d44m01.11s', '-30d14m16.41s', 2748]
+
     # longitude (str): Geographic longitude in string format
     longitude = geodetic_location[0]
+
     # latitude (str): Geographic latitude in string format.
     latitude = geodetic_location[1]
+
     # elevation (int): Geographic elevation in meters above sea level
     elevation = geodetic_location[2]
+
     # timezone (str): Time zone.
     timezone = 'UTC'
+
     # description(str): Observatory description
     description = 'Soar Telescope on Cerro Pachon, Chile'
 
@@ -294,6 +299,13 @@ def image_trim(ccd, trim_section, add_keyword=False):
                              fits_section=trim_section,
                              add_keyword=add_keyword)
     ccd.header.add_history('Trimmed image to ' + trim_section)
+
+    # if ccd.header['OBSTYPE'] == 'OBJECT':
+    #     mg = plt.get_current_fig_manager()
+    #     mg.window.showMaximized()
+    #     plt.imshow(ccd.data, clim=(50,800))
+    #     plt.show()
+
     return ccd
 
 
@@ -366,6 +378,11 @@ def get_slit_trim_section(master_flat):
         #     plt.axvline(peak, color='r')
         plt.legend(loc='best')
         plt.show()
+
+    # plt.imshow(master_flat.data[low_lim:high_lim, :])
+    # plt.axvline(low_lim, color='r')
+    # plt.axvline(high_lim, color='r')
+    # plt.show()
 
     return slit_trim_section
 
@@ -1065,9 +1082,9 @@ def spectroscopic_extraction(ccd, extraction,
                                         plots=plots)
                 extracted.append(extracted_ccd)
 
-                if plots:
-                    plt.imshow(nccd)
-                    plt.show()
+                # if plots:
+                #     plt.imshow(nccd.data)
+                #     plt.show()
 
         else:
             nccd, trace, model, zone = get_extraction_zone(
@@ -1122,7 +1139,7 @@ def spectroscopic_extraction(ccd, extraction,
         log_spec.error('Got wrong input')
 
 
-def identify_targets(ccd, plots=False):
+def identify_targets(ccd, line=None, nsum=20, nfind=3, plots=False):
     """Identify targets cross correlating spatial profile with a gaussian model
 
     The method of cross-correlating a gaussian model to the spatial profile was
@@ -1133,6 +1150,10 @@ def identify_targets(ccd, plots=False):
 
     Args:
         ccd (object): a ccdproc.CCDData instance
+        line:
+        nsum:
+        nfind:
+        plots (bool): to show debugging plots
 
     Returns:
         profile_model (object): an astropy.modeling.Model instance, it could be
@@ -1146,69 +1167,133 @@ def identify_targets(ccd, plots=False):
         # order will be used for finding the peaks later but also as an initial
         # estimate for stddev of gaussian
         order = int(round(float(slit_size) / (0.15 * serial_binning)))
-        # averaging overall spectral dimension because in goodman the spectra is
-        # deviated very little
-        profile_median = np.median(ccd.data, axis=1)
 
-        # Gaussian has to be defined at the middle for it to work
-        gaussian = models.Gaussian1D(amplitude=profile_median.max(),
-                                     mean=profile_median.size // 2,
-                                     stddev=order).rename('Gaussian')
-
-        # do cross correlation of data with gaussian
-        # this is useful for cases with low signal to noise ratio
-        cross_corr = signal.correlate(in1=profile_median,
-                                      in2=gaussian(range(profile_median.size)),
-                                      mode='same')
-        # filter cross correlation data
-        filt_cross_corr = np.where(np.abs(cross_corr > cross_corr.min()
-                                          + 0.03 * cross_corr.max()),
-                                   cross_corr,
-                                   None)
-        peaks = signal.argrelmax(filt_cross_corr, axis=0, order=order)[0]
-
-        profile_model = None
-        for i in range(len(peaks)):
-            low_lim = np.max([0, peaks[i] - 5])
-            hig_lim = np.min([peaks[i] + 5, profile_median.size])
-            amplitude = profile_median[low_lim: hig_lim].max()
-            gaussian = models.Gaussian1D(amplitude=amplitude,
-                                         mean=peaks[i],
-                                         stddev=order).rename('Gaussian_'
-                                                              '{:d}'.format(i))
-            if profile_model is not None:
-                profile_model += gaussian
-            else:
-                profile_model = gaussian
-        # plt.axvline(peaks[i])
-        # print(profile_model)
-
-        # fit model to profile
-        fit_gaussian = fitting.LevMarLSQFitter()
-        profile_model = fit_gaussian(model=profile_model,
-                                     x=range(profile_median.size),
-                                     y=profile_median)
-        # print(fit_gaussian.fit_info)
         if plots:
-            # print(profile_model)
-            # plt.plot(cross_corr, label='Cross Correlation', linestyle='--')
-            plt.plot(profile_model(range(profile_median.size)),
-                     label='Fitted Model')
-            plt.plot(profile_median, label='Profile (median)', linestyle='--')
-            plt.legend(loc='best')
+            plt.title(ccd.header['OFNAME'])
+            plt.imshow(ccd.data, clim=(30, 250))
+            plt.xlabel('Dispersion Axis (x)')
+            plt.ylabel('Spatial Axis (y)')
             plt.show()
 
-        # print(profile_model)
-        if fit_gaussian.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log_spec.warning('There is some problem with the fitting.'
-                        'Returning None.')
+        median_profile = np.median(ccd.data, axis=1)
+
+        # Fitting Background
+
+        # Before doing the fitting we will do a sigma clipping in order to
+        # remove any feature.
+        clipped_profile = sigma_clip(median_profile, sigma=2, iters=5)
+
+        linear_model = models.Linear1D(slope=0,
+                                       intercept=np.median(median_profile))
+
+        linear_fitter = fitting.LinearLSQFitter()
+
+        # the fitters do not support masked arrays so we need to have a new
+        # array without the masked (clipped) elements.
+        new_profile = clipped_profile[~clipped_profile.mask]
+
+        # also the indexes are different
+        new_x_axis = [i for i in range(len(clipped_profile)) if not clipped_profile.mask[i]]
+
+        fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
+
+        if plots:
+            plt.title('Background Fitting Model Defined')
+            plt.plot(median_profile, color='k')
+            plt.plot(linear_model(range(ccd.data.shape[0])), color='r')
+            plt.show()
+
+            plt.title('Background Fitted Model')
+            plt.plot(median_profile, color='k')
+            plt.plot(fitted_background(range(ccd.data.shape[0])), color='r')
+            plt.show()
+
+
+
+
+        # Removing Background
+
+        # Remove the background and set negative values to zero
+
+        # build an array of the same dimensions of the profile
+        background_array = fitted_background(range(len(median_profile)))
+
+        background_subtracted = median_profile - background_array
+
+        # set negative values to zero
+        background_subtracted[background_subtracted < 0] = 0
+
+        final_profile = background_subtracted.copy()
+
+        if plots:
+            plt.plot(background_subtracted)
+            # plt.plot(final_profile, color='r')
+            # plt.plot(median_profile)
+            # plt.plot(background_array)
+            plt.show()
+
+        # Identify targets
+        # Now that the profile is flat it should be easier to identify targets.
+
+        filtered_profile = np.where(np.abs(
+            final_profile > final_profile.min() + 0.03 * final_profile.max()),
+            final_profile,
+            None)
+
+        _upper_limit = final_profile.min() + 0.03 * final_profile.max()
+        # print(_upper_limit)
+        # print(np.median(final_profile))
+
+        # find the peaks
+        peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
+
+        # find profile values for peaks found
+        values = [final_profile[i] for i in peaks]
+
+        # sort values and reverse the order so that larger values are first
+        sorted_values = np.sort(values)[::-1]
+
+        # pick nfind top values
+        n_top_values = sorted_values[:nfind]
+        # print(n_top_values)
+
+        # retrieve the original index (real location) of the peaks
+        selected_peaks = []
+        for val in n_top_values:
+            index = np.where(values == val)[0]
+            #     print(index[0])
+            selected_peaks.append(peaks[index[0]])
+
+        if plots:
+            plt.plot(final_profile)
+            plt.axhline(_upper_limit, color='g')
+            for peak in selected_peaks:
+                plt.axvline(peak, color='r')
+            plt.show()
+
+        # build the model to return
+
+        profile_model = None
+        for peak in selected_peaks:
+            peak_value = median_profile[peak]
+            gaussian = models.Gaussian1D(amplitude=peak_value,
+                                         mean=peak,
+                                         stddev=order)
+            if profile_model is None:
+                profile_model = gaussian
+            else:
+                profile_model += gaussian
+
+        if plots:
+            plt.plot(median_profile, color='b')
+            plt.plot(profile_model(range(len(median_profile))), color='r')
+            plt.show()
+
+        if profile_model is None:
             return None
         else:
             return profile_model
 
-    else:
-        log_spec.error('Not a ccdproc.CCDData instance')
-        return None
 
 
 def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
@@ -1328,6 +1413,11 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                                     y=trace_points[trace_num])
 
         fitted_trace.rename('Trace_{:d}'.format(trace_num))
+
+        plt.title('Fitted Trace')
+        plt.imshow(ccd.data, clim=(15, 225), cmap='gray')
+        plt.plot(fitted_trace(range(dispersion_length)))
+        plt.show()
 
         # TODO (simon): Validate which kind of errors are represented here
         if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
@@ -1963,3 +2053,8 @@ class NoTargetException(Exception):
 class NoMatchFound(Exception):
     def __init__(self):
         Exception.__init__(self, 'Did not find a match')
+
+
+class NotEnoughLinesDetected(Exception):
+    def __init__(self):
+        Exception.__init__(self, 'Not enough lines detected.')

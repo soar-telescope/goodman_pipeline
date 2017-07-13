@@ -36,7 +36,8 @@ from .linelist import ReferenceData
 from goodman_ccd.core import (spectroscopic_extraction,
                               search_comp_group,
                               NoTargetException,
-                              NoMatchFound)
+                              NoMatchFound,
+                              NotEnoughLinesDetected)
 
 
 
@@ -553,6 +554,7 @@ class WavelengthCalibration(object):
             plt.plot(raw_pixel_axis, no_nan_lamp_data, color='k')
             plt.legend(loc='best')
             plt.show()
+
         return lines_center
 
     def recenter_lines(self, data, lines, plots=False):

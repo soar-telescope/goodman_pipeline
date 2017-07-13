@@ -150,7 +150,8 @@ class ImageProcessor(object):
                     #top
                     t = int(1896 / parallel_binning)
                     # TODO (simon): Need testing
-                    trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
+                    # trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
+                    trim_section = '[{:d}:{:d},:]'.format(l, r)
 
                 elif technique == 'Imaging':
                     trim_section = ccd.header['TRIMSEC']
@@ -172,7 +173,7 @@ class ImageProcessor(object):
 
         Notes
         1 based
-        IRAF V3 convention oppsoite to Python (poner en returns)
+        IRAF V3 convention opposite to Python (poner en returns)
 
         Returns:
             overscan_region (str): Region for overscan in the format
