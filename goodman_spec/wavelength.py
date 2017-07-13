@@ -128,6 +128,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                         ccd=ccd,
                         extraction=extraction_type,
                         comp_list=comp_ccd_list,
+                        nfind=args.max_n_targets,
                         plots=SHOW_PLOTS)
 
                     if args.debug_mode:

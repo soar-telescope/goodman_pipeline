@@ -999,6 +999,7 @@ def search_comp_group(object_group, comp_groups):
 
 def spectroscopic_extraction(ccd, extraction,
                              comp_list=None,
+                             nfind=3,
                              n_sigma_extract=10,
                              plots=False):
     """This function does not do the actual extraction but prepares the data
@@ -1009,6 +1010,7 @@ def spectroscopic_extraction(ccd, extraction,
         ccd (object): A ccdproc.CCDData Instance
         extraction (str): Extraction type name. _simple_ or _optimal_
         comp_list (list): List of ccdproc.CCDData instances of COMP lamps data
+        nfind (int): Maximum number of targets to be returned
         n_sigma_extract (int): Number of sigmas to be used for extraction
         plots (bool): If plots will be shown or not.
 
@@ -1033,7 +1035,7 @@ def spectroscopic_extraction(ccd, extraction,
 
     iccd = remove_background(ccd=ccd)
 
-    profile_model = identify_targets(ccd=iccd, plots=plots)
+    profile_model = identify_targets(ccd=iccd, nfind=nfind, plots=plots)
     del (iccd)
 
     if isinstance(profile_model, Model):
@@ -1139,20 +1141,13 @@ def spectroscopic_extraction(ccd, extraction,
         log_spec.error('Got wrong input')
 
 
-def identify_targets(ccd, line=None, nsum=20, nfind=3, plots=False):
+def identify_targets(ccd, nfind=3, plots=False):
     """Identify targets cross correlating spatial profile with a gaussian model
 
-    The method of cross-correlating a gaussian model to the spatial profile was
-    mentioned in Marsh 1989, then I created my own implementation. The spatial
-    profile is obtained by finding the median across the full dispersion axis.
-    For goodman the spectrum and ccd are very well aligned, there is a slight
-    variation from one configuration to another but in general is acceptable.
 
     Args:
         ccd (object): a ccdproc.CCDData instance
-        line:
-        nsum:
-        nfind:
+        nfind (int): Maximum number of targets to be returned
         plots (bool): to show debugging plots
 
     Returns:
@@ -1208,9 +1203,6 @@ def identify_targets(ccd, line=None, nsum=20, nfind=3, plots=False):
             plt.plot(fitted_background(range(ccd.data.shape[0])), color='r')
             plt.show()
 
-
-
-
         # Removing Background
 
         # Remove the background and set negative values to zero
@@ -1264,7 +1256,8 @@ def identify_targets(ccd, line=None, nsum=20, nfind=3, plots=False):
             #     print(index[0])
             selected_peaks.append(peaks[index[0]])
 
-        if plots:
+        if True:
+            plt.ioff()
             plt.plot(final_profile)
             plt.axhline(_upper_limit, color='g')
             for peak in selected_peaks:
