@@ -36,7 +36,8 @@ from .linelist import ReferenceData
 from goodman_ccd.core import (spectroscopic_extraction,
                               search_comp_group,
                               NoTargetException,
-                              NoMatchFound)
+                              NoMatchFound,
+                              NotEnoughLinesDetected)
 
 
 
@@ -127,6 +128,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                         ccd=ccd,
                         extraction=extraction_type,
                         comp_list=comp_ccd_list,
+                        nfind=args.max_n_targets,
                         plots=SHOW_PLOTS)
 
                     if args.debug_mode:
@@ -553,6 +555,7 @@ class WavelengthCalibration(object):
             plt.plot(raw_pixel_axis, no_nan_lamp_data, color='k')
             plt.legend(loc='best')
             plt.show()
+
         return lines_center
 
     def recenter_lines(self, data, lines, plots=False):
@@ -1352,8 +1355,12 @@ class WavelengthCalibration(object):
         """
         plt.switch_backend('Qt4Agg')
 
-        reference_file = self.reference_data.get_best_reference_lamp(
-            header=self.lamp_header)
+        try:
+            reference_file = self.reference_data.get_best_reference_lamp(
+                header=self.lamp_header)
+        except NotImplementedError:
+            reference_file = None
+            log.critical('Could not find a comparison lamp in the reference.')
 
         # reference_file = self.reference_data.get_reference_lamps_by_name(
         #     self.lamp_name)

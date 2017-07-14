@@ -16,10 +16,11 @@ from ccdproc import CCDData
 from .core import (image_overscan,
                    image_trim,
                    get_slit_trim_section,
-                   cosmicray_rejection,
+                   lacosmic_cosmicray_rejection,
                    get_best_flat,
                    normalize_master_flat,
-                   dcr_cosmicray_rejection)
+                   dcr_cosmicray_rejection,
+                   call_cosmic_rejection)
 
 from .wavmode_translator import SpectroscopicMode
 
@@ -75,8 +76,12 @@ class ImageProcessor(object):
             if group is not None:
                 for sub_group in group:
                     group_obstype = sub_group.obstype.unique()
-                    if len(group_obstype) == 1 and group_obstype[0] == 'BIAS':
-                        log.debug('Create Master Bias')
+
+                    if len(group_obstype) == 1 and \
+                        group_obstype[0] == 'BIAS' and \
+                        not self.args.ignore_bias:
+
+                        log.debug('Creating Master Bias')
                         self.create_master_bias(sub_group)
                     elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
                         log.debug('Create Master FLATS')
@@ -145,7 +150,8 @@ class ImageProcessor(object):
                     #top
                     t = int(1896 / parallel_binning)
                     # TODO (simon): Need testing
-                    trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
+                    # trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
+                    trim_section = '[{:d}:{:d},:]'.format(l, r)
 
                 elif technique == 'Imaging':
                     trim_section = ccd.header['TRIMSEC']
@@ -167,7 +173,7 @@ class ImageProcessor(object):
 
         Notes
         1 based
-        IRAF V3 convention oppsoite to Python (poner en returns)
+        IRAF V3 convention opposite to Python (poner en returns)
 
         Returns:
             overscan_region (str): Region for overscan in the format
@@ -368,10 +374,14 @@ class ImageProcessor(object):
                                             add_keyword=False)
             else:
                 log.error('Unknown observation technique: ' + self.technique)
+            # TODO (simon): Improve this part. One hot pixel could rule out a
+            # todo (cont): perfectly expososed image.
             if ccd.data.max() > self.args.saturation_limit:
                 log.warning('Removing saturated image {:s}. Use --saturation '
                             'to change saturation level'.format(flat_file))
-                # plt.plot(ccd.data[802,:])
+                # import numpy as np
+                # maximum_flat = np.max(ccd.data, axis=0)
+                # plt.plot(maximum_flat)
                 # plt.show()
                 # print(ccd.data.max())
                 continue
@@ -491,8 +501,10 @@ class ImageProcessor(object):
 
         target_name = ''
         slit_trim = None
+        master_flat = None
+        master_flat_name = None
         obstype = science_group.obstype.unique()
-        print(science_group)
+        # print(obstype)
         if 'OBJECT' in obstype or 'COMP' in obstype:
             object_group = science_group[(science_group.obstype == 'OBJECT') |
                                          (science_group.obstype == 'COMP')]
@@ -504,13 +516,18 @@ class ImageProcessor(object):
             else:
                 log.info('Processing Comparison Lamp: {:s}'.format(target_name))
 
-            if 'FLAT' in obstype:
+            if 'FLAT' in obstype and not self.args.ignore_flats:
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']
 
                 master_flat, master_flat_name =\
                     self.create_master_flats(flat_group=flat_sub_group,
                                              target_name=target_name)
+            elif self.args.ignore_flats:
+                log.warning('Ignoring creation of Master Flat by request.')
+                master_flat = None
+                master_flat_name = None
             else:
+                log.info('Attempting to find a suitable Master Flat')
                 object_list = object_group.file.tolist()
 
                 # grab a random image from the list
@@ -523,54 +540,41 @@ class ImageProcessor(object):
                 # read the random chosen file
                 ccd = CCDData.read(random_image_full, unit=u.adu)
 
-                # define the master flat name
-                master_flat_name = self.name_master_flats(header=ccd.header,
-                                                          group=object_group,
-                                                          get=True)
+                if not self.args.ignore_flats:
+                    # define the master flat name
+                    master_flat_name = self.name_master_flats(
+                        header=ccd.header,
+                        group=object_group,
+                        get=True)
 
-                log.debug('Defined Master Flat Name as : '
-                          '{:s}'.format(master_flat_name))
+                    # load the best flat based on the name previously defined
+                    master_flat, master_flat_name = \
+                        get_best_flat(flat_name=master_flat_name)
+                    if (master_flat is None) and (master_flat_name is None):
+                        log.critical('Failed to obtain master flat')
 
-                # load the best flat based on the name previously defined
-                master_flat, master_flat_name =\
-                    get_best_flat(flat_name=master_flat_name)
-                if (master_flat is None) and (master_flat_name is None):
-                    # attempt to find a set of flats in all the data
 
-                    if self.queue is None:
-                        self.queue = [science_group]
-                    else:
-                        self.queue.append(science_group)
-                        # for sgroup in self.queue:
-                        #     if isinstance(sgroup, pandas.DataFrame):
-                        #         if sgroup.equals(science_group):
-                        #             log.info('Science group already in queue')
-                        #         else:
-                        #             log.info('Appending science Group')
-                        #             self.queue.append(science_group)
-                        #     else:
-                        #         log.error('Science Group is not an instance of
-                        # pandas.DataFrame')
-                    log.warning('Adding image group to Queue')
-            if master_flat is not None:
+            if master_flat is not None and not self.args.ignore_flats:
                 log.debug('Attempting to find slit trim section')
                 slit_trim = get_slit_trim_section(master_flat=master_flat)
-
+            elif self.args.ignore_flats:
+                log.warning('Slit Trimming will be skipped, --ignore-flats is '
+                            'activated')
             else:
                 log.info('Master flat inexistent, cant find slit trim section')
             if slit_trim is not None:
 
-                log.debug('Slit Trim Section is: {:s}'.format(slit_trim))
-
                 master_flat = image_trim(ccd=master_flat,
                                          trim_section=slit_trim)
 
-                master_bias = image_trim(ccd=self.master_bias,
-                                         trim_section=slit_trim)
+                if self.master_bias is not None:
+                    master_bias = image_trim(ccd=self.master_bias,
+                                             trim_section=slit_trim)
             else:
-                log.debug('Slit Trim Section is: None')
-
-                master_bias = self.master_bias.copy()
+                try:
+                    master_bias = self.master_bias.copy()
+                except AttributeError:
+                    master_bias = None
 
             norm_master_flat = None
             for science_image in object_group.file.tolist():
@@ -601,16 +605,19 @@ class ImageProcessor(object):
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
 
-                    log.debug('Applying bias subtraction')
                     ccd = ccdproc.subtract_bias(ccd=ccd,
                                                 master=master_bias,
                                                 add_keyword=False)
 
                     self.out_prefix = 'z' + self.out_prefix
                     ccd.header.add_history('Bias subtracted image')
+                else:
+                    log.warning('Ignoring bias correction by request.')
                 if master_flat is None or master_flat_name is None:
                     log.warning('The file {:s} will not be '
                                 'flatfielded'.format(science_image))
+                elif self.args.ignore_flats:
+                    log.warning('Ignoring flatfielding by request.')
                 else:
                     if norm_master_flat is None:
 
@@ -629,26 +636,13 @@ class ImageProcessor(object):
                     ccd.header.add_history('master flat norm_'
                                            '{:s}'.format(master_flat_name))
 
-                full_path = os.path.join(self.args.red_path,
-                                         self.out_prefix + science_image)
-                ccd.write(full_path, clobber=True)
-                log.info('Created science image: {:s}'.format(full_path))
-
-                if self.args.clean_cosmic:
-
-                    in_file = self.out_prefix + science_image
-
-                    dcr_cosmicray_rejection(data_path=self.args.red_path,
-                                            in_file=in_file,
-                                            prefix='c',
-                                            dcr_par_dir=self.args.dcr_par_dir,
-                                            delete=self.args.keep_cosmic_files)
-
-                else:
-                    log.warning('Clean Cosmic ' + str(self.args.clean_cosmic))
-
-
-                
+                call_cosmic_rejection(ccd=ccd,
+                                      science_image=science_image,
+                                      out_prefix=self.out_prefix,
+                                      red_path=self.args.red_path,
+                                      dcr_par=self.args.dcr_par_dir,
+                                      keep_files=self.args.keep_cosmic_files,
+                                      method=self.args.clean_cosmic)
 
                 # print(science_group)
         elif 'FLAT' in obstype:
@@ -717,7 +711,7 @@ class ImageProcessor(object):
                     '{:s}'.format(master_flat_name.split('/')[-1]))
 
                 if self.args.clean_cosmic:
-                    ccd = cosmicray_rejection(ccd=ccd)
+                    ccd = lacosmic_cosmicray_rejection(ccd=ccd)
                     self.out_prefix = 'c' + self.out_prefix
                 else:
                     print('Clean Cosmic ' + str(self.args.clean_cosmic))

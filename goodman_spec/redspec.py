@@ -152,6 +152,15 @@ def get_args(arguments=None):
                         dest='log_to_file',
                         help="Write log to a file")
 
+    parser.add_argument('--max-targets',
+                        action='store',
+                        dest='max_n_targets',
+                        metavar='<max targets>',
+                        type=int,
+                        default=3,
+                        help="Maximum number of targets to be found in a "
+                             "single image. Default 3")
+
     parser.add_argument('--save-plots',
                         action='store_true',
                         dest='save_plots',

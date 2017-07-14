@@ -43,63 +43,44 @@ def get_args(arguments=None):
 
     """
 
-    parser = argparse.ArgumentParser(description="Goodman CCD Reduction - CCD"
-                                                 "reductions for "
-                                                 "Goodman spectroscopic data")
-
-    parser.add_argument('--cosmic',
-                        action='store_true',
-                        dest='clean_cosmic',
-                        help="Clean cosmic rays from science data.")
-
-    # TODO (simon): Add argument to use calibration data from other day
-
-    parser.add_argument('--ignore-bias',
-                        action='store_true',
-                        dest='ignore_bias',
-                        help="Ignore bias correction")
+    parser = argparse.ArgumentParser(
+        description="Goodman CCD Reduction - CCD reductions for Goodman "
+                    "spectroscopic data.")
 
     parser.add_argument('--auto-clean',
                         action='store_true',
                         dest='auto_clean',
                         help="Automatically clean reduced data directory")
 
-    parser.add_argument('--saturation',
+    parser.add_argument('--cosmic',
                         action='store',
-                        default=55000.,
-                        dest='saturation_limit',
-                        metavar='<Value>',
-                        help="Saturation limit. Default to 55.000 ADU (counts)")
+                        dest='clean_cosmic',
+                        default='dcr',
+                        choices=['dcr', 'lacosmic', 'none'],
+                        metavar='<method>',
+                        help="Clean cosmic rays from all data. Options are: "
+                             "'dcr', 'lacosmic' or 'none'. Default is 'dcr'. "
+                             "See manual for full description of dcr.")
 
-    parser.add_argument('--raw-path',
+    parser.add_argument('--dcr-par-dir',
                         action='store',
-                        metavar='raw_path',
-                        default='./',
-                        type=str,
-                        help="Path to raw data.")
-
-    parser.add_argument('--red-path',
-                        action='store',
-                        metavar='red_path',
-                        type=str,
-                        default='./RED',
-                        help="Path to reduced data.")
+                        default='files/',
+                        metavar='<dcr.par_directory>',
+                        dest='dcr_par_dir',
+                        help="Directory of default dcr.par file")
 
     parser.add_argument('--debug',
                         action='store_true',
                         dest='debug_mode',
                         help="Show detailed information of the process.")
 
-    parser.add_argument('--log-to-file',
-                        action='store_true',
-                        dest='log_to_file',
-                        help="Write log to a file.")
+    # TODO (simon): Add argument to use calibration data from other day
 
     parser.add_argument('--flat-normalize',
                         action='store',
                         default='simple',
                         type=str,
-                        metavar='<Normalization Method>',
+                        metavar='<normalization_method>',
                         dest='flat_normalize',
                         choices=['mean', 'simple', 'full'],
                         help='Choose a method to normalize the master flat for'
@@ -110,16 +91,20 @@ def get_args(arguments=None):
                         action='store',
                         default=15,
                         type=int,
-                        metavar='<Order>',
+                        metavar='<order>',
                         dest='norm_order',
-                        help='Defines the order of the model to be fitted.')
+                        help='Defines the order of the model to be fitted. '
+                             'Default to 15')
 
-    parser.add_argument('--dcr-par-dir',
-                        action='store',
-                        default='files/',
-                        metavar='<dcr.par directory>',
-                        dest='dcr_par_dir',
-                        help="Directory of default dcr.par file.")
+    parser.add_argument('--ignore-bias',
+                        action='store_true',
+                        dest='ignore_bias',
+                        help="Ignore bias correction")
+
+    parser.add_argument('--ignore-flats',
+                        action='store_true',
+                        dest='ignore_flats',
+                        help="Ignore flat field correction")
 
     parser.add_argument('--keep-cosmic-files',
                         action='store_false',
@@ -127,15 +112,50 @@ def get_args(arguments=None):
                         help="After cleaning cosmic rays with dcr, do not "
                              "remove the input file and the cosmic rays file.")
 
+    parser.add_argument('--log-file',
+                        action='store',
+                        dest='log_file',
+                        metavar='<log_file>',
+                        default=LOG_FILENAME,
+                        help="Name for log file. "
+                             "Default name is {:s}. "
+                             "The file is written in <red_path> and will be "
+                             "deleted each time you run this "
+                             "program".format(LOG_FILENAME))
+
+    parser.add_argument('--raw-path',
+                        action='store',
+                        metavar='<raw_path>',
+                        default='./',
+                        type=str,
+                        help="Path to raw data.")
+
+    parser.add_argument('--red-path',
+                        action='store',
+                        metavar='<red_path>',
+                        type=str,
+                        default='./RED',
+                        help="Path to reduced data.")
+
+    parser.add_argument('--saturation',
+                        action='store',
+                        default=65000.,
+                        dest='saturation_limit',
+                        metavar='<value>',
+                        help="Saturation limit. Default to 65.000 ADU (counts)")
+
     args = parser.parse_args(args=arguments)
 
-    if args.log_to_file:
-        log.info('Logging to file {:s}'.format(LOG_FILENAME))
-        file_handler = logging.FileHandler(filename=LOG_FILENAME)
-        file_handler.setLevel(level=logging.INFO)
-        formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
-        file_handler.setFormatter(fmt=formatter)
-        log.addHandler(file_handler)
+    # define log file
+    # the log file will be stored in the same directory that the program
+    # is called
+    log.info('Logging to file {:s}'.format(LOG_FILENAME))
+    file_handler = logging.FileHandler(filename=LOG_FILENAME)
+    file_handler.setLevel(level=logging.INFO)
+    formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
+    file_handler.setFormatter(fmt=formatter)
+    log.addHandler(file_handler)
+
     if args.debug_mode:
         log.info('Changing log level to DEBUG.')
         log.setLevel(level=logging.DEBUG)
@@ -277,11 +297,12 @@ class MainApp(object):
                 # nd = Night Dictionary
                 nd = night_sorter.nights_dict[night]
                 log.debug('Initializing NightOrganizer Class')
-                night_organizer = NightOrganizer(full_path=nd['full_path'],
-                                                 instrument=nd['instrument'],
-                                                 technique=nd['technique'],
-                                                 ignore_bias=
-                                                 self.args.ignore_bias)
+                night_organizer = NightOrganizer(
+                    full_path=nd['full_path'],
+                    instrument=nd['instrument'],
+                    technique=nd['technique'],
+                    ignore_bias=self.args.ignore_bias,
+                    ignore_flats=self.args.ignore_flats)
 
                 log.debug('Calling night_organizer instance')
                 self.data_container = night_organizer()

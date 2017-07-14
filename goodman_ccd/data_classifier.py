@@ -145,11 +145,11 @@ class DataClassifier(object):
                                         file_list=file_list)
             # gratings = self.objects_collection.grating.unique()
             cam_targ = self.objects_collection.cam_targ.unique()
-            print(type(cam_targ))
-            if int(np.mean(float(cam_targ))) != 0:
+
+            if int(np.mean(cam_targ)) != 0:
                 self.technique = 'Spectroscopy'
                 log.info('Detected Spectroscopy Data from BLUE Camera')
-            elif int(np.mean(float(cam_targ))) == 0:
+            elif int(np.mean(cam_targ)) == 0:
                 self.technique = 'Imaging'
                 log.info('Detected Imaging Data from BLUE Camera')
             else:

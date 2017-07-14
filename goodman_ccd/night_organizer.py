@@ -22,7 +22,8 @@ log = logging.getLogger('goodmanccd.nightorganizer')
 
 class NightOrganizer(object):
 
-    def __init__(self, full_path, instrument, technique, ignore_bias=False):
+    def __init__(self, full_path, instrument, technique, ignore_bias=False,
+                 ignore_flats=False):
         """Initializes the NightOrganizer class
 
         This class contains methods to organize the data for processing. It will
@@ -40,6 +41,7 @@ class NightOrganizer(object):
         self.instrument = instrument
         self.technique = technique
         self.ignore_bias = ignore_bias
+        self.ignore_flats = ignore_flats
         self.keywords = ['date',
                          'slit',
                          'date-obs',
@@ -123,8 +125,7 @@ class NightOrganizer(object):
             log.info('Sleeping 10 seconds')
             time.sleep(10)
 
-    @staticmethod
-    def spectroscopy_night(file_collection, data_container):
+    def spectroscopy_night(self, file_collection, data_container):
         """Organizes data for spectroscopy
 
         This method identifies all combinations of nine **key** keywords that
@@ -159,25 +160,49 @@ class NightOrganizer(object):
         #process bias
         bias_collection = file_collection[file_collection.obstype == 'BIAS']
 
-        bias_conf = bias_collection.groupby(
-            ['gain',
-             'rdnoise',
-             'radeg',
-             'decdeg']).size().reset_index().rename(columns={0: 'count'})
+        if not self.ignore_bias:
+            if len(bias_collection) == 0:
+                log.critical('There is no BIAS images. Use --ignore-bias to '
+                             'continue without BIAS.')
+                sys.exit('CRITICAL ERROR: BIAS not Found.')
+            else:
+                bias_conf = bias_collection.groupby(
+                    ['gain',
+                     'rdnoise',
+                     'radeg',
+                     'decdeg']).size().reset_index().rename(
+                    columns={0: 'count'})
 
-        # bias_conf
-        for i in bias_conf.index:
+                # bias_conf
+                for i in bias_conf.index:
+                    bias_group = bias_collection[
+                        (
+                        (bias_collection['gain'] == bias_conf.iloc[i]['gain']) &
+                        (bias_collection['rdnoise'] == bias_conf.iloc[i][
+                            'rdnoise']) &
+                        (bias_collection['radeg'] == bias_conf.iloc[i][
+                            'radeg']) &
+                        (bias_collection['decdeg'] == bias_conf.iloc[i][
+                            'decdeg']))]
 
-            bias_group = bias_collection[
-                ((bias_collection['gain'] == bias_conf.iloc[i]['gain']) &
-                (bias_collection['rdnoise'] == bias_conf.iloc[i]['rdnoise']) &
-                (bias_collection['radeg'] == bias_conf.iloc[i]['radeg']) &
-                (bias_collection['decdeg'] == bias_conf.iloc[i]['decdeg']))]
+                    data_container.add_bias(bias_group=bias_group)
+        else:
+            log.warning('Ignoring BIAS by request.')
 
-            data_container.add_bias(bias_group=bias_group)
+        if 'FLAT' not in file_collection.obstype.unique() and \
+                not self.ignore_flats:
+            log.critical('There is no FLAT images. Use --ignore-flats to '
+                         'continue without FLATs.')
+            sys.exit('CRITICAL ERROR: FLAT not Found.')
+        elif self.ignore_flats:
+            log.warning('Ignoring FLAT images on request.')
+            data_collection = file_collection[
+                ((file_collection.obstype != 'BIAS') &
+                 (file_collection.obstype != 'FLAT'))]
+        else:
+            # process non-bias i.e. flats and object ... and comp
+            data_collection = file_collection[file_collection.obstype != 'BIAS']
 
-        # process non-bias i.e. flats and object ... and comp
-        data_collection = file_collection[file_collection.obstype != 'BIAS']
 
         confs = data_collection.groupby(
             ['gain',
