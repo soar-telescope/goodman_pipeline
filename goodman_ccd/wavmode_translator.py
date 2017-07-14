@@ -149,13 +149,7 @@ class SpectroscopicMode(object):
         return _mode['wavmode'].to_string(index=False)
 
 if __name__ == '__main__':
-    # TODO (simon): Remove these lines
-    spect_mode = SpectroscopicMode()
-    # spect_mode(grating='lls_1200', camera_targ='49.6', grating_targ='24.8', blocking_filter='GG455')
-    ccd = CCDData.read('/user/simon/data/soar/raw/spectroscopy_engineering_night/2017-02-07/0227_quartz_400M2_GG455.fits', unit=u.adu)
-    spect_mode(header=ccd.header)
-    # (spect_mode.grating_freq)
-    # print(spect_mode.blocking_filter)
+    pass
 
 
 

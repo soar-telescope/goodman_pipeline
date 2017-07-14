@@ -1281,6 +1281,11 @@ def identify_targets(ccd, nfind=3, plots=False):
                                      range(len(median_profile)),
                                      median_profile)
 
+            # after being fitted, unfix the parameters and now fix stddev
+            fitted_gaussian.mean.fixed = False
+            fitted_gaussian.amplitude.fixed = False
+            fitted_gaussian.stddev.fixed = True
+
             # manually forcing the use of the best stddev if possitive
             if best_stddev is None:
                 best_stddev = fitted_gaussian.stddev.value
@@ -1373,6 +1378,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     # Loop to go through all the sampling points and gather the points
     for i in sampling_axis:
         # Fit the inital model to the data
+        # TODO (simon): Add constraints to the fit
         fitted_profile = model_fitter(model=profile,
                                       x=range(ccd.data[:, i].size),
                                       y=ccd.data[:, i])
