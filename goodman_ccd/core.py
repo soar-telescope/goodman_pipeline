@@ -1265,6 +1265,8 @@ def identify_targets(ccd, nfind=3, plots=False):
             plt.show()
 
         # build the model to return
+        fitter = fitting.LevMarLSQFitter()
+        best_stddev = None
 
         profile_model = None
         for peak in selected_peaks:
@@ -1272,15 +1274,41 @@ def identify_targets(ccd, nfind=3, plots=False):
             gaussian = models.Gaussian1D(amplitude=peak_value,
                                          mean=peak,
                                          stddev=order)
-            if profile_model is None:
-                profile_model = gaussian
+            # fixes mean and amplitude already found, just finding stddev
+            gaussian.mean.fixed = True
+            gaussian.amplitude.fixed = True
+            fitted_gaussian = fitter(gaussian,
+                                     range(len(median_profile)),
+                                     median_profile)
+
+            # manually forcing the use of the best stddev if possitive
+            if best_stddev is None:
+                best_stddev = fitted_gaussian.stddev.value
+            elif best_stddev < fitted_gaussian.stddev.value:
+                fitted_gaussian.stddev.value = best_stddev
             else:
-                profile_model += gaussian
+                best_stddev = fitted_gaussian.stddev.value
+            if best_stddev < 0:
+                best_stddev = None
+
+            # print(fitted_gaussian.stddev.value)
+            # plt.plot(median_profile, color='b')
+            # plt.plot(fitted_gaussian(range(len(median_profile))), color='r')
+            # plt.show()
+            if profile_model is None:
+                profile_model = fitted_gaussian
+            else:
+                profile_model += fitted_gaussian
 
         if plots:
             plt.plot(median_profile, color='b')
             plt.plot(profile_model(range(len(median_profile))), color='r')
             plt.show()
+
+        # plt.imshow(ccd.data, clim=(50, 200), cmap='gray')
+        # for peak in selected_peaks:
+        #     plt.axhline(peak, color='r')
+        # plt.show()
 
         if profile_model is None:
             return None
