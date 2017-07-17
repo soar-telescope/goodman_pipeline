@@ -139,14 +139,21 @@ class SpectroscopicMode(object):
                                                      cam_ang=camera_targ)
             return 'Custom_{:d}nm'.format(int(round(central_wavelength)))
 
-        _mode = self.modes_data_frame[
-            ((self.modes_data_frame['grating_freq'] == grating) &
-             (self.modes_data_frame['camtarg'] == camera_targ) &
-             (self.modes_data_frame['grttarg'] == grating_targ))]
+        else:
+            _mode = self.modes_data_frame[
+                ((self.modes_data_frame['grating_freq'] == grating) &
+                 (self.modes_data_frame['camtarg'] == camera_targ) &
+                 (self.modes_data_frame['grttarg'] == grating_targ))]
+            if _mode.empty:
+                central_wavelength = get_central_wavelength(grating=grating,
+                                                            grt_ang=grating_targ,
+                                                            cam_ang=camera_targ)
+                return 'Custom_{:d}nm'.format(int(round(central_wavelength)))
+            else:
+                # print('%s %s' %(grating, _mode.wavmode))
+                # print(_mode['wavmode'].to_string)
+                return _mode['wavmode'].to_string(index=False)
 
-        # print('%s %s' %(grating, _mode.wavmode))
-        # print(_mode['wavmode'].to_string)
-        return _mode['wavmode'].to_string(index=False)
 
 if __name__ == '__main__':
     pass
