@@ -1329,17 +1329,34 @@ def identify_targets(ccd, nfind=3, plots=False):
 
 
 def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
-    """
+    """Find the trace of a spectrum
+
+    This function is called by the `trace_targets` targets, the difference is
+    that it only takes single models only not CompoundModels so this function
+    is called for every single target.
+
+    Notes:
+        This method forces the trace to go withing a rectangular region of
+        center `model.mean.value` and width `2 * nsigmas`, this is for allowing
+        the trace of low SNR targets. The assumption is valid since the spectra
+        are always well aligned to the detectors's pixel columns. (dispersion
+        axis)
 
     Args:
-        ccd:
-        model:
-        trace_model:
-        fitter:
-        sampling_step:
-        nsigmas:
+        ccd (object): A ccdproc.CCDData instance, 2D image.
+        model (object): An astropy.modeling.Model instance that contains
+            information regarding the target to be traced.
+        trace_model (object): An astropy.modeling.Model instance, usually a low
+            order polynomial.
+        fitter (object): An astropy.modeling.fitting.Fitter instance. Will fit
+            the sampled points to construct the trace model
+        sampling_step (int): Step for sampling the spectrum.
+        nsigmas (int): Number of stddev to each side of the mean to be used for
+            searching the trace.
 
     Returns:
+        An astropy.modeling.Model instance, that defines the trace of the
+            spectrum.
 
     """
     spatial_length, dispersion_length = ccd.data.shape
