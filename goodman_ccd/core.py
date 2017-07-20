@@ -1257,7 +1257,7 @@ def identify_targets(ccd, nfind=3, plots=False):
             #     print(index[0])
             selected_peaks.append(peaks[index[0]])
 
-        if True:
+        if plots:
             plt.ioff()
             plt.plot(final_profile)
             plt.axhline(_upper_limit, color='g')
@@ -1274,7 +1274,9 @@ def identify_targets(ccd, nfind=3, plots=False):
             peak_value = median_profile[peak]
             gaussian = models.Gaussian1D(amplitude=peak_value,
                                          mean=peak,
-                                         stddev=order)
+                                         stddev=order).rename(
+                'Gaussian_{:d}'.format(peak))
+
             # fixes mean and amplitude already found, just finding stddev
             gaussian.mean.fixed = True
             gaussian.amplitude.fixed = True
@@ -1288,6 +1290,7 @@ def identify_targets(ccd, nfind=3, plots=False):
             fitted_gaussian.stddev.fixed = True
 
             # manually forcing the use of the best stddev if possitive
+            # this disables the pipeline for extended sources
             if best_stddev is None:
                 best_stddev = fitted_gaussian.stddev.value
             elif best_stddev < fitted_gaussian.stddev.value:
@@ -1301,10 +1304,14 @@ def identify_targets(ccd, nfind=3, plots=False):
             # plt.plot(median_profile, color='b')
             # plt.plot(fitted_gaussian(range(len(median_profile))), color='r')
             # plt.show()
-            if profile_model is None:
-                profile_model = fitted_gaussian
-            else:
-                profile_model += fitted_gaussian
+
+            # this ensures the profile returned are valid
+            if fitted_gaussian.stddev.value > 0:
+                if profile_model is None:
+                    profile_model = fitted_gaussian
+                else:
+                    profile_model += fitted_gaussian
+
 
         if plots:
             plt.plot(median_profile, color='b')
@@ -1321,6 +1328,101 @@ def identify_targets(ccd, nfind=3, plots=False):
         else:
             return profile_model
 
+
+def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
+    """Find the trace of a spectrum
+
+    This function is called by the `trace_targets` targets, the difference is
+    that it only takes single models only not CompoundModels so this function
+    is called for every single target.
+
+    Notes:
+        This method forces the trace to go withing a rectangular region of
+        center `model.mean.value` and width `2 * nsigmas`, this is for allowing
+        the trace of low SNR targets. The assumption is valid since the spectra
+        are always well aligned to the detectors's pixel columns. (dispersion
+        axis)
+
+    Args:
+        ccd (object): A ccdproc.CCDData instance, 2D image.
+        model (object): An astropy.modeling.Model instance that contains
+            information regarding the target to be traced.
+        trace_model (object): An astropy.modeling.Model instance, usually a low
+            order polynomial.
+        fitter (object): An astropy.modeling.fitting.Fitter instance. Will fit
+            the sampled points to construct the trace model
+        sampling_step (int): Step for sampling the spectrum.
+        nsigmas (int): Number of stddev to each side of the mean to be used for
+            searching the trace.
+
+    Returns:
+        An astropy.modeling.Model instance, that defines the trace of the
+            spectrum.
+
+    """
+    spatial_length, dispersion_length = ccd.data.shape
+
+    sampling_axis = range(0, dispersion_length, sampling_step)
+    sample_values = []
+
+    model_stddev = model.stddev.value
+    model_mean = model.mean.value
+
+    sample_center = float(model_mean)
+
+    for point in sampling_axis:
+
+        lower_limit = int(sample_center - nsigmas * model_stddev)
+        upper_limit = int(sample_center + nsigmas * model_stddev)
+
+        sample = ccd.data[lower_limit:upper_limit, point:point + sampling_step]
+        sample_median = np.median(sample, axis=1)
+
+        try:
+            sample_peak = np.argmax(sample_median)
+            # print(sample_peak + lower_limit)
+        except ValueError:
+            plt.plot(model(range(spatial_length)))
+            plt.plot(ccd.data[:,point])
+            plt.show()
+            print('Nsigmas ', nsigmas)
+            print('Model Stddev ', model_stddev)
+            print('sample_center ', sample_center)
+            print('sample ', sample)
+            print('sample_median ', sample_median)
+            print('lower_limit ', lower_limit)
+            print('upper_limit ', upper_limit)
+            print('point ', point)
+            print('point + sampling_step ', point + sampling_step)
+            print(spatial_length, dispersion_length)
+            sys.exit()
+
+        sample_values.append(sample_peak + lower_limit)
+
+        if np.abs(sample_peak + lower_limit - model_mean) < nsigmas * model_stddev:
+            sample_center = int(sample_peak + lower_limit)
+        else:
+            # print(np.abs(sample_peak + lower_limit - model_mean), nsigmas * model_stddev)
+            sample_center = float(model_mean)
+
+    fitted_trace = fitter(trace_model, sampling_axis, sample_values)
+
+    if False:
+        plt.title(ccd.header['OFNAME'])
+        plt.imshow(ccd.data, clim=(30, 200))
+        plt.plot(sampling_axis, sample_values, color='y', marker='o')
+        plt.axhspan(lower_limit,
+                    upper_limit,
+                    alpha=0.4,
+                    color='g')
+        plt.plot(model(range(spatial_length)))
+        plt.show()
+        print(dispersion_length)
+        print(sampling_axis)
+
+    # fitted_trace = None
+
+    return fitted_trace
 
 
 def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
@@ -1354,135 +1456,46 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     assert isinstance(ccd, CCDData)
     assert isinstance(profile, Model)
 
-    # Get image dimensions
-    spatial_length, dispersion_length = ccd.data.shape
-
     # Initialize model fitter
     model_fitter = fitting.LevMarLSQFitter()
 
     # Initialize the model to fit the traces
     trace_model = models.Polynomial1D(degree=pol_deg)
 
-    # Will store the arrays for the fitted location of the target obtained
-    # in the fitting
-    trace_points = None
-
     # List that will contain all the Model instances corresponding to traced
     # targets
     all_traces = None
 
-    # Array defining the points to be sampled
-    sampling_axis = range(0,
-                          dispersion_length // sampling_step * sampling_step,
-                          sampling_step)
+    if 'CompoundModel' in profile.__class__.name:
+        log_spec.debug(profile.__class__.name)
+        # TODO (simon): evaluate if targets are too close together.
+        for m in range(len(profile.submodel_names)):
+            submodel_name = profile.submodel_names[m]
 
-    # Loop to go through all the sampling points and gather the points
-    for i in sampling_axis:
-        # Fit the inital model to the data
-        # TODO (simon): Add constraints to the fit
-        fitted_profile = model_fitter(model=profile,
-                                      x=range(ccd.data[:, i].size),
-                                      y=ccd.data[:, i])
-        log_spec.debug('Profile fitted')
+            model = profile[submodel_name]
 
-        # if plots or log_spec.isEnabledFor(logging.DEBUG):
-        #     # print(fitted_profile)
-        #     x_axis = range(ccd.data[:, i].size)
-        #     plt.ion()
-        #     plt.title('Column {:d}'.format(i))
-        #     plt.plot(ccd.data[:, i], label='Data')
-        #     plt.plot(x_axis, fitted_profile(x_axis), label='Model')
-        #     plt.legend(loc='best')
-        #     # if model_fitter.fit_info['ierr'] == 1:
-        #     #     # print(model_fitter.fit_info)
-        #     #     plt.ioff()
-        #     #     plt.show()
-        #     #     plt.ion()
-        #     plt.draw()
-        #     plt.pause(.5)
-        #     plt.clf()
-        #     plt.ioff()
+            single_trace = trace(ccd=ccd,
+                                 model=model,
+                                 trace_model=trace_model,
+                                 fitter=model_fitter,
+                                 sampling_step=sampling_step)
 
-        if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log_spec.error(
-                "Fitting did not work, fit_info['ierr'] = \
-                {:d}".format(model_fitter.fit_info['ierr']))
 
-        # alternatively could use fitted_profile.param_names
-        # the mean_keys is another way to tell how many submodels are in the
-        # model that was parsed.
-        mean_keys = [key for key in dir(fitted_profile) if 'mean' in key]
-
-        # Since traces are assumed to vary smoothly with wavelength I change the
-        # previously found mean to the profile model used to fit the profile
-        # data
-        for mean_key in mean_keys:
-            profile.__getattribute__(mean_key).value = \
-                fitted_profile.__getattribute__(mean_key).value
-
-        if trace_points is None:
-            trace_points = np.ndarray((len(mean_keys),
-                                       dispersion_length // sampling_step))
-
-        # store the corresponding value in the proper array for later fitting
-        # a low order polynomial
-        for e in range(trace_points.shape[0]):
-            log_spec.debug('Median Trace'
-                      ' {:d}: {:.3f}'.format(e, np.median(trace_points[e])))
-
-            trace_points[e][i // sampling_step] = \
-                fitted_profile.__getattribute__(mean_keys[e]).value
-
-    # fit a low order polynomial for the trace
-    for trace_num in range(trace_points.shape[0]):
-
-        fitted_trace = model_fitter(model=trace_model,
-                                    x=sampling_axis,
-                                    y=trace_points[trace_num])
-
-        fitted_trace.rename('Trace_{:d}'.format(trace_num))
-
-        plt.title('Fitted Trace')
-        plt.imshow(ccd.data, clim=(15, 225), cmap='gray')
-        plt.plot(fitted_trace(range(dispersion_length)))
-        plt.show()
-
-        # TODO (simon): Validate which kind of errors are represented here
-        if model_fitter.fit_info['ierr'] not in [1, 2, 3, 4]:
-            log_spec.error(model_fitter.fit_info['ierr'])
-        else:
-            # RMS Error calculation
-            rms_error = np.sqrt(
-                np.sum(np.array([fitted_trace(sampling_axis) -
-                                 trace_points[trace_num]]) ** 2))
-            log_spec.info('Trace Fit RMSE: {:.3f}'.format(rms_error))
-
-            # append for returning
             if all_traces is None:
-                all_traces = [fitted_trace]
+                all_traces = [single_trace]
             else:
-                all_traces.append(fitted_trace)
+                all_traces.append(single_trace)
 
-        if plots:
-            plt.plot(sampling_axis,
-                     trace_points[trace_num],
-                     marker='o',
-                     label='Data Points')
-            plt.plot(fitted_trace(range(dispersion_length)),
-                     label='Model RMSE: {:.2f}'.format(rms_error))
+        return all_traces
+    else:
+        single_trace = trace(ccd=ccd,
+                             model=profile,
+                             trace_model=trace_model,
+                             fitter=model_fitter,
+                             sampling_step=sampling_step)
+        return [single_trace]
 
-    if plots:
-        plt.title('Targets Trace')
-        plt.xlabel('Dispersion Axis')
-        plt.ylabel('Spatial Axis')
-        plt.imshow(ccd.data, cmap='YlGnBu', clim=(0, 300))
 
-        for trace in trace_points:
-            plt.plot(sampling_axis, trace, marker='.', linestyle='--')
-            # print(trace)
-        plt.legend(loc='best')
-        plt.show()
-    return all_traces
 
 
 def get_extraction_zone(ccd,
