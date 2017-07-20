@@ -594,6 +594,7 @@ class ImageProcessor(object):
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match
                     # the size of the other data
+                    # TODO (simon): Potential problem here
                     ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
                     ccd = image_trim(ccd=ccd, trim_section=slit_trim)
                     self.out_prefix = 'st' + self.out_prefix

@@ -61,10 +61,12 @@ class WavelengthFitter(object):
                 fitted_model = self.model_fit(self.model, physical, wavelength)
                 return fitted_model
             except TypeError as error:
-                log.info('Please add more data points.')
+                log.info('Unable to do fit, please add more data points.')
                 log.error('TypeError: %s', error)
+                return None
         else:
             log.error('Either model or model fitter were not constructed')
+            return None
 
 
 class ReadWavelengthSolution(object):
