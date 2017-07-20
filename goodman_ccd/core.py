@@ -268,7 +268,7 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
         ccd (object): Overscan corrected ccdproc.CCDData instance
 
     """
-    log.debug('Applying overscan Correction: {:s}'.format(overscan_region))
+    log_ccd.debug('Applying overscan Correction: {:s}'.format(overscan_region))
     ccd = ccdproc.subtract_overscan(ccd=ccd,
                                     median=True,
                                     fits_section=overscan_region,
@@ -1824,7 +1824,7 @@ def extract(ccd,
         #     # warn if the difference of the spectrum position in the trace at the
         #     # extremes of the sampling range is larger than 1 pixel.
         #     if np.abs(trace(i) - trace(i + sampling_step)) > 1:
-        #         log.warning('Sampling step might be too large')
+        #         log_spec.warning('Sampling step might be too large')
         #
         #     sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)
         #     fitted_profile = model_fitter(model=new_model,
