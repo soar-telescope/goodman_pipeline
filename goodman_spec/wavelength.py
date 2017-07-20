@@ -1127,6 +1127,11 @@ class WavelengthCalibration(object):
         self.wsolution = wavelength_solution.ws_fit(pixel_values,
                                                     angstrom_values)
 
+        if self.wsolution is None:
+            log.error('Failed to find wavelength solution using reference '
+                      'file: {:s}'.format(self.calibration_lamp))
+            return
+
         #  finding differences in order to improve the wavelength solution
         wavelength_differences = [angstrom_values[i] -
                                   self.wsolution(pixel_values[i]) for i in

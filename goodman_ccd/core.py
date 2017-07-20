@@ -1406,7 +1406,7 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
 
     fitted_trace = fitter(trace_model, sampling_axis, sample_values)
 
-    if False:
+    if True:
         plt.title(ccd.header['OFNAME'])
         plt.imshow(ccd.data, clim=(30, 200))
         plt.plot(sampling_axis, sample_values, color='y', marker='o')
@@ -1468,6 +1468,24 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     if 'CompoundModel' in profile.__class__.name:
         log_spec.debug(profile.__class__.name)
         # TODO (simon): evaluate if targets are too close together.
+
+        stddev_keys = [key for key in profile._param_names if 'stddev' in key]
+
+        mean_keys = [key for key in profile._param_names if 'mean' in key]
+
+        stddev_values = [
+            profile.__getattribute__(key).value for key in stddev_keys]
+
+        mean_values = [
+            profile.__getattribute__(key).value for key in mean_keys]
+
+        # if len(mean_values) == 1:
+        #     nsigmas = 20
+        # else:
+        #     # get maximum width
+        #     for i in range(len(mean_values)-1):
+
+
         for m in range(len(profile.submodel_names)):
             submodel_name = profile.submodel_names[m]
 
@@ -1478,7 +1496,6 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                                  trace_model=trace_model,
                                  fitter=model_fitter,
                                  sampling_step=sampling_step)
-
 
             if all_traces is None:
                 all_traces = [single_trace]
