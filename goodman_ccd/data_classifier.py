@@ -48,7 +48,9 @@ class DataClassifier(object):
         log.debug('Raw path: ' + self.args.raw_path)
         self.get_instrument(self.args.raw_path)
         log.info('Instrument: ' + self.instrument + ' Camera')
-        self.get_obs_technique()
+        no_bias_collection = self.image_collection[
+            self.image_collection.obstype != 'BIAS']
+        self.get_obs_technique(image_collection=no_bias_collection)
         log.info('Observing Technique: ' + self.technique)
         if self.instrument is not None and self.technique is not None:
             # folder name is used as key for the dictionary
@@ -86,7 +88,7 @@ class DataClassifier(object):
                 self.image_collection = ifc.summary.to_pandas()
 
                 self.objects_collection = self.image_collection[
-                    self.image_collection.obstype != 'ZERO']
+                    self.image_collection.obstype != 'BIAS']
 
                 if len(self.objects_collection) > 0:
 
@@ -116,7 +118,7 @@ class DataClassifier(object):
                     log.error('Unknown Error: ' + str(error))
             break
 
-    def get_obs_technique(self):
+    def get_obs_technique(self, image_collection):
         """Identify if the data is Imaging or Spectroscopy
 
         Besides the fact there are two cameras there are two observational
@@ -128,7 +130,7 @@ class DataClassifier(object):
         """
 
         if self.instrument == 'Red':
-            wavmodes = self.objects_collection.wavmode.unique()
+            wavmodes = image_collection.wavmode.unique()
             if len(wavmodes) == 1 and wavmodes[0] == 'Imaging':
                 self.technique = 'Imaging'
                 log.info('Detected Imaging Data from RED Camera')
@@ -143,8 +145,8 @@ class DataClassifier(object):
             file_list = self.image_collection.file.tolist()
             remove_conflictive_keywords(path=self.args.raw_path,
                                         file_list=file_list)
-            # gratings = self.objects_collection.grating.unique()
-            cam_targ = self.objects_collection.cam_targ.unique()
+            # gratings = image_collection.grating.unique()
+            cam_targ = image_collection.cam_targ.unique()
 
             if int(np.mean(cam_targ)) != 0:
                 self.technique = 'Spectroscopy'
