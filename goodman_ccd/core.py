@@ -55,7 +55,7 @@ def fix_duplicated_keywords(night_dir):
         night_dir (str): The full path for the raw data location
 
     """
-    log_ccd.info('Finding duplicated keywords')
+    log_ccd.debug('Finding duplicated keywords')
     log_ccd.warning('Files will be overwritten')
     files = glob.glob(os.path.join(night_dir, '*.fits'))
     # Pick a random file to find duplicated keywords
@@ -70,7 +70,7 @@ def fix_duplicated_keywords(night_dir):
                 if keyword not in multiple_keys:
                     multiple_keys.append(keyword)
     if multiple_keys != []:
-        log_ccd.info('Found {:d} duplicated keyword '
+        log_ccd.debug('Found {:d} duplicated keyword '
                  '{:s}'.format(len(multiple_keys),
                                's' if len(multiple_keys) > 1 else ''))
 
@@ -419,7 +419,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     """
 
     log_ccd.info('Removing cosmic rays using DCR by Wojtek Pych')
-    log_ccd.info('See http://users.camk.edu.pl/pych/DCR/')
+    log_ccd.debug('See http://users.camk.edu.pl/pych/DCR/')
 
     # add the prefix for the output file
     out_file = prefix + in_file
@@ -451,7 +451,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     # check if file dcr.par exists
     while not os.path.isfile('dcr.par'):
 
-        log_ccd.error('File dcr.par does not exist. Copying default one.')
+        log_spec.debug('File dcr.par does not exist. Copying default one.')
         dcr_par_path = os.path.join(dcr_par_dir, 'dcr.par')
         log_ccd.debug('dcr.par full path: {:s}'.format(dcr_par_path))
         if os.path.isfile(dcr_par_path):
@@ -459,7 +459,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         else:
             log_ccd.error('Could not find dcr.par file')
     else:
-        log_ccd.info('File dcr.par exists.')
+        log_ccd.debug('File dcr.par exists.')
 
     # call dcr
     try:
@@ -502,7 +502,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
                      'sudo ln -s /full/path/to/dcr')
     else:
         for output_line in stdout.split('\n'):
-            log_ccd.info(output_line)
+            log_ccd.debug(output_line)
 
     # delete extra files only if the execution ended without error
     if delete and stderr == '' and 'USAGE:' not in stdout:
@@ -567,7 +567,7 @@ def lacosmic_cosmicray_rejection(ccd, mask_only=False):
         else:
             return ccd
     else:
-        log_ccd.info('Skipping cosmic ray rejection for image of datatype: '
+        log_ccd.debug('Skipping cosmic ray rejection for image of datatype: '
                  '{:s}'.format(ccd.header['OBSTYPE']))
         return ccd
 
@@ -647,7 +647,7 @@ def get_best_flat(flat_name):
         #     master_flat_name =
 
         master_flat = CCDData.read(master_flat_name, unit=u.adu)
-        log_ccd.info('Found suitable master flat: {:s}'.format(master_flat_name))
+        log_ccd.debug('Found suitable master flat: {:s}'.format(master_flat_name))
         return master_flat, master_flat_name
     else:
         log_ccd.error('There is no flat available')
@@ -689,7 +689,7 @@ def print_default_args(args):
                 'save_plots': '--save-plots',
                 'dcr_par_dir': '--dcr-par-dir'}
     for key in args.__dict__:
-        log_ccd.info('Default value for {:s} is {:s}'.format(
+        log_ccd.debug('Default value for {:s} is {:s}'.format(
             arg_name[key],
             str(args.__getattribute__(key))))
 
@@ -727,13 +727,13 @@ def normalize_master_flat(master, name, method='simple', order=15):
     norm_name = os.path.join(path, new_name)
 
     if method == 'mean':
-        log_ccd.info('Normalizing by mean')
+        log_ccd.debug('Normalizing by mean')
         master.data /= master.data.mean()
 
         master.header.add_history('Flat Normalized by Mean')
 
     elif method == 'simple' or method == 'full':
-        log_ccd.info('Normalizing flat by {:s} model'.format(method))
+        log_ccd.debug('Normalizing flat by {:s} model'.format(method))
 
         # Initialize Fitting models and fitter
         model_init = models.Chebyshev1D(degree=order)
@@ -762,7 +762,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
         elif method == 'full':
             log_ccd.warning('This part of the code was left here for experimental '
                         'purposes only')
-            log_ccd.info('This procedure takes a lot to process, you might want to'
+            log_ccd.warning('This procedure takes a lot to process, you might want to'
                      'see other method such as simple or mean.')
             for i in range(x_size):
                 fit = model_fitter(model_init, x_axis, master.data[i])
@@ -824,7 +824,7 @@ def remove_conflictive_keywords(path, file_list):
         file_list (list): List of files to remove keywords
 
     """
-    log_ccd.info('Removing conflictive keywords in Blue Camera Headers')
+    log_ccd.debug('Removing conflictive keywords in Blue Camera Headers')
     log_ccd.warning('Files will be overwritten')
     for blue_file in file_list:
         full_path = os.path.join(path, blue_file)
@@ -1375,6 +1375,8 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
         lower_limit = int(sample_center - nsigmas * model_stddev)
         upper_limit = int(sample_center + nsigmas * model_stddev)
 
+        # print(sample_center, nsigmas, model_stddev, lower_limit, upper_limit)
+
         sample = ccd.data[lower_limit:upper_limit, point:point + sampling_step]
         sample_median = np.median(sample, axis=1)
 
@@ -1407,7 +1409,7 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
 
     fitted_trace = fitter(trace_model, sampling_axis, sample_values)
 
-    if True:
+    if False:
         plt.title(ccd.header['OFNAME'])
         plt.imshow(ccd.data, clim=(30, 200))
         plt.plot(sampling_axis, sample_values, color='y', marker='o')
@@ -1415,10 +1417,15 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
                     upper_limit,
                     alpha=0.4,
                     color='g')
-        plt.plot(model(range(spatial_length)))
-        plt.show()
-        print(dispersion_length)
-        print(sampling_axis)
+        plt.plot(fitted_trace(range(dispersion_length)), color='c')
+        # plt.plot(model(range(spatial_length)))
+        if plt.isinteractive():
+            plt.draw()
+            plt.pause(2)
+        else:
+            plt.show()
+        # print(dispersion_length)
+        # print(sampling_axis)
 
     # fitted_trace = None
 
@@ -1509,10 +1516,9 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
                              model=profile,
                              trace_model=trace_model,
                              fitter=model_fitter,
-                             sampling_step=sampling_step)
+                             sampling_step=sampling_step,
+                             nsigmas=10)
         return [single_trace]
-
-
 
 
 def get_extraction_zone(ccd,
@@ -1561,13 +1567,13 @@ def get_extraction_zone(ccd,
     if zone is None and extraction is not None:
         assert (model is not None) and (n_sigma_extract is not None)
         assert isinstance(trace, Model)
-        log_spec.info('Extracting zone centered at: {:.3f}'.format(model.mean.value))
+        log_spec.debug('Extracting zone centered at: {:.3f}'.format(model.mean.value))
         spatial_length, dispersion_length = ccd.data.shape
 
         # get maximum variation in spatial direction
         trace_array = trace(range(dispersion_length))
         trace_inclination = trace_array.max() - trace_array.min()
-        log_spec.info('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
+        log_spec.debug('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
 
         # m_mean = model.mean.value
         m_stddev = model.stddev.value
@@ -1598,10 +1604,10 @@ def get_extraction_zone(ccd,
 
         # this is necessary since we are cutting a piece of the full ccd.
         trace.c0.value -= low_lim
-        log_spec.info('Changing attribute c0 from trace, this is to adjust it to '
+        log_spec.debug('Changing attribute c0 from trace, this is to adjust it to '
                  'the new extraction zone which is smaller that the full CCD.')
 
-        log_spec.info('Changing attribute mean of profile model')
+        log_spec.debug('Changing attribute mean of profile model')
         model.mean.value = extract_width
 
         nccd = ccd.copy()
@@ -1752,11 +1758,11 @@ def extract(ccd,
     variance_2d = (rdnoise + np.absolute(ccd.data) * gain) / gain
     cr_mask = np.ones(ccd.data.shape, dtype=int)
     # if ccd.mask is None and ccd.header['OBSTYPE'] == 'OBJECT':
-    #     log_spec.info('Finding cosmic rays to create mask')
+    #     log_spec.debug('Finding cosmic rays to create mask')
     #     cr_mask = cosmicray_rejection(ccd=ccd, mask_only=True)
     #     cr_mask = np.log_spec.cal_not(cr_mask).astype(int)
     # elif ccd.mask is None and ccd.header['OBSTYPE'] != 'OBJECT':
-    #     log_spec.info('Only OBSTYPE == OBJECT get cosmic ray rejection.')
+    #     log_spec.debug('Only OBSTYPE == OBJECT get cosmic ray rejection.')
     #     cr_mask = np.ones(ccd.data.shape, dtype=int)
     # else:
     #     log_spec.debug('Cosmic ray mask already exists.')
@@ -1914,9 +1920,10 @@ def extract(ccd,
 #     full_path = os.path.join(red_path,
 #                              out_prefix + science_image)
 #     ccd.write(full_path, clobber=True)
-#     log_ccd.info('Created science image: {:s}'.format(full_path))
+#     log_ccd.debug('Created science image: {:s}'.format(full_path))
 
 # classes definition
+
 
 class NightDataContainer(object):
     """This class is designed to be the organized data container. It doesn't
@@ -2116,3 +2123,8 @@ class NoMatchFound(Exception):
 class NotEnoughLinesDetected(Exception):
     def __init__(self):
         Exception.__init__(self, 'Not enough lines detected.')
+
+
+class CritialError(Exception):
+    def __init__(self, message):
+        Exception.__init__(self, message)

@@ -1,6 +1,7 @@
 # list of Lamps
 Instrument_type_Grating_Mode_filter_Lamp
  - goodman_comp_400_M1_HgAr.fits
+ - goodman_comp_400_M1_HgArNe.fits
  - goodman_comp_400_M2_GG455_HgArNe.fits
  - goodman_comp_400_M2_GG455_HgAr.fits
 

@@ -37,7 +37,8 @@ from goodman_ccd.core import (spectroscopic_extraction,
                               search_comp_group,
                               NoTargetException,
                               NoMatchFound,
-                              NotEnoughLinesDetected)
+                              NotEnoughLinesDetected,
+                              CritialError)
 
 
 
@@ -69,12 +70,11 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
 
     full_path = data_container.full_path
 
-    # instantiate wavelength solution class
-    get_wsolution = WavelengthCalibration(args=args)
-
     for sub_container in [groups for groups in [data_container.spec_groups,
                           data_container.object_groups] if groups is not None]:
         for group in sub_container:
+            # instantiate WavelengthCalibration here for each group.
+            get_wsolution = WavelengthCalibration(args=args)
             # this will contain only obstype == OBJECT
             object_group = group[group.obstype == 'OBJECT']
             # this has to be initialized here
@@ -147,7 +147,8 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                             plt.plot(edata.data, label=edata.header['OBJECT'])
                             if comps != []:
                                 for comp in comps:
-                                    plt.plot(comp.data, label=comp.header['OBJECT'])
+                                    plt.plot(comp.data,
+                                             label=comp.header['OBJECT'])
                         plt.legend(loc='best')
                         if plt.isinteractive():
                             plt.draw()
@@ -319,8 +320,9 @@ class WavelengthCalibration(object):
                 # self.lines_center = self.get_line_centers(self.lines_limits)
                 self.lines_center = self.get_lines_in_lamp()
                 self.spectral = self.get_spectral_characteristics()
+                object_name = ccd.header['OBJECT']
                 if self.args.interactive_ws:
-                    self.interactive_wavelength_solution()
+                    self.interactive_wavelength_solution(object_name=object_name)
                 else:
                     log.warning('Automatic Wavelength Solution might fail to '
                                 'provide accurate solutions')
@@ -2131,11 +2133,25 @@ class WavelengthCalibration(object):
         #     print(data_point)
         # print('data ', data)
         pixel_axis = range(len(data))
+        # print(pixel_axis)
         if self.wsolution is not None:
-            x_axis = self.wsolution(pixel_axis)
-            new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
-            tck = scipy.interpolate.splrep(x_axis, data, s=0)
-            linearized_data = scipy.interpolate.splev(new_x_axis, tck, der=0)
+            try:
+                x_axis = self.wsolution(pixel_axis)
+                new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
+                tck = scipy.interpolate.splrep(x_axis, data, s=0)
+                linearized_data = scipy.interpolate.splev(new_x_axis, tck,
+                                                          der=0)
+            except ValueError as error:
+                log.error(error)
+                raise CritialError(message='Unable to linearize data')
+                # log.error('Unable to linearize data')
+                # log.critical('Returning Non-linearized data.')
+                # plt.plot(data)
+                # plt.show()
+                # print(data)
+                # for point in data:
+                #     print(point)
+                # return [x_axis, data]
             # print('l ', linearized_data)
             smoothed_linearized_data = signal.medfilt(linearized_data)
             # print('sl ', smoothed_linearized_data)
