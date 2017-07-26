@@ -338,6 +338,8 @@ class WavelengthCalibration(object):
                         original_filename=self.calibration_lamp,
                         index=object_number)
 
+                    # print(ccd.header)
+
                     self.linearized_sci = self.linearize_spectrum(ccd.data)
 
                     self.header = self.add_wavelength_solution(
@@ -2143,11 +2145,11 @@ class WavelengthCalibration(object):
                                                           der=0)
             except ValueError as error:
                 log.error(error)
+                log.error('Unable to linearize data')
+                log.critical('Returning Non-linearized data.')
+                plt.plot(data)
+                plt.show()
                 raise CritialError(message='Unable to linearize data')
-                # log.error('Unable to linearize data')
-                # log.critical('Returning Non-linearized data.')
-                # plt.plot(data)
-                # plt.show()
                 # print(data)
                 # for point in data:
                 #     print(point)

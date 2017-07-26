@@ -1205,7 +1205,6 @@ def identify_targets(ccd, nfind=3, plots=False):
             plt.show()
 
         # Removing Background
-
         # Remove the background and set negative values to zero
 
         # build an array of the same dimensions of the profile
@@ -1218,12 +1217,33 @@ def identify_targets(ccd, nfind=3, plots=False):
 
         final_profile = background_subtracted.copy()
 
+        # sigma clip and then get some features of the noise.
+        clipped_final_profile = sigma_clip(final_profile, sigma=3, iters=3)
+
+        clipped_final_profile = clipped_final_profile[~clipped_final_profile.mask]
+
+        background_level = np.abs(np.max(clipped_final_profile) - np.min(clipped_final_profile))
+        # print('MEAN: ', np.mean(clipped_final_profile))
+        # print('MEDIAN: ', np.median(clipped_final_profile))
+        # print('STDDEV: ', np.std(clipped_final_profile))
+        # print('RANGE: ', background_level)
+
         if plots:
+            plt.ioff()
+            plt.close()
+            # if plt.isinteractive():
+            #     plt.ioff()
             plt.plot(background_subtracted)
+            plt.plot(clipped_final_profile, color='r')
+            plt.axhline(background_level, color='m')
             # plt.plot(final_profile, color='r')
             # plt.plot(median_profile)
             # plt.plot(background_array)
-            plt.show()
+            if plt.isinteractive():
+                plt.draw()
+                plt.pause(5)
+            else:
+                plt.show()
 
         # Identify targets
         # Now that the profile is flat it should be easier to identify targets.
@@ -1253,11 +1273,15 @@ def identify_targets(ccd, nfind=3, plots=False):
         # retrieve the original index (real location) of the peaks
         selected_peaks = []
         for val in n_top_values:
-            index = np.where(values == val)[0]
-            #     print(index[0])
-            selected_peaks.append(peaks[index[0]])
+            # discard peaks smaller than twice the level of background
+            if val > 3 * background_level:
+                index = np.where(values == val)[0]
+                #     print(index[0])
+                selected_peaks.append(peaks[index[0]])
+            else:
+                log_spec.debug('Discarding peak: {:.3f}'.format(val))
 
-        if plots:
+        if True:
             plt.ioff()
             plt.plot(final_profile)
             plt.axhline(_upper_limit, color='g')
