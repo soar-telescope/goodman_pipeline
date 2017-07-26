@@ -212,6 +212,7 @@ class WavelengthCalibration(object):
 
         # TODO - Documentation missing
         self.args = args
+        self.poly_order = 2
         self.wsolution = None
         self.rms_error = None
         self.reference_data = ReferenceData(self.args)
@@ -329,6 +330,16 @@ class WavelengthCalibration(object):
                     self.automatic_wavelength_solution()
                     # self.wsolution = self.wavelength_solution()
                 if self.wsolution is not None:
+                    # TODO (simon): plug in a record system
+                    # record = '{:s} {:.3f} {:.3f}'.format(
+                    #     self.lamp_header['GRATING'],
+                    #     self.lamp_header['GRT_TARG'],
+                    #     self.lamp_header['CAM_TARG'])
+                    #
+                    # for par in self.wsolution.parameters:
+                    #     record += ' {:.5f}'.format(par)
+                    #
+                    # os.system("echo \'{:s}\' >> parametros.txt".format(record))
 
                     self.linear_lamp = self.linearize_spectrum(self.lamp_data)
 
@@ -352,7 +363,7 @@ class WavelengthCalibration(object):
                     wavelength_solution = WavelengthSolution(
                         solution_type='non_linear',
                         model_name='chebyshev',
-                        model_order=3,
+                        model_order=self.poly_order,
                         model=self.wsolution,
                         ref_lamp=self.calibration_lamp,
                         eval_comment=self.evaluation_comment,
@@ -1029,7 +1040,8 @@ class WavelengthCalibration(object):
 
 
         # Initialize wavelength builder class
-        wavelength_solution = WavelengthFitter(model='chebyshev', degree=3)
+        wavelength_solution = WavelengthFitter(model='chebyshev',
+                                               degree=self.poly_order)
         # self.wsolution = wavelength_solution.ws_fit(pixel, auto_angs)
 
         '''detect lines in comparison lamp (not reference)'''
@@ -1087,7 +1099,7 @@ class WavelengthCalibration(object):
             angstrom_values.append(angstrom_value_model)
             pixel_values.append(line_value_pixel)
 
-            if self.args.debug_mode:
+            if False:
                 plt.ion()
                 plt.title('Samples after cross correlation')
                 plt.xlabel('Pixel Axis')
@@ -1311,7 +1323,7 @@ class WavelengthCalibration(object):
                               len(ccorr))
 
         correlation_value = x_ccorr[max_index]
-        if self.args.debug_mode:
+        if False:
             plt.ion()
             plt.title('Cross Correlation')
             plt.xlabel('Lag Value')
@@ -2097,7 +2109,7 @@ class WavelengthCalibration(object):
                     angstrom.append(self.reference_marks_x[i])
 
                 wavelength_solution = WavelengthFitter(model='chebyshev',
-                                                       degree=3)
+                                                       degree=self.poly_order)
 
                 self.wsolution = wavelength_solution.ws_fit(pixel, angstrom)
                 self.evaluate_solution(plots=True)
@@ -2107,6 +2119,7 @@ class WavelengthCalibration(object):
             self.display_onscreen_message(message='Clicks record is empty')
             if self.wsolution is not None:
                 self.wsolution = None
+
 
     def linearize_spectrum(self, data, plots=False):
         """Produces a linearized version of the spectrum
@@ -2137,24 +2150,13 @@ class WavelengthCalibration(object):
         pixel_axis = range(len(data))
         # print(pixel_axis)
         if self.wsolution is not None:
-            try:
-                x_axis = self.wsolution(pixel_axis)
-                new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
-                tck = scipy.interpolate.splrep(x_axis, data, s=0)
-                linearized_data = scipy.interpolate.splev(new_x_axis, tck,
-                                                          der=0)
-            except ValueError as error:
-                log.error(error)
-                log.error('Unable to linearize data')
-                log.critical('Returning Non-linearized data.')
-                plt.plot(data)
-                plt.show()
-                raise CritialError(message='Unable to linearize data')
-                # print(data)
-                # for point in data:
-                #     print(point)
-                # return [x_axis, data]
-            # print('l ', linearized_data)
+            x_axis = self.wsolution(pixel_axis)
+            new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
+            tck = scipy.interpolate.splrep(x_axis, data, s=0)
+            linearized_data = scipy.interpolate.splev(new_x_axis,
+                                                      tck,
+                                                      der=0)
+
             smoothed_linearized_data = signal.medfilt(linearized_data)
             # print('sl ', smoothed_linearized_data)
             if plots:

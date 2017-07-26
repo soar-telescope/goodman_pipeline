@@ -1281,7 +1281,7 @@ def identify_targets(ccd, nfind=3, plots=False):
             else:
                 log_spec.debug('Discarding peak: {:.3f}'.format(val))
 
-        if True:
+        if False:
             plt.ioff()
             plt.plot(final_profile)
             plt.axhline(_upper_limit, color='g')
@@ -1335,8 +1335,6 @@ def identify_targets(ccd, nfind=3, plots=False):
                     profile_model = fitted_gaussian
                 else:
                     profile_model += fitted_gaussian
-
-
         if plots:
             plt.plot(median_profile, color='b')
             plt.plot(profile_model(range(len(median_profile))), color='r')
