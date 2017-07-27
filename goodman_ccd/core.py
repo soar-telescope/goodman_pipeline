@@ -1034,10 +1034,15 @@ def spectroscopic_extraction(ccd, extraction,
         comp_list = []
     # print(comp_list)
 
-    iccd = remove_background(ccd=ccd)
+    iccd = remove_background_by_median(ccd=ccd)
 
     profile_model = identify_targets(ccd=iccd, nfind=nfind, plots=plots)
     del (iccd)
+
+    background_image = create_background_image(ccd=ccd,
+                                               profile_model=profile_model,
+                                               nsigma=n_sigma_extract,
+                                               separation=5)
 
     if isinstance(profile_model, Model):
         traces = trace_targets(ccd=ccd, profile=profile_model, plots=plots)
@@ -1048,13 +1053,15 @@ def spectroscopic_extraction(ccd, extraction,
         if 'CompoundModel' in profile_model.__class__.name:
             log_spec.debug(profile_model.submodel_names)
             for m in range(len(profile_model.submodel_names)):
-
                 submodel_name = profile_model.submodel_names[m]
 
-                nccd, trace, model, zone = get_extraction_zone(
+                ntrace = traces[m]
+                model = profile_model[submodel_name]
+
+                zone = get_extraction_zone(
                     ccd=ccd,
                     extraction=extraction,
-                    trace=traces[m],
+                    trace=ntrace,
                     trace_index=m,
                     model=profile_model[submodel_name],
                     n_sigma_extract=n_sigma_extract,
@@ -1063,7 +1070,7 @@ def spectroscopic_extraction(ccd, extraction,
                 for comp in comp_list:
                     comp_zone = get_extraction_zone(ccd=comp,
                                                     extraction=extraction,
-                                                    trace=trace,
+                                                    trace=ntrace,
                                                     trace_index=m,
                                                     zone=zone,
                                                     plots=plots)
@@ -1074,13 +1081,16 @@ def spectroscopic_extraction(ccd, extraction,
                     comp_zone.data = np.median(comp_zone.data, axis=0)
                     comp_zones.append(comp_zone)
 
-                nccd = remove_background(ccd=nccd,
-                                         plots=plots)
+                background_level = get_background_value(
+                    background_image=background_image,
+                    zone=zone)
 
-                extracted_ccd = extract(ccd=nccd,
-                                        trace=trace,
+                extracted_ccd = extract(ccd=ccd,
+                                        trace=ntrace,
                                         spatial_profile=model,
                                         extraction=extraction,
+                                        zone=zone,
+                                        background_level=background_level,
                                         sampling_step=10,
                                         plots=plots)
                 extracted.append(extracted_ccd)
@@ -1090,7 +1100,9 @@ def spectroscopic_extraction(ccd, extraction,
                 #     plt.show()
 
         else:
-            nccd, trace, model, zone = get_extraction_zone(
+            ntrace = traces[0]
+
+            zone = get_extraction_zone(
                 ccd=ccd,
                 extraction=extraction,
                 trace=traces[0],
@@ -1102,7 +1114,7 @@ def spectroscopic_extraction(ccd, extraction,
             for comp in comp_list:
                 comp_zone = get_extraction_zone(ccd=comp,
                                                 extraction=extraction,
-                                                trace=trace,
+                                                trace=ntrace,
                                                 trace_index=0,
                                                 zone=zone,
                                                 plots=plots)
@@ -1114,13 +1126,16 @@ def spectroscopic_extraction(ccd, extraction,
                 comp_zone.data = np.median(comp_zone.data, axis=0)
                 comp_zones.append(comp_zone)
 
-            nccd = remove_background(ccd=nccd,
-                                     plots=plots)
+            background_level = get_background_value(
+                background_image=background_image,
+                zone=zone)
 
-            extracted_ccd = extract(ccd=nccd,
-                                    trace=trace,
-                                    spatial_profile=model,
+            extracted_ccd = extract(ccd=ccd,
+                                    trace=ntrace,
+                                    spatial_profile=profile_model,
                                     extraction=extraction,
+                                    zone=zone,
+                                    background_level=background_level,
                                     sampling_step=10,
                                     plots=plots)
 
@@ -1220,7 +1235,13 @@ def identify_targets(ccd, nfind=3, plots=False):
         # sigma clip and then get some features of the noise.
         clipped_final_profile = sigma_clip(final_profile, sigma=3, iters=3)
 
+        # define the propper x-axis
+        new_x_axis = [i for i in range(len(clipped_final_profile)) if
+                      not clipped_final_profile.mask[i]]
+
         clipped_final_profile = clipped_final_profile[~clipped_final_profile.mask]
+
+
 
         background_level = np.abs(np.max(clipped_final_profile) - np.min(clipped_final_profile))
         # print('MEAN: ', np.mean(clipped_final_profile))
@@ -1228,17 +1249,21 @@ def identify_targets(ccd, nfind=3, plots=False):
         # print('STDDEV: ', np.std(clipped_final_profile))
         # print('RANGE: ', background_level)
 
-        if plots:
+        # TODO (simon): Add information to plots
+        if True:
             plt.ioff()
             plt.close()
             # if plt.isinteractive():
             #     plt.ioff()
-            plt.plot(background_subtracted)
-            plt.plot(clipped_final_profile, color='r')
-            plt.axhline(background_level, color='m')
+            plt.title('Median Along Dispersion Axis (spatial)')
+            plt.plot(background_subtracted, label='Background Subtracted Data')
+            plt.plot(new_x_axis, clipped_final_profile, color='r', label='Sigma Clip Data')
+
+            plt.axhline(background_level, color='m', label='Min-Max Difference')
             # plt.plot(final_profile, color='r')
             # plt.plot(median_profile)
             # plt.plot(background_array)
+            plt.legend(loc='best')
             if plt.isinteractive():
                 plt.draw()
                 plt.pause(5)
@@ -1281,7 +1306,7 @@ def identify_targets(ccd, nfind=3, plots=False):
             else:
                 log_spec.debug('Discarding peak: {:.3f}'.format(val))
 
-        if False:
+        if True:
             plt.ioff()
             plt.plot(final_profile)
             plt.axhline(_upper_limit, color='g')
@@ -1585,12 +1610,15 @@ def get_extraction_zone(ccd,
         zone (list): Low and high limits of extraction zone
 
     """
+    # make a copy of the ccd image
+    nccd = ccd.copy()
 
     if zone is None and extraction is not None:
         assert (model is not None) and (n_sigma_extract is not None)
         assert isinstance(trace, Model)
         log_spec.debug('Extracting zone centered at: {:.3f}'.format(model.mean.value))
-        spatial_length, dispersion_length = ccd.data.shape
+
+        spatial_length, dispersion_length = nccd.data.shape
 
         # get maximum variation in spatial direction
         trace_array = trace(range(dispersion_length))
@@ -1622,7 +1650,7 @@ def get_extraction_zone(ccd,
                                               low_lim,
                                               hig_lim)
 
-        ccd.header['APNUM1'] = apnum_1
+        nccd.header['APNUM1'] = apnum_1
 
         # this is necessary since we are cutting a piece of the full ccd.
         trace.c0.value -= low_lim
@@ -1632,20 +1660,22 @@ def get_extraction_zone(ccd,
         log_spec.debug('Changing attribute mean of profile model')
         model.mean.value = extract_width
 
-        nccd = ccd.copy()
-        nccd.data = ccd.data[low_lim:hig_lim, :]
+
+
+        nccd.data = nccd.data[low_lim:hig_lim, :]
         if nccd.mask is not None:
             log_spec.debug('Trimming mask')
-            nccd.mask = ccd.mask[low_lim:hig_lim, :]
+            nccd.mask = nccd.mask[low_lim:hig_lim, :]
         nccd.header['HISTORY'] = 'Subsection of CCD ' \
                                  '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
 
-        if plots:
-            plt.imshow(ccd.data)
+        if True:
+            plt.imshow(ccd.data, clim=(0, 60))
             plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
             plt.show()
 
-        return nccd, trace, model, zone
+        # return nccd, trace, model, zone
+        return zone
 
     else:
 
@@ -1656,13 +1686,13 @@ def get_extraction_zone(ccd,
                                                low_lim,
                                                hig_lim)
 
-        ccd.header['APNUM1'] = apnum_1
-
         nccd = ccd.copy()
-        nccd.data = ccd.data[low_lim:hig_lim, :]
+        nccd.header['APNUM1'] = apnum_1
+
+        nccd.data = nccd.data[low_lim:hig_lim, :]
         if nccd.mask is not None:
             log_spec.debug('Trimming mask')
-            nccd.mask = ccd.mask[low_lim:hig_lim, :]
+            nccd.mask = nccd.mask[low_lim:hig_lim, :]
         nccd.header['HISTORY'] = 'Subsection of CCD ' \
                                  '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
         return nccd
@@ -1706,7 +1736,7 @@ def add_wcs_keys(header):
         log_spec.debug(err)
 
 
-def remove_background(ccd, plots=False):
+def remove_background_by_median(ccd, plots=False):
     """Remove Background of a ccd spectrum image
 
     Args:
@@ -1716,23 +1746,173 @@ def remove_background(ccd, plots=False):
         ccd (object): The modified
 
     """
-    # ccd_copia = ccd.copy()
-    data = ma.masked_invalid(ccd.data)
+    new_ccd = ccd.copy()
+    data = ma.masked_invalid(new_ccd.data)
     # x, y = ccd.data.shape
     median = ma.median(data, axis=0)
 
     data -= median
     data.set_fill_value(-np.inf)
-    ccd.data = data.filled()
+    new_ccd.data = data.filled()
 
     # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
-    return ccd
+    return new_ccd
+
+
+def get_background_value(background_image, zone=None):
+
+    spatial_length, dispersion_length = background_image.data.shape
+    if zone is None:
+        background_profile = np.median(background_image.data, axis=1)
+
+        target_zones_points = np.where(background_profile == 0)[0]
+
+        target_zones = [i + 1 for i in range(len(target_zones_points) - 1) \
+                        if
+                        target_zones_points[i + 1] - target_zones_points[i] > 1]
+
+        target_zones.append(np.argmin(target_zones_points))
+        target_zones.append(len(target_zones_points))
+        target_zones.sort()
+
+        # plt.imshow(background_image, clim=(0,60))
+
+        for i in range(len(target_zones) - 1):
+
+            if target_zones[i + 1] - target_zones[i] > 2:
+
+                log_spec.debug('Found valid target zone:'
+                               ' {:d}:{:d}'.format(target_zones[i],
+                                                   target_zones[i + 1]))
+
+                full_zone = target_zones_points[
+                            target_zones[i]:target_zones[i + 1]]
+                zone = [full_zone[0], full_zone[-1]]
+                # zone_width = len(zone)
+
+
+            else:
+                log_spec.warning('Target Zone is too small')
+
+    # here do the evaluation if background zones are valid.
+    first_background = None
+    second_background = None
+    background_median = None
+
+    zone_width = zone[1] - zone[0]
+
+    # first background zone
+    back_first_low = int(zone[0] - 1.5 * zone_width)
+    back_first_high = int(zone[0] - 0.5 * zone_width)
+    if 0 < back_first_low < back_first_high:
+
+        first_background = np.median(background_image.data[
+                                     back_first_low:back_first_high,
+                                     :],
+                                     axis=0)
+
+        # print('First b ', back_first_low, back_first_high)
+        # plt.axhspan(back_first_low,
+        #             back_first_high,
+        #             color='w',
+        #             alpha=0.5)
+    else:
+        log_spec.debug('Zone [{:d}:{:d}] is forbidden'.format(
+            back_first_low,
+            back_first_high))
+
+        # plt.axhspan(back_first_low,
+        #             back_first_high,
+        #             color='k',
+        #             alpha=0.5)
+
+    # second background zone
+    back_second_low = int(zone[-1] + 0.5 * zone_width)
+    back_second_high = int(zone[-1] + 1.5 * zone_width)
+    if back_second_low < back_second_high < spatial_length:
+
+        second_background = np.mean(background_image.data[
+                                    back_second_low:back_second_high,
+                                    :],
+                                    axis=0)
+        # print('Second b ', back_second_low, back_second_high)
+        # plt.axhspan(back_second_low,
+        #             back_second_high,
+        #             color='w',
+        #             alpha=0.5)
+    else:
+        log_spec.debug('Zone [{:d}:{:d}] is forbidden'.format(
+            back_second_low,
+            back_second_high))
+        # plt.axhspan(back_second_low,
+        #             back_second_high,
+        #             color='k',
+        #             alpha=0.5)
+    if first_background is not None and second_background is not None:
+        background_mean = np.mean([first_background, second_background], axis=0)
+        plt.title('Background Mean')
+        plt.plot(background_mean)
+        plt.show()
+        return background_mean
+    elif first_background is not None and second_background is None:
+        return first_background
+    elif first_background is None and second_background is not None:
+        return second_background
+    else:
+        log_spec.error(
+            'Not possible to get a background extraction zone')
+        return 0
+
+
+
+    # background_mean = np.mean(background_image.data, axis=0)
+    # background_median = np.median(background_image.data, axis=0)
+    # plt.plot(background_mean, color='b')
+    # plt.plot(background_median, color='r')
+    # plt.show()
+    #
+    # return background_median
+
+
+def create_background_image(ccd, profile_model, nsigma, separation):
+    background_ccd = ccd.copy()
+    spatial_length, dispersion_length = background_ccd.data.shape
+    target_profiles = []
+    if 'CompoundModel' in profile_model.__class__.name:
+        log_spec.debug(profile_model.submodel_names)
+        for m in range(len(profile_model.submodel_names)):
+            submodel_name = profile_model.submodel_names[m]
+
+            target_profiles.append(profile_model[submodel_name])
+    else:
+        target_profiles.append(profile_model)
+
+    for target in target_profiles:
+        target_mean = target.mean.value
+        target_stddev = target.stddev.value
+
+        data_low_lim = np.max(
+            [0, target_mean - (nsigma / 2. + separation) * target_stddev])
+
+        data_high_lim = np.min([spatial_length, int(
+            target_mean + (nsigma / 2. + separation) * target_stddev)])
+
+        background_ccd.data[data_low_lim:data_high_lim, :] = 0
+
+    if False:
+        plt.title('Background Image')
+        plt.imshow(background_ccd.data, clim=(0, 50))
+        plt.show()
+
+    return background_ccd
 
 
 def extract(ccd,
             trace,
             spatial_profile,
             extraction,
+            zone,
+            background_level=0,
             sampling_step=1,
             plots=False):
     """Performs spectrum extraction
@@ -1752,6 +1932,8 @@ def extract(ccd,
             contained in the ccd object.
         extraction (str): Extraction type, can be `simple` or `optimal` for the
             beta release the optimal extraction is not implemented yet.
+        zone (list):
+        background_level (array):
         sampling_step (int): The optimal extraction needs to sample the spatial
             profile, this value defines the intervals at which get such
             sampling.
@@ -1770,25 +1952,27 @@ def extract(ccd,
     assert isinstance(ccd, CCDData)
     assert isinstance(trace, Model)
 
-    spatial_length, dispersion_length = ccd.data.shape
+    nccd = ccd.copy()
+
+    spatial_length, dispersion_length = nccd.data.shape
 
     # create variance model
-    rdnoise = float(ccd.header['RDNOISE'])
-    gain = float(ccd.header['GAIN'])
-    log_spec.debug('Original Name {:s}'.format(ccd.header['OFNAME']))
+    rdnoise = float(nccd.header['RDNOISE'])
+    gain = float(nccd.header['GAIN'])
+    log_spec.debug('Original Name {:s}'.format(nccd.header['OFNAME']))
 
-    variance_2d = (rdnoise + np.absolute(ccd.data) * gain) / gain
-    cr_mask = np.ones(ccd.data.shape, dtype=int)
-    # if ccd.mask is None and ccd.header['OBSTYPE'] == 'OBJECT':
+    variance_2d = (rdnoise + np.absolute(nccd.data) * gain) / gain
+    cr_mask = np.ones(nccd.data.shape, dtype=int)
+    # if nccd.mask is None and nccd.header['OBSTYPE'] == 'OBJECT':
     #     log_spec.debug('Finding cosmic rays to create mask')
     #     cr_mask = cosmicray_rejection(ccd=ccd, mask_only=True)
     #     cr_mask = np.log_spec.cal_not(cr_mask).astype(int)
-    # elif ccd.mask is None and ccd.header['OBSTYPE'] != 'OBJECT':
+    # elif nccd.mask is None and nccd.header['OBSTYPE'] != 'OBJECT':
     #     log_spec.debug('Only OBSTYPE == OBJECT get cosmic ray rejection.')
-    #     cr_mask = np.ones(ccd.data.shape, dtype=int)
+    #     cr_mask = np.ones(nccd.data.shape, dtype=int)
     # else:
     #     log_spec.debug('Cosmic ray mask already exists.')
-    #     cr_mask = np.logical_not(ccd.mask).astype(int)
+    #     cr_mask = np.logical_not(nccd.mask).astype(int)
 
     model_fitter = fitting.LevMarLSQFitter()
 
@@ -1805,37 +1989,43 @@ def extract(ccd,
         # print('Fixed ', new_model.mean.fixed)
     else:
         raise NotImplementedError
-    log_spec.debug('ccd.data is a masked array: '
-              '{:s}'.format(str(np.ma.isMaskedArray(ccd.data))))
+    log_spec.debug('nccd.data is a masked array: '
+              '{:s}'.format(str(np.ma.isMaskedArray(nccd.data))))
 
-    ccd.data = np.ma.masked_invalid(ccd.data)
-    # print(np.ma.isMaskedArray(ccd.data))
-    np.ma.set_fill_value(ccd.data, 0)
+    nccd.data = np.ma.masked_invalid(nccd.data)
+    # print(np.ma.isMaskedArray(nccd.data))
+    np.ma.set_fill_value(nccd.data, 0)
 
     if extraction == 'simple':
 
-        indexes = np.argwhere(cr_mask == 0)
+
         # print(indexes)
         if plots:
+            indexes = np.argwhere(cr_mask == 0)
             fig = plt.figure(1)
             ax1 = fig.add_subplot(111)
             for index in indexes:
                 x, y = index
                 ax1.plot(y, x, marker='o', color='r')
 
-            ax1.imshow(ccd.data, interpolation='none')
+            ax1.imshow(nccd.data, interpolation='none')
             if plt.isinteractive():
                 plt.draw()
                 plt.pause(1)
             else:
                 plt.show()
-        # print(np.ma.isMaskedArray(ccd.data))
-        to_sum = ccd.data * cr_mask
-        simple_sum = np.ma.sum(to_sum, axis=0)
 
-        ccd.data = simple_sum
+        # print(np.ma.isMaskedArray(nccd.data))
+        # spectrum zone limit
+        low_lim, high_lim = zone
+        spectrum_masked = nccd.data * cr_mask
+        spectrum_sum = np.ma.sum(spectrum_masked[low_lim:high_lim, :], axis=0)
 
-        if plots:
+        background_sum = np.abs(high_lim - low_lim) * background_level
+
+        nccd.data = spectrum_sum - background_sum
+
+        if True:
             fig = plt.figure()
             fig.canvas.set_window_title('Simple Extraction')
             # ax = fig.add_subplot(111)
@@ -1845,13 +2035,15 @@ def extract(ccd,
             elif plt.get_backend() == u'Qt4Agg':
                 manager.window.showMaximized()
 
-            plt.title(ccd.header['OBJECT'])
+            plt.title(nccd.header['OBJECT'])
             plt.xlabel('Dispersion Axis (Pixels)')
             plt.ylabel('Intensity (Counts)')
             # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
-            plt.plot(ccd.data, color='k',
+            plt.plot(nccd.data, color='k',
                      label='Simple Extracted')
-            plt.xlim((0, len(ccd.data)))
+            plt.plot(background_sum, color='r', label='Background')
+            plt.plot(spectrum_sum, color='b', label='Spectrum Raw Sum')
+            plt.xlim((0, len(nccd.data)))
             plt.legend(loc='best')
             if plt.isinteractive():
                 plt.draw()
@@ -1871,7 +2063,7 @@ def extract(ccd,
         #     if np.abs(trace(i) - trace(i + sampling_step)) > 1:
         #         log_spec.warning('Sampling step might be too large')
         #
-        #     sample = np.median(ccd.data[:, i:i + sampling_step], axis=1)
+        #     sample = np.median(nccd.data[:, i:i + sampling_step], axis=1)
         #     fitted_profile = model_fitter(model=new_model,
         #                                   x=range(len(sample)),
         #                                   y=sample)
@@ -1890,7 +2082,7 @@ def extract(ccd,
         #
         #         for e in range(i, right, 1):
         #             mask = cr_mask[:, e]
-        #             data = ma.masked_invalid(ccd.data[:, e])
+        #             data = ma.masked_invalid(nccd.data[:, e])
         #             # print(ma.isMaskedArray(data))
         #             V = variance_2d[:, e]
         #             P = nor_profile
@@ -1909,7 +2101,7 @@ def extract(ccd,
         #             #     plt.show()
         #
         #             out_spectrum[e] = np.sum(data * mask * nor_profile)
-        # ccd.data = out_spectrum
+        # nccd.data = out_spectrum
         # if plots:
         #     fig = plt.figure()
         #     fig.canvas.set_window_title('Optimal Extraction')
@@ -1921,13 +2113,13 @@ def extract(ccd,
         #     elif plt.get_backend() == u'Qt4Agg':
         #         manager.window.showMaximized()
         #
-        #     plt.title(ccd.header['OBJECT'])
+        #     plt.title(nccd.header['OBJECT'])
         #     plt.xlabel('Dispersion Axis (Pixels)')
         #     plt.ylabel('Intensity (Counts)')
         #     # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
-        #     plt.plot(ccd.data, color='k',
+        #     plt.plot(nccd.data, color='k',
         #              label='Optimal Extracted')
-        #     plt.xlim((0, len(ccd.data)))
+        #     plt.xlim((0, len(nccd.data)))
         #     plt.legend(loc='best')
         #     if plt.isinteractive():
         #         plt.draw()
@@ -1935,8 +2127,8 @@ def extract(ccd,
         #     else:
         #         plt.show()
 
-    # ccd.data = out_spectrum
-    return ccd
+    # nccd.data = out_spectrum
+    return nccd
 
 # def save_fits(full_name, clobber=True):
 #     full_path = os.path.join(red_path,
