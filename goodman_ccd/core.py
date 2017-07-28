@@ -1250,7 +1250,7 @@ def identify_targets(ccd, nfind=3, plots=False):
         # print('RANGE: ', background_level)
 
         # TODO (simon): Add information to plots
-        if True:
+        if plots:
             plt.ioff()
             plt.close()
             # if plt.isinteractive():
@@ -1306,7 +1306,7 @@ def identify_targets(ccd, nfind=3, plots=False):
             else:
                 log_spec.debug('Discarding peak: {:.3f}'.format(val))
 
-        if True:
+        if plots:
             plt.ioff()
             plt.plot(final_profile)
             plt.axhline(_upper_limit, color='g')
@@ -1431,9 +1431,9 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
             sample_peak = np.argmax(sample_median)
             # print(sample_peak + lower_limit)
         except ValueError:
-            plt.plot(model(range(spatial_length)))
-            plt.plot(ccd.data[:,point])
-            plt.show()
+            # plt.plot(model(range(spatial_length)))
+            # plt.plot(ccd.data[:,point])
+            # plt.show()
             print('Nsigmas ', nsigmas)
             print('Model Stddev ', model_stddev)
             print('sample_center ', sample_center)
@@ -1669,7 +1669,7 @@ def get_extraction_zone(ccd,
         nccd.header['HISTORY'] = 'Subsection of CCD ' \
                                  '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
 
-        if True:
+        if plots:
             plt.imshow(ccd.data, clim=(0, 60))
             plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
             plt.show()
@@ -1850,9 +1850,9 @@ def get_background_value(background_image, zone=None):
         #             alpha=0.5)
     if first_background is not None and second_background is not None:
         background_mean = np.mean([first_background, second_background], axis=0)
-        plt.title('Background Mean')
-        plt.plot(background_mean)
-        plt.show()
+        # plt.title('Background Mean')
+        # plt.plot(background_mean)
+        # plt.show()
         return background_mean
     elif first_background is not None and second_background is None:
         return first_background
@@ -2030,7 +2030,7 @@ def extract(ccd,
 
         nccd.header['APNUM1'] = apnum1
 
-        if False:
+        if plots:
             fig = plt.figure()
             fig.canvas.set_window_title('Simple Extraction')
             # ax = fig.add_subplot(111)
