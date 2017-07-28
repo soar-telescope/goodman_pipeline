@@ -1956,6 +1956,9 @@ def extract(ccd,
 
     spatial_length, dispersion_length = nccd.data.shape
 
+    apnum1 = '{:d} {:d} {:d} {:d}'.format(1, 1, zone[0], zone[1])
+    log_spec.debug('APNUM1 Keyword: {:s}'.format(apnum1))
+
     # create variance model
     rdnoise = float(nccd.header['RDNOISE'])
     gain = float(nccd.header['GAIN'])
@@ -2025,7 +2028,9 @@ def extract(ccd,
 
         nccd.data = spectrum_sum - background_sum
 
-        if True:
+        nccd.header['APNUM1'] = apnum1
+
+        if False:
             fig = plt.figure()
             fig.canvas.set_window_title('Simple Extraction')
             # ax = fig.add_subplot(111)

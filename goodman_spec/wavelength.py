@@ -35,6 +35,7 @@ from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
 from .linelist import ReferenceData
 from goodman_ccd.core import (spectroscopic_extraction,
                               search_comp_group,
+                              add_wcs_keys,
                               NoTargetException,
                               NoMatchFound,
                               NotEnoughLinesDetected,
@@ -110,11 +111,13 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
                 ccd = CCDData.read(file_path, unit=u.adu)
+                ccd.header = add_wcs_keys(header=ccd.header)
                 ccd.header['OFNAME'] = (spec_file, 'Original File Name')
                 if comp_group is not None and comp_ccd_list == []:
                     for comp_file in comp_group.file.tolist():
                         comp_path = os.path.join(full_path, comp_file)
                         comp_ccd = CCDData.read(comp_path, unit=u.adu)
+                        comp_ccd.header = add_wcs_keys(header=comp_ccd.header)
                         comp_ccd.header['OFNAME'] = (comp_file,
                                                      'Original File Name')
                         comp_ccd_list.append(comp_ccd)
