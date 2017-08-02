@@ -60,7 +60,7 @@ def fix_duplicated_keywords(night_dir):
     files = glob.glob(os.path.join(night_dir, '*.fits'))
     # Pick a random file to find duplicated keywords
     random_file = random.choice(files)
-    ccd = CCDData.read(random_file)
+    ccd = CCDData.read(random_file, unit=u.adu)
     header = ccd.header
     # Put the duplicated keywords in a list
     multiple_keys = []
@@ -77,7 +77,7 @@ def fix_duplicated_keywords(night_dir):
         for image_file in files:
             log_ccd.debug('Processing Image File: {:s}'.format(image_file))
             try:
-                ccd = CCDData.read(image_file)
+                ccd = CCDData.read(image_file, unit=u.adu)
                 for keyword in multiple_keys:
                     while ccd.header.count(keyword) > 1:
                         ccd.header.remove(keyword,
