@@ -18,7 +18,6 @@ goodman_spec/__init__.py
 goodman_spec/id_and_extract.py
 goodman_spec/linelist.py
 goodman_spec/redspec.py
-goodman_spec/scrattch.py
 goodman_spec/simulator.py
 goodman_spec/wavelength.py
 goodman_spec/wsbuilder.py
