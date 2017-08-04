@@ -238,6 +238,12 @@ class NightOrganizer(object):
                 # Comparison lamps are processed as science data.
                 data_container.add_data_group(data_group)
 
+                if 'FLAT' in group_obstype:
+                    # grab flats and put them in the flats group as well
+                    object_flat_group = data_group[
+                        data_group['obstype'] == 'FLAT']
+                    data_container.add_day_flats(object_flat_group)
+
         return data_container
 
     def imaging_night(self):
