@@ -21,6 +21,7 @@ def get_args(arguments=None):
 
     parser.add_argument('file',
                         action='store',
+                        nargs='+',
                         help="File containing fits data.")
     args = parser.parse_args(args=arguments)
 
@@ -51,7 +52,7 @@ class DataPlotter(object):
         manager.window.showMaximized()
         plt.title('{:s}\n{:s}'.format(self.file, ccd.header['OBJECT']))
 
-        self.ax.plot(wavelength, intensity, label='Data')
+        self.ax.plot(wavelength, intensity, color='k', label='Data')
         self.ax.set_xlim((wavelength[0], wavelength[-1]))
         self.ax.set_ylabel('Intensity (ADU)')
         self.ax.set_xlabel('Wavelength (Angstrom)')
@@ -67,7 +68,7 @@ class DataPlotter(object):
         #     plt.savefig(output, dpi=600)
 
     def key_pressed(self, event):
-        print(event.key)
+        # print(event.key)
         if event.key == 'q':
             plt.close(self.fig)
             sys.exit()
@@ -82,8 +83,13 @@ class DataPlotter(object):
 
 if __name__ == '__main__':
     args = get_args()
-    file_list = glob.glob(args.file)
-    print(file_list)
+
+    if type(args.file) == list and len(args.file) > 1:
+        file_list = args.file
+    elif len(args.file) == 1:
+        # print(args.file)
+        file_list = glob.glob(args.file[0])
+    #print(file_list)
 
 
     plotter = DataPlotter(args=args)

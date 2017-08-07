@@ -1039,10 +1039,13 @@ def spectroscopic_extraction(ccd, extraction,
     profile_model = identify_targets(ccd=iccd, nfind=nfind, plots=plots)
     del (iccd)
 
-    background_image = create_background_image(ccd=ccd,
-                                               profile_model=profile_model,
-                                               nsigma=n_sigma_extract,
-                                               separation=5)
+    if profile_model is None:
+        log_spec.critical('Target identification FAILED!')
+    else:
+        background_image = create_background_image(ccd=ccd,
+                                                   profile_model=profile_model,
+                                                   nsigma=n_sigma_extract,
+                                                   separation=5)
 
     if isinstance(profile_model, Model):
         traces = trace_targets(ccd=ccd, profile=profile_model, plots=plots)

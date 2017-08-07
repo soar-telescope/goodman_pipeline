@@ -1415,7 +1415,11 @@ class WavelengthCalibration(object):
         elif plt.get_backend() == u'Qt4Agg':
             manager.window.showMaximized()
 
-        self.ax1.set_title('Raw Data - {:s}'.format(self.lamp_name))
+        self.ax1.set_title('Raw Data - {:s}\n{:s} - {:s}'.format(
+            self.lamp_name,
+            self.lamp_header['GRATING'],
+            self.lamp_header['SLIT']))
+
         self.ax1.set_xlabel('Pixels')
         self.ax1.set_ylabel('Intensity (counts)')
         self.ax1.plot([], linestyle='--', color='r', label='Detected Lines')
@@ -1477,7 +1481,7 @@ class WavelengthCalibration(object):
 
         plt.subplots_adjust(left=0.05,
                             right=0.99,
-                            top=0.97,
+                            top=0.96,
                             bottom=0.04,
                             hspace=0.17,
                             wspace=0.11)
