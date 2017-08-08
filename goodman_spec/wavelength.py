@@ -35,9 +35,11 @@ from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
 from .linelist import ReferenceData
 from goodman_ccd.core import (spectroscopic_extraction,
                               search_comp_group,
+                              add_wcs_keys,
                               NoTargetException,
                               NoMatchFound,
-                              NotEnoughLinesDetected)
+                              NotEnoughLinesDetected,
+                              CritialError)
 
 
 
@@ -69,12 +71,11 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
 
     full_path = data_container.full_path
 
-    # instantiate wavelength solution class
-    get_wsolution = WavelengthCalibration(args=args)
-
     for sub_container in [groups for groups in [data_container.spec_groups,
                           data_container.object_groups] if groups is not None]:
         for group in sub_container:
+            # instantiate WavelengthCalibration here for each group.
+            get_wsolution = WavelengthCalibration(args=args)
             # this will contain only obstype == OBJECT
             object_group = group[group.obstype == 'OBJECT']
             # this has to be initialized here
@@ -110,11 +111,13 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
                 ccd = CCDData.read(file_path, unit=u.adu)
+                ccd.header = add_wcs_keys(header=ccd.header)
                 ccd.header['OFNAME'] = (spec_file, 'Original File Name')
                 if comp_group is not None and comp_ccd_list == []:
                     for comp_file in comp_group.file.tolist():
                         comp_path = os.path.join(full_path, comp_file)
                         comp_ccd = CCDData.read(comp_path, unit=u.adu)
+                        comp_ccd.header = add_wcs_keys(header=comp_ccd.header)
                         comp_ccd.header['OFNAME'] = (comp_file,
                                                      'Original File Name')
                         comp_ccd_list.append(comp_ccd)
@@ -147,7 +150,8 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                             plt.plot(edata.data, label=edata.header['OBJECT'])
                             if comps != []:
                                 for comp in comps:
-                                    plt.plot(comp.data, label=comp.header['OBJECT'])
+                                    plt.plot(comp.data,
+                                             label=comp.header['OBJECT'])
                         plt.legend(loc='best')
                         if plt.isinteractive():
                             plt.draw()
@@ -211,6 +215,7 @@ class WavelengthCalibration(object):
 
         # TODO - Documentation missing
         self.args = args
+        self.poly_order = 2
         self.wsolution = None
         self.rms_error = None
         self.reference_data = ReferenceData(self.args)
@@ -319,14 +324,25 @@ class WavelengthCalibration(object):
                 # self.lines_center = self.get_line_centers(self.lines_limits)
                 self.lines_center = self.get_lines_in_lamp()
                 self.spectral = self.get_spectral_characteristics()
+                object_name = ccd.header['OBJECT']
                 if self.args.interactive_ws:
-                    self.interactive_wavelength_solution()
+                    self.interactive_wavelength_solution(object_name=object_name)
                 else:
                     log.warning('Automatic Wavelength Solution might fail to '
                                 'provide accurate solutions')
                     self.automatic_wavelength_solution()
                     # self.wsolution = self.wavelength_solution()
                 if self.wsolution is not None:
+                    # TODO (simon): plug in a record system
+                    # record = '{:s} {:.3f} {:.3f}'.format(
+                    #     self.lamp_header['GRATING'],
+                    #     self.lamp_header['GRT_TARG'],
+                    #     self.lamp_header['CAM_TARG'])
+                    #
+                    # for par in self.wsolution.parameters:
+                    #     record += ' {:.5f}'.format(par)
+                    #
+                    # os.system("echo \'{:s}\' >> parametros.txt".format(record))
 
                     self.linear_lamp = self.linearize_spectrum(self.lamp_data)
 
@@ -335,6 +351,8 @@ class WavelengthCalibration(object):
                         spectrum=self.linear_lamp,
                         original_filename=self.calibration_lamp,
                         index=object_number)
+
+                    # print(ccd.header)
 
                     self.linearized_sci = self.linearize_spectrum(ccd.data)
 
@@ -348,7 +366,7 @@ class WavelengthCalibration(object):
                     wavelength_solution = WavelengthSolution(
                         solution_type='non_linear',
                         model_name='chebyshev',
-                        model_order=3,
+                        model_order=self.poly_order,
                         model=self.wsolution,
                         ref_lamp=self.calibration_lamp,
                         eval_comment=self.evaluation_comment,
@@ -1025,7 +1043,8 @@ class WavelengthCalibration(object):
 
 
         # Initialize wavelength builder class
-        wavelength_solution = WavelengthFitter(model='chebyshev', degree=3)
+        wavelength_solution = WavelengthFitter(model='chebyshev',
+                                               degree=self.poly_order)
         # self.wsolution = wavelength_solution.ws_fit(pixel, auto_angs)
 
         '''detect lines in comparison lamp (not reference)'''
@@ -1083,7 +1102,7 @@ class WavelengthCalibration(object):
             angstrom_values.append(angstrom_value_model)
             pixel_values.append(line_value_pixel)
 
-            if self.args.debug_mode:
+            if False:
                 plt.ion()
                 plt.title('Samples after cross correlation')
                 plt.xlabel('Pixel Axis')
@@ -1307,7 +1326,7 @@ class WavelengthCalibration(object):
                               len(ccorr))
 
         correlation_value = x_ccorr[max_index]
-        if self.args.debug_mode:
+        if False:
             plt.ion()
             plt.title('Cross Correlation')
             plt.xlabel('Lag Value')
@@ -1360,6 +1379,10 @@ class WavelengthCalibration(object):
         """
         plt.switch_backend('Qt4Agg')
 
+        # disable full screen to allow the use of f for fitting the solution
+
+        plt.rcParams['keymap.fullscreen'] = [u'ctrl+f']
+
         try:
             reference_file = self.reference_data.get_best_reference_lamp(
                 header=self.lamp_header)
@@ -1396,7 +1419,11 @@ class WavelengthCalibration(object):
         elif plt.get_backend() == u'Qt4Agg':
             manager.window.showMaximized()
 
-        self.ax1.set_title('Raw Data - {:s}'.format(self.lamp_name))
+        self.ax1.set_title('Raw Data - {:s}\n{:s} - {:s}'.format(
+            self.lamp_name,
+            self.lamp_header['GRATING'],
+            self.lamp_header['SLIT']))
+
         self.ax1.set_xlabel('Pixels')
         self.ax1.set_ylabel('Intensity (counts)')
         self.ax1.plot([], linestyle='--', color='r', label='Detected Lines')
@@ -1458,7 +1485,7 @@ class WavelengthCalibration(object):
 
         plt.subplots_adjust(left=0.05,
                             right=0.99,
-                            top=0.97,
+                            top=0.96,
                             bottom=0.04,
                             hspace=0.17,
                             wspace=0.11)
@@ -1556,7 +1583,7 @@ class WavelengthCalibration(object):
         elif event.key == 'f4':
             if self.wsolution is not None and len(self.raw_data_marks_x) > 0:
                 self.evaluate_solution(plots=True)
-        elif event.key == 'd':
+        elif event.key == 'f5' or event.key == 'd':
             # TODO (simon): simplify this code.
 
             figure_x, figure_y = \
@@ -2093,7 +2120,7 @@ class WavelengthCalibration(object):
                     angstrom.append(self.reference_marks_x[i])
 
                 wavelength_solution = WavelengthFitter(model='chebyshev',
-                                                       degree=3)
+                                                       degree=self.poly_order)
 
                 self.wsolution = wavelength_solution.ws_fit(pixel, angstrom)
                 self.evaluate_solution(plots=True)
@@ -2103,6 +2130,7 @@ class WavelengthCalibration(object):
             self.display_onscreen_message(message='Clicks record is empty')
             if self.wsolution is not None:
                 self.wsolution = None
+
 
     def linearize_spectrum(self, data, plots=False):
         """Produces a linearized version of the spectrum
@@ -2131,12 +2159,15 @@ class WavelengthCalibration(object):
         #     print(data_point)
         # print('data ', data)
         pixel_axis = range(len(data))
+        # print(pixel_axis)
         if self.wsolution is not None:
             x_axis = self.wsolution(pixel_axis)
             new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
             tck = scipy.interpolate.splrep(x_axis, data, s=0)
-            linearized_data = scipy.interpolate.splev(new_x_axis, tck, der=0)
-            # print('l ', linearized_data)
+            linearized_data = scipy.interpolate.splev(new_x_axis,
+                                                      tck,
+                                                      der=0)
+
             smoothed_linearized_data = signal.medfilt(linearized_data)
             # print('sl ', smoothed_linearized_data)
             if plots:
