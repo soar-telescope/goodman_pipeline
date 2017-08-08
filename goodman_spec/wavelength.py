@@ -1379,6 +1379,10 @@ class WavelengthCalibration(object):
         """
         plt.switch_backend('Qt4Agg')
 
+        # disable full screen to allow the use of f for fitting the solution
+
+        plt.rcParams['keymap.fullscreen'] = [u'ctrl+f']
+
         try:
             reference_file = self.reference_data.get_best_reference_lamp(
                 header=self.lamp_header)
@@ -1579,7 +1583,7 @@ class WavelengthCalibration(object):
         elif event.key == 'f4':
             if self.wsolution is not None and len(self.raw_data_marks_x) > 0:
                 self.evaluate_solution(plots=True)
-        elif event.key == 'd':
+        elif event.key == 'f5' or event.key == 'd':
             # TODO (simon): simplify this code.
 
             figure_x, figure_y = \
