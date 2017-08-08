@@ -58,7 +58,13 @@ class DataPlotter(object):
         self.ax.set_xlabel('Wavelength (Angstrom)')
 
         plt.legend(loc='best')
-        plt.tight_layout()
+        plt.subplots_adjust(left=0.05,
+                            right=0.99,
+                            top=0.96,
+                            bottom=0.04,
+                            hspace=0.17,
+                            wspace=0.11)
+        # plt.tight_layout()
 
         if not save:
             self.fig.canvas.mpl_connect('key_press_event', self.key_pressed)
