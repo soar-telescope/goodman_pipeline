@@ -1,1 +1,2 @@
 include dcr/dcr*
+include requirements.txt

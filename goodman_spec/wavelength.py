@@ -2131,7 +2131,6 @@ class WavelengthCalibration(object):
             if self.wsolution is not None:
                 self.wsolution = None
 
-
     def linearize_spectrum(self, data, plots=False):
         """Produces a linearized version of the spectrum
 

@@ -157,7 +157,7 @@ class NightOrganizer(object):
                                           morning_twilight)
 
 
-        #process bias
+        # process bias
         bias_collection = file_collection[file_collection.obstype == 'BIAS']
 
         if not self.ignore_bias:
