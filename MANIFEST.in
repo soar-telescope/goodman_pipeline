@@ -1,3 +1,4 @@
 include dcr/dcr*
 include requirements.txt
 include user_manual.pdf
+include README.txt
