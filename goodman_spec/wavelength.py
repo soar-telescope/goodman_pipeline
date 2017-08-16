@@ -218,7 +218,7 @@ class WavelengthCalibration(object):
         self.poly_order = 2
         self.wsolution = None
         self.rms_error = None
-        self.reference_data = ReferenceData(self.args)
+        self.reference_data = ReferenceData(self.args.reference_dir)
         # self.science_object = science_object
         self.slit_offset = None
         self.interpolation_size = 200

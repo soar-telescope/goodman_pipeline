@@ -34,14 +34,14 @@ class ReferenceData(object):
         - file names for CSV tables with reference lines and relative intensities
         - line positions only for the elements used in SOAR comparison lamps
     """
-    def __init__(self, args):
+    def __init__(self, reference_dir):
         """Initializes the class ReferenceData
 
         Args:
             args(class): All the arguments parsed to the parent program
         """
-        self.args = args
-        reference_collection = ccd.ImageFileCollection(self.args.reference_dir)
+        self.reference_dir = reference_dir
+        reference_collection = ccd.ImageFileCollection(self.reference_dir)
         self.ref_lamp_collection = reference_collection.summary.to_pandas()
         self.lamps_file_list = {'cuhear': 'goodman_comp_600_BLUE_CuHeAr.fits',
                                 'hgar': 'hgar_reference_soar.fits',
@@ -745,7 +745,7 @@ class ReferenceData(object):
         lamp_name = lamp_name.lower()
         # TODO (simon): Do this using ImageFileCollection
         try:
-            reference_lamp = os.path.join(self.args.reference_dir,
+            reference_lamp = os.path.join(self.reference_dir,
                                           self.lamps_file_list[lamp_name])
 
             return reference_lamp
@@ -783,7 +783,7 @@ class ReferenceData(object):
             raise NotImplementedError('Reference Lamp not found')
         try:
             lamp_name = lamp_pandas_data_frame.file.tolist()[0]
-            ref_lamp_full_path = os.path.join(self.args.reference_dir, lamp_name)
+            ref_lamp_full_path = os.path.join(self.reference_dir, lamp_name)
             log.debug('Reference Lamp Full Path' + ref_lamp_full_path)
             return ref_lamp_full_path
         except IndexError:
@@ -808,7 +808,7 @@ class ReferenceData(object):
 
         if len(lamp_file_list) == 1:
             print(lamp_file_list)
-            return os.path.join(self.args.reference_dir, lamp_file_list[0])
+            return os.path.join(self.reference_dir, lamp_file_list[0])
         else:
             raise NotImplementedError
 
@@ -822,7 +822,7 @@ class ReferenceData(object):
             elements = [name[i:i + 2].lower() for i in range(0, len(name), 2)]
             for element in elements:
                 linelist_file = self.line_list_files[element]
-                pandas_data_frame = pandas.read_csv(self.args.reference_dir + linelist_file)
+                pandas_data_frame = pandas.read_csv(self.reference_dir + linelist_file)
                 # print(linelist_file, pandas_data_frame, blue, red)
 
         else:
