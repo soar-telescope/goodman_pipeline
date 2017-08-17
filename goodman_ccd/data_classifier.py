@@ -2,7 +2,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import logging
 import numpy as np
-import os
 import random
 from ccdproc import ImageFileCollection
 from .core import fix_duplicated_keywords, remove_conflictive_keywords
@@ -10,6 +9,7 @@ from .core import fix_duplicated_keywords, remove_conflictive_keywords
 log = logging.getLogger('goodmanccd.dataclassifier')
 
 # TODO (simon): Move methods as functions to goodman_ccd.core.py
+
 
 class DataClassifier(object):
     """Class Definition
