@@ -263,6 +263,7 @@ class MainApp(object):
                                 os.unlink(os.path.join(self.args.red_path,
                                                        _file))
                             except OSError as error:
+                                log.error('OSError: {:s}'.format(error))
                                 log.warning('Removing Directory '
                                             '{:s}'.format(_file))
 
