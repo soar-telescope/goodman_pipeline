@@ -56,7 +56,7 @@ def fix_duplicated_keywords(night_dir):
 
     """
     log_ccd.debug('Finding duplicated keywords')
-    log_ccd.warning('Files will be overwritten')
+    log_ccd.warning('Files headers will be overwritten')
     files = glob.glob(os.path.join(night_dir, '*.fits'))
     # Pick a random file to find duplicated keywords
     random_file = random.choice(files)
@@ -164,12 +164,12 @@ def print_progress(current, total):
     It works for FOR loops, requires to know the full length of the loop.
     Prints to the standard output.
 
+    Notes:
+        A possible improvement for this is to run it using multithreading
+
     Args:
         current (int): Current value in the range of the loop.
         total (int): The length of the loop.
-
-    Returns:
-        Nothing
 
     """
     if current == total:
@@ -255,7 +255,7 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
 
     Notes:
         The overscan_region argument uses FITS convention, just like IRAF,
-        therefore is 1 based. i.e. t starts in 1 not 0.
+        therefore is 1 based. i.e. it starts in 1 not 0.
 
     Args:
         ccd (object): A ccdproc.CCDData instance
@@ -283,7 +283,7 @@ def image_trim(ccd, trim_section, add_keyword=False):
 
     Notes:
         The overscan_region argument uses FITS convention, just like IRAF,
-        therefore is 1 based. i.e. t starts in 1 not 0.
+        therefore is 1 based. i.e. it starts in 1 not 0.
 
     Args:
         ccd (object): A ccdproc.CCDData instance
@@ -300,12 +300,6 @@ def image_trim(ccd, trim_section, add_keyword=False):
                              fits_section=trim_section,
                              add_keyword=add_keyword)
     ccd.header.add_history('Trimmed image to ' + trim_section)
-
-    # if ccd.header['OBSTYPE'] == 'OBJECT':
-    #     mg = plt.get_current_fig_manager()
-    #     mg.window.showMaximized()
-    #     plt.imshow(ccd.data, clim=(50,800))
-    #     plt.show()
 
     return ccd
 
@@ -328,6 +322,7 @@ def get_slit_trim_section(master_flat):
 
     """
     x, y = master_flat.data.shape
+
     # Using the middle point to make calculations, usually flats have good
     # illumination already at the middle.
     middle = int(y / 2.)
@@ -364,6 +359,7 @@ def get_slit_trim_section(master_flat):
     # define the slit trim section as (IRA
     slit_trim_section = '[:,{:d}:{:d}]'.format(low_lim, high_lim)
 
+    # debugging plots that have to be manually turned on
     if False:
         manager = plt.get_current_fig_manager()
         manager.window.showMaximized()
@@ -534,15 +530,15 @@ def lacosmic_cosmicray_rejection(ccd, mask_only=False):
           Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
 
       Args:
-          ccd (object): CCDData Object
+          ccd (object): A ccdproc.CCDData instance.
           mask_only (bool): In some cases you may want to obtain the cosmic
-              rays mask only
+              rays mask only.
 
       Returns:
-          ccd (object): A CCDData instance with the mask attribute updated.
+          ccd (object): A CCDData instance with the mask attribute updated or an
+          array which corresponds to the mask.
 
-      """
-    # TODO (simon): Validate this method
+    """
     if ccd.header['OBSTYPE'] == 'OBJECT':
         value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
         log_ccd.info('Cleaning cosmic rays... ')
@@ -572,17 +568,40 @@ def lacosmic_cosmicray_rejection(ccd, mask_only=False):
         return ccd
 
 
-def call_cosmic_rejection(ccd, science_image, out_prefix, red_path,
+def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
                           dcr_par, keep_files=False, prefix='c', method='dcr'):
+    """Call for the appropriate cosmic ray rejection method
+
+    There are three options when dealing with cosmic ray rejection in this
+    pipeline, the first is ``dcr`` which is a program written in C by Wojtek
+    Pych (http://users.camk.edu.pl/pych/DCR/) and works very well for
+    spectroscopy the only negative aspect is that integration with python was
+    difficult and not native.
+
+    Args:
+        ccd (object): a ccdproc.CCDData instance.
+        image_name (str): Science image name.
+        out_prefix (str): Partial prefix to be added to the image name. Related
+            to previous processes and not cosmic ray rejection.
+        red_path (str): Path to reduced data directory.
+        dcr_par (str): Path to dcr.par file.
+        keep_files (bool): If True, the original file and the cosmic ray mask
+            will not be deleted. Default is False.
+        prefix (str): Cosmic ray rejection related prefix to be added to image
+            name.
+        method (str): Method to use for cosmic ray rejection. There are three
+            options: dcr, lacosmic and none.
+
+    """
 
     if method == 'dcr':
         log_ccd.warning('DCR does apply the correction to images if you want '
                         'the mask use --keep-cosmic-files')
-        full_path = os.path.join(red_path, out_prefix + science_image)
+        full_path = os.path.join(red_path, out_prefix + image_name)
         ccd.write(full_path, clobber=True)
         log_ccd.info('Saving image: {:s}'.format(full_path))
 
-        in_file = out_prefix + science_image
+        in_file = out_prefix + image_name
 
         dcr_cosmicray_rejection(data_path=red_path,
                                 in_file=in_file,
@@ -598,20 +617,19 @@ def call_cosmic_rejection(ccd, science_image, out_prefix, red_path,
         ccd = lacosmic_cosmicray_rejection(ccd=ccd)
 
         out_prefix = prefix + out_prefix
-        full_path = os.path.join(red_path, out_prefix + science_image)
+        full_path = os.path.join(red_path, out_prefix + image_name)
 
         ccd.write(full_path, clobber=True)
         log_ccd.info('Saving image: {:s}'.format(full_path))
 
     elif method == 'none':
-        full_path = os.path.join(red_path, out_prefix + science_image)
+        full_path = os.path.join(red_path, out_prefix + image_name)
         log_ccd.warning("--cosmic set to 'none'")
         ccd.write(full_path, clobber=True)
         log_ccd.info('Saving image: {:s}'.format(full_path))
 
     else:
         log_ccd.error('Unrecognized Cosmic Method {:s}'.format(method))
-
 
 
 def get_best_flat(flat_name):
@@ -628,7 +646,8 @@ def get_best_flat(flat_name):
     None instead of master_flat_name.
 
     Args:
-        flat_name (str): Full path of masterflat basename. Ends in '*.fits'.
+        flat_name (str): Full path of masterflat basename. Ends in '*.fits' for
+            globbing.
 
     Returns:
         master_flat (object): A ccdproc.CCDData instance
@@ -659,6 +678,9 @@ def print_default_args(args):
 
     This is mostly helpful for debug but people not familiar with the software
     might find it useful as well
+
+    Notes:
+        This function is deprecated.
 
     Notes:
         This is not dynamically updated so use with caution
@@ -819,6 +841,10 @@ def remove_conflictive_keywords(path, file_list):
     The data will be overwritten with the keywords removed. The user will
     need to have backups of raw data.
 
+    Notes:
+        This function solves a problem with old data, new headers are compliant
+        with the headers.
+
     Args:
         path (str): Path to the folder containing the files
         file_list (list): List of files to remove keywords
@@ -845,13 +871,13 @@ def remove_conflictive_keywords(path, file_list):
                 data = data[0]
 
                 log_ccd.debug('Modified file to be 2D instead of 3D '
-                          '(problematic)')
+                              '(problematic)')
 
             for keyword in keys_to_remove:
                 header.remove(keyword)
 
                 log_ccd.debug('Removed conflictive keyword '
-                          '{:s}'.format(keyword))
+                              '{:s}'.format(keyword))
 
             log_ccd.debug('Updated headers')
 
@@ -893,7 +919,7 @@ def classify_spectroscopic_data(path, search_pattern):
 
     if file_list == []:
         log_spec.error('No file found using search pattern '
-                  '"{:s}"'.format(search_pattern))
+                       '"{:s}"'.format(search_pattern))
 
         sys.exit('Please use the argument --search-pattern to define the '
                  'common prefix for the files to be processed.')
@@ -972,7 +998,24 @@ def classify_spectroscopic_data(path, search_pattern):
 
 
 def search_comp_group(object_group, comp_groups):
+    """Search for a suitable comparison lamp group
 
+    In case a science target was observed without comparison lamps, usually
+    right before or right after, this function will look for a compatible set
+    obtained at a different time or pointing.
+
+    Notes:
+        This methodology is not recommended for radial velocity studies.
+
+    Args:
+        object_group (object): A pandas.DataFrame instances containing a group
+            of images for a given scientific target.
+        comp_groups (list): A list in which every element is a pandas.DataFrame
+            that contains information regarding groups of comparison lamps.
+
+    Returns:
+
+    """
     log_spec.debug('Finding a suitable comparison lamp group')
 
     object_confs = object_group.groupby(['slit',
@@ -981,7 +1024,8 @@ def search_comp_group(object_group, comp_groups):
                                          'grt_targ',
                                          'filter',
                                          'filter2']
-                                        ).size().reset_index()# .rename(columns={0: 'count'})
+                                        ).size().reset_index()
+    # .rename(columns={0: 'count'})
 
     for comp_group in comp_groups:
 
@@ -1005,7 +1049,8 @@ def spectroscopic_extraction(ccd, extraction,
                              plots=False):
     """This function does not do the actual extraction but prepares the data
 
-
+    There are several steps involved in a spectroscopic extraction, this
+    function manages them.
 
     Args:
         ccd (object): A ccdproc.CCDData Instance
@@ -1041,6 +1086,7 @@ def spectroscopic_extraction(ccd, extraction,
 
     if profile_model is None:
         log_spec.critical('Target identification FAILED!')
+        raise NoTargetException
     else:
         background_image = create_background_image(ccd=ccd,
                                                    profile_model=profile_model,
@@ -1154,15 +1200,23 @@ def spectroscopic_extraction(ccd, extraction,
 
     elif profile_model is None:
         log_spec.warning("Didn't receive identified targets "
-                    "from {:s}".format(ccd.header['OFNAME']))
+                         "from {:s}".format(ccd.header['OFNAME']))
         raise NoTargetException
     else:
         log_spec.error('Got wrong input')
 
 
 def identify_targets(ccd, nfind=3, plots=False):
-    """Identify targets cross correlating spatial profile with a gaussian model
+    """Identify spectroscopic targets in an image
 
+    This function collapses the image along the dispersion direction using a
+    median, This highlights the spatial features present in a 2D spectrum
+    (image), Then does a sigma clip to remove any features in order to fit the
+    background level and shape, the fit is a linear function. Once the
+    background has been removed it will equal to zero all negative values. It
+    will perform a new sigma clipping but this time to determinate the
+    background amplitude. Finally it finds all the peaks above the background
+    level and pick the n largets ones. n is defined by nfind.
 
     Args:
         ccd (object): a ccdproc.CCDData instance
@@ -1493,7 +1547,9 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
     base model used to fit the spectrum profile.
 
     Notes:
-        This doesn't work for extended sources.
+        This doesn't work for extended sources. Also this calls for the function
+        trace for doing the actual trace, the difference is that this method is
+        at a higher level.
 
     Args:
         ccd (object): Instance of ccdproc.CCDData
@@ -1742,11 +1798,15 @@ def add_wcs_keys(header):
 def remove_background_by_median(ccd, plots=False):
     """Remove Background of a ccd spectrum image
 
+    Notes:
+        This function works well for images without strong sky lines. Or for
+        targets embedded in extended sources.
+
     Args:
         ccd (object): A ccdproc.CCDData instance.
 
     Returns:
-        ccd (object): The modified
+        ccd (object): The modified ccdproc.CCDData instance.
 
     """
     new_ccd = ccd.copy()
@@ -1762,8 +1822,28 @@ def remove_background_by_median(ccd, plots=False):
     return new_ccd
 
 
-def get_background_value(background_image, zone=None):
+def get_background_value(background_image, zone_sep=0.5, zone=None):
+    """finds background value for each dispersion line
 
+    A background image is an image whose spectrum has been masked with zeros,
+    the spectrum zone is retrieved by analyzing the pixels values and then two
+    background zones are defined at a distance from the edges of the target zone
+    defined by zone_sep, the width of the background zone is the same as the
+    target's. After validating the background zone they averaged by median along
+    the spatial direction. If there are two zones they are averaged as well.
+
+    Args:
+        background_image (object): ccdproc.CCDData instance. Spectra are masked.
+        zone_sep (float): How far the background zone should be from the edges
+            of the target zone. Default 0.5.
+        zone (list): Alternative you could parse the zone as a list with each
+            element a limit. Therefore there should be an even number of
+            elements.
+
+    Returns:
+        A 1D array the same length of the dispersion length.
+
+    """
     spatial_length, dispersion_length = background_image.data.shape
     if zone is None:
         background_profile = np.median(background_image.data, axis=1)
@@ -1777,8 +1857,6 @@ def get_background_value(background_image, zone=None):
         target_zones.append(np.argmin(target_zones_points))
         target_zones.append(len(target_zones_points))
         target_zones.sort()
-
-        # plt.imshow(background_image, clim=(0,60))
 
         for i in range(len(target_zones) - 1):
 
@@ -1805,57 +1883,36 @@ def get_background_value(background_image, zone=None):
     zone_width = zone[1] - zone[0]
 
     # first background zone
-    back_first_low = int(zone[0] - 1.5 * zone_width)
-    back_first_high = int(zone[0] - 0.5 * zone_width)
+    back_first_low = int(zone[0] - (1 + zone_sep) * zone_width)
+    back_first_high = int(zone[0] - zone_sep * zone_width)
     if 0 < back_first_low < back_first_high:
 
         first_background = np.median(background_image.data[
                                      back_first_low:back_first_high,
                                      :],
                                      axis=0)
-
-        # print('First b ', back_first_low, back_first_high)
-        # plt.axhspan(back_first_low,
-        #             back_first_high,
-        #             color='w',
-        #             alpha=0.5)
     else:
         log_spec.debug('Zone [{:d}:{:d}] is forbidden'.format(
             back_first_low,
             back_first_high))
 
-        # plt.axhspan(back_first_low,
-        #             back_first_high,
-        #             color='k',
-        #             alpha=0.5)
-
     # second background zone
-    back_second_low = int(zone[-1] + 0.5 * zone_width)
-    back_second_high = int(zone[-1] + 1.5 * zone_width)
+    back_second_low = int(zone[-1] + zone_sep * zone_width)
+    back_second_high = int(zone[-1] + (1 + zone_sep) * zone_width)
     if back_second_low < back_second_high < spatial_length:
 
         second_background = np.mean(background_image.data[
                                     back_second_low:back_second_high,
                                     :],
                                     axis=0)
-        # print('Second b ', back_second_low, back_second_high)
-        # plt.axhspan(back_second_low,
-        #             back_second_high,
-        #             color='w',
-        #             alpha=0.5)
     else:
         log_spec.debug('Zone [{:d}:{:d}] is forbidden'.format(
             back_second_low,
             back_second_high))
-        # plt.axhspan(back_second_low,
-        #             back_second_high,
-        #             color='k',
-        #             alpha=0.5)
+
     if first_background is not None and second_background is not None:
         background_mean = np.mean([first_background, second_background], axis=0)
-        # plt.title('Background Mean')
-        # plt.plot(background_mean)
-        # plt.show()
+
         return background_mean
     elif first_background is not None and second_background is None:
         return first_background
@@ -1867,17 +1924,27 @@ def get_background_value(background_image, zone=None):
         return 0
 
 
-
-    # background_mean = np.mean(background_image.data, axis=0)
-    # background_median = np.median(background_image.data, axis=0)
-    # plt.plot(background_mean, color='b')
-    # plt.plot(background_median, color='r')
-    # plt.show()
-    #
-    # return background_median
-
-
 def create_background_image(ccd, profile_model, nsigma, separation):
+    """Creates a background-only image
+
+    Using a profile model and assuming the spectrum is misaligned only a little
+    bit (i.e. a couple of pixels from end to end) with respect to the lines of
+    the detector. The number of sigmas determines the width of the zone to be
+    masked and the separation is an offset that is added.
+
+    Args:
+        ccd (object): A ccdproc.CCDData instance.
+        profile_model (object): An astropy.modeling.Model instance. Describes
+            the spatial profile of the target.
+        nsigma (float): Number of sigmas. Used to calculate the width of the
+            target zone to be masked.
+        separation (float): Additional offset that adds to the width of the
+            target zone.
+
+    Returns:
+        A ccdproc.CCDData instance with the spectrum masked.
+
+    """
     background_ccd = ccd.copy()
     spatial_length, dispersion_length = background_ccd.data.shape
     target_profiles = []
@@ -2025,6 +2092,7 @@ def extract(ccd,
         # spectrum zone limit
         low_lim, high_lim = zone
         spectrum_masked = nccd.data * cr_mask
+        # TODO (simon): Add fractional pixel
         spectrum_sum = np.ma.sum(spectrum_masked[low_lim:high_lim, :], axis=0)
 
         background_sum = np.abs(high_lim - low_lim) * background_level
@@ -2138,14 +2206,8 @@ def extract(ccd,
     # nccd.data = out_spectrum
     return nccd
 
-# def save_fits(full_name, clobber=True):
-#     full_path = os.path.join(red_path,
-#                              out_prefix + science_image)
-#     ccd.write(full_path, clobber=True)
-#     log_ccd.debug('Created science image: {:s}'.format(full_path))
 
 # classes definition
-
 
 class NightDataContainer(object):
     """This class is designed to be the organized data container. It doesn't
@@ -2333,6 +2395,7 @@ class NightDataContainer(object):
 
 
 class NoTargetException(Exception):
+    """Exception to be raised when no target is identified"""
     def __init__(self):
         Exception.__init__(self, 'No targets identified.')
 
@@ -2347,6 +2410,6 @@ class NotEnoughLinesDetected(Exception):
         Exception.__init__(self, 'Not enough lines detected.')
 
 
-class CritialError(Exception):
+class CriticalError(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
