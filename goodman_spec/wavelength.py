@@ -39,7 +39,7 @@ from goodman_ccd.core import (spectroscopic_extraction,
                               NoTargetException,
                               NoMatchFound,
                               NotEnoughLinesDetected,
-                              CritialError)
+                              CriticalError)
 
 
 
