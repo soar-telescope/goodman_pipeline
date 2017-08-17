@@ -19,7 +19,6 @@ from .core import (image_overscan,
                    lacosmic_cosmicray_rejection,
                    get_best_flat,
                    normalize_master_flat,
-                   dcr_cosmicray_rejection,
                    call_cosmic_rejection)
 
 from .wavmode_translator import SpectroscopicMode
@@ -30,13 +29,14 @@ log = logging.getLogger('goodmanccd.imageprocessor')
 class ImageProcessor(object):
 
     def __init__(self, args, data_container):
-        """
+        """Init method for ImageProcessor class
 
         Args:
             args (object): Argparse object
             data_container (object): Contains relevant information of the night
             and the data itself.
         """
+        # TODO (simon): Check how inheritance could be used here.
         self.args = args
         self.instrument = data_container.instrument
         self.technique = data_container.technique
@@ -79,7 +79,7 @@ class ImageProcessor(object):
 
                     if len(group_obstype) == 1 and \
                         group_obstype[0] == 'BIAS' and \
-                        not self.args.ignore_bias:
+                            not self.args.ignore_bias:
 
                         log.debug('Creating Master Bias')
                         self.create_master_bias(sub_group)
@@ -131,8 +131,8 @@ class ImageProcessor(object):
                 # serial binning - dispersion binning
                 # parallel binngin - spatial binning
                 serial_binning, \
-                parallel_binning = [int(x) for x
-                                    in ccd.header['CCDSUM'].split()]
+                    parallel_binning = [int(x) for x
+                                        in ccd.header['CCDSUM'].split()]
 
                 # Trim section is valid for Blue and Red Camera Binning 1x1 and
                 # Spectroscopic ROI
@@ -145,10 +145,10 @@ class ImageProcessor(object):
                     r = int(4110 / serial_binning)
 
                     # bottom
-                    b = 1
+                    # b = 1
 
                     #top
-                    t = int(1896 / parallel_binning)
+                    # t = int(1896 / parallel_binning)
                     # TODO (simon): Need testing
                     # trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
                     trim_section = '[{:d}:{:d},:]'.format(l, r)
@@ -201,7 +201,7 @@ class ImageProcessor(object):
                 h = ccd.data.shape[0]
 
                 # Image width - spectral direction
-                w = ccd.data.shape[1]
+                # w = ccd.data.shape[1]
 
                 # Take the binnings
                 serial_binning, parallel_binning = \
@@ -268,7 +268,7 @@ class ImageProcessor(object):
 
         """
         bias_file_list = bias_group.file.tolist()
-        default_bias_name =os.path.join(self.args.red_path, 'master_bias.fits')
+        default_bias_name = os.path.join(self.args.red_path, 'master_bias.fits')
         search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
         n_bias = len(glob.glob(search_bias_name))
         if n_bias > 0:
@@ -472,14 +472,14 @@ class ImageProcessor(object):
             else:
                 filter2 = '_' + filter2
 
-            master_flat_name += target_name +\
-                                flat_grating +\
-                                wavmode +\
-                                filter2 +\
-                                '_' +\
-                                flat_slit +\
-                                dome_sky +\
-                                '.fits'
+            master_flat_name += target_name\
+                + flat_grating\
+                + wavmode\
+                + filter2\
+                + '_'\
+                + flat_slit\
+                + dome_sky\
+                + '.fits'
 
         elif self.technique == 'Imaging':
             flat_filter = re.sub('-', '_', group['filter'].unique()[0])
@@ -552,7 +552,6 @@ class ImageProcessor(object):
                         get_best_flat(flat_name=master_flat_name)
                     if (master_flat is None) and (master_flat_name is None):
                         log.critical('Failed to obtain master flat')
-
 
             if master_flat is not None and not self.args.ignore_flats:
                 log.debug('Attempting to find slit trim section')
@@ -638,7 +637,7 @@ class ImageProcessor(object):
                                            '{:s}'.format(master_flat_name))
 
                 call_cosmic_rejection(ccd=ccd,
-                                      science_image=science_image,
+                                      image_name=science_image,
                                       out_prefix=self.out_prefix,
                                       red_path=self.args.red_path,
                                       dcr_par=self.args.dcr_par_dir,
@@ -727,4 +726,3 @@ class ImageProcessor(object):
 
 if __name__ == '__main__':
     pass
-
