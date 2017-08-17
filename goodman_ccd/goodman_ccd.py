@@ -1,24 +1,22 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import os
+import shutil
 import argparse
 import glob
 import logging
 import matplotlib
 matplotlib.use('Qt4Agg')
-import os
-import shutil
 
-
-from .core import print_default_args
 from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
 
 __author__ = 'David Sanmartim'
 __date__ = '2016-07-15'
-__version__ = "0.1"
-__email__ = "dsanmartim@ctio.noao.edu"
+__version__ = "1.0b2"
 __maintainer__ = "Simon Torres"
+__email__ = "storres@ctio.noao.edu"
 
 FORMAT = '%(levelname)s: %(asctime)s: %(module)s.%(funcName)s: %(message)s'
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
@@ -39,7 +37,8 @@ def get_args(arguments=None):
         arguments (list): A list containing the arguments as elements.
 
     Returns:
-        args (object): Argparse object. Contains all the arguments as attributes
+        args (object): argparse instance. Contains all the arguments as
+            attributes
 
     """
 
@@ -290,11 +289,6 @@ class MainApp(object):
 
             # print(night_sorter.nights_dict)
             for night in night_sorter.nights_dict:
-                # print(night_sorter.nights_dict[night])
-                # night_organizer = \
-                #     NightOrganizer(args=self.args,
-                #                    night_dict=night_sorter.nights_dict[night])
-                # nd = Night Dictionary
                 nd = night_sorter.nights_dict[night]
                 log.debug('Initializing NightOrganizer Class')
                 night_organizer = NightOrganizer(
