@@ -203,7 +203,6 @@ class NightOrganizer(object):
             # process non-bias i.e. flats and object ... and comp
             data_collection = file_collection[file_collection.obstype != 'BIAS']
 
-
         confs = data_collection.groupby(
             ['gain',
              'rdnoise',
