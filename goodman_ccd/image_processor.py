@@ -27,14 +27,20 @@ log = logging.getLogger('goodmanccd.imageprocessor')
 
 
 class ImageProcessor(object):
+    """Image processing class
+
+    This class contains methods for performing CCD image reduction for
+    spectroscopy and imaging.
+
+    """
 
     def __init__(self, args, data_container):
         """Init method for ImageProcessor class
 
         Args:
-            args (object): Argparse object
+            args (object): argparse instance
             data_container (object): Contains relevant information of the night
-            and the data itself.
+                and the data itself.
         """
         # TODO (simon): Check how inheritance could be used here.
         self.args = args
@@ -57,14 +63,11 @@ class ImageProcessor(object):
         self.master_bias = None
         self.out_prefix = None
 
-    def __call__(self, *args, **kwargs):
-        """
+    def __call__(self):
+        """Call method for ImageProcessor class
 
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
+        This method manages the image processing by calling the appropriate
+        methods.
 
         """
 
@@ -105,9 +108,19 @@ class ImageProcessor(object):
                 print(sub_group)
 
     def define_trim_section(self, technique=None):
-        """
+        """Get the initial trim section
+
+        The initial trim section is usually defined in the header with the
+        keyword TRIMSEC but in the case of Goodman HTS this does not work well.
+        In particular for spectroscopy where is more likely to have combined
+        binnings and so on.
+
+        Args:
+            technique (str): The name of the technique, the options are:
+                Imaging or Spectroscopy.
 
         Returns:
+            The trim section in the format ``[x1:x2, y1:y2]``
 
         """
 
@@ -171,9 +184,10 @@ class ImageProcessor(object):
         by the binning size. This was checked
         that it actually works as expected.
 
-        Notes
-        1 based
-        IRAF V3 convention opposite to Python (poner en returns)
+        Notes:
+            The regions are 1-based i.e. opposite to Python convention.
+            For Imaging there is no overscan region.
+
 
         Returns:
             overscan_region (str): Region for overscan in the format
@@ -181,7 +195,6 @@ class ImageProcessor(object):
             point of the overscan region.
 
         """
-        # TODO (simon): elaborate Notes on docstrings
         log.warning('Determining Overscan Region. Assuming you have only one '
                     'kind of binning in the data.')
         for group in [self.bias,
@@ -259,12 +272,15 @@ class ImageProcessor(object):
                 return overscan_region
 
     def create_master_bias(self, bias_group):
-        """
+        """Create Master Bias
+
+        Given a pandas.DataFrame object that contains a list of compatible bias.
+        This function creates the master flat using ccdproc.combine using median
+        and 3-sigma clipping.
 
         Args:
-            bias_group:
-
-        Returns:
+            bias_group (object): pandas.DataFrame instance that contains a list
+                of bias images compatible with each other.
 
         """
         bias_file_list = bias_group.file.tolist()
@@ -329,13 +345,22 @@ class ImageProcessor(object):
             log.info('Created master bias: ' + new_bias_name)
 
     def create_master_flats(self, flat_group, target_name=''):
-        """
+        """Creates master flats
+
+        Using a list of compatible flat images it combines them using median and
+        1-sigma clipping. Also it apply all previous standard calibrations to
+        each image.
 
         Args:
-            flat_group:
-            target_name:
+            flat_group (object): pandas.DataFrame instance. Contains a list of
+                compatible flat images
+            target_name (str): Science target name. This is used in some science
+                case uses only.
+
 
         Returns:
+            The master flat ccdproc.CCDData instance and the name of under which
+            the master flat was stored.
 
         """
 
@@ -401,20 +426,36 @@ class ImageProcessor(object):
             return master_flat, master_flat_name
             # print(master_flat_name)
         else:
-            log.error('Empty flat list. Probably they exceed the '
+            log.error('Empty flat list. Check that they do not exceed the '
                       'saturation limit.')
             return None, None
 
     def name_master_flats(self, header, group, target_name='', get=False):
-        """
+        """Defines the name of a master flat or what master flat is compatible
+        with a given data
+
+        Given the header of a flat image this method will look for certain
+        keywords that are unique to a given instrument configuration therefore
+        they are used to discriminate compatibility.
+        
+        It can be used to define a master flat when creating it or find a base
+        name to match existing master flat files thus finding a compatible one
+        for a given non-flat image.
 
         Args:
-            header:
-            group:
-            target_name:
-            get:
+            header (object): Fits header. Instance of
+                astropy.io.fits.header.Header
+            group (object): pandas.DataFrame instance. Contains filenames as
+                well as other important keywords that are defined in
+                goodman_ccd.night_organizer.NightOrganizer.keywords
+            target_name (str): Optional science target name to be added to the
+                master flat name.
+            get (bool): This option is used when trying to find a suitable 
+                master flat for a given data.
 
         Returns:
+            A master flat name, or basename to find a match among existing
+            files.
 
         """
         master_flat_name = os.path.join(self.args.red_path, 'master_flat')
@@ -487,13 +528,20 @@ class ImageProcessor(object):
         # print(master_flat_name)
         return master_flat_name
 
-    def process_spectroscopy_science(self, science_group):
-        """
+    def process_spectroscopy_science(self, science_group, save_all=False):
+        """Process Spectroscopy science images.
+
+        This function handles the full image reduction process for science
+        files. if save_all is used, all intermediate steps are saved.
 
         Args:
-            science_group:
-
-        Returns:
+            science_group (object): pandas.DataFrame instance that contains a
+                list of science images that where observed at the same pointing
+                and time. It also contains a set of selected keywords from the
+                image's header.
+            save_all (bool): If True the pipeline will save all the intermadiate
+                files such as after overscan correction or bias corrected and
+                etc.
 
         """
         # TODO (simon): The code here is too crowded.
@@ -590,6 +638,12 @@ class ImageProcessor(object):
                 ccd = image_overscan(ccd, overscan_region=self.overscan_region)
                 self.out_prefix += 'o_'
 
+                if save_all:
+                    full_path = os.path.join(self.args.red_path,
+                                             self.out_prefix + science_image)
+
+                    ccd.write(full_path, clobber=True)
+
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match
                     # the size of the other data
@@ -598,9 +652,23 @@ class ImageProcessor(object):
                     ccd = image_trim(ccd=ccd, trim_section=slit_trim)
                     self.out_prefix = 'st' + self.out_prefix
 
+                    if save_all:
+                        full_path = os.path.join(
+                            self.args.red_path,
+                            self.out_prefix + science_image)
+
+                        ccd.write(full_path, clobber=True)
+
                 else:
                     ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
                     self.out_prefix = 't' + self.out_prefix
+
+                    if save_all:
+                        full_path = os.path.join(
+                            self.args.red_path,
+                            self.out_prefix + science_image)
+
+                        ccd.write(full_path, clobber=True)
 
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
@@ -611,6 +679,13 @@ class ImageProcessor(object):
 
                     self.out_prefix = 'z' + self.out_prefix
                     ccd.header.add_history('Bias subtracted image')
+
+                    if save_all:
+                        full_path = os.path.join(
+                            self.args.red_path,
+                            self.out_prefix + science_image)
+
+                        ccd.write(full_path, clobber=True)
                 else:
                     log.warning('Ignoring bias correction by request.')
                 if master_flat is None or master_flat_name is None:
@@ -636,6 +711,13 @@ class ImageProcessor(object):
                     ccd.header.add_history('master flat norm_'
                                            '{:s}'.format(master_flat_name))
 
+                    if save_all:
+                        full_path = os.path.join(
+                            self.args.red_path,
+                            self.out_prefix + science_image)
+
+                        ccd.write(full_path, clobber=True)
+
                 call_cosmic_rejection(ccd=ccd,
                                       image_name=science_image,
                                       out_prefix=self.out_prefix,
@@ -656,12 +738,13 @@ class ImageProcessor(object):
             log.error('There is no valid datatype in this group')
 
     def process_imaging_science(self, imaging_group):
-        """
+        """Does image reduction for science imaging data.
 
         Args:
-            imaging_group:
+            imaging_group (object): pandas.DataFrame instance that contains a
+                list of science data that are compatible with a given
+                instrument configuration and can be reduced together.
 
-        Returns:
 
         """
         # pick a random image in order to get a header
