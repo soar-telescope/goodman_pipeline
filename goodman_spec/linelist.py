@@ -1,7 +1,8 @@
 # -*- coding: utf8 -*-
 """ Line list per elements
 
-This contains a dictionary of elements used for comparison lamps with their main emission lines
+This contains a dictionary of elements used for comparison lamps with their
+main emission lines
 
 The current elements present are:
 
@@ -18,7 +19,7 @@ from __future__ import (absolute_import, division, print_function,
 import logging
 import pandas
 import os
-import ccdproc as ccd
+import ccdproc
 import re
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
@@ -35,16 +36,20 @@ class ReferenceData(object):
         - line positions only for the elements used in SOAR comparison lamps
     """
     def __init__(self, reference_dir):
-        """Initializes the class ReferenceData
+        """Init method for the ReferenceData class
+
+        This methods uses ccdproc.ImageFileCollection on the reference_dir to
+        capture all possible reference lamps. Also defines dictionaries
+        containg line lists for several elements used in lamps.
 
         Args:
-            args(class): All the arguments parsed to the parent program
+            reference_dir (str): full path to the reference data directory
         """
         self.reference_dir = reference_dir
-        reference_collection = ccd.ImageFileCollection(self.reference_dir)
+        reference_collection = ccdproc.ImageFileCollection(self.reference_dir)
         self.ref_lamp_collection = reference_collection.summary.to_pandas()
         self.lamps_file_list = {'cuhear': 'goodman_comp_600_BLUE_CuHeAr.fits',
-                                'hgar': 'hgar_reference_soar.fits',
+                                'hgar': 'goodman_comp_400_M2_GG455_HgAr.fits',
                                 'hgarne': 'goodman_comp_400_M2_GG455_HgArNe.fits'}
         self.line_list_files = {'cu': 'Cu_3000A-10000A_clean.csv',
                                 'he': 'He_3000A-10000A_clean.csv',
@@ -692,14 +697,17 @@ class ReferenceData(object):
     def get_line_list_by_name(self, lamp_name):
         """Get the reference lines for elements in the lamp's name
 
-        Splits the name in chunks of two characters assuming each one of them represents an element in the comparison
-        lamp, then fetches the list of line positions available and appends it to a list that will be return ordered.
+        Splits the name in chunks of two characters assuming each one of them
+        represents an element in the comparison lamp, then fetches the list of
+        line positions available and appends it to a list that will be return
+        ordered.
 
         Args:
-            lamp_name(str): Lamp's name as in the header keyword OBJECT
+            lamp_name (str): Lamp's name as in the header keyword OBJECT.
 
         Returns:
-            line_list(list): Sorted line list
+            line_list(list): Sorted line list.
+
         """
         elements = [lamp_name[i:i + 2].lower() for i in range(0, len(lamp_name), 2)]
         line_list = []
@@ -708,18 +716,19 @@ class ReferenceData(object):
         return sorted(line_list)
 
     def get_lines_in_range(self, blue, red, lamp_name):
-        """Get the reference lines for a given comparison lamp in a wavelength range
+        """Get the reference lines for a given comparison lamp in a wavelength
+        range
 
-        Select the reference lines available for all the elements in the comparison lamp in the spectral range specified
-        by blue and red
+        Select the reference lines available for all the elements in the
+        comparison lamp in the spectral range specified by blue and red
 
         Args:
-            blue(float): Blue limit for lines required
-            red(float): Red limit for lines required
-            lamp_name(str): Lamp's name as in the header keyword OBJECT
+            blue(float): Blue limit for lines required.
+            red(float): Red limit for lines required.
+            lamp_name(str): Lamp's name as in the header keyword OBJECT.
 
         Returns:
-            lines(list): Sorted line list
+            lines(list): Sorted line list.
         """
         lines = []
         if len(lamp_name) % 2 == 0:
@@ -735,6 +744,10 @@ class ReferenceData(object):
         """Get lamp's template by element
 
         Some lamp templates are available for selected configurations.
+
+        Notes:
+            This method has hardcoded lamp names. Also it might be deprecated
+            in the near future.
 
         Args:
             lamp_name(str): Lamp's name as in the header keyword OBJECT
@@ -757,9 +770,11 @@ class ReferenceData(object):
         """Finds a suitable template lamp from the catalog
 
         Args:
-            header:
+            header (object): FITS header of image we are looking a a reference
+                lamp.
 
         Returns:
+            full path to best matching reference lamp.
 
         """
         criteria = ['slit', 'cam_targ', 'grt_targ', 'grating', 'object']
@@ -778,6 +793,8 @@ class ReferenceData(object):
             # else:
             #     print(lamp_pandas_data_frame)
 
+        elif len(lamp_pandas_data_frame) == 1:
+            log.debug(lamp_pandas_data_frame.file.tolist()[0])
         else:
             log.error('There is no reference lamp found')
             raise NotImplementedError('Reference Lamp not found')
@@ -793,9 +810,11 @@ class ReferenceData(object):
         """Finds the exact reference lamp
 
         Args:
-            header:
+            header (object): FITS header of image we are looking a a reference
+                lamp.
 
         Returns:
+            full path to best matching reference lamp.
 
         """
         criteria = ['slit', 'cam_targ', 'grt_targ', 'grating', 'object']
@@ -807,15 +826,23 @@ class ReferenceData(object):
              (self.ref_lamp_collection['object'] == header['object']))].tolist()
 
         if len(lamp_file_list) == 1:
-            print(lamp_file_list)
+            # print(lamp_file_list)
             return os.path.join(self.reference_dir, lamp_file_list[0])
         else:
             raise NotImplementedError
 
     def get_ref_spectrum_from_linelist(self, blue, red, name):
-        """Experimental not working at the moment
+        """Build spectrum from linelist
 
-        Builds a unidimensional spectrum to be used as a template for finding an automatic wavelength solution
+        Builds a unidimensional spectrum to be used as a template for finding
+        an automatic wavelength solution.
+
+        There is no safe way to do this, so this method will be deprecated at
+        some point.
+
+        Notes:
+            Experimental, never really worked.
+
         """
         # raise DeprecationWarning
         if len(name) % 2 == 0:
