@@ -51,14 +51,25 @@ SHOW_PLOTS = False
 
 
 def process_spectroscopy_data(data_container, args, extraction_type='simple'):
-    """
+    """Does spectroscopic processing
+
+    This is a high level method that manages all subprocess regarding the
+    spectroscopic reduction.
+
+    It returns a True value but it should be modified to return something more
+    usable in case it is integrated in other application.
 
     Args:
-        data_container:
-        args:
-        extraction_type:
+        data_container (object): Instance of goodman_ccd.core.NightDataContainer
+            class that is used to store classified data.
+        args (object): Instance of arparse.Namespace that contains all the
+            arguments of the pipeline.
+        extraction_type (str): string that defines the type of extraction to be
+            performed. 'simple' or 'optimal'. This is required by the extraction
+            function.
 
     Returns:
+        a True value.
 
     """
 
@@ -209,7 +220,7 @@ class WavelengthCalibration(object):
             for next release.
 
         Args:
-            args (objects): Runtime arguments.
+            args (object): Runtime arguments.
 
         """
 
@@ -276,17 +287,21 @@ class WavelengthCalibration(object):
     def __call__(self, ccd, comp_list, object_number=None, wsolution_obj=None):
         """Call method for the WavelengthSolution Class
 
-        It takes extracted data and produces wavelength calibrated by means of
-        an interactive mode. The call method takes care of the order and logic
-        needed to call the different methods. A wavelength solution can be
-        recycled for the next science object. In that case, the wavelength
-        solution is parsed as an argument and then there is no need to calculate
-        it again.
+        It takes extracted data and produces wavelength calibrated 1D FITS file.
+        The call method takes care of the order and logic needed to call the
+        different methods. A wavelength solution can be recycled for the next
+        science object. In that case, the wavelength solution is parsed as an
+        argument and then there is no need to calculate it again. The recycling
+        part has to be implemented in the caller function.
 
         Args:
-            ccd (object): a CCDData instance
-            comp_list (list):
-            object_number:
+            ccd (object): a ccdproc.CCDData instance
+            comp_list (list): Comparison lamps for the science target that will
+                be processed here. Every element of this list is an instance of
+                ccdproc.CCDData.
+            object_number (int): In case of multiple detections in a single
+                image this number will be added as a suffix before `.fits` in
+                order to allow for multiple 1D files. Default value is None.
             wsolution_obj (object): Mathematical model of the wavelength
                 solution if exist. If it doesnt is a None
 
@@ -466,11 +481,12 @@ class WavelengthCalibration(object):
         """Get the mathematical model of the wavelength solution
 
         The wavelength solution is a callable mathematical function from
-        astropy.modeling.models By obtaining this solution it can be applied to
-        a pixel axis.
+        astropy.modeling.models. By obtaining this mathematical model the user
+        can use its own method to apply it to a given data.
 
         Returns:
-            wsolution (callable): A callable mathematical function
+            wsolution (callable): A callable mathematical function. None if the
+                wavelength solution doesn't exist.
 
         """
         if self.wsolution is not None:
@@ -480,14 +496,11 @@ class WavelengthCalibration(object):
             return None
 
     def get_calibration_lamp(self):
-        """Get the name of the calibration lamp used for obtain the solution
-
-        The filename of the lamp used to obtain must go to the header for
-        documentation
+        """Get the name of the calibration lamp used to obtain the solution
 
         Returns:
             calibration_lamp (str): Filename of calibration lamp used to obtain
-            wavelength solution
+                wavelength solution
 
         """
         if self.wsolution is not None and self.calibration_lamp is not None:
@@ -499,7 +512,7 @@ class WavelengthCalibration(object):
         """Identify peaks in a lamp spectrum
 
         Uses scipy.signal.argrelmax to find peaks in a spectrum i.e emission
-        lines then it calls the recenter_lines method that will recenter them
+        lines, then it calls the recenter_lines method that will recenter them
         using a "center of mass", because, not always the maximum value (peak)
         is the center of the line.
 
@@ -582,13 +595,21 @@ class WavelengthCalibration(object):
         For every line center (pixel value) it will scan left first until the
         data stops decreasing, it assumes it is an emission line and then will
         scan right until it stops decreasing too. Defined those limits it will
+        use the line data in between and calculate the centroid.
+
+        Notes:
+            This method is used to recenter relatively narrow lines only, there
+            is a special method for dealing with broad lines.
 
         Args:
-            data:
-            lines:
-            plots:
+            data (array): numpy.ndarray instance. or the data attribute of a
+                ccdproc.CCDData instance.
+            lines (list): A line list in pixel values.
+            plots (bool): If True will plot spectral line as well as the input
+                center and the recentered value.
 
         Returns:
+            A list containing the recentered line positions.
 
         """
         new_center = []
@@ -682,18 +703,27 @@ class WavelengthCalibration(object):
             plt.show()
         return new_center
 
-    def recenter_broad_lines(self, lamp_data, lines, slit_size, order):
-        """
+    def recenter_broad_lines(self, lamp_data, lines, order):
+        """Recenter broad lines
+
+        Notes:
+            This method is used to recenter broad lines only, there is a special
+            method for dealing with narrower lines.
 
         Args:
-            lamp_data:
-            lines:
-            slit_size:
-            order:
+            lamp_data (array): numpy.ndarray instance. It contains the lamp
+                data.
+            lines (list): A line list in pixel values.
+            order (float): A rough estimate of the FWHM of the lines in pixels
+                in the data. It is calculated using the slit size divided by the
+                pixel scale multiplied by the binning.
 
         Returns:
+            A list containing the recentered line positions.
 
         """
+        # TODO (simon): use slit size information for a square function
+        # TODO (simon): convolution
         new_line_centers = []
         gaussian_kernel = Gaussian1DKernel(stddev=2.)
         lamp_data = convolve(lamp_data, gaussian_kernel)
@@ -722,10 +752,10 @@ class WavelengthCalibration(object):
     def get_spectral_characteristics(self):
         """Calculates some Goodman's specific spectroscopic values.
 
-        From the Header value for Grating, Grating Angle and Camera Angle it is
-        possible to estimate what are the limits wavelength values and central
-        wavelength. It was necessary to add offsets though, since the formulas
-        provided are slightly off. The values are only an estimate.
+        From the header value for Grating, Grating Angle and Camera Angle it is
+        possible to estimate what are the wavelength values at the edges as well
+        as in the center. It was necessary to add offsets though, since the
+        formulas provided are slightly off. The values are only an estimate.
 
         Returns:
             spectral_characteristics (dict): Contains the following parameters:
@@ -739,7 +769,8 @@ class WavelengthCalibration(object):
 
 
         """
-        # TODO (simon): find a definite solution for this, this only work (a little) for one configuration
+        # TODO (simon): find a definite solution for this, this only work
+        # TODO (simon): (a little) for one configuration
         blue_correction_factor = -50 * u.angstrom
         red_correction_factor = -37 * u.angstrom
 
@@ -830,10 +861,10 @@ class WavelengthCalibration(object):
         """Finds a better center for a click-selected line
 
         This method is called by another method that handles click events. An
-        argument is parsed that will tell which plot was the clicked and what is
+        argument is parsed that will tell which plot was clicked and what is
         the x-value in data coordinates. Then the closest pixel center will be
         found and from there will extract a 20 pixel wide sample of the data
-        (this could be a future improvement the width of the extraction should
+        (this could be a future improvement: the width of the extraction should
         depend on the FWHM of the lines). The sample of the data is used to
         calculate a centroid (center of mass) which is a good approximation but
         could be influenced by data shape or if the click was too far
@@ -842,16 +873,16 @@ class WavelengthCalibration(object):
         used and for raw data the line centers are calculated earlier in the
         process, independently of any human input.
 
-        It also will plot the sample, the centroid and the reference line center
+        It wil also plot the sample, the centroid and the reference line center
         at the fourth subplot, bottom right corner.
 
         Args:
             data_name (str): 'reference' or 'raw-data' is where the click was
-            done
+                done
             x_data (float): click x-axis value in data coordinates
 
         Returns:
-            reference_line_value (float): The value the line center that will
+            reference_line_value (float): The value of the line center that will
             be used later to do the wavelength fit
 
         """
@@ -951,6 +982,22 @@ class WavelengthCalibration(object):
             log.error('Unrecognized data name')
 
     def predicted_wavelength(self, pixel):
+        """Find the predicted wavelength value for a given pixel
+
+        It is possible to estimate the wavelength position of any pixel given
+        the instrument configuration.
+
+        Notes:
+            The equations are not precise enough so the value returned here has
+            to be used as an estimate only.
+
+        Args:
+            pixel (int): Pixel number.
+
+        Returns:
+            Wavelength value in angstrom.
+
+        """
         # TODO (simon): Update with bruno's new calculations
         alpha = self.alpha
         beta = self.beta
@@ -971,7 +1018,7 @@ class WavelengthCalibration(object):
 
         The pipeline includes a set of comparison lamps already wavelength
         calibrated that will be used as templates for cross-matching incoming
-        comparison lamps taken in the same conditions (i.e. same elements,
+        comparison lamps taken in the same conditions (i.e. same lamp,
         grating, mode and ideally slit).
 
         It will first find the suitable comparison lamp and if it succeeds it
@@ -984,7 +1031,7 @@ class WavelengthCalibration(object):
         stored as well as the wavelength value of pixel_value +
         cross_correlation_value using the mathematical model of the template
         comparison lamp. The cross correlation value will also be stored and
-        will be used as a first order filter by doing a sigma clip discarding
+        will be used as a first order filter by doing a sigma-clip discarding
         large mismatch but this is not enough since there are some cases where
         the cross correlation collection does not have a clear distribution and
         sigma clip does not work so after this first order filtering it will
@@ -997,9 +1044,11 @@ class WavelengthCalibration(object):
 
 
         Returns:
-            None: In case it is not possible to find a suitable template lamp.
+            None in case it is not possible to find a suitable template lamp.
 
         """
+        # TODO (simon): Re-write general description in docstrings since it is
+        # TODO (simon): too complex.
         try:
             # reference_lamp_file = self.reference_data.get_best_reference_lamp(
             #     header=self.lamp_header)
@@ -1283,8 +1332,8 @@ class WavelengthCalibration(object):
         """Do cross correlation to two arrays
 
         Args:
-            reference (Numpy.Array): Reference array.
-            new_array (Numpy.Array): Array to be matched.
+            reference (array): Reference array.
+            new_array (array): Array to be matched.
             mode (str): Correlation mode for `scipy.signal.correlate`.
 
         Returns:
@@ -1346,13 +1395,13 @@ class WavelengthCalibration(object):
         deviation from linearity of the data. It uses a combination of
         previously wavelength calibrated comparison lamp and laboratory line
         centers. Those two are combined in a single plot, bottom left, to help
-        to visually identify their counterparts in the raw data and viceversa.
+        visually identify their counterparts in the raw data and viceversa.
         In the other hand, raw data is previously processed to find the lines
         present. They are stored as a list and used as the correct center of
         the line. Once you select a line, the centroid will be calculated and
         the closest line will be returned.
 
-        This method generates a GUI like plot using matplolib, capable of
+        This method generates a GUI-like plot using matplolib, capable of
         handling keyboard and click events. The window consist of four plots:
 
         In the top left side will be a wide plot named raw data. This is the
@@ -1374,7 +1423,8 @@ class WavelengthCalibration(object):
         class even with an indepentend QT GUI.
 
         Notes:
-            This method uses the Qt4Agg backend, it will not work with other.
+            This method uses the Qt4Agg backend, in theory it could also work
+            with GTK3Agg but it is being forced to use Qt4Agg.
 
         """
         plt.switch_backend('Qt4Agg')
@@ -1515,6 +1565,7 @@ class WavelengthCalibration(object):
         """
         if event.button == 2:
             self.register_mark(event)
+        # TODO (simon): Make sure the text below is useless
         # else:
         #     print(event.button)
         # elif event.button == 3:
@@ -2457,6 +2508,17 @@ class WavelengthSolution(object):
                  ref_lamp=None,
                  eval_comment='',
                  header=None):
+        """Init method for the WavelengthSolution class
+
+        Args:
+            solution_type:
+            model_name:
+            model_order:
+            model:
+            ref_lamp:
+            eval_comment:
+            header:
+        """
         self.dtype_dict = {None: -1,
                            'linear': 0,
                            'log_linear': 1,
@@ -2491,7 +2553,7 @@ class WavelengthSolution(object):
         dictionary accordingly.
 
         Args:
-            header:
+            header (object):
 
         Returns:
 
