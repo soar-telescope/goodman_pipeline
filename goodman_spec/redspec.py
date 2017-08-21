@@ -41,24 +41,11 @@ __status__ = "Development"
 def get_args(arguments=None):
     """Handles the argparse library and returns the arguments
 
-    The possible arguments to be used are:
+    The list of arguments can be found with running `redspec -h`.
 
-    --data-path: has to be the source directory, where the data (images) is.
-        The location is `self.source` and the default value is ./
-    --proc-path: is the destination where all new files/data will be
-        placed. The location is `self.destiny` and the default value is ./
-    --search-pattern: the pattern that matches the reduced data that
-        will be processed. The location is `self.pattern` default value is
-        fc\_
-    --interactive: Interactive Wavelength Solution. Enabled by default
-    --output-prefix: Prefix to use to name wavelength calibrated spectrum
-    --extraction: Spectrum extraction type. Simple or optimal.
-    --reference-files: Directory of reference files location
-    --debug: Show plots for intermediate steps. Also prints more messages.
-    --log-to-file: Write the log to a file.
-    --save-plots: Save all plots ina directory
-    --plot-results: Show a plot of the wavelength calibrated data at the
-        end.
+    Notes:
+        The full list of arguments are not listed here as the may evolve in
+        which case is impossible to keep this up to date.
 
 
     Returns:
@@ -209,12 +196,21 @@ def get_args(arguments=None):
 class MainApp(object):
     """Defines and initialize all important variables for processing the data
 
-    The MainApp class controls the way the night is organize to its further
+    The MainApp class controls the way the night is organized for further
     processing. It also sets the appropriate parameters that will allow for a
     smooth working in all the other modules.
 
     """
     def __init__(self, args=None):
+        """Init method for MainApp class
+
+        This method initializes the arguments for the class, if they are not
+        provided it will get them.
+
+        Args:
+            args (object): argparse.Namespace instance that contains all the
+                arguments.
+        """
 
         if args is None:
             self.args = get_args()
@@ -224,6 +220,12 @@ class MainApp(object):
         self.wavelength_solution_obj = None
 
     def __call__(self):
+        """Call method for the MainApp class
+
+        This method call the higher level functions in order to do the
+        spectroscopic data reduction.
+
+        """
 
         # data_container instance of NightDataContainer defined in core
         data_container = classify_spectroscopic_data(
