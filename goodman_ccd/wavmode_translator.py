@@ -11,42 +11,16 @@ from .core import get_central_wavelength
 
 log = logging.getLogger('goodmanccd.wavmodetranslator')
 
-# modes_dict = {'400': {'m1': {'cam_targ': '11.6', 'grt_targ': '5.8', 'filter2': ''},
-#                  'm2': {'cam_targ': '16.1', 'grt_targ': '7.5', 'filter2': 'GG455'}
-#                  },
-#          '600': {'UV': {'cam_targ': '15.25', 'grt_targ': '7.0', 'filter2': ''},
-#                  'Blue': {'cam_targ': '17.0', 'grt_targ': '7.0', 'filter2': ''},
-#                  'Mid': {'cam_targ': '20.0', 'grt_targ': '10', 'filter2': 'GG385'},
-#                  'Red': {'cam_targ': '27.0', 'grt_targ': '12.0', 'filter2': 'GG495'}
-#                  },
-#          '930': {'m1': {'cam_targ': '20.6', 'grt_targ': '10.3', 'filter2': ''},
-#                  'm2': {'cam_targ': '', 'grt_targ': '', 'filter2': ''},
-#                  'm3': {'cam_targ': '29.9', 'grt_targ': '15.0', 'filter2': 'GG385'},
-#                  'm4': {'cam_targ': '', 'grt_targ': '', 'filter2': 'GG495'},
-#                  'm5': {'cam_targ': '39.4', 'grt_targ': '19.7', 'filter2': 'GG495'},
-#                  'm6': {'cam_targ': '44.2', 'grt_targ': '22.1', 'filter2': 'OG570'}
-#                  },
-#          '1200': {'m0': {'cam_targ': '26.0', 'grt_targ': '16.3', 'filter2': ''},
-#                   'm1': {'cam_targ': '29.5', 'grt_targ': '16.3', 'filter2': ''},
-#                   'm2': {'cam_targ': '34.4', 'grt_targ': '18.7', 'filter2': ''},
-#                   'm3': {'cam_targ': '39.4', 'grt_targ': '20.2', 'filter2': ''},
-#                   'm4': {'cam_targ': '44.4', 'grt_targ': '22.2', 'filter2': 'GG455'},
-#                   'm5': {'cam_targ': '49.6', 'grt_targ': '24.8', 'filter2': 'GG455'},
-#                   'm6': {'cam_targ': '54.8', 'grt_targ': '27.4', 'filter2': 'GG495'},
-#                   'm7': {'cam_targ': '60.2', 'grt_targ': '30.1', 'filter2': 'OG570'}
-#                   },
-#          '1800': {'Custom': {'cam_targ': '', 'grt_targ': '', 'filter2': ''}
-#                   },
-#          '2100': {'Custom': {'cam_targ': '', 'grt_targ': '', 'filter2': ''}
-#                   },
-#          '2400': {'Custom': {'cam_targ': '', 'grt_targ': '', 'filter2': ''}
-#                   }
-#          }
-
 
 class SpectroscopicMode(object):
 
     def __init__(self):
+        """Init method for the Spectroscopic Mode
+
+        This method defines a pandas.DataFrame instance that contains all the
+        current standard wavelength modes for Goodman HTS.
+
+        """
         columns = ['grating_freq', 'wavmode', 'camtarg', 'grttarg', 'ob_filter']
         spec_mode = [['400', 'm1', '11.6', '5.8', 'None'],
                      ['400', 'm2', '16.1', '7.5', 'GG455'],
@@ -81,19 +55,19 @@ class SpectroscopicMode(object):
                  camera_targ=None,
                  grating_targ=None,
                  blocking_filter=None):
-        """
+        """Get spectroscopic mode
 
         This method can be called either parsing a header alone or the rest of
         values separated.
-
         Args:
-            header:
-            grating:
-            camera_targ:
-            grating_targ:
-            blocking_filter:
+            header (object): FITS header.
+            grating (str): Grating as in the FITS header.
+            camera_targ (str): Camera target angle as in the FITS header.
+            grating_targ (str): Grating target angle as in the FITS header.
+            blocking_filter (str): Order blocking filter as in the FITS header.
 
         Returns:
+            string that defines the instrument wavelength mode.
 
         """
 
@@ -120,23 +94,26 @@ class SpectroscopicMode(object):
                                  blocking_filter=blocking_filter)
 
     def get_mode(self, grating, camera_targ, grating_targ, blocking_filter):
-        """
+        """Get the camera's optical configuration mode.
+
+        This method is useful for data that does not have the WAVMODE keyword
 
         Args:
-            grating:
-            camera_targ:
-            grating_targ:
-            blocking_filter:
+            grating (str): Grating frequency as string
+            camera_targ (str): Camera target angle as in the header.
+            grating_targ (str): Grating target angle as in the header.
+            blocking_filter (str): Order blocking filter listed on the header.
 
         Returns:
+            string that defines the wavelength mode used
 
         """
 
         # print(grating, camera_targ, grating_targ)
         if any(grat == grating for grat in ('1800', '2100', '2400')):
             central_wavelength = get_central_wavelength(grating=grating,
-                                                     grt_ang=grating_targ,
-                                                     cam_ang=camera_targ)
+                                                        grt_ang=grating_targ,
+                                                        cam_ang=camera_targ)
             return 'Custom_{:d}nm'.format(int(round(central_wavelength)))
 
         else:
