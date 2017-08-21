@@ -1387,8 +1387,11 @@ class WavelengthCalibration(object):
             reference_file = self.reference_data.get_best_reference_lamp(
                 header=self.lamp_header)
         except NotImplementedError:
-            reference_file = None
-            log.critical('Could not find a comparison lamp in the reference.')
+            reference_file = self.reference_data.get_reference_lamps_by_name(
+                lamp_name=self.lamp_header['OBJECT'])
+            log.warning('Could not find a perfect match for reference data')
+            # reference_file = None
+            # log.critical('Could not find a comparison lamp in the reference.')
 
         # reference_file = self.reference_data.get_reference_lamps_by_name(
         #     self.lamp_name)
@@ -2635,6 +2638,7 @@ class WavelengthSolution(object):
             except IndexError:
                 # it means it is Custom mode
                 mode = header['wavmode']
+                # TODO (simon): Include other modes
                 if mode == 'Custom':
                     grating_frequency = int(re.sub('[a-zA-Z-]', '', grating))
                     alpha = float(header['grt_ang'])
@@ -2650,7 +2654,8 @@ class WavelengthSolution(object):
                                  mode.upper() + \
                                  '_{:d}nm'.format(int(round(center_wavelength)))
                 else:
-                    log.error('WAVMODE: {:s} not supported', mode)
+                    # print(mode)
+                    log.error('WAVMODE: {:s} not supported'.format(mode))
 
         # First filter wheel part of the flat name
         if header['filter'] != '<NO FILTER>':

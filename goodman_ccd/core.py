@@ -1355,6 +1355,7 @@ def identify_targets(ccd, nfind=3, plots=False):
         # retrieve the original index (real location) of the peaks
         selected_peaks = []
         for val in n_top_values:
+            # TODO (simon): replace the 3 below by a parameter in a conf file.
             # discard peaks smaller than twice the level of background
             if val > 3 * background_level:
                 index = np.where(values == val)[0]
@@ -2092,6 +2093,8 @@ def extract(ccd,
         # spectrum zone limit
         low_lim, high_lim = zone
         spectrum_masked = nccd.data * cr_mask
+        # plt.imshow(spectrum_masked, clim=(10, 70))
+        # plt.show()
         # TODO (simon): Add fractional pixel
         spectrum_sum = np.ma.sum(spectrum_masked[low_lim:high_lim, :], axis=0)
 
