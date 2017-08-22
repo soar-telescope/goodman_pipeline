@@ -34,8 +34,9 @@ class WavelengthFitter(object):
     def model_constructor(self):
         """Generates callable mathematical model
 
-        It can do chebyshev and linear model only but is easy to implement others.
-        Chebyshev 3rd degree is by default since provided the best results for Goodman data.
+        It can do chebyshev and linear model only but is easy to implement
+        others. Chebyshev 3rd degree is by default since provided the best
+        results for Goodman data.
         """
         if self.model_name == 'chebyshev':
             self.model = models.Chebyshev1D(degree=self.degree)
@@ -48,8 +49,8 @@ class WavelengthFitter(object):
     def ws_fit(self, physical, wavelength):
         """Wavelength solution fit
 
-        Takes a list of pixel values and its respective wavelength values to do a fit to
-        the mathematical model defined with the class.
+        Takes a list of pixel values and its respective wavelength values to do
+        a fit to the mathematical model defined with the class.
 
         Returns:
             fitted_model (class): Fitted model
@@ -88,8 +89,9 @@ class ReadWavelengthSolution(object):
         and call the appropriate method for linear or non-linear solutions.
 
         Returns:
-            self.wave_intens (list): Returns the class attribute which is a two dimension list
-            the first element is the x_axis in angstrom and the second is the y_axis in intensity
+            self.wave_intens (list): Returns the class attribute which is a two
+                dimension list the first element is the x_axis in angstrom and
+                the second is the y_axis in intensity
         """
         wcsdim = int(self.header['WCSDIM'])
         for dim in range(1, wcsdim + 1):
@@ -109,7 +111,8 @@ class ReadWavelengthSolution(object):
             Not all kind of non-linear solutions are implemented
 
         Args:
-            dimension (int): Solutions can be multi-dimensionals, this method is called for each one of them.
+            dimension (int): Solutions can be multi-dimensionals, this method is
+                called for each one of them.
 
         Returns:
 
@@ -199,7 +202,10 @@ class ReadWavelengthSolution(object):
             # x0 = range(len(self.data))
             # print('x data', x_axis[0], x_axis[-1], len(self.data))
             plt.title(self.header['OBJECT'])
-            plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'], self.wat_wcs_dict['units']))
+
+            plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'],
+                                    self.wat_wcs_dict['units']))
+
             plt.plot(solution(x_axis), self.data)
             # plt.plot(solution(x0), self.data, color='g')
             for line in wav1:
@@ -287,9 +293,14 @@ class ReadMathFunctions(object):
         return False
 
     def chebyshev(self):
-        cheb = models.Chebyshev1D(degree=self.wcs['order'], domain=[self.wcs['pmin'], self.wcs['pmax']], )
+
+        cheb = models.Chebyshev1D(degree=self.wcs['order'],
+                                  domain=[self.wcs['pmin'],
+                                          self.wcs['pmax']], )
         for param_index in range(self.wcs['order']):
+
             cheb.parameters[param_index] = self.wcs['fpar'][param_index]
+
         return cheb
 
     def non_linear_legendre(self):

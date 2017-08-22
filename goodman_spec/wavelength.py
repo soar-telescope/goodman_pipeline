@@ -1016,39 +1016,41 @@ class WavelengthCalibration(object):
     def automatic_wavelength_solution(self):
         """Finds a Wavelength Solution Automatically
 
-        The pipeline includes a set of comparison lamps already wavelength
-        calibrated that will be used as templates for cross-matching incoming
-        comparison lamps taken in the same conditions (i.e. same lamp,
-        grating, mode and ideally slit).
-
-        It will first find the suitable comparison lamp and if it succeeds it
-        will load its wavelength solution creating a wavelength axis. Then it
-        will identify the lines in the lamp we want to calibrate, there is no
-        need to load this lamp since is an attribute of the class and has been
-        already extracted. For each identified line will cut sub-samples of the
-        template reference lamp and the new lamp and then will do a cross
-        correlation to find the shift in pixels. The line's pixel value will be
-        stored as well as the wavelength value of pixel_value +
-        cross_correlation_value using the mathematical model of the template
-        comparison lamp. The cross correlation value will also be stored and
-        will be used as a first order filter by doing a sigma-clip discarding
-        large mismatch but this is not enough since there are some cases where
-        the cross correlation collection does not have a clear distribution and
-        sigma clip does not work so after this first order filtering it will
-        create a wavelength solution. Using the new wavelength solution a new
-        list of the difference in Angstrom will be created as the difference of
-        the reference Angstrom value minus the Angstrom value corresponding to
-        the line center using the mathematical model of the first solution.
-        This will be sigma clipped once more and the values left out removed
-        and finally a new solution will be calculated.
-
+        This method uses a library of previously wavelength-calibrated
+        comparison lamps. It will only process them if they are the exact match.
+        A workflow summary is presented below:
+          - Identify the exactly matching reference comparison lamp. If it
+            doesn't exist it will return None. If it does exist the reference
+            lamp will be loaded and it's wavelength solution read.
+          - Identify lines in the new lamp, the lamp data has been already
+            loaded at the initialization of the class
+          - According to the lines detected it will split both spectrum in the
+            same number of pieces and same respective sizes and then will do
+            cross correlation for each of them.
+          - The line's pixel value is stored
+          - Using the reference lamp's wavelength solution mathematical model,
+            the corresponding value in angstrom is calculated using the offset
+            obtained from the cross correlation something like this:
+            angstrom = model(pixel + offset)
+          - As a first order filter one-iteration of a two-sigma clipping is
+            applied to the cross-correlation offsets, this is necessary to
+            eliminate mismatched lines.
+          - A new wavelength solution is calculated using the points collected
+            above.
+          - Using the Angstrom values previously found and the detected lines
+            plus the newly calculated solution, the differences in angstrom are
+            calculated to which values a new sigma-clipping is applied, again
+            one iteration two-sigmas, since the distributions are not
+            necessarily normal distributions.
+          - Once these values are cleaned of rejected values the final solution
+            is calculated.
 
         Returns:
-            None in case it is not possible to find a suitable template lamp.
+            None in case it is not possible to find a suitable template lamp or
+            if is not possible to calculate the solution.
 
         """
-        # TODO (simon): Re-write general description in docstrings since it is
-        # TODO (simon): too complex.
+        # TODO (simon): Implement the use of the binning value
         try:
             # reference_lamp_file = self.reference_data.get_best_reference_lamp(
             #     header=self.lamp_header)
@@ -1072,11 +1074,6 @@ class WavelengthCalibration(object):
         reference_lamp_wav_axis, reference_lamp_data.data = read_wsolution()
         reference_lamp_copy = reference_lamp_data.copy()
 
-        # if float(re.sub('[A-Za-z" ]', '',self.lamp_header['SLIT'])) > 3:
-        # plt.plot(self.lamp_data, color='b')
-        # plt.plot(reference_lamp_copy.data, color='k')
-        # # plt.plot(test, color='r')
-        # plt.show()
         if False:
             box_kernel = Box1DKernel(width=33)
             test = convolve(reference_lamp_copy.data, box_kernel)
@@ -1086,10 +1083,6 @@ class WavelengthCalibration(object):
 
             reference_lamp_copy.data = convolve(reference_lamp_copy.data,
                                                 gaussian_kernel)
-
-            # ref_lamp_lines_pixel_full = self.get_lines_in_lamp(
-            #     ccddata_lamp=reference_lamp_copy)
-
 
         # Initialize wavelength builder class
         wavelength_solution = WavelengthFitter(model='chebyshev',
@@ -1140,11 +1133,6 @@ class WavelengthCalibration(object):
             """record value for reference wavelength"""
             angstrom_value_model = read_wsolution.math_model(
                 line_value_pixel + correlation_value)
-
-            # log.debug('Model - Original - Pixel',
-            #           angstrom_value_model,
-            #           line_value_angst,
-            #           line_value_pixel)
 
             correlation_values.append(correlation_value)
             angstrom_differences.append(angstrom_value_model - line_value_angst)
@@ -1198,9 +1186,9 @@ class WavelengthCalibration(object):
         if self.wsolution is None:
             log.error('Failed to find wavelength solution using reference '
                       'file: {:s}'.format(self.calibration_lamp))
-            return
+            return None
 
-        #  finding differences in order to improve the wavelength solution
+        # finding differences in order to improve the wavelength solution
         wavelength_differences = [angstrom_values[i] -
                                   self.wsolution(pixel_values[i]) for i in
                                   range(len(pixel_values))]
@@ -1244,6 +1232,7 @@ class WavelengthCalibration(object):
                 # plt.show()
             else:
                 plt.ioff()
+
             manager = plt.get_current_fig_manager()
 
             if plt.get_backend() == u'GTK3Agg':
@@ -1260,14 +1249,6 @@ class WavelengthCalibration(object):
             for val2 in angstrom_values:
                 self.ax1.axvline(val2, color='c', linestyle='--')
 
-            # print('Blue ' +
-            #       str(self.spectral['blue'].value) +
-            #       ' Red ' +
-            #       str(self.spectral['red'].value))
-
-            # self.ax1.axvline(self.spectral['blue'].value, color='b')
-            # self.ax1.axvline(self.spectral['red'].value, color='r')
-
             self.ax1.plot(reference_lamp_wav_axis,
                           reference_lamp_data.data,
                           label='Reference',
@@ -1280,20 +1261,12 @@ class WavelengthCalibration(object):
                           color='r',
                           alpha=0.7)
 
-            # self.ax1.plot(lamp_axis_pixel,
-            #               self.lamp_data,
-            #               label='Last Solution',
-            #               color='r',
-            #               alpha=0.7)
-
             try:
                 wavmode = self.lamp_header['wavmode']
             except KeyError as error:
                 log.debug(error)
                 wavmode = ''
-            # print(self.rms_error, wavmode, self.lamp_header['OBJECT'], '\n')
 
-            self.ax1.legend(loc='best')
             self.ax1.set_xlabel('Wavelength (Angstrom)')
             self.ax1.set_ylabel('Intensity (ADU)')
 
@@ -1302,18 +1275,24 @@ class WavelengthCalibration(object):
                                + ' ' + wavmode + '\n'
                                + 'RMS Error: {:.3f}'.format(self.rms_error))
 
+            self.ax1.legend(loc='best')
             self.i_fig.tight_layout()
 
-            out_file_name = 'automatic-solution_' + self.lamp_header['OBJECT']
-
-            file_count = len(glob.glob(os.path.join(self.args.destiny,
-                                                    out_file_name + '*')))
-
-            out_file_name += '_{:04d}.pdf'.format(file_count)
-            pdf_pages = PdfPages(os.path.join(self.args.destiny, out_file_name))
-            plt.savefig(pdf_pages, format='pdf')
-            pdf_pages.close()
             if self.args.save_plots:
+                # saves pdf files of the wavelength solution plot
+                out_file_name = 'automatic-solution_' + self.lamp_header[
+                    'OBJECT']
+
+                file_count = len(glob.glob(os.path.join(self.args.destiny,
+                                                        out_file_name + '*')))
+
+                out_file_name += '_{:04d}.pdf'.format(file_count)
+                pdf_pages = PdfPages(
+                    os.path.join(self.args.destiny, out_file_name))
+                plt.savefig(pdf_pages, format='pdf')
+                pdf_pages.close()
+
+                # saves png images
                 plots_path = os.path.join(self.args.destiny, 'plots')
                 if not os.path.isdir(plots_path):
                     os.path.os.makedirs(plots_path)
@@ -1328,99 +1307,13 @@ class WavelengthCalibration(object):
                 plt.close()
                 # plt.close(self.i_fig)
 
-    def cross_correlation(self, reference, new_array, mode='full'):
-        """Do cross correlation to two arrays
-
-        Args:
-            reference (array): Reference array.
-            new_array (array): Array to be matched.
-            mode (str): Correlation mode for `scipy.signal.correlate`.
-
-        Returns:
-            correlation_value (int): Shift value in pixels.
-
-        """
-        # print(reference, new_array)
-        cyaxis2 = new_array
-        if float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) > 3:
-
-            box_width = float(
-                re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) / 0.15
-
-            log.debug('BOX WIDTH: {:f}'.format(box_width))
-            box_kernel = Box1DKernel(width=box_width)
-            max_before = np.max(reference)
-            cyaxis1 = convolve(reference, box_kernel)
-            max_after = np.max(cyaxis1)
-            cyaxis1 *= max_before / max_after
-
-
-        else:
-            gaussian_kernel = Gaussian1DKernel(stddev=2.)
-            cyaxis1 = convolve(reference, gaussian_kernel)
-            cyaxis2 = convolve(new_array, gaussian_kernel)
-        # plt.plot(cyaxis1, color='k', label='Reference')
-        # plt.plot(cyaxis2, color='r', label='New Array')
-        # plt.plot(reference, color='g')
-        # plt.show()
-        try:
-            ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
-        except ValueError:
-            print(cyaxis1, cyaxis2)
-        # print('Corr ', ccorr)
-        max_index = np.argmax(ccorr)
-
-        x_ccorr = np.linspace(-int(len(ccorr) / 2.),
-                              int(len(ccorr) / 2.),
-                              len(ccorr))
-
-        correlation_value = x_ccorr[max_index]
-        if False:
-            plt.ion()
-            plt.title('Cross Correlation')
-            plt.xlabel('Lag Value')
-            plt.ylabel('Correlation Value')
-            plt.plot(x_ccorr, ccorr)
-            plt.draw()
-            plt.pause(2)
-            plt.clf()
-            plt.ioff()
-        return correlation_value
-
     def interactive_wavelength_solution(self, object_name=''):
         """Find the wavelength solution interactively
 
-        Using matplotlib graphical interface we developed an interactive method
-        to find the wavelength solution. It is capable of tracing the slight
-        deviation from linearity of the data. It uses a combination of
-        previously wavelength calibrated comparison lamp and laboratory line
-        centers. Those two are combined in a single plot, bottom left, to help
-        visually identify their counterparts in the raw data and viceversa.
-        In the other hand, raw data is previously processed to find the lines
-        present. They are stored as a list and used as the correct center of
-        the line. Once you select a line, the centroid will be calculated and
-        the closest line will be returned.
-
-        This method generates a GUI-like plot using matplolib, capable of
-        handling keyboard and click events. The window consist of four plots:
-
-        In the top left side will be a wide plot named raw data. This is the
-        uncalibrated comparison lamp associated to the science image that is
-        being processed.
-
-        Then in the bottom left, there is the reference plot, where a previously
-        calibrated lamp is displayed along with the reference line values.
-
-        In the top right side there is a permanent help text with the basic
-        functions plus a short description.
-
-        And finally in the bottom right side you will find a more dynamic plot.
-        It will show a zoomed line when you mark one with a click, a scatter
-        plot when you do a fit to the recorded marks and also will show warnings
-        in case something is going wrong.
-
-        For future release there is the plan to put all this method as a new
-        class even with an indepentend QT GUI.
+        This method uses the graphical capabilities of matplotlib in particular
+        the user interface (UI) capabilities such as click and key-pressed
+        events. We could say that it implements a matplotlib Graphical User
+        Interface.
 
         Notes:
             This method uses the Qt4Agg backend, in theory it could also work
@@ -1552,8 +1445,66 @@ class WavelengthCalibration(object):
         self.i_fig.canvas.mpl_connect('key_press_event', self.key_pressed)
         # print self.wsolution
         plt.show()
-
         return True
+
+    def cross_correlation(self, reference, new_array, mode='full'):
+        """Do cross correlation to two arrays
+
+        Args:
+            reference (array): Reference array.
+            new_array (array): Array to be matched.
+            mode (str): Correlation mode for `scipy.signal.correlate`.
+
+        Returns:
+            correlation_value (int): Shift value in pixels.
+
+        """
+        # print(reference, new_array)
+        cyaxis2 = new_array
+        if float(re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) > 3:
+
+            box_width = float(
+                re.sub('[A-Za-z" ]', '', self.lamp_header['SLIT'])) / 0.15
+
+            log.debug('BOX WIDTH: {:f}'.format(box_width))
+            box_kernel = Box1DKernel(width=box_width)
+            max_before = np.max(reference)
+            cyaxis1 = convolve(reference, box_kernel)
+            max_after = np.max(cyaxis1)
+            cyaxis1 *= max_before / max_after
+
+
+        else:
+            gaussian_kernel = Gaussian1DKernel(stddev=2.)
+            cyaxis1 = convolve(reference, gaussian_kernel)
+            cyaxis2 = convolve(new_array, gaussian_kernel)
+        # plt.plot(cyaxis1, color='k', label='Reference')
+        # plt.plot(cyaxis2, color='r', label='New Array')
+        # plt.plot(reference, color='g')
+        # plt.show()
+        try:
+            ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+        except ValueError:
+            print(cyaxis1, cyaxis2)
+        # print('Corr ', ccorr)
+        max_index = np.argmax(ccorr)
+
+        x_ccorr = np.linspace(-int(len(ccorr) / 2.),
+                              int(len(ccorr) / 2.),
+                              len(ccorr))
+
+        correlation_value = x_ccorr[max_index]
+        if False:
+            plt.ion()
+            plt.title('Cross Correlation')
+            plt.xlabel('Lag Value')
+            plt.ylabel('Correlation Value')
+            plt.plot(x_ccorr, ccorr)
+            plt.draw()
+            plt.pause(2)
+            plt.clf()
+            plt.ioff()
+        return correlation_value
 
     def on_click(self, event):
         """Handles Click events for Interactive Mode
@@ -2498,6 +2449,9 @@ class WavelengthCalibration(object):
 class WavelengthSolution(object):
     """Contains all relevant information of a given wavelength solution
 
+    Stores the mathematical model that allows to convert from pixel to angstrom
+    as well as more detailed information regarding the type of solution and the
+    quality.
 
     """
     def __init__(self,
@@ -2511,13 +2465,17 @@ class WavelengthSolution(object):
         """Init method for the WavelengthSolution class
 
         Args:
-            solution_type:
-            model_name:
-            model_order:
-            model:
-            ref_lamp:
-            eval_comment:
-            header:
+            solution_type (str): Type of wavelength solution.
+            model_name (str): Mathematical model name.
+            model_order (int): Order of the mathematical model in case it is a
+                polynomial which in most cases it is.
+            model (object): Instance of astropy.modeling.Model, represents the
+                transformation from pixel to angstrom.
+            ref_lamp (str): File name of reference lamp used to find the
+                wavelength solution
+            eval_comment (str): Text describing the qualitative evaluation of
+                the wavelength solution.
+            header (object): Instance of astropy.io.fits.header.Header
         """
         self.dtype_dict = {None: -1,
                            'linear': 0,
@@ -2552,18 +2510,23 @@ class WavelengthSolution(object):
         information. This method will recognize the camera and create the
         dictionary accordingly.
 
+        Notes:
+            As of August 2017 both headers are FITS compliant and contain the
+            same keywords.
+
         Args:
             header (object):
 
         Returns:
 
         """
+        # TODO (simon): Use CAM_TARG and GRT_TARG instead of CAM_ANG and GRT_ANG
         if header is None:
             log.error('Header has not been parsed')
         else:
             try:
-                log.debug('Red Camera')
-                spectral_dict = {'camera': 'red',
+                log.debug('{:s} Camera'.format(header['INSTCONF']))
+                spectral_dict = {'camera': header['INSTCONF'],
                                  'grating': header['GRATING'],
                                  'roi': header['ROI'],
                                  'filter1': header['FILTER'],
@@ -2578,7 +2541,7 @@ class WavelengthSolution(object):
                 # print(key, dict[key])
                 return spectral_dict
             except KeyError:
-                log.debug('Blue Camera')
+                log.debug('(Old) Blue Camera')
                 spectral_dict = {'camera': 'blue',
                                  'grating': header['GRATING'],
                                  'ccdsum': header['CCDSUM'],
@@ -2599,15 +2562,17 @@ class WavelengthSolution(object):
 
         A wavelength solution is stored as an object (this class). As an
         attribute of this class there is a dictionary that contains critical
-        parameters of the spectrum with which the wavelength solution was found.
+        parameters of the spectrum that were used to obtain this solution.
         In order to apply the same solution to another spectrum its header has
-        to be parsed and then the parameters are compared in a hierarchic way.
+        to be parsed and then the parameters are compared in order of
+        importance.
 
         Args:
-            header (object): FITS header object from astropy.io.fits
+            header (object): FITS header instance from astropy.io.fits.
 
         Returns:
-            True or False
+            True if the new data is compatible with the solution or False if its
+            not.
 
         """
         if header is not None:
@@ -2617,12 +2582,13 @@ class WavelengthSolution(object):
                     if key in ['grating', 'roi', 'instconf', 'wavmode'] and \
                                     new_dict[key] != self.spectral_dict[key]:
 
-                        log.info('Keyword: {:s} does not Match', key.upper())
+                        log.info('Keyword: {:s} does not Match'.format(
+                            key.upper()))
 
-                        log.info('{:s} - Solution: {:s} - New Data: {:s}',
-                                 key.upper(),
-                                 self.spectral_dict[key],
-                                 new_dict[key])
+                        log.info('{:s} - Solution: {:s} - New '
+                                 'Data: {:s}'.format(key.upper(),
+                                                     self.spectral_dict[key],
+                                                     new_dict[key]))
 
                         return False
 
@@ -2630,10 +2596,10 @@ class WavelengthSolution(object):
                                     abs(new_dict[key] -
                                                 self.spectral_dict[key]) > 1:
 
-                        log.debug('Keyword: {:s} Lamp: {:s} Data: {:s}',
-                                  key,
-                                  self.spectral_dict[key],
-                                  new_dict[key])
+                        log.debug('Keyword: {:s} Lamp: {:s} Data: '
+                                  '{:s}'.format(key,
+                                                self.spectral_dict[key],
+                                                new_dict[key]))
 
                         log.info('Solution belong to a different Instrument'
                                  'Configuration.')
@@ -2678,7 +2644,21 @@ class WavelengthSolution(object):
             log.error('Header has not been parsed')
             return False
 
-    def set_solution_name(self, header):
+    @staticmethod
+    def set_solution_name(header):
+        """Defines a name for the solution
+
+        Using the header's information define a string that could be used as a
+        keyword to identify a particular solution in the event that multiple
+        solutions or instances of this class are stored somewhere/somehow.
+
+        Args:
+            header (object): FITS header instance from astropy.io.fits.
+
+        Returns:
+            Wavelength solution name.
+
+        """
         name_text = ''
         grating = None
         # Grating part of the flat name
@@ -2731,10 +2711,6 @@ class WavelengthSolution(object):
 
         log.debug(wsolution_name)
         return wsolution_name
-        # else:
-        #     log.error('There is no flat suitable for use')
-        #     return False
-
 
 
 if __name__ == '__main__':
