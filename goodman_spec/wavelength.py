@@ -1313,7 +1313,53 @@ class WavelengthCalibration(object):
         This method uses the graphical capabilities of matplotlib in particular
         the user interface (UI) capabilities such as click and key-pressed
         events. We could say that it implements a matplotlib Graphical User
-        Interface.
+        Interface. There are some limitation though, for instance, the access to
+        a better formatted help text.
+
+        It will display four plots of the same height but their width have a
+        4:1 ratio being the leftmost the wider.
+
+        Top Left Plot: Displays the spectrum of the lamp we want to calibrate,
+        or as it is called in the plot, the Raw Data, therefore the axis are
+        intensity (ADU) versus dispersion (pixels). There will be red vertical
+        dashed lines that are lines detected by pipeline. If you see the a line
+        without a red dashed line it means it was not detected.
+
+        Bottom Left Plot: Displays the reference lamp data, therefore the axis
+        are intensity (ADU) versus wavelength (Angstrom). In this case there are
+        vertical dotted lines plotted with a relatively low alpha value. They
+        represent reference laboratory lines obtained from the NIST database at
+        https://physics.nist.gov/PhysRefData/ASD/lines_form.html.
+
+        Top Right Plot: This is a quick reference help text. The formatting of
+        the text is quite difficult here due to matplotlib's own limitations.
+        This text is also displayed on the terminal.
+
+        Bottom Right Plot: This is a dynamic plot since it shows different kind
+        of information. First it shows short messages, such as warnings, errors,
+        or general information. Once you select a line it will show a zoomed
+        version of the line plus the reference value chosen as well as were the
+        click was done. And finally, it shows the dispersion of the wavelength
+        solution. This could be one of the most useful plots in the entire
+        screen.
+
+        Usage: A quick reference of the instructions is shown in the Top Right
+        Plot, but in general you have to select the matching lines in both data
+        plots this will create a table of pixels versus angstrom which at its
+        roots a wavelength solution. Then this will have to be translated to a
+        mathematical model. Having this mathematical model the wavelength
+        solution can be applied, evaluated etc. Among the features implemented
+        you can:
+          - Delete a line or a matching pair.
+          - Find more lines automatically once you have a decent wavelength
+            solution.
+          - Remove all the automatically added lines at once, this is useful in
+            some cases when adding more lines actually makes the solution worst.
+          - Find the RMS Error of the solution
+          - Remove ALL the points at a given point to start over.
+          - Fit a wavelength solution
+
+
 
         Notes:
             This method uses the Qt4Agg backend, in theory it could also work
@@ -2515,9 +2561,14 @@ class WavelengthSolution(object):
             same keywords.
 
         Args:
-            header (object):
+            header (object): Instance of astropy.io.fits.header.Header.
 
         Returns:
+            A dictionary that contains key information regarding the kind of
+            spectroscopic data, basically related to the instrument
+            configuration.
+            The keywords it reads are: INSTCONF, GRATING, ROI, FILTER, FILTER2,
+            SLIT, WAVMODE, CAM_ANG, GRT_ANG.
 
         """
         # TODO (simon): Use CAM_TARG and GRT_TARG instead of CAM_ANG and GRT_ANG
