@@ -2619,7 +2619,8 @@ class WavelengthSolution(object):
         importance.
 
         Args:
-            header (object): FITS header instance from astropy.io.fits.
+            header (object): FITS header instance from
+                astropy.io.fits.header.Header.
 
         Returns:
             True if the new data is compatible with the solution or False if its
@@ -2704,7 +2705,8 @@ class WavelengthSolution(object):
         solutions or instances of this class are stored somewhere/somehow.
 
         Args:
-            header (object): FITS header instance from astropy.io.fits.
+            header (object): FITS header instance from
+                astropy.io.fits.header.Header.
 
         Returns:
             Wavelength solution name.
