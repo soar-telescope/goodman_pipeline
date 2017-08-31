@@ -6,7 +6,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = GoodmanPipelines
 SOURCEDIR     = source
-BUILDDIR      = /data/simon/documentation/soar/goodman
+BUILDDIR      = /data/simon/documentation/soar/goodman/_pages/sphinx
 
 # Put it first so that "make" without argument is like "make help".
 help:
