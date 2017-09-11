@@ -34,7 +34,7 @@ ccd reduction process and _goodman_spec_ for advanced processing for
 spectroscopic data such as target identification and extraction for instance.
 
 They are supposed to work in sequence and they are called from two indepentent 
-scripts, *redccd* and *redspec*. 
+scripts, _redccd_ and _redspec_. 
 
 Other files included are:
 - Readme.md (this)
@@ -84,12 +84,12 @@ You are not ready to install the pipeline yet.
 ### Get Latest Release 
 
 Visit [this link](https://github.com/soar-telescope/goodman/tree/master/dist)
-and download the newest file.
+and download the newest file in the list.
 
 #### Requirements
 
-This software was developed on Python 2.7, use the `requirements.txt` file to 
-install all dependencies.
+This software was developed on Python 2.7, use the included `requirements.txt`
+file to install all the dependencies.
 
 ```shell
 sudo -H pip2.7 install -r requirements.txt
@@ -119,8 +119,8 @@ Solaris 11 and MacOS Sierra. The pre-compiled versions are distributed with
 the package but it is not guaranteed they will work on your running platform.
 
 
-Follow [this link](http://users.camk.edu.pl/pych/DCR/) and you can follow the 
-instructions there in order to get and compile the `dcr` code. 
+Follow [this link](http://users.camk.edu.pl/pych/DCR/) where you can find the 
+instructions in order to get and compile the `dcr` code. 
 The same instructions are reproduced here.
 
 Download the `dcr.tar` file and untar it.
