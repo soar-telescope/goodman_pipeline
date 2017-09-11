@@ -1,6 +1,5 @@
 *.pyc
 .idea/*
-dev/*
 build/*
 sandbox/*
 __pycache__/*
