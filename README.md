@@ -1,40 +1,53 @@
-# Goodman High Throughput Spectrograph
-**Important** This is a Beta Release Candidate version of this pipeline,
-although we have thoroughly tested it there might (and will) still be bugs.
-Please let us know if you find any, writting to storres [at] ctio noao edu.
+# Goodman High Throughput Spectrograph Data Reduction Pipeline
 
-The Goodman High Throughput Spectrograph is an imaging spectrograph,
- if you wish to know more about the instrument please check the 
- [SOAR website](http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph)
+The Goodman High Throughput Spectrograph (Goodman HTS) Data-Reduction Pipeline
+is the SOAR Telescope's official data reduction pipeline for _Goodman HTS_.
+
+It has been fully developed in Python 2.7 and mostly astropy affiliated packages
+with the exception of [dcr](http://users.camk.edu.pl/pych/DCR/) an external tool
+that does cosmic ray identification and correction. The reason for using it
+instead of LACosmic was that it works very well for spectroscopic data and the
+results are evidently superior. Some of the negative aspects of using this
+external (meaning outside of Python domains) software were: The integration into
+the pipeline's workflow and the use of an external `dcr.par` parameter file.
+ Such parameters have to be changed by hand and can't be integrated into the
+ pipeline's workflow itself. In particular for binning 2x2 and custom ROI those
+ parameters contained in _dcr.par_ has to be specifically tuned.
+
+
+The pipeline is currently in its first beta release version. We have thoroughly
+tested it but we know there are still bugs to be found. If you found one or have
+any comment please contact Simón Torres at storres [at] ctio noao edu.
+
+
+The Goodman High Throughput Spectrograph is an imaging spectrograph, if you wish
+to know more about the instrument please check the 
+[SOAR website](http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph)
  
 To see full documentation please go to the GitHub hosted site for
 [Goodman](https://soar-telescope.github.io/goodman/)
 
-## What is contained in this package?
+## What is contained in the project?
 
-This repository contains tools for processing Goodman's spectrograph data.
-It is separated into two main components. The **CCD** part is done by _redccd_
-originally developed by [David Sanmartim](https://github.com/dsanmartim)
-and currently maintained by our team. It does
-the standard _ccd image reduction_, i.e. trim, bias and flat correction.
-Currently the ccd reduction pipeline has been integrated into this package so
-there is no need to look for it separately. The **Spectroscopic** processing is
-done by _redspec_ and includes the following features:
+The Goodman HTS Pipeline has two packages, _goodman_ccd_ dedicated to the basic
+ccd reduction process and _goodman_spec_ for advanced processing for 
+spectroscopic data such as target identification and extraction for instance.
 
+They are supposed to work in sequence and they are called from two indepentent 
+scripts, *redccd* and *redspec*. 
 
-- [x] Identify targets in images
-- [x] Trace the target
-- [x] Extract the target with background subtraction
-- [x] Find the wavelength Solution, interactive and automatically
-- [x] Linearize data (resamples)
-- [x] Write wavelength solution to a FITS header
-- [x] Create a new file for the wavelength calibrated 1D spectrum
-
-There is also a library of calibrated spectrum in FITS format. Different
-configurations are provided but is very easy
-to add your own.
+Other files included are:
+- Readme.md (this)
+- requirements.txt
+- user_manual.pdf
+- dcr binaries
+- Library of Wavelength Calibrated lamps.
 
 ## How to install it?
+
+The installation instructions are also detailed in the pdf manual
+(user_manual.pdf).
+
 ### Specific platform instructions
 _for installing on Ubuntu 16.04 see 
 [this wiki](https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience)_
@@ -46,7 +59,8 @@ Below you will find the instrucctions anyways, please refer to the wiki for the
 specifics.
 
 ### Get the code
-
+In case you want to get the full project you need to install `git`, if you 
+don't, please go to [Get latest release](#get-latest-release). 
 #### Install Git
 This step will depend on your platform, below are two examples:
 
@@ -65,6 +79,12 @@ git clone https://github.com/soar-telescope/goodman.git
 ```
  
 You are not ready to install the pipeline yet.
+
+
+### Get Latest Release 
+
+Visit [this link](https://github.com/soar-telescope/goodman/tree/master/dist)
+and download the newest file.
 
 #### Requirements
 
@@ -163,112 +183,13 @@ use something different follow the example below as a guide.
 
 ## How to use it?
  
-The pipeline is separated in two sub-pipelines. _redccd_ and _redspec_. 
-The `--help` argument will print the argument plus some some description
+The pipeline is run by two separated scripts. _redccd_ and _redspec_. 
+The `--help` argument will print the argument plus some short description.
+Also check the manual included in the distribution package.
 
-```shell
-$ redccd --help
-  usage: redccd [-h] [-c] [--ignore-bias] [--auto-clean] [--saturation <Value>]
-                [--raw-path raw_path] [--red-path red_path] [--debug]
-                [--log-to-file] [--flat-normalize <Normalization Method>]
-                [--flat-norm-order <Order>] [--dcr-par-dir <dcr.par directory>]
-                [--keep-cosmic-files]
 
-Goodman CCD Reduction - CCDreductions for Goodman spectroscopic data
+# Acknowledge
 
-optional arguments:
-  -h, --help            Show this help message and exit
-  -c, --cosmic          Clean cosmic rays from science data.
-  --ignore-bias         Ignore bias correction
-  --auto-clean          Automatically clean reduced data directory
-  --saturation <Value>  Saturation limit. Default to 55.000 ADU (counts)
-  --raw-path raw_path   Path to raw data.
-  --red-path red_path   Path to reduced data.
-  --debug               Show detailed information of the process.
-  --log-to-file         Write log to a file.
-  --flat-normalize <Normalization Method>
-                        Choose a method to normalize the master flat
-                        forspectroscoy. Choices are: mean, simple (model) and
-                        full (fits model to each line).
-  --flat-norm-order <Order>
-                        Defines the order of the model to be fitted.
-  --dcr-par-dir <dcr.par directory>
-                        Directory of default dcr.par file.
-  --keep-cosmic-files   After cleaning cosmic rays with dcr, do not remove the
-                        input file and the cosmic rays file.
-
-  ```
-
-And for `redspec`:
-
-```shell
-$ redspec --help
-  usage: redspec [-h] [--data-path <Source Path>]
-                 [--proc-path <Destination Path>]
-                 [--search-pattern <Search Pattern>]
-                 [--output-prefix <Out Prefix>] [--extraction <Extraction Type>]
-                 [--reference-files <Reference Dir>] [--interactive] [--debug]
-                 [--log-to-file] [--save-plots] [--plot-results]
-
-Extracts goodman spectra and does wavelength calibration.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --data-path <Source Path>
-                        Path for location of raw data. Default <./>
-  --proc-path <Destination Path>
-                        Path for destination of processed data. Default <./>
-  --search-pattern <Search Pattern>
-                        Pattern for matching the goodman's reduced data.
-  --output-prefix <Out Prefix>
-                        Prefix to add to calibrated spectrum.
-  --extraction <Extraction Type>
-                        Choose a which extraction to perform. Simple is a sum
-                        across the spatial direction after the background has
-                        been removed. Optimal is a more advanced method that
-                        considers weights and profilefitting.
-  --reference-files <Reference Dir>
-                        Directory of Reference files location
-  --interactive         Interactive wavelength solution.Disbled by default.
-  --debug               Debugging Mode
-  --log-to-file         Write log to a file
-  --save-plots          Save all plots in a directory
-  --plot-results        Show wavelength calibrated spectrum at the end.
-
-   ```
-
-You should always run `redccd` first and then `redspec`. There are certain
-defaults values 
-
-### redccd Defaults
-
-```shell
-    --cosmic              False
-    --ignore-bias         False
-    --auto-clean          False
-    --debug               False
-    --log-to-file         False
-    --keep-cosmic-files   False
-    --saturation          55000
-    --raw-path            ./
-    --red-path            ./RED/
-    --flat-normalize      simple
-    --dcr-par-dir         files/
-    --flat-norm-order     15
-```
-### redspec Defaults
-
-```shell
-    --data-path         ./
-    --proc-path         ./
-    --search-pattern    cfzsto
-    --extraction        simple
-    --reference-files   refdata
-    --reference-lamp    (empty string)
-    --output-prefix     g
-    --interactive       False
-    --debug             False
-    --log-to-file       False
-    --save-plots        False
-    --plot-results      False
-```
+[David Sanmartim](https://github.com/dsanmartim) developed the first version of
+the ccd reduction part before he moved to a new position. That first version was
+included in the pipeline as a package and has evolved along all the code.
