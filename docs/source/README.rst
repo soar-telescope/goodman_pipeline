@@ -1,10 +1,24 @@
 Goodman High Throughput Spectrograph
 ====================================
 
-**Important** This is a Beta Release Candidate version of this pipeline,
-although we have thoroughly tested it there might (and will) still be
-bugs. Please let us know if you find any. My e-mail is storres [at] ctio
-noao edu.
+The Goodman High Throughput Spectrograph (Goodman HTS) Data-Reduction Pipeline
+is the SOAR Telescope's official data reduction pipeline for *Goodman HTS*.
+
+It has been fully developed in Python 2.7 and mostly astropy affiliated packages
+with the exception of `dcr <http://users.camk.edu.pl/pych/DCR/>`_ an external tool
+that does cosmic ray identification and correction. The reason for using it
+instead of LACosmic was that it works very well for spectroscopic data and the
+results are evidently superior. Some of the negative aspects of using this
+external (meaning outside of Python domains) software were: The integration into
+the pipeline's workflow and the use of an external ``dcr.par`` parameter file.
+ Such parameters have to be changed by hand and can't be integrated into the
+ pipeline's workflow itself. In particular for binning 2x2 and custom ROI those
+ parameters contained in *dcr.par* has to be specifically tuned.
+
+
+The pipeline is currently in its first beta release version. We have thoroughly
+tested it but we know there are still bugs to be found. If you found one or have
+any comment please contact Simón Torres at storres [at] ctio noao edu.
 
 The Goodman High Throughput Spectrograph is an imaging spectrograph, if
 you wish to know more about the instrument please check the `SOAR
