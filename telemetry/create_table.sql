@@ -64,6 +64,8 @@ create table all_images (
     ID int NOT NULL AUTO_INCREMENT,
     INPUT_DATE TIMESTAMP,
     FULL_PATH varchar(100),
+    PATH varchar(100),
+    FILE_NAME varchar(50),
     HOSTNAME varchar(30),
     DATE_OBS datetime,
     TELESCOPE VARCHAR(10),
