@@ -45,147 +45,16 @@ Other files included are:
 
 ## How to install it?
 
-The installation instructions are also detailed in the pdf manual
-(user_manual.pdf).
+In principle you don't need to install it since SOAR Telescope is providing
+dedicated servers where you can run the pipeline.
 
-### Specific platform instructions
-_for installing on Ubuntu 16.04 see 
-[this wiki](https://github.com/simontorres/goodman/wiki/Ubuntu-16.04-Installation-Experience)_
+If you are a _user_ you should follow the instructions in the `user_manual.pdf`
+file, where you will find instruction for accessing the server and using the
+pipeline, even for installing it.
+  
+The user manual file is included in the distribution.
 
-_for installing on Centos 7 see 
-[this wiki](https://github.com/simontorres/goodman/wiki/Centos-7-Installation)_
-
-Below you will find the instrucctions anyways, please refer to the wiki for the
-specifics.
-
-### Get the code
-In case you want to get the full project you need to install `git`, if you 
-don't, please go to [Get latest release](#get-latest-release). 
-#### Install Git
-This step will depend on your platform, below are two examples:
-
-```shell
-# Centos
-sudo yum install git
-
-# Ubuntu
-sudo apt-get install git
-```
-#### Clone from GitHub
-To clone from GitHub copy and paste the following line in a terminal.
-
-```shell
-git clone https://github.com/soar-telescope/goodman.git
-```
- 
-You are not ready to install the pipeline yet.
-
-
-### Get Latest Release 
-
-Visit [this link](https://github.com/soar-telescope/goodman/tree/master/dist)
-and download the newest file in the list.
-
-#### Requirements
-
-This software was developed on Python 2.7, use the included `requirements.txt`
-file to install all the dependencies.
-
-```shell
-sudo -H pip2.7 install -r requirements.txt
-```
-
-Remember that if you do not have super user privileges, you can still install
-all the requirements by adding the `--users` flag. There is also an option of
-[installing it using different virtual environments](http://docs.python-guide.org/en/latest/dev/virtualenvs/) 
-or even using [Anaconda](https://www.continuum.io/downloads).
-
-
-You may have some issues when using MatPlotLib on `virtualenvs` and on Mac OSX.
-If so, you can try to follow the instructions on
-[this site](http://matplotlib.org/faq/osx_framework.html#osxframework-faq) and,
-then add the following line on your `.bashrc` or `.bash_profile` file.
-
-```shell
-alias python='pythonw' 
-```
-
-### Install DCR (Cosmic Ray Rejection)
-This pipeline uses [DCR](http://users.camk.edu.pl/pych/DCR/) developed by 
-[Wojtek Pych](mailto:pych@camk.edu.pl) instead of `ccdproc.cosmicray_lacosmic` 
-because we got better results with `DCR`. Unfortunately you will have to compile
-it, I have successfully compiled it on Centos 7, Ubuntu 16.04, Linux Mint 18.1, 
-Solaris 11 and MacOS Sierra. The pre-compiled versions are distributed with
-the package but it is not guaranteed they will work on your running platform.
-
-
-Follow [this link](http://users.camk.edu.pl/pych/DCR/) where you can find the 
-instructions in order to get and compile the `dcr` code. 
-The same instructions are reproduced here.
-
-Download the `dcr.tar` file and untar it.
-```shell
-tar -xvf dcr.tar
-```
-
-Compile it
-```shell
-make
-```
-
-If you don't get any errors you can try it without any arguments and you will
-get something like this
-```shell
-$ ./dcr
-
-        USAGE:  dcr  input_file  cleaned_file  cosmicrays_file
-
-File 'dcr.par' must be present in the working directory.
-      ~~~~~~
-```
-
-#### Make it available for the system
-Now that you have compiled the program you have a file called `dcr` you need to
-put it in the `$PATH` variable of your system. I usually use `bash` so if you
-use something different follow the example below as a guide.
-
- 1. Create a directory to place the executable
-     ```shell
-     $ mkdir ~/.bin
-     ```
-     Note that in the example above the directory .bin will be hidden and the 
-     symbol `~` denotes your home directory for instance: `/home/goodman/`
- 2. Move `dcr` to your new folder.
-     ```shell
-     $ mv dcr ~/.bin
-     ```
- 3. Add the directory to the `PATH` variable. With your favorite text editor, 
- open the file `~/.bashrc`
-     ```shell
-     $ vim ~/.bashrc
-     ```
-     At the end add the following line.
-     ```text
-     export PATH=$PATH:/home/user/.bin
-     ```
-     If you don't know your home directory do the following
-     ```shell
-     $ cd
-     $ pwd
-     ```
-     Replace `/home/user/`for whatever the output is in the last command
- 
- 4. Reload the environment variables. For this you can simply close and reopen
- the terminal or you can do:
-     ```shell
-     $ source ~/.bashrc
-     ```
-
-## How to use it?
- 
-The pipeline is run by two separated scripts. _redccd_ and _redspec_. 
-The `--help` argument will print the argument plus some short description.
-Also check the manual included in the distribution package.
+If you want to try it out as a developer please request the developer's manual.
 
 
 # Acknowledge
