@@ -1,0 +1,19 @@
+{
+  "mysql":{
+    "host":"localhost",
+    "user":"mysql_user",
+    "password":"user_password",
+    "database":"mysql_database_name",
+    "table":"mysql_table_name"
+  },
+
+  "publisher":{
+    "ip":"ip_or_ip_range",
+    "port":"5555"
+  },
+
+  "subscriber":{
+    "server_ip":"localhost",
+    "listening_port":"5555"
+  }
+}
