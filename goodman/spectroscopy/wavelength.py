@@ -33,13 +33,13 @@ from scipy import signal
 
 from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
 from .linelist import ReferenceData
-from goodman_ccd.core import (spectroscopic_extraction,
-                              search_comp_group,
-                              add_wcs_keys,
-                              NoTargetException,
-                              NoMatchFound,
-                              NotEnoughLinesDetected,
-                              CriticalError)
+from ..core import (spectroscopic_extraction,
+                    search_comp_group,
+                    add_wcs_keys,
+                    NoTargetException,
+                    NoMatchFound,
+                    NotEnoughLinesDetected,
+                    CriticalError)
 
 
 
@@ -60,7 +60,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     usable in case it is integrated in other application.
 
     Args:
-        data_container (object): Instance of goodman_ccd.core.NightDataContainer
+        data_container (object): Instance of ccd.core.NightDataContainer
             class that is used to store classified data.
         args (object): Instance of arparse.Namespace that contains all the
             arguments of the pipeline.

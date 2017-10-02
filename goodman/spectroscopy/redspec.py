@@ -21,7 +21,7 @@ import matplotlib
 matplotlib.use('Qt4Agg')
 import warnings
 from .wavelength import WavelengthCalibration, process_spectroscopy_data
-from goodman_ccd.core import (classify_spectroscopic_data)
+from ..core import (classify_spectroscopic_data)
 
 
 warnings.filterwarnings('ignore')
