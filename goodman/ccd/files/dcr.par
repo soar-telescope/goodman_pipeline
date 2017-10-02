@@ -1,0 +1,10 @@
+THRESH	= 3.0	// Threshold (in STDDEV)
+XRAD	= 9	// x-radius of the box (size = 2 * radius)
+YRAD	= 9	// y-radius of the box (size = 2 * radius)
+NPASS	= 5	// Maximum number of cleaning passes
+DIAXIS	= 0	// Dispersion axis: 0 - no dispersion, 1 - X, 2 - Y
+LRAD	= 1	// Lower radius of region for replacement statistics
+URAD	= 3	// Upper radius of region for replacement statistics
+GRAD	= 1	// Growing radius
+VERBOSE	= 1	// Verbose level [0,1,2]
+END
