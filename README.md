@@ -56,6 +56,13 @@ The user manual file is included in the distribution.
 
 If you want to try it out as a developer please request the developer's manual.
 
+# Common Failures
+
+- The pipeline fails to detect a target: Usually is the keyword OBSTYPE is wrong
+and is trying to detect targets where it shouldn't
+
+- The wavelength solution RMS Error is too high (larger than 3): The lamp was 
+mislabeled. For instance it says HgArNe when is HgAr.
 
 # Acknowledge
 

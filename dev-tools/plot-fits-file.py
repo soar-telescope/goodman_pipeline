@@ -53,6 +53,7 @@ class DataPlotter(object):
         plt.title('{:s}\n{:s}'.format(self.file, ccd.header['OBJECT']))
 
         self.ax.plot(wavelength, intensity, color='k', label='Data')
+        self.ax.axvline(6562.8, color='r')
         self.ax.set_xlim((wavelength[0], wavelength[-1]))
         self.ax.set_ylabel('Intensity (ADU)')
         self.ax.set_xlabel('Wavelength (Angstrom)')
