@@ -7,7 +7,7 @@ setup(
     package_dir={'ccd': 'ccd',
                  'spectroscopy': 'spectroscopy'},
     package_data={'ccd': ['files/dcr.par'],
-                  'spectroscopy': ['refdata/*fits']},
+                  'spectroscopy': ['ref_comp/*fits']},
     scripts=['bin/redccd', 'bin/redspec'],
     url='https://github.com/soar-telescope/goodman',
     license='BSD 3-Clause',

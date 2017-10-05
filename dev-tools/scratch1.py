@@ -42,7 +42,7 @@ arguments = load_json_params(json_file=parameters_file, param_group='spec_args')
 #              "--search-pattern", "cfzsto",
 #              "--output-prefix", "o",
 #              "--extraction", "simple",
-#              "--reference-files", "refdata/",
+#              "--reference-files", "ref_comp/",
 #              "--max-targets", "3"]
 
 
@@ -98,7 +98,7 @@ parser.add_argument('--extraction',
 
 parser.add_argument('--reference-files',
                     action='store',
-                    default='refdata/',
+                    default='ref_comp/',
                     metavar='<Reference Dir>',
                     dest='reference_dir',
                     help="Directory of Reference files location")

@@ -107,7 +107,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--reference-files',
                         action='store',
-                        default='refdata/',
+                        default='ref_comp/',
                         metavar='<Reference Dir>',
                         dest='reference_dir',
                         help="Directory of Reference files location")
