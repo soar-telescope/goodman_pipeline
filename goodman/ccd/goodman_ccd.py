@@ -21,7 +21,7 @@ __email__ = "storres@ctio.noao.edu"
 FORMAT = '%(levelname)s: %(asctime)s: %(module)s.%(funcName)s: %(message)s'
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 DATE_FORMAT = '%I:%M:%S%p'
-LOG_FILENAME = 'ccd.log'
+LOG_FILENAME = 'goodman_ccd.log'
 logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
 # TODO (simon): Check the use of getLogger versus Logger
 log = logging.getLogger('goodmanccd')
