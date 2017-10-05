@@ -4,7 +4,8 @@ from core import (NightDataContainer,
                   NoTargetException,
                   NoMatchFound,
                   NotEnoughLinesDetected,
-                  CriticalError)
+                  CriticalError,
+                  SpectroscopicMode)
 
 # import of functions in core.py
 from core import (convert_time,

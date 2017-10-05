@@ -19,9 +19,8 @@ from ..core import (image_overscan,
                     lacosmic_cosmicray_rejection,
                     get_best_flat,
                     normalize_master_flat,
-                    call_cosmic_rejection)
-
-from .wavmode_translator import SpectroscopicMode
+                    call_cosmic_rejection,
+                    SpectroscopicMode)
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
