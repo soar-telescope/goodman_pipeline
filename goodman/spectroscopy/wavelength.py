@@ -60,9 +60,9 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     usable in case it is integrated in other application.
 
     Args:
-        data_container (object): Instance of ccd.core.NightDataContainer
+        data_container (object): Instance of goodman.core.NightDataContainer
             class that is used to store classified data.
-        args (object): Instance of arparse.Namespace that contains all the
+        args (object): Instance of argparse.Namespace that contains all the
             arguments of the pipeline.
         extraction_type (str): string that defines the type of extraction to be
             performed. 'simple' or 'optimal'. This is required by the extraction
@@ -271,7 +271,8 @@ class WavelengthCalibration(object):
         self.points_ref = None
         self.points_raw = None
         self.line_raw = None
-        self.filling_value = 1000
+        self.ref_filling_value = 1000
+        self.raw_filling_value = 1000
         self.events = True
         self.first = True
         self.evaluation_comment = None
@@ -558,7 +559,6 @@ class WavelengthCalibration(object):
 
             lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data,
                                                      lines=peaks,
-                                                     slit_size=slit_size,
                                                      order=new_order)
         else:
             # lines_center = peaks
@@ -588,6 +588,14 @@ class WavelengthCalibration(object):
             plt.show()
 
         return lines_center
+
+    @staticmethod
+    def get_best_filling_value(data):
+        clipped_data = sigma_clip(data, sigma=5, iters=5)
+        clean_data = clipped_data[~clipped_data.mask]
+        log.debug("Found best filling value"
+                  " at {:s}".format(np.median(clean_data)))
+        return np.median(clean_data)
 
     def recenter_lines(self, data, lines, plots=False):
         """Finds the centroid of an emission line
@@ -1396,6 +1404,10 @@ class WavelengthCalibration(object):
             reference_plots_enabled = False
             log.error('Please Check the OBJECT Keyword of your reference data')
 
+        # update filling value
+        self.raw_filling_value = self.get_best_filling_value(data=self.lamp_data)
+        self.ref_filling_value = self.get_best_filling_value(data=ref_data)
+
         # ------- Plots -------
         self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = \
             plt.subplots(2,
@@ -1631,6 +1643,8 @@ class WavelengthCalibration(object):
                 self.find_more_lines()
                 self.update_marks_plot('reference')
                 self.update_marks_plot('raw_data')
+            else:
+                log.debug('Wavelength solution is None')
         elif event.key == 'f4':
             if self.wsolution is not None and len(self.raw_data_marks_x) > 0:
                 self.evaluate_solution(plots=True)
@@ -1747,7 +1761,7 @@ class WavelengthCalibration(object):
                 to_remove = []
                 for i in range(len(self.raw_data_marks_x)):
                     # print self.raw_data_marks[i], self.filling_value
-                    if self.raw_data_marks_y[i] == self.filling_value:
+                    if self.raw_data_marks_y[i] == self.raw_filling_value:
                         to_remove.append(i)
                         # print to_remove
                 to_remove = np.array(sorted(to_remove, reverse=True))
@@ -1884,9 +1898,9 @@ class WavelengthCalibration(object):
                             self.reference_marks_x:
 
                         self.reference_marks_x.append(new_wavelength[i])
-                        self.reference_marks_y.append(self.filling_value)
+                        self.reference_marks_y.append(self.ref_filling_value)
                         self.raw_data_marks_x.append(new_physical[i])
-                        self.raw_data_marks_y.append(self.filling_value)
+                        self.raw_data_marks_y.append(self.raw_filling_value)
         return True
 
     def update_marks_plot(self, action=None):
@@ -1908,8 +1922,11 @@ class WavelengthCalibration(object):
                 try:
                     self.points_ref.remove()
                     self.ax3.relim()
+                    log.debug('Removing reference marks')
                 except:
+                    log.debug('Reference points is None')
                     pass
+            log.debug("Plot new marks")
             self.points_ref, = self.ax3.plot(self.reference_marks_x,
                                              self.reference_marks_y,
                                              linestyle='None',
