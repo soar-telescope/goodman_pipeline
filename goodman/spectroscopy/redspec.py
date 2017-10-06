@@ -107,7 +107,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--reference-files',
                         action='store',
-                        default='ref_comp/',
+                        default='data/ref_comp/',
                         metavar='<Reference Dir>',
                         dest='reference_dir',
                         help="Directory of Reference files location")
@@ -161,8 +161,10 @@ def get_args(arguments=None):
         log.setLevel(level=logging.DEBUG)
 
     # get full path for reference files directory
-    ref_full_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 args.reference_dir)
+
+    ref_full_path = os.path.join(
+        os.path.dirname(sys.modules['goodman'].__file__),
+        args.reference_dir)
     if not os.path.isdir(ref_full_path):
         log.info("Reference files directory doesn't exist.")
         try:
