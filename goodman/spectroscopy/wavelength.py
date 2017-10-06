@@ -591,7 +591,21 @@ class WavelengthCalibration(object):
 
     @staticmethod
     def get_best_filling_value(data):
-        clipped_data = sigma_clip(data, sigma=5, iters=5)
+        """Find the best y-value to locate marks
+
+        The autmatically added points will be placed at a fixed location in the
+        y-axis. This value is calculated by doing a 2-sigma clipping with 5
+        iterations. Then the masked out values are removed and the median is
+        calculated.
+
+        Args:
+            data (array): Array of 1D data
+
+        Returns:
+            Median value of clipped data.
+
+        """
+        clipped_data = sigma_clip(data, sigma=2, iters=5)
         clean_data = clipped_data[~clipped_data.mask]
         log.debug("Found best filling value"
                   " at {:s}".format(np.median(clean_data)))
