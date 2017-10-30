@@ -1263,25 +1263,26 @@ class WavelengthCalibration(object):
                 manager.window.showMaximized()
 
             self.ax1 = self.i_fig.add_subplot(111)
+            self.ax1.set_rasterization_zorder(1)
 
             self.ax1.plot([], color='m', label='Pixels')
             self.ax1.plot([], color='c', label='Angstrom')
             for val in pixel_values:
-                self.ax1.axvline(self.wsolution(val), color='m')
+                self.ax1.axvline(self.wsolution(val), color='m', zorder=0)
             for val2 in angstrom_values:
-                self.ax1.axvline(val2, color='c', linestyle='--')
+                self.ax1.axvline(val2, color='c', linestyle='--', zorder=0)
 
             self.ax1.plot(reference_lamp_wav_axis,
                           reference_lamp_data.data,
                           label='Reference',
                           color='k',
-                          alpha=1)
+                          alpha=1, zorder=0)
 
             self.ax1.plot(self.wsolution(self.raw_pixel_axis),
                           self.lamp_data,
                           label='Last Solution',
                           color='r',
-                          alpha=0.7)
+                          alpha=0.7, zorder=0)
 
             try:
                 wavmode = self.lamp_header['wavmode']
@@ -1315,11 +1316,12 @@ class WavelengthCalibration(object):
                 pdf_pages.close()
 
                 # saves png images
+
                 plots_path = os.path.join(self.args.destiny, 'plots')
                 if not os.path.isdir(plots_path):
                     os.path.os.makedirs(plots_path)
-                plot_name = os.path.join(plots_path, out_file_name + '.png')
-                plt.savefig(plot_name, dpi=300)
+                plot_name = os.path.join(plots_path, out_file_name + '.eps')
+                plt.savefig(plot_name, rasterized=True, format='eps', dpi=300)
             if self.args.debug_mode:
                 plt.show()
             else:

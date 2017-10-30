@@ -1,6 +1,8 @@
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 # import all classes in core.py
-from core import (NightDataContainer,
+from .core import (NightDataContainer,
                   NoTargetException,
                   NoMatchFound,
                   NotEnoughLinesDetected,
@@ -8,7 +10,7 @@ from core import (NightDataContainer,
                   SpectroscopicMode)
 
 # import of functions in core.py
-from core import (convert_time,
+from .core import (convert_time,
                   fix_duplicated_keywords,
                   ra_dec_to_deg,
                   print_spacers,

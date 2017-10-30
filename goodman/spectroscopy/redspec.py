@@ -12,6 +12,9 @@ Simon Torres 2016-06-28
 # TODO (simon): Change all astropy.io.fits to astropy.CCDData.read
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from .wavelength import WavelengthCalibration, process_spectroscopy_data
+from ..core import (classify_spectroscopic_data)
+
 import sys
 import os
 import textwrap
@@ -20,8 +23,6 @@ import logging
 import matplotlib
 matplotlib.use('Qt4Agg')
 import warnings
-from .wavelength import WavelengthCalibration, process_spectroscopy_data
-from ..core import (classify_spectroscopic_data)
 
 
 warnings.filterwarnings('ignore')
@@ -34,7 +35,7 @@ log = logging.getLogger('redspec')
 
 __author__ = 'Simon Torres'
 __date__ = '2016-06-28'
-__version__ = "0.1"
+__version__ = "1.0b1"
 __email__ = "storres@ctio.noao.edu"
 __status__ = "Development"
 
@@ -234,6 +235,8 @@ class MainApp(object):
         data_container = classify_spectroscopic_data(
             path=self.args.source,
             search_pattern=self.args.pattern)
+        log.debug("Got data container")
+        print(data_container.is_empty)
 
         # print('data_container.bias')
         # print(data_container.bias)
@@ -247,6 +250,7 @@ class MainApp(object):
         # print(data_container.data_groups)
         # print('data_container.spec_groups')
         # print(data_container.spec_groups)
+
 
         self.wavelength_solution_obj = process_spectroscopy_data(
             data_container=data_container,
