@@ -33,13 +33,13 @@ from scipy import signal
 
 from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
 from .linelist import ReferenceData
-from goodman_ccd.core import (spectroscopic_extraction,
-                              search_comp_group,
-                              add_wcs_keys,
-                              NoTargetException,
-                              NoMatchFound,
-                              NotEnoughLinesDetected,
-                              CriticalError)
+from ..core import (spectroscopic_extraction,
+                    search_comp_group,
+                    add_wcs_keys,
+                    NoTargetException,
+                    NoMatchFound,
+                    NotEnoughLinesDetected,
+                    CriticalError)
 
 
 
@@ -60,9 +60,9 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     usable in case it is integrated in other application.
 
     Args:
-        data_container (object): Instance of goodman_ccd.core.NightDataContainer
+        data_container (object): Instance of goodman.core.NightDataContainer
             class that is used to store classified data.
-        args (object): Instance of arparse.Namespace that contains all the
+        args (object): Instance of argparse.Namespace that contains all the
             arguments of the pipeline.
         extraction_type (str): string that defines the type of extraction to be
             performed. 'simple' or 'optimal'. This is required by the extraction
@@ -271,7 +271,8 @@ class WavelengthCalibration(object):
         self.points_ref = None
         self.points_raw = None
         self.line_raw = None
-        self.filling_value = 1000
+        self.ref_filling_value = 1000
+        self.raw_filling_value = 1000
         self.events = True
         self.first = True
         self.evaluation_comment = None
@@ -558,7 +559,6 @@ class WavelengthCalibration(object):
 
             lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data,
                                                      lines=peaks,
-                                                     slit_size=slit_size,
                                                      order=new_order)
         else:
             # lines_center = peaks
@@ -588,6 +588,28 @@ class WavelengthCalibration(object):
             plt.show()
 
         return lines_center
+
+    @staticmethod
+    def get_best_filling_value(data):
+        """Find the best y-value to locate marks
+
+        The autmatically added points will be placed at a fixed location in the
+        y-axis. This value is calculated by doing a 2-sigma clipping with 5
+        iterations. Then the masked out values are removed and the median is
+        calculated.
+
+        Args:
+            data (array): Array of 1D data
+
+        Returns:
+            Median value of clipped data.
+
+        """
+        clipped_data = sigma_clip(data, sigma=2, iters=5)
+        clean_data = clipped_data[~clipped_data.mask]
+        log.debug("Found best filling value"
+                  " at {:s}".format(np.median(clean_data)))
+        return np.median(clean_data)
 
     def recenter_lines(self, data, lines, plots=False):
         """Finds the centroid of an emission line
@@ -1241,25 +1263,26 @@ class WavelengthCalibration(object):
                 manager.window.showMaximized()
 
             self.ax1 = self.i_fig.add_subplot(111)
+            self.ax1.set_rasterization_zorder(1)
 
             self.ax1.plot([], color='m', label='Pixels')
             self.ax1.plot([], color='c', label='Angstrom')
             for val in pixel_values:
-                self.ax1.axvline(self.wsolution(val), color='m')
+                self.ax1.axvline(self.wsolution(val), color='m', zorder=0)
             for val2 in angstrom_values:
-                self.ax1.axvline(val2, color='c', linestyle='--')
+                self.ax1.axvline(val2, color='c', linestyle='--', zorder=0)
 
             self.ax1.plot(reference_lamp_wav_axis,
                           reference_lamp_data.data,
                           label='Reference',
                           color='k',
-                          alpha=1)
+                          alpha=1, zorder=0)
 
             self.ax1.plot(self.wsolution(self.raw_pixel_axis),
                           self.lamp_data,
                           label='Last Solution',
                           color='r',
-                          alpha=0.7)
+                          alpha=0.7, zorder=0)
 
             try:
                 wavmode = self.lamp_header['wavmode']
@@ -1293,11 +1316,12 @@ class WavelengthCalibration(object):
                 pdf_pages.close()
 
                 # saves png images
+
                 plots_path = os.path.join(self.args.destiny, 'plots')
                 if not os.path.isdir(plots_path):
                     os.path.os.makedirs(plots_path)
-                plot_name = os.path.join(plots_path, out_file_name + '.png')
-                plt.savefig(plot_name, dpi=300)
+                plot_name = os.path.join(plots_path, out_file_name + '.eps')
+                plt.savefig(plot_name, rasterized=True, format='eps', dpi=300)
             if self.args.debug_mode:
                 plt.show()
             else:
@@ -1395,6 +1419,10 @@ class WavelengthCalibration(object):
         else:
             reference_plots_enabled = False
             log.error('Please Check the OBJECT Keyword of your reference data')
+
+        # update filling value
+        self.raw_filling_value = self.get_best_filling_value(data=self.lamp_data)
+        self.ref_filling_value = self.get_best_filling_value(data=ref_data)
 
         # ------- Plots -------
         self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = \
@@ -1631,6 +1659,8 @@ class WavelengthCalibration(object):
                 self.find_more_lines()
                 self.update_marks_plot('reference')
                 self.update_marks_plot('raw_data')
+            else:
+                log.debug('Wavelength solution is None')
         elif event.key == 'f4':
             if self.wsolution is not None and len(self.raw_data_marks_x) > 0:
                 self.evaluate_solution(plots=True)
@@ -1747,7 +1777,7 @@ class WavelengthCalibration(object):
                 to_remove = []
                 for i in range(len(self.raw_data_marks_x)):
                     # print self.raw_data_marks[i], self.filling_value
-                    if self.raw_data_marks_y[i] == self.filling_value:
+                    if self.raw_data_marks_y[i] == self.raw_filling_value:
                         to_remove.append(i)
                         # print to_remove
                 to_remove = np.array(sorted(to_remove, reverse=True))
@@ -1884,9 +1914,9 @@ class WavelengthCalibration(object):
                             self.reference_marks_x:
 
                         self.reference_marks_x.append(new_wavelength[i])
-                        self.reference_marks_y.append(self.filling_value)
+                        self.reference_marks_y.append(self.ref_filling_value)
                         self.raw_data_marks_x.append(new_physical[i])
-                        self.raw_data_marks_y.append(self.filling_value)
+                        self.raw_data_marks_y.append(self.raw_filling_value)
         return True
 
     def update_marks_plot(self, action=None):
@@ -1908,8 +1938,11 @@ class WavelengthCalibration(object):
                 try:
                     self.points_ref.remove()
                     self.ax3.relim()
+                    log.debug('Removing reference marks')
                 except:
+                    log.debug('Reference points is None')
                     pass
+            log.debug("Plot new marks")
             self.points_ref, = self.ax3.plot(self.reference_marks_x,
                                              self.reference_marks_y,
                                              linestyle='None',

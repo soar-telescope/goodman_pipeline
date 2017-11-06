@@ -84,8 +84,8 @@ class CleanLineList(object):
 
 if __name__ == '__main__':
     this_file_path = os.path.dirname(os.path.abspath(__file__)).split('/')[:-1]
-    this_file_path.append('goodman_spec')
-    this_file_path.append('refdata')
+    this_file_path.append('spectroscopy')
+    this_file_path.append('ref_comp')
 
     reference_dir = '/'.join(this_file_path)
 

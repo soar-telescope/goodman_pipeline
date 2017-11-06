@@ -4,7 +4,7 @@ import logging
 import numpy as np
 import random
 from ccdproc import ImageFileCollection
-from .core import fix_duplicated_keywords, remove_conflictive_keywords
+from ..core import fix_duplicated_keywords, remove_conflictive_keywords
 
 log = logging.getLogger('goodmanccd.dataclassifier')
 

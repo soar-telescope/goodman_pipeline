@@ -1,6 +1,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import os
+import sys
 import shutil
 import argparse
 import glob
@@ -64,7 +65,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--dcr-par-dir',
                         action='store',
-                        default='files/',
+                        default='data/params',
                         metavar='<dcr.par_directory>',
                         dest='dcr_par_dir',
                         help="Directory of default dcr.par file")
@@ -168,9 +169,12 @@ def get_args(arguments=None):
 
     # updated full path for default dcr.par file. If it doesn't exist it will
     # create an empty one.
-    dcr_par_full_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                 args.dcr_par_dir)
-    if not os.path.isdir(dcr_par_full_path) or args.dcr_par_dir != 'files/':
+    # print()
+    dcr_par_full_path = os.path.join(
+        os.path.dirname(sys.modules['goodman'].__file__),
+        args.dcr_par_dir)
+    # TODO (simon): Review the logic of the next if statement.
+    if not os.path.isdir(dcr_par_full_path) or args.dcr_par_dir != 'data/params':
         log.info("dcr.par default location doesn't exist.")
         try:
             os.path.os.makedirs(dcr_par_full_path)

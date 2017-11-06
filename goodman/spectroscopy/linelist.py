@@ -730,6 +730,7 @@ class ReferenceData(object):
         Returns:
             lines(list): Sorted line list.
         """
+        # TODO (simon): Make sure the line name is in lower case.
         lines = []
         if len(lamp_name) % 2 == 0:
             for element_index in range(0, len(lamp_name), 2):

@@ -14,8 +14,8 @@ from astropy.coordinates import EarthLocation
 from astropy.time import Time, TimeDelta
 from astroplan import Observer
 from astropy import units as u
-from .core import convert_time, get_twilight_time, ra_dec_to_deg
-from .core import NightDataContainer
+from ..core import convert_time, get_twilight_time, ra_dec_to_deg
+from ..core import NightDataContainer
 
 log = logging.getLogger('goodmanccd.nightorganizer')
 

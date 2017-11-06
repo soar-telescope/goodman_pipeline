@@ -1,0 +1,19 @@
+{
+  "mysql":{
+    "host":"localhost",
+    "user":"goodman",
+    "password":"g00dmAn1o9",
+    "database":"goodman_log",
+    "table":"telemetry"
+  },
+
+  "publisher":{
+    "ip":"*",
+    "port":"5556"
+  },
+
+  "subscriber":{
+    "server_ip":"localhost",
+    "listening_port":"5556"
+  }
+}

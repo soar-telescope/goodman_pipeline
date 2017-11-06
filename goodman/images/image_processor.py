@@ -13,15 +13,14 @@ import pandas
 
 from astropy import units as u
 from ccdproc import CCDData
-from .core import (image_overscan,
-                   image_trim,
-                   get_slit_trim_section,
-                   lacosmic_cosmicray_rejection,
-                   get_best_flat,
-                   normalize_master_flat,
-                   call_cosmic_rejection)
-
-from .wavmode_translator import SpectroscopicMode
+from ..core import (image_overscan,
+                    image_trim,
+                    get_slit_trim_section,
+                    lacosmic_cosmicray_rejection,
+                    get_best_flat,
+                    normalize_master_flat,
+                    call_cosmic_rejection,
+                    SpectroscopicMode)
 
 log = logging.getLogger('goodmanccd.imageprocessor')
 
@@ -447,7 +446,7 @@ class ImageProcessor(object):
                 astropy.io.fits.header.Header
             group (object): pandas.DataFrame instance. Contains filenames as
                 well as other important keywords that are defined in
-                goodman_ccd.night_organizer.NightOrganizer.keywords
+                ccd.night_organizer.NightOrganizer.keywords
             target_name (str): Optional science target name to be added to the
                 master flat name.
             get (bool): This option is used when trying to find a suitable 
