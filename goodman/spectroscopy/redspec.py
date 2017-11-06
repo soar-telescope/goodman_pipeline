@@ -205,7 +205,7 @@ class MainApp(object):
     smooth working in all the other modules.
 
     """
-    def __init__(self, args=None):
+    def __init__(self):
         """Init method for MainApp class
 
         This method initializes the arguments for the class, if they are not
@@ -216,20 +216,20 @@ class MainApp(object):
                 arguments.
         """
 
-        if args is None:
-            self.args = get_args()
-        else:
-            self.args = args
-
+        self.args = None
         self.wavelength_solution_obj = None
 
-    def __call__(self):
+    def __call__(self, args=None):
         """Call method for the MainApp class
 
         This method call the higher level functions in order to do the
         spectroscopic data reduction.
 
         """
+        if args is None:
+            self.args = get_args()
+        else:
+            self.args = args
 
         # data_container instance of NightDataContainer defined in core
         data_container = classify_spectroscopic_data(

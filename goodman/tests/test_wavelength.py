@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
-def test_class_initialization():
-    from ..spectroscopy.wavelength import WavelengthCalibration
+
+def test_wavevelengthcalibration_isntantiate():
+    from goodman.spectroscopy.wavelength import WavelengthCalibration
     from .test_redspec import test_get_args
     import os
 

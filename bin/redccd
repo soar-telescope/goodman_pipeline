@@ -1,8 +1,8 @@
 #!/usr/bin/env python2
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from goodman import images
+from goodman.images import MainApp
 
 if __name__ == '__main__':
-    GOODMAN_CCD = images.MainApp()
+    GOODMAN_CCD = MainApp()
     GOODMAN_CCD()

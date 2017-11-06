@@ -2,8 +2,8 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from goodman import spectroscopy
+from goodman.spectroscopy import MainApp
 
 if __name__ == '__main__':
-    GOODMAN_SPECTROSCOPY = spectroscopy.MainApp()
+    GOODMAN_SPECTROSCOPY = MainApp()
     GOODMAN_SPECTROSCOPY()
