@@ -400,7 +400,7 @@ class ImageProcessor(object):
                 log.error('Unknown observation technique: ' + self.technique)
             # TODO (simon): Improve this part. One hot pixel could rule out a
             # todo (cont): perfectly expososed image.
-            if ccd.data.max() > self.args.saturation_limit:
+            if ccd.data.max() > float(self.args.saturation_limit):
                 log.warning('Removing saturated image {:s}. Use --saturation '
                             'to change saturation level'.format(flat_file))
                 # import numpy as np

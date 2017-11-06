@@ -2,4 +2,4 @@
 
 """
 
-from goodman_ccd import MainApp, get_args
+from .goodman_ccd import MainApp, get_args

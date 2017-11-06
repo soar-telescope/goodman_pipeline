@@ -1,8 +1,9 @@
 #!/usr/bin/env python2
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import goodman.spectroscopy as goodman_spec
+
+from goodman import spectroscopy
 
 if __name__ == '__main__':
-    GOODMAN_SPECTROSCOPY = goodman_spec.MainApp()
+    GOODMAN_SPECTROSCOPY = spectroscopy.MainApp()
     GOODMAN_SPECTROSCOPY()

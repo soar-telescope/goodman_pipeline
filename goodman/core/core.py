@@ -491,18 +491,18 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     os.chdir(cwd)
 
     # If no error stderr is an empty string
-    if stderr != '':
+    if stderr != b'':
         log_ccd.error(stderr)
-        if 'dcr: not found' in stderr:
+        if b'dcr: not found' in stderr:
             sys.exit('Your system can not locate the executable file dcr, try '
-                 'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
+                     'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
                      'sudo ln -s /full/path/to/dcr')
     else:
-        for output_line in stdout.split('\n'):
+        for output_line in stdout.split(b'\n'):
             log_ccd.debug(output_line)
 
     # delete extra files only if the execution ended without error
-    if delete and stderr == '' and 'USAGE:' not in stdout:
+    if delete and stderr == b'' and b'USAGE:' not in stdout:
         try:
             log_ccd.warning('Removing input file: {:s}'.format(full_path_in))
             os.unlink(full_path_in)

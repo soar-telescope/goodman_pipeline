@@ -2,5 +2,5 @@
 
 """
 from __future__ import absolute_import
-from . import redspec
+from .redspec import MainApp, get_args
 
