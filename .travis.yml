@@ -1,0 +1,53 @@
+language: python
+python:
+- '2.7'
+- '3.5'
+- '3.6'
+
+branches:
+  only:
+  - master
+  - auto_test
+
+install:
+- sudo apt-get update
+
+# Here we install Anaconda to work with Virtual Environments. We do this
+# conditionally because it saves us some downloading if the version is the same.
+- if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+    wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
+  else
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  fi
+
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+
+# Adding AstroConda Channel since it contains most of the dependencies for
+# Dragons and Dragons-SOAR
+- conda config --add channels http://ssb.stsci.edu/astroconda
+- conda update -q conda
+
+# Useful for debugging any issues with conda
+- conda info -a
+
+# Create astroconda virtual environment
+- conda create -q -n astroconda stsci python=$TRAVIS_PYTHON_VERSION
+- source activate astroconda
+
+# Install Coveralls
+- pip install coveralls
+
+script:
+- pytest
+- coverage run --branch --source= setup.py test
+# TODO - How can I add the ./goodman as a source?
+
+after_success:
+- coveralls
+
+notifications:
+  slack:
+    secure: ErsZJHDjCk0YrG0bGRXK5f+812VgPxlHrOM5MxNkeyO7knPV+WPg0pHdRo6hFBqIdQqGlBCTATMB9vgMn3uS4BIwOWutgntLVcCm67EJObaV1rRQJqBgw4AHNdKhg7mlJQ/BQqVGsX2FuCMhce0zRV+fdiAWOfArQjlxftWJBQL1OcxOMLvtWZZCj5vS9hjcNxeV5vxsZt0tYkwfYraYHMBWbBFU0e5OxfKiqkUccc0zcsoNjnJCIeINEghz/6M/wSslkh5vEwSKLPRTnwOsUTV5oR8UgHqfTHTzENFl18vPodGTFfnAQaKQNwfclLXoD1O+NVTgARu6+ib0ZZs0GMx7pT1l6yMl1r5s4sN5+fci0fvqGgUvLXBoKnCprdNyLCiJS3ZmUqVK6uue1WWQPP5BbEWewvY89k/m5aAJqOAi6gMgLxkQT4xVnY/DIktj+YWrVEztOeDEcF36WGmMNHaq8gLgpFsuDYMXE/Jv2fJ7PEekBI/Mm3XpKG7XOQeGLGlD8jd5hOXTlzV3YA7D7jkiDQMxKIlBPXHZWWg54vWK4ycSTYBS42g0+owRv55YrUwBNklfh2gxQ6vQ6xJv0WeD8v+OWmWyQXNx7JVdaJOBW2JEKN7xkk1wnmqctk7DbKxY1GtUmJvTf/f/UPJBl7XOUtzEZ8vFwIveggRlYN8=

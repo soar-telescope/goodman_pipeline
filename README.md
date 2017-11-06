@@ -1,5 +1,8 @@
 # Goodman High Throughput Spectrograph Data Reduction Pipeline
 
+[![Build Status](https://travis-ci.org/soar-telescope/goodman.svg?branch=master)](https://travis-ci.org/soar-telescope/goodman)
+[![Coverage Status](https://coveralls.io/repos/github/soar-telescope/goodman/badge.svg?branch=master)](https://coveralls.io/github/soar-telescope/goodman?branch=master)
+
 The Goodman High Throughput Spectrograph (Goodman HTS) Data-Reduction Pipeline
 is the SOAR Telescope's official data reduction pipeline for _Goodman HTS_.
 
