@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 def test_get_args():
     from ..spectroscopy.redspec import get_args
     import argparse

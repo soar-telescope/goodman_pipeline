@@ -1,4 +1,4 @@
-
+from __future__ import absolute_import
 
 def test_class_initialization():
     from ..spectroscopy.wavelength import WavelengthCalibration
