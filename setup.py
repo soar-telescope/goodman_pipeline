@@ -80,13 +80,16 @@ setup(
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
 
-    packages=['goodman', 'goodman.core', 'goodman.images', 'goodman.spectroscopy', 'goodman.telemetry'],
+    packages=['goodman',
+              'goodman.core',
+              'goodman.images',
+              'goodman.spectroscopy',
+              'goodman.telemetry'],
 
-    package_dir={'goodman_ccd': 'goodman_ccd',
-                 'goodman_spec': 'goodman_spec'},
+    package_dir={'goodman': 'goodman'},
 
-    package_data={'goodman_ccd': ['files/dcr.par'],
-                  'goodman_spec': ['refdata/*fits']},
+    package_data={'goodman': ['data/params/dcr.par',
+                              'data/ref_comp/*fits']},
 
     scripts=['bin/redccd', 'bin/redspec'],
 
