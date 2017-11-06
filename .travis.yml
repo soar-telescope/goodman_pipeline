@@ -40,6 +40,9 @@ install:
 # Install Coveralls
 - pip install coveralls
 
+# Install ccdproc
+- pip install ccdproc
+
 script:
 - pytest
 - coverage run --branch --source= setup.py test
