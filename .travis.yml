@@ -40,7 +40,7 @@ install:
 # Install Coveralls
 - pip install coveralls
 
-# Install ccdproc
+# Install ccdprocQt5Agg
 - pip install ccdproc
 
 script:

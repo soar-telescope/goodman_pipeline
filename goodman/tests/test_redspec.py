@@ -12,5 +12,5 @@ def test_get_args():
     args = get_args(arguments)
 
     assert isinstance(args, argparse.Namespace)
-    assert args.search_pattern == 'test-pattern'
+    assert args.pattern == 'test-pattern'
     return args

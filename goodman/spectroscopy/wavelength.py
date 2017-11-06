@@ -154,7 +154,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
 
                         if plt.get_backend() == u'GTK3Agg':
                             manager.window.maximize()
-                        elif plt.get_backend() == u'Qt4Agg':
+                        elif plt.get_backend() == u'Qt5Agg':
                             manager.window.showMaximized()
 
                         for edata in extracted:
@@ -411,7 +411,7 @@ class WavelengthCalibration(object):
                         manager = plt.get_current_fig_manager()
                         if plt.get_backend() == u'GTK3Agg':
                             manager.window.maximize()
-                        elif plt.get_backend() == u'Qt4Agg':
+                        elif plt.get_backend() == u'Qt5Agg':
                             manager.window.showMaximized()
 
                         ax1.set_title(fig_title)
@@ -1241,7 +1241,7 @@ class WavelengthCalibration(object):
         self.evaluate_solution()
 
         if self.args.plot_results or self.args.debug_mode:
-            plt.switch_backend('Qt4Agg')
+            plt.switch_backend('Qt5Agg')
             if self.i_fig is None:
                 self.i_fig = plt.figure(figsize=(15, 10))
                 self.i_fig.canvas.set_window_title(
@@ -1259,7 +1259,7 @@ class WavelengthCalibration(object):
 
             if plt.get_backend() == u'GTK3Agg':
                 manager.window.maximize()
-            elif plt.get_backend() == u'Qt4Agg':
+            elif plt.get_backend() == u'Qt5Agg':
                 manager.window.showMaximized()
 
             self.ax1 = self.i_fig.add_subplot(111)
@@ -1386,11 +1386,11 @@ class WavelengthCalibration(object):
 
 
         Notes:
-            This method uses the Qt4Agg backend, in theory it could also work
-            with GTK3Agg but it is being forced to use Qt4Agg.
+            This method uses the Qt5Agg backend, in theory it could also work
+            with GTK3Agg but it is being forced to use Qt5Agg.
 
         """
-        plt.switch_backend('Qt4Agg')
+        plt.switch_backend('Qt5Agg')
 
         # disable full screen to allow the use of f for fitting the solution
 
@@ -1436,7 +1436,7 @@ class WavelengthCalibration(object):
         manager = plt.get_current_fig_manager()
         if plt.get_backend() == u'GTK3Agg':
             manager.window.maximize()
-        elif plt.get_backend() == u'Qt4Agg':
+        elif plt.get_backend() == u'Qt5Agg':
             manager.window.showMaximized()
 
         self.ax1.set_title('Raw Data - {:s}\n{:s} - {:s}'.format(
