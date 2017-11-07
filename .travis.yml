@@ -38,7 +38,7 @@ install:
 - source activate astroconda
 
 # Install packages
-- pip install -r requirements.txt
+- pip install coveralls
 - conda install -c astropy ccdproc
 
 
