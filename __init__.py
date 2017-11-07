@@ -1,1 +1,1 @@
-import goodman
+from . import goodman

@@ -1,14 +1,10 @@
-.. Goodman Pipelines documentation master file, created by
-   sphinx-quickstart on Mon Jan 30 18:51:30 2017.
+.. Goodman Spectroscopic Pipeline documentation master file, created by
+   sphinx-quickstart on Tue Nov  7 17:48:18 2017.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Goodman Pipelines's documentation!
-=============================================
-
-* :ref:`modindex`
-
-.. include:: README.rst
+Welcome to Goodman Spectroscopic Pipeline's documentation!
+==========================================================
 
 .. toctree::
    :maxdepth: 2

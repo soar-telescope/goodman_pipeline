@@ -3,10 +3,10 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = GoodmanPipelines
-SOURCEDIR     = source
-BUILDDIR      = /data/simon/documentation/soar/goodman/_pages/sphinx
+SPHINXBUILD   = python -msphinx
+SPHINXPROJ    = GoodmanSpectroscopicPipeline
+SOURCEDIR     = .
+BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".
 help:

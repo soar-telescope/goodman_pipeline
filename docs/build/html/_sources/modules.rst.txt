@@ -1,6 +1,0 @@
-goodman
-=======
-
-.. toctree::
-   :maxdepth: 4
-
