@@ -38,7 +38,7 @@ install:
 - source activate astroconda
 
 # Install packages
-- pip install coveralls
+- pip install coveralls astroplan
 - conda install -c astropy ccdproc
 
 
