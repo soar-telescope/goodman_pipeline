@@ -190,7 +190,7 @@ def get_args(arguments=None):
 
 class MainApp(object):
 
-    def __init__(self, args=None):
+    def __init__(self):
         """This method initializes the MainApp class
 
         The main task of this method is to call the get_args function that
@@ -198,21 +198,15 @@ class MainApp(object):
         The arguments will be obtained here and they will be available for all
         execution of the program.
         Other attributes will be initialized as None.
-
-        Args:
-            args (list): a list of arguments and values, this is useful when you
-                want to import the class.
         """
-        if args is None:
-            self.args = get_args()
-        else:
-            self.args = args
+
+        self.args = None
         self.data_container = None
         self.full_path = None
         # self.instrument = None
         # self.technique = None
     
-    def __call__(self):
+    def __call__(self, args=None):
         """Call method for MainApp
 
         From the arguments this method finds the raw_path attribute and checks
@@ -222,8 +216,15 @@ class MainApp(object):
         program will assume is a single data directory.
         Any subdirectory will be ignored.
 
+        Args:
+            args (list): a list of arguments and values, this is useful when you
+                want to import the class.
         """
 
+        if args is None:
+            self.args = get_args()
+        else:
+            self.args = args
         folders = glob.glob(os.path.join(self.args.raw_path, '*'))
         if any('.fits' in item for item in folders):
             folders = [self.args.raw_path]

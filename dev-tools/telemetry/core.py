@@ -3,13 +3,15 @@ import time
 import sys
 import os
 
-import MySQLdb
+# import MySQLdb
 import json
 
 import random
 
+import pkg_resources
 
-def load_config(name, config_file='./config.json'):
+
+def load_config(name, config_path=None):
     """Load configuration dictionary from json file
 
     Args:
@@ -21,15 +23,20 @@ def load_config(name, config_file='./config.json'):
           exist it will not return anything.
 
     """
-    if os.path.isfile(config_file):
-        with open('config.json') as json_config:
+    if config_path is None:
+        config_path = pkg_resources.resource_filename('goodman',
+                                                      'data/params/config.json')
+
+    if os.path.isfile(config_path):
+        with open(config_path) as json_config:
             config = json.load(json_config)
             try:
                 return config[name]
             except KeyError:
                 print('Configuration for {:s} does not exist.'.format(name))
     else:
-        print("Configuration file {:s} does not exist.".format(config_file))
+        print("Configuration file {:s} does not exist.".format(config_path))
+        raise FileNotFoundError
 
 
 class ZmqPublisher(object):
@@ -82,6 +89,7 @@ class ZmqSubscriber(object):
         """
         if host is None and port is None:
             self.config = load_config('subscriber')
+            # TODO (simon): do something if self.config is None
             host = self.config['server_ip']
             port = self.config['listening_port']
 
@@ -90,7 +98,7 @@ class ZmqSubscriber(object):
         self.socket = self.context.socket(zmq.SUB)
         self.socket.connect(self.server)
         # limit subscription to INSERT queries
-        self.socket.setsockopt(zmq.SUBSCRIBE, 'INSERT')
+        # self.socket.setsockopt(zmq.SUBSCRIBE, 'INSERT')
 
     def listen_and_print(self):
         """Listen to the publisher and prints any incomming message."""

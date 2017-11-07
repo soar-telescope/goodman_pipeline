@@ -21,7 +21,6 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the README file
 #with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #    long_description = f.read()
-
 setup(
     name='goodman',
 
@@ -83,12 +82,12 @@ setup(
     packages=['goodman',
               'goodman.core',
               'goodman.images',
-              'goodman.spectroscopy',
-              'goodman.telemetry'],
+              'goodman.spectroscopy'],
 
     package_dir={'goodman': 'goodman'},
 
     package_data={'goodman': ['data/params/dcr.par',
+                              'data/params/*.json',
                               'data/ref_comp/*fits']},
 
     scripts=['bin/redccd', 'bin/redspec'],
@@ -134,4 +133,5 @@ setup(
     #    ],
     #},
 )
+
 
