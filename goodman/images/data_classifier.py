@@ -34,6 +34,14 @@ class DataClassifier(object):
         self.objects_collection = None
         self.technique = None
 
+    def __str__(self):
+        return str("Raw Path: {:s}\n " \
+                   "Instrument: {:s} Camera\n " \
+                   "Observing Technique: {:s}".format(self.raw_path,
+                                                      self.instrument,
+                                                      self.technique))
+
+
     def __call__(self, raw_path):
         """Call method for the DataClassifier class
 

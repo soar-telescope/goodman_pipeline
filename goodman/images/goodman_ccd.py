@@ -201,7 +201,7 @@ class MainApp(object):
         """
 
         self.args = None
-        log.debug('Initializing DataClassifier Class')
+        log.debug('Initializing DataClassifier instance')
         self.data_classifier = DataClassifier()
         self.data_container = None
         self.full_path = None
@@ -227,6 +227,9 @@ class MainApp(object):
             self.args = get_args()
         else:
             self.args = args
+
+        # Division point for the future implementation of *live reduction mode*
+
         folders = glob.glob(os.path.join(self.args.raw_path, '*'))
         if any('.fits' in item for item in folders):
             folders = [self.args.raw_path]
@@ -237,9 +240,8 @@ class MainApp(object):
             self.args.raw_path = data_folder
 
             try:
-
                 # self.data_classifier = DataClassifier()
-                log.debug('Calling self.data_classifier Instance of DataClassifier')
+                log.debug('Calling data_classifier Instance of DataClassifier')
                 self.data_classifier(raw_path=self.args.raw_path)
                 # self.instrument = self.data_classifier.instrument
                 # self.technique = self.data_classifier.technique
