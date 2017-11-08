@@ -201,6 +201,8 @@ class MainApp(object):
         """
 
         self.args = None
+        log.debug('Initializing DataClassifier Class')
+        self.data_classifier = DataClassifier()
         self.data_container = None
         self.full_path = None
         # self.instrument = None
@@ -235,12 +237,12 @@ class MainApp(object):
             self.args.raw_path = data_folder
 
             try:
-                log.debug('Initializing DataClassifier Class')
-                night_sorter = DataClassifier(self.args)
-                log.debug('Calling night_sorter Instance of DataClassifier')
-                night_sorter()
-                # self.instrument = night_sorter.instrument
-                # self.technique = night_sorter.technique
+
+                # self.data_classifier = DataClassifier()
+                log.debug('Calling self.data_classifier Instance of DataClassifier')
+                self.data_classifier(raw_path=self.args.raw_path)
+                # self.instrument = self.data_classifier.instrument
+                # self.technique = self.data_classifier.technique
                 # print(self.instrument)
                 # print(self.technique)
             except AttributeError as error:
@@ -294,9 +296,9 @@ class MainApp(object):
                     log.error(error)
             # check ends
 
-            # print(night_sorter.nights_dict)
-            for night in night_sorter.nights_dict:
-                nd = night_sorter.nights_dict[night]
+            # print(self.data_classifier.nights_dict)
+            for night in self.data_classifier.nights_dict:
+                nd = self.data_classifier.nights_dict[night]
                 log.debug('Initializing NightOrganizer Class')
                 night_organizer = NightOrganizer(
                     full_path=nd['full_path'],

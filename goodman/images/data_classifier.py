@@ -20,33 +20,34 @@ class DataClassifier(object):
 
     """
 
-    def __init__(self, args):
+    def __init__(self):
         """Initialization method for the DataClassifier class
 
         The general arguments of the program are parsed and become part of the
         class attributes. The rest of attributes are initialized as None.
 
-        Args:
-            args (object): Argparse object
-
         """
-        self.args = args
+        self.raw_path = None
         self.nights_dict = None
         self.instrument = None
         self.image_collection = None
         self.objects_collection = None
         self.technique = None
 
-    def __call__(self):
+    def __call__(self, raw_path):
         """Call method for the DataClassifier class
 
         This method call specific method that define all the attributes of the
         class. The intention is to define the instrument and technique in use.
 
+        Args:
+            raw_path (str): Full Path to raw data
+
         """
+        self.raw_path = raw_path
         self.nights_dict = {}
-        log.debug('Raw path: ' + self.args.raw_path)
-        self.get_instrument(self.args.raw_path)
+        log.debug('Raw path: ' + self.raw_path)
+        self.get_instrument(self.raw_path)
         log.info('Instrument: ' + self.instrument + ' Camera')
         no_bias_collection = self.image_collection[
             self.image_collection.obstype != 'BIAS']
@@ -54,14 +55,14 @@ class DataClassifier(object):
         log.info('Observing Technique: ' + self.technique)
         if self.instrument is not None and self.technique is not None:
             # folder name is used as key for the dictionary
-            night = self.args.raw_path.split('/')[-1]
+            night = self.raw_path.split('/')[-1]
 
-            self.nights_dict[night] = {'full_path': self.args.raw_path,
+            self.nights_dict[night] = {'full_path': self.raw_path,
                                        'instrument': self.instrument,
                                        'technique': self.technique}
         else:
             log.error('Failed to determine Instrument or Technique '
-                      'for the night: {:s}'.format(self.args.raw_path))
+                      'for the night: {:s}'.format(self.raw_path))
 
     def get_instrument(self, night_folder):
         """Identify Goodman's Camera
@@ -143,7 +144,7 @@ class DataClassifier(object):
                 log.info('Detected Spectroscopy Data from RED Camera')
         elif self.instrument == 'Blue':
             file_list = self.image_collection.file.tolist()
-            remove_conflictive_keywords(path=self.args.raw_path,
+            remove_conflictive_keywords(path=self.raw_path,
                                         file_list=file_list)
             # gratings = image_collection.grating.unique()
             cam_targ = image_collection.cam_targ.unique()
