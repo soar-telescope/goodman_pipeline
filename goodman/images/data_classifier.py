@@ -41,7 +41,6 @@ class DataClassifier(object):
                                                       self.instrument,
                                                       self.technique))
 
-
     def __call__(self, raw_path):
         """Call method for the DataClassifier class
 
