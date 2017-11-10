@@ -174,8 +174,10 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                                                       object_number=object_number)
                         # return wsolution_obj
                 except NoTargetException:
-                    log.error('No target was identified')
-                    break
+                    log.error('No target was identified in file'
+                              ' {:s}'.format(spec_file))
+                    continue
+
     return True
 
 

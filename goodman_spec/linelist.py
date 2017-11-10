@@ -807,7 +807,6 @@ class ReferenceData(object):
              (self.ref_lamp_collection['object'] == header['object']))].tolist()
 
         if len(lamp_file_list) == 1:
-            print(lamp_file_list)
             return os.path.join(self.reference_dir, lamp_file_list[0])
         else:
             raise NotImplementedError

@@ -1,0 +1,35 @@
+Index: goodman_spec/linelist.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- goodman_spec/linelist.py	(revision 79fb5c06c57a62e50069743be7f2c66b1ff1eba3)
++++ goodman_spec/linelist.py	(revision )
+@@ -807,7 +807,6 @@
+              (self.ref_lamp_collection['object'] == header['object']))].tolist()
+ 
+         if len(lamp_file_list) == 1:
+-            print(lamp_file_list)
+             return os.path.join(self.reference_dir, lamp_file_list[0])
+         else:
+             raise NotImplementedError
+Index: goodman_spec/wavelength.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- goodman_spec/wavelength.py	(revision 79fb5c06c57a62e50069743be7f2c66b1ff1eba3)
++++ goodman_spec/wavelength.py	(revision )
+@@ -174,8 +174,10 @@
+                                                       object_number=object_number)
+                         # return wsolution_obj
+                 except NoTargetException:
+-                    log.error('No target was identified')
+-                    break
++                    log.error('No target was identified in file'
++                              ' {:s}'.format(spec_file))
++                    continue
++
+     return True
+ 
+ 
