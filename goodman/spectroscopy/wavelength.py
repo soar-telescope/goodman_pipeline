@@ -154,7 +154,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
 
                         if plt.get_backend() == u'GTK3Agg':
                             manager.window.maximize()
-                        elif plt.get_backend() == u'Qt5Agg':
+                        elif plt.get_backend() == u'Qt4Agg':
                             manager.window.showMaximized()
 
                         for edata in extracted:
@@ -413,7 +413,7 @@ class WavelengthCalibration(object):
                         manager = plt.get_current_fig_manager()
                         if plt.get_backend() == u'GTK3Agg':
                             manager.window.maximize()
-                        elif plt.get_backend() == u'Qt5Agg':
+                        elif plt.get_backend() == u'Qt4Agg':
                             manager.window.showMaximized()
 
                         ax1.set_title(fig_title)
@@ -545,8 +545,12 @@ class WavelengthCalibration(object):
             no_nan_lamp_data,
             None)
 
+        # replace None to zero and convert it to an array
+        none_to_zero = [0 if it is None else it for it in filtered_data]
+        filtered_data = np.array(none_to_zero)
+
         _upper_limit = no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()
-        slit_size = re.sub('[a-zA-Z" ]', '', lamp_header['slit'])
+        slit_size = np.float(re.sub('[a-zA-Z" ]', '', lamp_header['slit']))
 
         serial_binning, parallel_binning = [
             int(x) for x in lamp_header['CCDSUM'].split()]
@@ -557,7 +561,7 @@ class WavelengthCalibration(object):
         # print(round(new_order))
         peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
 
-        if slit_size >= 5:
+        if slit_size >= 5.:
 
             lines_center = self.recenter_broad_lines(lamp_data=no_nan_lamp_data,
                                                      lines=peaks,
@@ -1243,7 +1247,7 @@ class WavelengthCalibration(object):
         self.evaluate_solution()
 
         if self.args.plot_results or self.args.debug_mode:
-            plt.switch_backend('Qt5Agg')
+            plt.switch_backend('Qt4Agg')
             if self.i_fig is None:
                 self.i_fig = plt.figure(figsize=(15, 10))
                 self.i_fig.canvas.set_window_title(
@@ -1261,7 +1265,7 @@ class WavelengthCalibration(object):
 
             if plt.get_backend() == u'GTK3Agg':
                 manager.window.maximize()
-            elif plt.get_backend() == u'Qt5Agg':
+            elif plt.get_backend() == u'Qt4Agg':
                 manager.window.showMaximized()
 
             self.ax1 = self.i_fig.add_subplot(111)
@@ -1388,11 +1392,11 @@ class WavelengthCalibration(object):
 
 
         Notes:
-            This method uses the Qt5Agg backend, in theory it could also work
-            with GTK3Agg but it is being forced to use Qt5Agg.
+            This method uses the Qt4Agg backend, in theory it could also work
+            with GTK3Agg but it is being forced to use Qt4Agg.
 
         """
-        plt.switch_backend('Qt5Agg')
+        plt.switch_backend('Qt4Agg')
 
         # disable full screen to allow the use of f for fitting the solution
 
@@ -1438,7 +1442,7 @@ class WavelengthCalibration(object):
         manager = plt.get_current_fig_manager()
         if plt.get_backend() == u'GTK3Agg':
             manager.window.maximize()
-        elif plt.get_backend() == u'Qt5Agg':
+        elif plt.get_backend() == u'Qt4Agg':
             manager.window.showMaximized()
 
         self.ax1.set_title('Raw Data - {:s}\n{:s} - {:s}'.format(

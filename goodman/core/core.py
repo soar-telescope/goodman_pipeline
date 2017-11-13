@@ -16,7 +16,7 @@ import shutil
 import subprocess
 from threading import Timer
 
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt4Agg')
 from matplotlib import pyplot as plt
 from ccdproc import CCDData, ImageFileCollection
 from astropy.coordinates import EarthLocation
@@ -495,8 +495,8 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         log_ccd.error(stderr)
         if b'dcr: not found' in stderr:
             sys.exit('Your system can not locate the executable file dcr, try '
-                     'moving it to /bin or create a symbolic link\n\n\tcd /bin\n\t'
-                     'sudo ln -s /full/path/to/dcr')
+                     'moving it to /bin or create a symbolic link\n\n\tcd '
+                     '/bin\n\tsudo ln -s /full/path/to/dcr')
     else:
         for output_line in stdout.split(b'\n'):
             log_ccd.debug(output_line)
@@ -1340,6 +1340,12 @@ def identify_targets(ccd, nfind=3, plots=False):
         # print(_upper_limit)
         # print(np.median(final_profile))
 
+        # replace the None elements to zero.
+        none_to_zero_prof = [0 if it is None else it for it in filtered_profile]
+
+        # convert the list to array
+        filtered_profile = np.array(none_to_zero_prof)
+
         # find the peaks
         peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
 
@@ -1963,11 +1969,11 @@ def create_background_image(ccd, profile_model, nsigma, separation):
         target_mean = target.mean.value
         target_stddev = target.stddev.value
 
-        data_low_lim = np.max(
-            [0, target_mean - (nsigma / 2. + separation) * target_stddev])
+        data_low_lim = np.int(np.max(
+            [0, target_mean - (nsigma / 2. + separation) * target_stddev]))
 
-        data_high_lim = np.min([spatial_length, int(
-            target_mean + (nsigma / 2. + separation) * target_stddev)])
+        data_high_lim = np.int(np.min([spatial_length, int(
+            target_mean + (nsigma / 2. + separation) * target_stddev)]))
 
         background_ccd.data[data_low_lim:data_high_lim, :] = 0
 
@@ -2065,7 +2071,7 @@ def extract(ccd,
     else:
         raise NotImplementedError
     log_spec.debug('nccd.data is a masked array: '
-              '{:s}'.format(str(np.ma.isMaskedArray(nccd.data))))
+                   '{:s}'.format(str(np.ma.isMaskedArray(nccd.data))))
 
     nccd.data = np.ma.masked_invalid(nccd.data)
     # print(np.ma.isMaskedArray(nccd.data))
@@ -2112,7 +2118,7 @@ def extract(ccd,
             manager = plt.get_current_fig_manager()
             if plt.get_backend() == u'GTK3Agg':
                 manager.window.maximize()
-            elif plt.get_backend() == u'Qt5Agg':
+            elif plt.get_backend() == u'Qt4Agg':
                 manager.window.showMaximized()
 
             plt.title(nccd.header['OBJECT'])
@@ -2190,7 +2196,7 @@ def extract(ccd,
         #
         #     if plt.get_backend() == u'GTK3Agg':
         #         manager.window.maximize()
-        #     elif plt.get_backend() == u'Qt5Agg':
+        #     elif plt.get_backend() == u'Qt4Agg':
         #         manager.window.showMaximized()
         #
         #     plt.title(nccd.header['OBJECT'])

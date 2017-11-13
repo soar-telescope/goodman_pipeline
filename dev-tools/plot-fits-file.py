@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function,
 from ccdproc import CCDData
 import argparse
 import matplotlib
-matplotlib.use('Qt5Agg')
+matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 # disables the s key event for saving.
 # plt.rcParams['keymap.save'] = ''

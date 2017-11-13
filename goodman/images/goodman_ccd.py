@@ -7,7 +7,7 @@ import argparse
 import glob
 import logging
 import matplotlib
-matplotlib.use('Qt5Agg')
+matplotlib.use('Qt4Agg')
 
 from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
