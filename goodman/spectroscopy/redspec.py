@@ -20,8 +20,8 @@ import os
 import textwrap
 import argparse
 import logging
-import matplotlib
-matplotlib.use('Qt4Agg')
+# import matplotlib
+# matplotlib.use('Qt4Agg')
 import warnings
 
 
