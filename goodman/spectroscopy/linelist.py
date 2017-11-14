@@ -23,8 +23,8 @@ import ccdproc
 import re
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
-# log.basicConfig(level=log.DEBUG, format=FORMAT)
-log = logging.getLogger('redspec.linelist')
+# self.log.basicConfig(level=self.log.DEBUG, format=FORMAT)
+
 
 
 class ReferenceData(object):
@@ -45,6 +45,7 @@ class ReferenceData(object):
         Args:
             reference_dir (str): full path to the reference data directory
         """
+        self.log = logging.getLogger(__name__)
         self.reference_dir = reference_dir
         reference_collection = ccdproc.ImageFileCollection(self.reference_dir)
         self.ref_lamp_collection = reference_collection.summary.to_pandas()
@@ -764,7 +765,7 @@ class ReferenceData(object):
 
             return reference_lamp
         except KeyError:
-            log.error('Reference lamp %s does not exist', lamp_name)
+            self.log.error('Reference lamp %s does not exist', lamp_name)
             return None
 
     def get_best_reference_lamp(self, header):
@@ -795,14 +796,14 @@ class ReferenceData(object):
             #     print(lamp_pandas_data_frame)
 
         elif len(lamp_pandas_data_frame) == 1:
-            log.debug(lamp_pandas_data_frame.file.tolist()[0])
+            self.log.debug(lamp_pandas_data_frame.file.tolist()[0])
         else:
-            log.error('There is no reference lamp found')
+            self.log.error('There is no reference lamp found')
             raise NotImplementedError('Reference Lamp not found')
         try:
             lamp_name = lamp_pandas_data_frame.file.tolist()[0]
             ref_lamp_full_path = os.path.join(self.reference_dir, lamp_name)
-            log.debug('Reference Lamp Full Path' + ref_lamp_full_path)
+            self.log.debug('Reference Lamp Full Path' + ref_lamp_full_path)
             return ref_lamp_full_path
         except IndexError:
             raise NotImplementedError('No lamp found in reference files.')
@@ -854,5 +855,5 @@ class ReferenceData(object):
                 # print(linelist_file, pandas_data_frame, blue, red)
 
         else:
-            log.error('Error in the calibration lamp name: %s', name)
+            self.log.error('Error in the calibration lamp name: %s', name)
             return None

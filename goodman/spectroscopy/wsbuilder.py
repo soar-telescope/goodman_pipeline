@@ -12,8 +12,7 @@ import shlex
 from astropy.modeling import models, fitting
 from ccdproc import CCDData
 
-# log.basicConfig(level=log.DEBUG)
-log = logging.getLogger('redspec.wsbuilder')
+# self.log.basicConfig(level=self.log.DEBUG)
 
 
 class WavelengthFitter(object):
@@ -26,6 +25,7 @@ class WavelengthFitter(object):
             model (str): Name of the model to fit, Chebyshev (default) or Linear
             degree (int): Degree of the model. Only needed by Chebyshev model.
         """
+        self.log = logging.getLogger(__name__)
         self.model_name = model
         self.degree = degree
         self.model = None
@@ -66,11 +66,11 @@ class WavelengthFitter(object):
                 fitted_model = self.model_fit(self.model, physical, wavelength)
                 return fitted_model
             except TypeError as error:
-                log.info('Unable to do fit, please add more data points.')
-                log.error('TypeError: %s', error)
+                self.log.info('Unable to do fit, please add more data points.')
+                self.log.error('TypeError: %s', error)
                 return None
         else:
-            log.error('Either model or model fitter were not constructed')
+            self.log.error('Either model or model fitter were not constructed')
             return None
 
 
@@ -87,6 +87,7 @@ class ReadWavelengthSolution(object):
 
         """
         assert isinstance(ccd, CCDData)
+        self.log = logging.getLogger(__name__)
         self.ccd = ccd
         self.header = ccd.header
         self.data = ccd.data
@@ -116,7 +117,7 @@ class ReadWavelengthSolution(object):
         for dim in range(1, wcsdim + 1):
             ctypen = self.wcs.ctype[0]
             if ctypen == 'LINEAR':
-                log.info('Reading Linear Solution')
+                self.log.info('Reading Linear Solution')
                 # self.wcs_dict = {'dtype': 0}
                 self.math_model = self.linear_solution()
             elif ctypen == 'MULTISPE':
@@ -145,7 +146,7 @@ class ReadWavelengthSolution(object):
             # TODO (simon): What is the * (asterisc) doing here?.
             wat_head = header['WAT{:d}*'.format(dimension)]
             if len(wat_head) == 1:
-                log.debug('Get units')
+                self.log.debug('Get units')
                 wat_array = wat_head[0].split(' ')
                 for pair in wat_array:
                     split_pair = pair.split('=')
@@ -164,7 +165,7 @@ class ReadWavelengthSolution(object):
 
         for key in self.wat_wcs_dict.keys():
 
-            log.debug("{:d} -{:s}- {:s}".format(dimension,
+            self.log.debug("{:d} -{:s}- {:s}".format(dimension,
                                                 key,
                                                 self.wat_wcs_dict[key]))
 
@@ -325,6 +326,7 @@ class ReadMathFunctions(object):
             wcs_dict (dict): Dictionary that contains all the information
                 regarding the wavelength solution or WCS.
         """
+        self.log = logging.getLogger(__name__)
         self.wcs = wcs_dict
         self.solution = None
         if self.wcs['dtype'] == -1:
@@ -349,9 +351,9 @@ class ReadMathFunctions(object):
                 # sampled coordinate array
                 pass
             else:
-                log.error('Not Implemented')
+                self.log.error('Not Implemented')
         else:
-            log.error('Not Implemented')
+            self.log.error('Not Implemented')
 
     @staticmethod
     def none():
@@ -414,7 +416,7 @@ class ReadMathFunctions(object):
         if self.solution is not None:
             return self.solution
         else:
-            log.error("The solution hasn't been found")
+            self.log.error("The solution hasn't been found")
 
 if __name__ == '__main__':
     pass

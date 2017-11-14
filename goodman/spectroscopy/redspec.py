@@ -29,9 +29,6 @@ warnings.filterwarnings('ignore')
 FORMAT = '%(levelname)s: %(asctime)s:%(module)s.%(funcName)s: %(message)s'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_spec.log'
-logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
-# TODO (simon): Check the use of getLogger versus Logger
-log = logging.getLogger('redspec')
 
 __author__ = 'Simon Torres'
 __date__ = '2016-06-28'
@@ -55,6 +52,7 @@ def get_args(arguments=None):
         system
 
     """
+    log = logging.getLogger(__name__)
     global LOG_FILENAME
     leave = False
     parser = argparse.ArgumentParser(
@@ -175,7 +173,7 @@ def get_args(arguments=None):
     # print(sys.modules['goodman.goodman'].__file__)
 
     ref_full_path = os.path.join(
-        os.path.dirname(sys.modules['goodman.goodman'].__file__),
+        os.path.dirname(sys.modules['goodman'].__file__),
         args.reference_dir)
     if not os.path.isdir(ref_full_path):
         log.info("Reference files directory doesn't exist.")
@@ -227,6 +225,10 @@ class MainApp(object):
                 arguments.
         """
 
+        logging.basicConfig(level=logging.INFO,
+                            format=FORMAT,
+                            datefmt=DATE_FORMAT)
+        self.log = logging.getLogger(__name__)
         self.args = None
         self.wavelength_solution_obj = None
 
@@ -246,8 +248,9 @@ class MainApp(object):
         data_container = classify_spectroscopic_data(
             path=self.args.source,
             search_pattern=self.args.pattern)
-        log.debug("Got data container")
-        print(data_container.is_empty)
+        self.log.debug("Got data container")
+        if data_container.is_empty:
+            sys.exit("Unable to find or classify data")
 
         # print('data_container.bias')
         # print(data_container.bias)
@@ -261,7 +264,6 @@ class MainApp(object):
         # print(data_container.data_groups)
         # print('data_container.spec_groups')
         # print(data_container.spec_groups)
-
 
         self.wavelength_solution_obj = process_spectroscopy_data(
             data_container=data_container,
