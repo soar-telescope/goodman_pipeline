@@ -23,9 +23,7 @@ FORMAT = '%(levelname)s: %(asctime)s: %(module)s.%(funcName)s: %(message)s'
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_ccd.log'
-logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATE_FORMAT)
-# TODO (simon): Check the use of getLogger versus Logger
-log = logging.getLogger('goodmanccd')
+
 
 
 def get_args(arguments=None):
@@ -43,6 +41,7 @@ def get_args(arguments=None):
             attributes
 
     """
+    log = logging.getLogger(__name__)
     global LOG_FILENAME
 
     parser = argparse.ArgumentParser(
@@ -173,7 +172,7 @@ def get_args(arguments=None):
 
     # updated full path for default dcr.par file. If it doesn't exist it will
     # create an empty one.
-    # print()
+    # print(sys.modules['goodman'].__file__)
     dcr_par_full_path = os.path.join(
         os.path.dirname(sys.modules['goodman'].__file__),
         args.dcr_par_dir)
@@ -204,8 +203,12 @@ class MainApp(object):
         Other attributes will be initialized as None.
         """
 
+        logging.basicConfig(level=logging.INFO,
+                            format=FORMAT,
+                            datefmt=DATE_FORMAT)
+        self.log = logging.getLogger(__name__)
         self.args = None
-        log.debug('Initializing DataClassifier instance')
+        self.log.debug('Initializing DataClassifier instance')
         self.data_classifier = DataClassifier()
         self.data_container = None
         self.full_path = None
@@ -245,15 +248,15 @@ class MainApp(object):
 
             try:
                 # self.data_classifier = DataClassifier()
-                log.debug('Calling data_classifier Instance of DataClassifier')
+                self.log.debug('Calling data_classifier Instance of DataClassifier')
                 self.data_classifier(raw_path=self.args.raw_path)
                 # self.instrument = self.data_classifier.instrument
                 # self.technique = self.data_classifier.technique
                 # print(self.instrument)
                 # print(self.technique)
             except AttributeError as error:
-                log.error(error)
-                log.error('Empty or Invalid data directory:'
+                self.log.error(error)
+                self.log.error('Empty or Invalid data directory:'
                           '{:s}'.format(data_folder))
                 continue
 
@@ -261,7 +264,7 @@ class MainApp(object):
             # self.args.raw_path = data_folder
             if self.args.red_path == './RED' or len(folders) > 1:
 
-                log.info('No special reduced data path defined. '
+                self.log.info('No special reduced data path defined. '
                          'Proceeding with defaults.')
 
                 if self.args.raw_path not in self.args.red_path:
@@ -270,42 +273,42 @@ class MainApp(object):
 
             if os.path.isdir(self.args.red_path):
                 if os.listdir(self.args.red_path) != []:
-                    log.warning('Reduced Data Path is not empty')
+                    self.log.warning('Reduced Data Path is not empty')
                     if self.args.auto_clean:
                         for _file in os.listdir(self.args.red_path):
                             try:
                                 os.unlink(os.path.join(self.args.red_path,
                                                        _file))
                             except OSError as error:
-                                log.error('OSError: {:s}'.format(error))
-                                log.warning('Removing Directory '
+                                self.log.error('OSError: {:s}'.format(str(error)))
+                                self.log.warning('Removing Directory '
                                             '{:s}'.format(_file))
 
                                 shutil.rmtree(os.path.join(self.args.red_path,
                                                            _file))
 
-                        log.info('Cleaned Reduced data directory:'
+                        self.log.info('Cleaned Reduced data directory:'
                                  ' {:s}'.format(self.args.red_path))
                     else:
-                        log.error('Please clean the reduced data folder or '
+                        self.log.error('Please clean the reduced data folder or '
                                   'use --auto-clean')
                         break
                 self.args.red_path = os.path.abspath(self.args.red_path)
-                log.debug(os.path.abspath(self.args.red_path))
+                self.log.debug(os.path.abspath(self.args.red_path))
             else:
                 try:
-                    log.warning("Reduction folder doesn't exist.")
+                    self.log.warning("Reduction folder doesn't exist.")
                     os.mkdir(os.path.abspath(self.args.red_path))
-                    log.info('Created reduced data directory!')
-                    log.info(os.path.abspath(self.args.red_path))
+                    self.log.info('Created reduced data directory!')
+                    self.log.info(os.path.abspath(self.args.red_path))
                 except OSError as error:
-                    log.error(error)
+                    self.log.error(error)
             # check ends
 
             # print(self.data_classifier.nights_dict)
             for night in self.data_classifier.nights_dict:
                 nd = self.data_classifier.nights_dict[night]
-                log.debug('Initializing NightOrganizer Class')
+                self.log.debug('Initializing NightOrganizer Class')
                 night_organizer = NightOrganizer(
                     full_path=nd['full_path'],
                     instrument=nd['instrument'],
@@ -313,10 +316,10 @@ class MainApp(object):
                     ignore_bias=self.args.ignore_bias,
                     ignore_flats=self.args.ignore_flats)
 
-                log.debug('Calling night_organizer instance')
+                self.log.debug('Calling night_organizer instance')
                 self.data_container = night_organizer()
                 if self.data_container is None or self.data_container is None:
-                    log.error('Discarding night ' + str(night))
+                    self.log.error('Discarding night ' + str(night))
                     break
                 process_images = ImageProcessor(self.args, self.data_container)
                 process_images()

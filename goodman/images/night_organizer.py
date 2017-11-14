@@ -17,7 +17,9 @@ from astropy import units as u
 from ..core import convert_time, get_twilight_time, ra_dec_to_deg
 from ..core import NightDataContainer
 
-log = logging.getLogger('goodmanccd.nightorganizer')
+# log = logging.getLogger(__name__)
+
+
 
 
 class NightOrganizer(object):
@@ -37,6 +39,7 @@ class NightOrganizer(object):
             and observational technique.
 
         """
+        self.log = logging.getLogger(__name__)
         self.path = full_path
         self.instrument = instrument
         self.technique = technique
@@ -109,20 +112,20 @@ class NightOrganizer(object):
             self.imaging_night()
 
         if self.data_container.is_empty:
-            log.debug('data_container is empty')
+            self.log.debug('data_container is empty')
             sys.exit('ERROR: There is no data to process!')
         else:
-            log.debug('Returning classified data')
+            self.log.debug('Returning classified data')
             return self.data_container
 
     def initial_checks(self):
         readout_confs = self.file_collection.groupby(['gain', 'rdnoise'])
         if len(readout_confs) > 1:
 
-            log.warning('There are {:d} different readout modes in the '
+            self.log.warning('There are {:d} different readout modes in the '
                         'data.'.format(len(readout_confs)))
 
-            log.info('Sleeping 10 seconds')
+            self.log.info('Sleeping 10 seconds')
             time.sleep(10)
 
     def spectroscopy_night(self, file_collection, data_container):
@@ -162,7 +165,7 @@ class NightOrganizer(object):
 
         if not self.ignore_bias:
             if len(bias_collection) == 0:
-                log.critical('There is no BIAS images. Use --ignore-bias to '
+                self.log.critical('There is no BIAS images. Use --ignore-bias to '
                              'continue without BIAS.')
                 sys.exit('CRITICAL ERROR: BIAS not Found.')
             else:
@@ -187,15 +190,15 @@ class NightOrganizer(object):
 
                     data_container.add_bias(bias_group=bias_group)
         else:
-            log.warning('Ignoring BIAS by request.')
+            self.log.warning('Ignoring BIAS by request.')
 
         if 'FLAT' not in file_collection.obstype.unique() and \
                 not self.ignore_flats:
-            log.critical('There is no FLAT images. Use --ignore-flats to '
+            self.log.critical('There is no FLAT images. Use --ignore-flats to '
                          'continue without FLATs.')
             sys.exit('CRITICAL ERROR: FLAT not Found.')
         elif self.ignore_flats:
-            log.warning('Ignoring FLAT images on request.')
+            self.log.warning('Ignoring FLAT images on request.')
             data_collection = file_collection[
                 ((file_collection.obstype != 'BIAS') &
                  (file_collection.obstype != 'FLAT'))]
@@ -288,7 +291,7 @@ class NightOrganizer(object):
 
                 self.data_container.add_bias(bias_group)
         else:
-            log.error('Not enough bias images.')
+            self.log.error('Not enough bias images.')
 
         # flats separation
         flat_data = self.file_collection[self.file_collection.obstype == 'FLAT']
@@ -302,7 +305,7 @@ class NightOrganizer(object):
 
             flat_group = flat_data[
                 ((flat_data['object'] == confs.iloc[i]['object']) &
-                (flat_data['filter'] == confs.iloc[i]['filter']))]
+                 (flat_data['filter'] == confs.iloc[i]['filter']))]
 
             self.data_container.add_day_flats(flat_group)
 
