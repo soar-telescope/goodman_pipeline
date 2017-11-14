@@ -1096,8 +1096,8 @@ class WavelengthCalibration(object):
             # TODO (simon): Evaluate if send this to interactive mode
             return None
 
-        read_wsolution = ReadWavelengthSolution(
-            header=reference_lamp_data.header, data=reference_lamp_data.data)
+
+        read_wsolution = ReadWavelengthSolution(ccd=reference_lamp_data)
 
         reference_lamp_wav_axis, reference_lamp_data.data = read_wsolution()
         reference_lamp_copy = reference_lamp_data.copy()
@@ -1203,7 +1203,8 @@ class WavelengthCalibration(object):
             for i in range(len(clipped_values)):
                 if clipped_values[i] is not np.ma.masked:
                     pixel_values.append(_pixel_values[i])
-                    angstrom_values.append(_angstrom_values[i])
+                    # print(_angstrom_values[i][0])
+                    angstrom_values.append(_angstrom_values[i][0])
 
         # Create a wavelength solution
         log.info('Creating Wavelength Solution')

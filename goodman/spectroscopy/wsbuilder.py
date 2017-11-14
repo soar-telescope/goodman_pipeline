@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import shlex
 
 from astropy.modeling import models, fitting
+from ccdproc import CCDData
 
 # log.basicConfig(level=log.DEBUG)
 log = logging.getLogger('redspec.wsbuilder')
@@ -61,8 +62,7 @@ class WavelengthFitter(object):
         """
         if self.model and self.model_fit is not None:
             try:
-                # print(physical)
-                # print(wavelength)
+
                 fitted_model = self.model_fit(self.model, physical, wavelength)
                 return fitted_model
             except TypeError as error:
@@ -77,7 +77,7 @@ class WavelengthFitter(object):
 class ReadWavelengthSolution(object):
     """Read wavelength solutions from a fits header"""
 
-    def __init__(self, header, data):
+    def __init__(self, ccd):
         """Initializes the ReadWavelengthSolution class
 
         Args:
@@ -86,8 +86,11 @@ class ReadWavelengthSolution(object):
                 ccdproc.CCDData instance.
 
         """
-        self.header = header
-        self.data = data
+        assert isinstance(ccd, CCDData)
+        self.ccd = ccd
+        self.header = ccd.header
+        self.data = ccd.data
+        self.wcs = ccd.wcs.wcs
         self.wat_wcs_dict = dict()
         self.wcs_dict = dict()
         self.wave_intens = []
@@ -108,9 +111,10 @@ class ReadWavelengthSolution(object):
             A two dimension list in which the first element is the wavelength
             axis in angstrom and the second is the intensity axis in ADU.
         """
-        wcsdim = int(self.header['WCSDIM'])
+        # wcsdim = int(self.header['WCSDIM'])
+        wcsdim = self.wcs.naxis
         for dim in range(1, wcsdim + 1):
-            ctypen = self.header['CTYPE%s' % dim]
+            ctypen = self.wcs.ctype[0]
             if ctypen == 'LINEAR':
                 log.info('Reading Linear Solution')
                 # self.wcs_dict = {'dtype': 0}
@@ -118,6 +122,7 @@ class ReadWavelengthSolution(object):
             elif ctypen == 'MULTISPE':
                 self.non_linear_solution(dim)
         return self.wave_intens
+
 
     def non_linear_solution(self, dimension):
         """Non linear solutions reader
@@ -239,6 +244,41 @@ class ReadWavelengthSolution(object):
             plt.show()
             # print(spec)
 
+    # def linear_solution(self):
+    #     """Linear solution reader
+    #
+    #     This method read the apropriate keywords and defines a linear wavelength
+    #     solution
+    #
+    #     Returns:
+    #         Callable wavelength solution model. Instance of
+    #             astropy.modeling.Model
+    #     """
+    #     crval = float(self.header['CRVAL1'])
+    #     crpix = int(self.header['CRPIX1'])
+    #
+    #     # workaround for some notations
+    #     try:
+    #
+    #         cdelt = float(self.header['CDELT1'])
+    #
+    #     except KeyError:
+    #         cdelt = float(self.header['CD1_1'])
+    #
+    #     self.wcs_dict = {'crval': crval,
+    #                      'crpix': crpix,
+    #                      'cdelt': cdelt,
+    #                      'dtype': 0}
+    #
+    #     math_function = ReadMathFunctions(self.wcs_dict)
+    #     solution = math_function.get_solution()
+    #
+    #     x_axis = range(len(self.data))
+    #
+    #     self.wave_intens = [solution(x_axis), self.data]
+    #
+    #     return solution
+
     def linear_solution(self):
         """Linear solution reader
 
@@ -249,20 +289,20 @@ class ReadWavelengthSolution(object):
             Callable wavelength solution model. Instance of
                 astropy.modeling.Model
         """
-        crval = float(self.header['CRVAL1'])
-        crpix = int(self.header['CRPIX1'])
+        # crval = float(self.header['CRVAL1'])
+        # crpix = int(self.header['CRPIX1'])
+        #
+        # # workaround for some notations
+        # try:
+        #
+        #     cdelt = float(self.header['CDELT1'])
+        #
+        # except KeyError:
+        #     cdelt = float(self.header['CD1_1'])
 
-        # workaround for some notations
-        try:
-
-            cdelt = float(self.header['CDELT1'])
-
-        except KeyError:
-            cdelt = float(self.header['CD1_1'])
-
-        self.wcs_dict = {'crval': crval,
-                         'crpix': crpix,
-                         'cdelt': cdelt,
+        self.wcs_dict = {'crval': self.wcs.crval[0],
+                         'crpix': self.wcs.crpix[0],
+                         'cdelt': self.wcs.cd[0],
                          'dtype': 0}
 
         math_function = ReadMathFunctions(self.wcs_dict)
