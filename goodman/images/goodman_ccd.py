@@ -43,6 +43,7 @@ def get_args(arguments=None):
             attributes
 
     """
+    global LOG_FILENAME
 
     parser = argparse.ArgumentParser(
         description="Goodman CCD Reduction - CCD reductions for Goodman "
@@ -119,7 +120,7 @@ def get_args(arguments=None):
                         metavar='<log_file>',
                         default=LOG_FILENAME,
                         help="Name for log file. "
-                             "Default name is {:s}. "
+                             "Default name is <{:s}>. "
                              "The file is written in <red_path> and will be "
                              "deleted each time you run this "
                              "program".format(LOG_FILENAME))
@@ -150,9 +151,12 @@ def get_args(arguments=None):
     # define log file
     # the log file will be stored in the same directory that the program
     # is called
+    if args.log_file != LOG_FILENAME:
+        LOG_FILENAME = args.log_file
+
     log.info('Logging to file {:s}'.format(LOG_FILENAME))
     file_handler = logging.FileHandler(filename=LOG_FILENAME)
-    file_handler.setLevel(level=logging.INFO)
+    # file_handler.setLevel(level=logging.INFO)
     formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
     file_handler.setFormatter(fmt=formatter)
     log.addHandler(file_handler)

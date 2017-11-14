@@ -55,6 +55,7 @@ def get_args(arguments=None):
         system
 
     """
+    global LOG_FILENAME
     leave = False
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -124,10 +125,16 @@ def get_args(arguments=None):
                         dest='debug_mode',
                         help="Debugging Mode")
 
-    parser.add_argument('--log-to-file',
-                        action='store_true',
-                        dest='log_to_file',
-                        help="Write log to a file")
+    parser.add_argument('--log-file',
+                        action='store',
+                        dest='log_file',
+                        metavar='<log_file>',
+                        default=LOG_FILENAME,
+                        help="Name for log file. "
+                             "Default name is <{:s}>. "
+                             "The file is written in <red_path> and will be "
+                             "deleted each time you run this "
+                             "program".format(LOG_FILENAME))
 
     parser.add_argument('--max-targets',
                         action='store',
@@ -150,12 +157,14 @@ def get_args(arguments=None):
 
     args = parser.parse_args(args=arguments)
 
-    if args.log_to_file:
-        log.info('Logging to file {:s}'.format(LOG_FILENAME))
-        file_handler = logging.FileHandler(LOG_FILENAME)
-        formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
-        file_handler.setFormatter(fmt=formatter)
-        log.addHandler(file_handler)
+    if args.log_file != LOG_FILENAME:
+        LOG_FILENAME = args.log_file
+
+    log.info('Logging to file {:s}'.format(LOG_FILENAME))
+    file_handler = logging.FileHandler(LOG_FILENAME)
+    formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
+    file_handler.setFormatter(fmt=formatter)
+    log.addHandler(file_handler)
 
     if args.debug_mode:
         log.info('Changing log level to DEBUG.')
