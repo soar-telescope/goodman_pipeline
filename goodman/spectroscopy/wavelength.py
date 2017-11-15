@@ -119,6 +119,10 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 else:
                     log.warning('Data will be extracted but not calibrated')
 
+
+            COMBINE = True
+            if len(object_group.file.tolist()) > 1 and COMBINE:
+                print("Combine Here")
             for spec_file in object_group.file.tolist():
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
