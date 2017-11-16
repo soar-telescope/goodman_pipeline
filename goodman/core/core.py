@@ -16,7 +16,7 @@ import shutil
 import subprocess
 from threading import Timer
 
-# matplotlib.use('Qt4Agg')
+# matplotlib.use('Qt5Agg')
 from matplotlib import pyplot as plt
 from ccdproc import CCDData, ImageFileCollection
 from astropy.coordinates import EarthLocation
@@ -2118,7 +2118,7 @@ def extract(ccd,
             manager = plt.get_current_fig_manager()
             if plt.get_backend() == u'GTK3Agg':
                 manager.window.maximize()
-            elif plt.get_backend() == u'Qt4Agg':
+            elif plt.get_backend() == u'Qt5Agg':
                 manager.window.showMaximized()
 
             plt.title(nccd.header['OBJECT'])
@@ -2196,7 +2196,7 @@ def extract(ccd,
         #
         #     if plt.get_backend() == u'GTK3Agg':
         #         manager.window.maximize()
-        #     elif plt.get_backend() == u'Qt4Agg':
+        #     elif plt.get_backend() == u'Qt5Agg':
         #         manager.window.showMaximized()
         #
         #     plt.title(nccd.header['OBJECT'])

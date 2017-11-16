@@ -1,3 +1,6 @@
 ccdproc
 coveralls
 astroplan
+matplotlib
+scipy
+astropy

@@ -21,7 +21,7 @@ import textwrap
 import argparse
 import logging
 # import matplotlib
-# matplotlib.use('Qt4Agg')
+# matplotlib.use('Qt5Agg')
 import warnings
 
 

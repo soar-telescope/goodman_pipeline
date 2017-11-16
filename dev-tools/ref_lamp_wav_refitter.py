@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 import os
 import glob
 import matplotlib
-matplotlib.use('Qt4Agg')
+matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 from ccdproc import CCDData
 from astropy import units as u
