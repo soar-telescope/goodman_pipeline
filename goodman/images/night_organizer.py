@@ -271,7 +271,7 @@ class NightOrganizer(object):
                                                morning=morning_twilight)
 
         bias_group = self.file_collection[
-            self.file_collection.obstype == 'BIAS'] # .tolist()
+            self.file_collection.obstype == 'BIAS']  # .tolist()
 
         if len(bias_group) > 2:
 

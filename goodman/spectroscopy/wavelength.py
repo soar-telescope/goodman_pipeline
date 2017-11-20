@@ -2339,17 +2339,24 @@ class WavelengthCalibration(object):
             necessary since there is no further processing
 
         """
+        rms_error, n_points, n_rejections = self.evaluate_solution()
+
+        # gsp_wser = rms_error
+        # gsp_wpoi = n_points
+        # gsp_wrej = n_rejections
+        new_header['GSP_WRMS'] = (rms_error,
+                                  'Wavelength solution RMS Error')
+        new_header['GSP_WPOI'] = (n_points, 'Number of points used to '
+                                            'calculate wavelength solution')
+        new_header['GSP_WREJ'] = (n_rejections, 'Number of points rejected')
+
         if evaluation_comment is None:
-            rms_error, n_points, n_rejections = self.evaluate_solution()
             self.evaluation_comment = 'Lamp Solution RMSE = {:.3f} ' \
                                       'Npoints = {:d}, ' \
                                       'NRej = {:d}'.format(rms_error,
                                                            n_points,
                                                            n_rejections)
 
-            new_header['HISTORY'] = self.evaluation_comment
-        else:
-            new_header['HISTORY'] = evaluation_comment
 
         new_crpix = 1
         new_crval = spectrum[0][new_crpix - 1]
