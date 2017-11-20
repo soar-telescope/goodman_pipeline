@@ -7,8 +7,10 @@ standard.
 """
 
 # TODO Reformat file - It is confusing at the moment
-# TODO Reformat _ Re-order imports (first "import ...", then "from ... import ..." alphabetically)
-# TODO (simon): Discuss this because there are other rules that will probably conflict with this request.
+# TODO Reformat _ Re-order imports (first "import ...", then
+# "from ... import ..." alphabetically)
+# TODO (simon): Discuss this because there are other rules that will probably
+# conflict with this request.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import astropy.units as u
@@ -119,18 +121,22 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 else:
                     log.warning('Data will be extracted but not calibrated')
 
+
+            COMBINE = True
+            if len(object_group.file.tolist()) > 1 and COMBINE:
+                print("Combine Here")
             for spec_file in object_group.file.tolist():
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
                 ccd = CCDData.read(file_path, unit=u.adu)
                 ccd.header = add_wcs_keys(header=ccd.header)
-                ccd.header['OFNAME'] = (spec_file, 'Original File Name')
+                ccd.header['GSP_FNAM'] = (spec_file, 'Original File Name')
                 if comp_group is not None and comp_ccd_list == []:
                     for comp_file in comp_group.file.tolist():
                         comp_path = os.path.join(full_path, comp_file)
                         comp_ccd = CCDData.read(comp_path, unit=u.adu)
                         comp_ccd.header = add_wcs_keys(header=comp_ccd.header)
-                        comp_ccd.header['OFNAME'] = (comp_file,
+                        comp_ccd.header['GSP_NAM'] = (comp_file,
                                                      'Original File Name')
                         comp_ccd_list.append(comp_ccd)
                         # plt.imshow(comp_ccd.data)
@@ -328,7 +334,7 @@ class WavelengthCalibration(object):
             for lamp_ccd in comp_list:
 
                 try:
-                    self.calibration_lamp = lamp_ccd.header['OFNAME']
+                    self.calibration_lamp = lamp_ccd.header['GSP_FNAM']
                 except KeyError:
                     self.calibration_lamp = ''
 
@@ -381,7 +387,7 @@ class WavelengthCalibration(object):
                     self.header = self.add_wavelength_solution(
                         new_header=ccd.header,
                         spectrum=self.linearized_sci,
-                        original_filename=ccd.header['OFNAME'],
+                        original_filename=ccd.header['GSP_FNAM'],
                         index=object_number)
 
 
@@ -412,7 +418,7 @@ class WavelengthCalibration(object):
                                     '{:s}\n{:s}'.format(object_name, grating)
 
                         fig = plt.figure()
-                        fig.canvas.set_window_title(ccd.header['OFNAME'])
+                        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
                         ax1 = fig.add_subplot(111)
                         manager = plt.get_current_fig_manager()
                         if plt.get_backend() == u'GTK3Agg':
@@ -439,7 +445,7 @@ class WavelengthCalibration(object):
                                 os.mkdir(plots_dir)
                             plot_name = re.sub('.fits',
                                                '.png',
-                                               ccd.header['OFNAME'])
+                                               ccd.header['GSP_FNAM'])
                             plot_path = os.path.join(plots_dir, plot_name)
                             # print(plot_path)
                             plt.savefig(plot_path, dpi=300)
@@ -599,8 +605,7 @@ class WavelengthCalibration(object):
 
         return lines_center
 
-    @staticmethod
-    def get_best_filling_value(data):
+    def get_best_filling_value(self, data):
         """Find the best y-value to locate marks
 
         The autmatically added points will be placed at a fixed location in the
@@ -2335,17 +2340,24 @@ class WavelengthCalibration(object):
             necessary since there is no further processing
 
         """
+        rms_error, n_points, n_rejections = self.evaluate_solution()
+
+        # gsp_wser = rms_error
+        # gsp_wpoi = n_points
+        # gsp_wrej = n_rejections
+        new_header['GSP_WRMS'] = (rms_error,
+                                  'Wavelength solution RMS Error')
+        new_header['GSP_WPOI'] = (n_points, 'Number of points used to '
+                                            'calculate wavelength solution')
+        new_header['GSP_WREJ'] = (n_rejections, 'Number of points rejected')
+
         if evaluation_comment is None:
-            rms_error, n_points, n_rejections = self.evaluate_solution()
             self.evaluation_comment = 'Lamp Solution RMSE = {:.3f} ' \
                                       'Npoints = {:d}, ' \
                                       'NRej = {:d}'.format(rms_error,
                                                            n_points,
                                                            n_rejections)
 
-            new_header['HISTORY'] = self.evaluation_comment
-        else:
-            new_header['HISTORY'] = evaluation_comment
 
         new_crpix = 1
         new_crval = spectrum[0][new_crpix - 1]

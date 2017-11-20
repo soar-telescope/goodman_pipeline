@@ -14,6 +14,8 @@ import matplotlib
 import pandas
 import shutil
 import subprocess
+import goodman
+
 from threading import Timer
 
 # matplotlib.use('Qt5Agg')
@@ -249,6 +251,80 @@ def get_twilight_time(date_obs):
     return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
 
 
+def read_fits(full_path, technique='Unknown'):
+    assert os.path.isfile(full_path)
+    ccd = CCDData.read(full_path, unit=u.adu)
+
+    ccd.header.set('GSP_VERS',
+                   value=goodman.__version__,
+                   comment='Goodman Spectroscopic Pipeline Version')
+
+    ccd.header.set('GSP_FNAM',
+                   value=os.path.basename(full_path),
+                   comment='Original file name')
+
+    ccd.header.set('GSP_PATH',
+                   value=os.path.dirname(full_path),
+                   comment='Location at moment of reduce')
+
+    ccd.header.set('GSP_TECH',
+                   value=technique,
+                   comment='Observing technique')
+
+    ccd.header.set('GSP_DATE',
+                   value=time.strftime("%Y-%m-%d"),
+                   comment='Processing date')
+
+    ccd.header.set('GSP_OVER',
+                   value='none',
+                   comment='Overscan Region')
+
+    ccd.header.set('GSP_TRIM',
+                   value='none',
+                   comment='Trim section')
+
+    ccd.header.set('GSP_SLIT',
+                   value='none',
+                   comment='Slit trim section, slit illuminated area only')
+
+    ccd.header.set('GSP_BIAS',
+                   value='none',
+                   comment='Master bias image')
+
+    ccd.header.set('GSP_FLAT',
+                   value='none',
+                   comment='Master flat image')
+
+    ccd.header.set('GSP_NORM',
+                   value='none',
+                   comment='Flat normalization method')
+
+    ccd.header.set('GSP_COSM',
+                   value='none',
+                   comment='Cosmic ray rejection method')
+
+    ccd.header.set('GSP_WRMS',
+                   value='none',
+                   comment='Wavelength solution RMS Error')
+
+    ccd.header.set('GSP_WPOI',
+                   value='none',
+                   comment='Number of points used to '
+                           'calculate wavelength solution')
+
+    ccd.header.set('GSP_WREJ',
+                   value='none',
+                   comment='Number of points rejected')
+
+    ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --', before='GSP_VERS')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    return ccd
+
 def image_overscan(ccd, overscan_region, add_keyword=False):
     """Apply overscan to data
 
@@ -275,11 +351,11 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
                                     fits_section=overscan_region,
                                     add_keyword=add_keyword)
 
-    ccd.header.add_history('Applied overscan correction ' + overscan_region)
+    ccd.header['GSP_OVER'] = (overscan_region, 'Overscan region')
     return ccd
 
 
-def image_trim(ccd, trim_section, add_keyword=False):
+def image_trim(ccd, trim_section, trim_type, add_keyword=False):
     """Trim image to a given section
 
     Notes:
@@ -290,6 +366,7 @@ def image_trim(ccd, trim_section, add_keyword=False):
         ccd (object): A ccdproc.CCDData instance
         trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
             where x is the spectral axis and y is the spatial axis.
+        trim_type (str): default or slit trim
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
             Default False.
 
@@ -300,7 +377,14 @@ def image_trim(ccd, trim_section, add_keyword=False):
     ccd = ccdproc.trim_image(ccd=ccd,
                              fits_section=trim_section,
                              add_keyword=add_keyword)
-    ccd.header.add_history('Trimmed image to ' + trim_section)
+    if trim_type == 'trimsec':
+        ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
+    elif trim_type == 'slit':
+        ccd.header['GSP_SLIT'] = (trim_section,
+                                  'Slit trim section, slit illuminated '
+                                  'area only.')
+    else:
+        log_ccd.warning('Unrecognized trim type')
 
     return ccd
 
@@ -557,7 +641,7 @@ def lacosmic_cosmicray_rejection(ccd, mask_only=False):
             psfmodel='gaussy',
             verbose=False)
 
-        ccd.header.add_history("Cosmic rays rejected with LACosmic")
+        ccd.header['GSP_COSM'] = ("LACosmic", "Cosmic ray rejection method")
         log_ccd.info("Cosmic rays rejected with LACosmic")
         if mask_only:
             return ccd.mask
@@ -599,6 +683,9 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         log_ccd.warning('DCR does apply the correction to images if you want '
                         'the mask use --keep-cosmic-files')
         full_path = os.path.join(red_path, out_prefix + image_name)
+
+        ccd.header['GSP_COSM'] = ("DCR", "Cosmic ray rejection method")
+
         ccd.write(full_path, clobber=True)
         log_ccd.info('Saving image: {:s}'.format(full_path))
 
@@ -753,7 +840,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
         log_ccd.debug('Normalizing by mean')
         master.data /= master.data.mean()
 
-        master.header.add_history('Flat Normalized by Mean')
+        master.header['GSP_NORM'] = ('mean', 'Flat normalization method')
 
     elif method == 'simple' or method == 'full':
         log_ccd.debug('Normalizing flat by {:s} model'.format(method))
@@ -780,22 +867,25 @@ def normalize_master_flat(master, name, method='simple', order=15):
             # pythonic way to divide an array by a vector
             master.data = master.data / fit_array[None, :]
 
-            master.header.add_history('Flat Normalized by simple model')
+            # master.header.add_history('Flat Normalized by simple model')
+            master.header['GSP_NORM'] = ('simple', 'Flat normalization method')
 
         elif method == 'full':
-            log_ccd.warning('This part of the code was left here for experimental '
-                        'purposes only')
-            log_ccd.warning('This procedure takes a lot to process, you might want to'
-                     'see other method such as simple or mean.')
+            log_ccd.warning('This part of the code was left here for '
+                            'experimental purposes only')
+            log_ccd.warning('This procedure takes a lot to process, you might '
+                            'want to see other method such as "simple" or '
+                            '"mean".')
             for i in range(x_size):
                 fit = model_fitter(model_init, x_axis, master.data[i])
                 master.data[i] = master.data[i] / fit(x_axis)
-            master.header.add_history('Flat Normalized by full model')
+            # master.header.add_history('Flat Normalized by full model')
+            master.header['GSP_NORM'] = ('full', 'Flat normalization method')
 
     # write normalized flat to a file
     master.write(norm_name, clobber=True)
 
-    return master
+    return master, norm_name
 
 
 def get_central_wavelength(grating, grt_ang, cam_ang):
@@ -1201,7 +1291,7 @@ def spectroscopic_extraction(ccd, extraction,
 
     elif profile_model is None:
         log_spec.warning("Didn't receive identified targets "
-                         "from {:s}".format(ccd.header['OFNAME']))
+                         "from {:s}".format(ccd.header['GSP_FNAM']))
         raise NoTargetException
     else:
         log_spec.error('Got wrong input')
@@ -1238,7 +1328,7 @@ def identify_targets(ccd, nfind=3, plots=False):
         order = int(round(float(slit_size) / (0.15 * serial_binning)))
 
         if plots:
-            plt.title(ccd.header['OFNAME'])
+            plt.title(ccd.header['GSP_FNAM'])
             plt.imshow(ccd.data, clim=(30, 250))
             plt.xlabel('Dispersion Axis (x)')
             plt.ylabel('Spatial Axis (y)')
@@ -1522,7 +1612,7 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
     fitted_trace = fitter(trace_model, sampling_axis, sample_values)
 
     if False:
-        plt.title(ccd.header['OFNAME'])
+        plt.title(ccd.header['GSP_FNAM'])
         plt.imshow(ccd.data, clim=(30, 200))
         plt.plot(sampling_axis, sample_values, color='y', marker='o')
         plt.axhspan(lower_limit,
@@ -2040,7 +2130,7 @@ def extract(ccd,
     # create variance model
     rdnoise = float(nccd.header['RDNOISE'])
     gain = float(nccd.header['GAIN'])
-    log_spec.debug('Original Name {:s}'.format(nccd.header['OFNAME']))
+    log_spec.debug('Original Name {:s}'.format(nccd.header['GSP_FNAM']))
 
     variance_2d = (rdnoise + np.absolute(nccd.data) * gain) / gain
     cr_mask = np.ones(nccd.data.shape, dtype=int)
