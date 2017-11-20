@@ -13,7 +13,8 @@ import pandas
 
 from astropy import units as u
 from ccdproc import CCDData
-from ..core import (image_overscan,
+from ..core import (read_fits,
+                    image_overscan,
                     image_trim,
                     get_slit_trim_section,
                     lacosmic_cosmicray_rejection,
@@ -140,7 +141,7 @@ class ImageProcessor(object):
                 image_list = group[0]['file'].tolist()
                 sample_image = os.path.join(self.args.raw_path,
                                             random.choice(image_list))
-                ccd = CCDData.read(sample_image, unit=u.adu)
+                ccd = read_fits(sample_image, technique=technique)
 
                 # serial binning - dispersion binning
                 # parallel binngin - spatial binning
@@ -296,62 +297,50 @@ class ImageProcessor(object):
             self.log.info('New name for master bias: ' + self.master_bias_name)
         else:
             self.master_bias_name = default_bias_name
-        # TODO (simon): Review whether it is necessary to discriminate by
-        # TODO (simon): technique
-        if self.technique == 'Spectroscopy':
-            master_bias_list = []
-            self.log.info('Creating master bias')
-            for image_file in bias_file_list:
-                # print(image_file)
-                image_full_path = os.path.join(self.args.raw_path, image_file)
-                self.log.debug('Overscan Region: {:s}'.format(self.overscan_region))
-                ccd = CCDData.read(image_full_path, unit=u.adu)
-                self.log.debug('Loading bias image: ' + image_full_path)
-                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                ccd = image_trim(ccd,
-                                 trim_section=self.trim_section,
-                                 trim_type='trimsec')
-                master_bias_list.append(ccd)
 
-            # combine bias for spectroscopy
-            self.master_bias = ccdproc.combine(master_bias_list,
-                                               method='median',
-                                               sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0,
-                                               sigma_clip_high_thresh=3.0,
-                                               add_keyword=False)
+        master_bias_list = []
+        self.log.info('Creating master bias')
+        for image_file in bias_file_list:
+            image_full_path = os.path.join(self.args.raw_path, image_file)
+            ccd = read_fits(image_full_path, technique=self.technique)
+            self.log.debug('Loading bias image: ' + image_full_path)
+            if self.technique == 'Spectroscopy':
+                self.log.debug(
+                    'Overscan Region: {:s}'.format(self.overscan_region))
+                ccd = image_overscan(ccd=ccd,
+                                     overscan_region=self.overscan_region)
+            ccd = image_trim(ccd,
+                             trim_section=self.trim_section,
+                             trim_type='trimsec')
+            master_bias_list.append(ccd)
 
-            # write master bias to file
-            self.master_bias.write(self.master_bias_name, clobber=True)
-            self.log.info('Created master bias: ' + self.master_bias_name)
-            return self.master_bias, self.master_bias_name
+        # combine bias for spectroscopy
+        self.master_bias = ccdproc.combine(master_bias_list,
+                                           method='median',
+                                           sigma_clip=True,
+                                           sigma_clip_low_thresh=3.0,
+                                           sigma_clip_high_thresh=3.0,
+                                           add_keyword=False)
 
-        elif self.technique == 'Imaging':
-            master_bias_list = []
-            self.log.info('Creating master bias')
-            for image_file in bias_file_list:
-                image_full_path = os.path.join(self.args.raw_path, image_file)
-                ccd = CCDData.read(image_full_path, unit=u.adu)
-                self.log.debug('Loading bias image: {:s}'.format(image_full_path))
+        # add name of images used to create master bias
+        for n in range(len(bias_file_list)):
+            self.master_bias.header['GSP_IC{:02d}'.format(n + 1)] = (
+                bias_file_list[n],
+                'Image used to create master bias')
 
-                ccd = image_trim(ccd=ccd,
-                                 trim_section=self.trim_section,
-                                 trim_type='trimsec')
+        # add name of master_bias to GSP_FNAM
+        self.master_bias.header['GSP_FNAM'] = (
+            os.path.basename(self.master_bias_name),
+            'Original File Name')
 
-                master_bias_list.append(ccd)
+        # add observing technique to GSP_TECH
+        self.master_bias.header['GSP_TECH'] = (self.technique,
+                                               'Observing technique')
 
-            # combine bias for imaging
-            self.master_bias = ccdproc.combine(master_bias_list,
-                                               method='median',
-                                               sigma_clip=True,
-                                               sigma_clip_low_thresh=3.0,
-                                               sigma_clip_high_thresh=3.0,
-                                               add_keyword=False)
-
-            # write master bias to file
-            self.master_bias.write(self.master_bias_name, clobber=True)
-            self.log.info('Created master bias: ' + self.master_bias_name)
-            return self.master_bias, self.master_bias_name
+        # write master bias to file
+        self.master_bias.write(self.master_bias_name, clobber=True)
+        self.log.info('Created master bias: ' + self.master_bias_name)
+        return self.master_bias, self.master_bias_name
 
     def create_master_flats(self, flat_group, target_name=''):
         """Creates master flats
@@ -380,8 +369,7 @@ class ImageProcessor(object):
         for flat_file in flat_file_list:
             # print(f_file)
             image_full_path = os.path.join(self.args.raw_path, flat_file)
-            ccd = CCDData.read(image_full_path, unit=u.adu)
-            # ccd.header['GSP_FNAM'] = (os.path.basename(image_full_path),)
+            ccd = read_fits(image_full_path, technique=self.technique)
             self.log.debug('Loading flat image: ' + image_full_path)
             if master_flat_name is None:
 
@@ -658,7 +646,7 @@ class ImageProcessor(object):
                                                science_image)
 
                 # load image
-                ccd = CCDData.read(image_full_path, unit=u.adu)
+                ccd = read_fits(image_full_path, technique=self.technique)
 
                 # apply overscan
                 ccd = image_overscan(ccd, overscan_region=self.overscan_region)
@@ -807,7 +795,7 @@ class ImageProcessor(object):
                 self.out_prefix = ''
 
                 image_full_path = os.path.join(self.args.raw_path, image_file)
-                ccd = CCDData.read(image_full_path, unit=u.adu)
+                ccd = read_fits(image_full_path, technique=self.technique)
 
                 # Trim image
                 ccd = image_trim(ccd=ccd,
