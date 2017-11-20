@@ -27,3 +27,4 @@
 # OTher keywords to add
 
 - Some wavelength solution parameteres?
+- for image combined, list the source images.

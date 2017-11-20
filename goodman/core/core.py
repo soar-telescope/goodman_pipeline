@@ -607,6 +607,9 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         log_ccd.warning('DCR does apply the correction to images if you want '
                         'the mask use --keep-cosmic-files')
         full_path = os.path.join(red_path, out_prefix + image_name)
+
+        ccd.header['GSP_COSM'] = ("DCR", "Cosmic ray rejection method")
+
         ccd.write(full_path, clobber=True)
         log_ccd.info('Saving image: {:s}'.format(full_path))
 

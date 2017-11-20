@@ -381,6 +381,7 @@ class ImageProcessor(object):
             # print(f_file)
             image_full_path = os.path.join(self.args.raw_path, flat_file)
             ccd = CCDData.read(image_full_path, unit=u.adu)
+            # ccd.header['GSP_FNAM'] = (os.path.basename(image_full_path),)
             self.log.debug('Loading flat image: ' + image_full_path)
             if master_flat_name is None:
 
@@ -403,6 +404,13 @@ class ImageProcessor(object):
                 # plt.title('After Trimming')
                 # plt.imshow(ccd.data, clim=(-100, 0))
                 # plt.show()
+                ccd = ccdproc.subtract_bias(ccd,
+                                            self.master_bias,
+                                            add_keyword=False)
+                ccd.header['GSP_BIAS'] = (
+                    os.path.basename(self.master_bias_name),
+                    'Master bias image')
+
             elif self.technique == 'Imaging':
                 ccd = image_trim(ccd=ccd,
                                  trim_section=self.trim_section,
@@ -410,6 +418,9 @@ class ImageProcessor(object):
                 ccd = ccdproc.subtract_bias(ccd,
                                             self.master_bias,
                                             add_keyword=False)
+                ccd.header['GSP_BIAS'] = (
+                    os.path.basename(self.master_bias_name),
+                    'Master bias image')
             else:
                 self.log.error('Unknown observation technique: ' + self.technique)
             # TODO (simon): Improve this part. One hot pixel could rule out a
