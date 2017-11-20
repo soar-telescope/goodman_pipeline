@@ -289,13 +289,13 @@ class ImageProcessor(object):
         search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
         n_bias = len(glob.glob(search_bias_name))
         if n_bias > 0:
-            self.new_bias_name = re.sub('.fits',
-                                        '_{:d}.fits'.format(n_bias + 1),
-                                        default_bias_name)
+            self.master_bias_name = re.sub('.fits',
+                                           '_{:d}.fits'.format(n_bias + 1),
+                                           default_bias_name)
 
-            self.log.info('New name for master bias: ' + self.new_bias_name)
+            self.log.info('New name for master bias: ' + self.master_bias_name)
         else:
-            self.new_bias_name = default_bias_name
+            self.master_bias_name = default_bias_name
         # TODO (simon): Review whether it is necessary to discriminate by
         # TODO (simon): technique
         if self.technique == 'Spectroscopy':
@@ -308,7 +308,9 @@ class ImageProcessor(object):
                 ccd = CCDData.read(image_full_path, unit=u.adu)
                 self.log.debug('Loading bias image: ' + image_full_path)
                 ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                ccd = image_trim(ccd, trim_section=self.trim_section)
+                ccd = image_trim(ccd,
+                                 trim_section=self.trim_section,
+                                 trim_type='trimsec')
                 master_bias_list.append(ccd)
 
             # combine bias for spectroscopy
@@ -320,9 +322,9 @@ class ImageProcessor(object):
                                                add_keyword=False)
 
             # write master bias to file
-            self.master_bias.write(self.new_bias_name, clobber=True)
-            self.log.info('Created master bias: ' + self.new_bias_name)
-            return self.master_bias, self.new_bias_name
+            self.master_bias.write(self.master_bias_name, clobber=True)
+            self.log.info('Created master bias: ' + self.master_bias_name)
+            return self.master_bias, self.master_bias_name
 
         elif self.technique == 'Imaging':
             master_bias_list = []
@@ -331,7 +333,11 @@ class ImageProcessor(object):
                 image_full_path = os.path.join(self.args.raw_path, image_file)
                 ccd = CCDData.read(image_full_path, unit=u.adu)
                 self.log.debug('Loading bias image: {:s}'.format(image_full_path))
-                ccd = image_trim(ccd, trim_section=self.trim_section)
+
+                ccd = image_trim(ccd=ccd,
+                                 trim_section=self.trim_section,
+                                 trim_type='trimsec')
+
                 master_bias_list.append(ccd)
 
             # combine bias for imaging
@@ -343,9 +349,9 @@ class ImageProcessor(object):
                                                add_keyword=False)
 
             # write master bias to file
-            self.master_bias.write(self.new_bias_name, clobber=True)
-            self.log.info('Created master bias: ' + self.new_bias_name)
-            return self.master_bias, self.new_bias_name
+            self.master_bias.write(self.master_bias_name, clobber=True)
+            self.log.info('Created master bias: ' + self.master_bias_name)
+            return self.master_bias, self.master_bias_name
 
     def create_master_flats(self, flat_group, target_name=''):
         """Creates master flats
@@ -391,12 +397,16 @@ class ImageProcessor(object):
                 # plt.title('After Overscan')
                 # plt.imshow(ccd.data, clim=(-100, 0))
                 # plt.show()
-                ccd = image_trim(ccd, trim_section=self.trim_section)
+                ccd = image_trim(ccd=ccd,
+                                 trim_section=self.trim_section,
+                                 trim_type='trimsec')
                 # plt.title('After Trimming')
                 # plt.imshow(ccd.data, clim=(-100, 0))
                 # plt.show()
             elif self.technique == 'Imaging':
-                ccd = image_trim(ccd, trim_section=self.trim_section)
+                ccd = image_trim(ccd=ccd,
+                                 trim_section=self.trim_section,
+                                 trim_type='trimsec')
                 ccd = ccdproc.subtract_bias(ccd,
                                             self.master_bias,
                                             add_keyword=False)
@@ -615,16 +625,13 @@ class ImageProcessor(object):
             if slit_trim is not None:
 
                 master_flat = image_trim(ccd=master_flat,
-                                         trim_section=slit_trim)
-
-                master_flat.header['GSP_SLIT'] = (slit_trim,
-                                                  'Slit trim section')
+                                         trim_section=slit_trim,
+                                         trim_type='slit')
 
                 if self.master_bias is not None:
                     master_bias = image_trim(ccd=self.master_bias,
-                                             trim_section=slit_trim)
-                    master_bias.header['GSP_SLIT'] = (slit_trim,
-                                                      'Slit trim section')
+                                             trim_section=slit_trim,
+                                             trim_type='slit')
             else:
                 try:
                     master_bias = self.master_bias.copy()
@@ -656,12 +663,14 @@ class ImageProcessor(object):
                     # There is a double trimming of the image, this is to match
                     # the size of the other data
                     # TODO (simon): Potential problem here
-                    ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
-                    ccd.header['GSP_TRIM'] = (self.trim_section,
-                                              'Trimsection from TRIMSEC')
-                    ccd = image_trim(ccd=ccd, trim_section=slit_trim)
-                    ccd.header['GSP_SLIT'] = (slit_trim,
-                                              'Slit trim section')
+                    ccd = image_trim(ccd=ccd,
+                                     trim_section=self.trim_section,
+                                     trim_type='trimsec')
+
+                    ccd = image_trim(ccd=ccd,
+                                     trim_section=slit_trim,
+                                     trim_type='slit')
+
                     self.out_prefix = 'st' + self.out_prefix
 
                     if save_all:
@@ -672,9 +681,10 @@ class ImageProcessor(object):
                         ccd.write(full_path, clobber=True)
 
                 else:
-                    ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
-                    ccd.header['GSP_TRIM'] = (self.trim_section,
-                                              'Trimsection from TRIMSEC')
+                    ccd = image_trim(ccd=ccd,
+                                     trim_section=self.trim_section,
+                                     trim_type='trimsec')
+
                     self.out_prefix = 't' + self.out_prefix
 
                     if save_all:
@@ -692,8 +702,10 @@ class ImageProcessor(object):
                                                 add_keyword=False)
 
                     self.out_prefix = 'z' + self.out_prefix
-                    ccd.header['GSP_BIAS'] = (self.master_bias_name,
-                                              'Master bias image')
+
+                    ccd.header['GSP_BIAS'] = (
+                        os.path.basename(self.master_bias_name),
+                        'Master bias image')
 
                     if save_all:
                         full_path = os.path.join(
@@ -723,8 +735,9 @@ class ImageProcessor(object):
 
                     self.out_prefix = 'f' + self.out_prefix
 
-                    ccd.header['GSP_FLAT'] = (master_flat_name,
-                                              'Master flat image')
+                    ccd.header['GSP_FLAT'] = (
+                        os.path.basename(master_flat_name),
+                        'Master flat image')
 
                     if save_all:
                         full_path = os.path.join(
@@ -786,7 +799,9 @@ class ImageProcessor(object):
                 ccd = CCDData.read(image_full_path, unit=u.adu)
 
                 # Trim image
-                ccd = image_trim(ccd, trim_section=self.trim_section)
+                ccd = image_trim(ccd=ccd,
+                                 trim_section=self.trim_section,
+                                 trim_type='trimsec')
                 self.out_prefix = 't_'
                 if not self.args.ignore_bias:
 
@@ -795,8 +810,10 @@ class ImageProcessor(object):
                                                 add_keyword=False)
 
                     self.out_prefix = 'z' + self.out_prefix
-                    ccd.header['GSP_BIAS'] = (self.master_bias_name,
-                                              'Master bias image')
+
+                    ccd.header['GSP_BIAS'] = (
+                        os.path.basename(self.master_bias_name),
+                        'Master bias image')
 
                 # apply flat correction
                 ccd = ccdproc.flat_correct(ccd,
@@ -805,8 +822,9 @@ class ImageProcessor(object):
 
                 self.out_prefix = 'f' + self.out_prefix
 
-                ccd.header['GSP_FLAT'] = (master_flat_name.split('/')[-1],
-                                          'Master Flat image')
+                ccd.header['GSP_FLAT'] = (
+                    os.path.basename(master_flat_name),
+                    'Master Flat image')
 
                 if self.args.clean_cosmic:
                     ccd = lacosmic_cosmicray_rejection(ccd=ccd)

@@ -279,7 +279,7 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
     return ccd
 
 
-def image_trim(ccd, trim_section, add_keyword=False):
+def image_trim(ccd, trim_section, trim_type, add_keyword=False):
     """Trim image to a given section
 
     Notes:
@@ -290,6 +290,7 @@ def image_trim(ccd, trim_section, add_keyword=False):
         ccd (object): A ccdproc.CCDData instance
         trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
             where x is the spectral axis and y is the spatial axis.
+        trim_type (str): default or slit trim
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
             Default False.
 
@@ -300,7 +301,14 @@ def image_trim(ccd, trim_section, add_keyword=False):
     ccd = ccdproc.trim_image(ccd=ccd,
                              fits_section=trim_section,
                              add_keyword=add_keyword)
-    ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
+    if trim_type == 'trimsec':
+        ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
+    elif trim_type == 'slit':
+        ccd.header['GSP_SLIT'] = (trim_section,
+                                  'Slit trim section, slit illuminated '
+                                  'area only.')
+    else:
+        log_ccd.warning('Unrecognized trim type')
 
     return ccd
 
