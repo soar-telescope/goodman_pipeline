@@ -61,6 +61,7 @@ class ImageProcessor(object):
         self.overscan_region = self.get_overscan_region()
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
+        self.master_bias_name = None
         self.out_prefix = None
 
     def __call__(self):
@@ -288,15 +289,15 @@ class ImageProcessor(object):
         search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
         n_bias = len(glob.glob(search_bias_name))
         if n_bias > 0:
-            new_bias_name = re.sub('.fits',
-                                   '_{:d}.fits'.format(n_bias + 1),
-                                   default_bias_name)
+            self.new_bias_name = re.sub('.fits',
+                                        '_{:d}.fits'.format(n_bias + 1),
+                                        default_bias_name)
 
-            self.log.info('New name for master bias: ' + new_bias_name)
+            self.log.info('New name for master bias: ' + self.new_bias_name)
         else:
-            new_bias_name = default_bias_name
+            self.new_bias_name = default_bias_name
         # TODO (simon): Review whether it is necessary to discriminate by
-        # TODO technique
+        # TODO (simon): technique
         if self.technique == 'Spectroscopy':
             master_bias_list = []
             self.log.info('Creating master bias')
@@ -319,8 +320,9 @@ class ImageProcessor(object):
                                                add_keyword=False)
 
             # write master bias to file
-            self.master_bias.write(new_bias_name, clobber=True)
-            self.log.info('Created master bias: ' + new_bias_name)
+            self.master_bias.write(self.new_bias_name, clobber=True)
+            self.log.info('Created master bias: ' + self.new_bias_name)
+            return self.master_bias, self.new_bias_name
 
         elif self.technique == 'Imaging':
             master_bias_list = []
@@ -341,8 +343,9 @@ class ImageProcessor(object):
                                                add_keyword=False)
 
             # write master bias to file
-            self.master_bias.write(new_bias_name, clobber=True)
-            self.log.info('Created master bias: ' + new_bias_name)
+            self.master_bias.write(self.new_bias_name, clobber=True)
+            self.log.info('Created master bias: ' + self.new_bias_name)
+            return self.master_bias, self.new_bias_name
 
     def create_master_flats(self, flat_group, target_name=''):
         """Creates master flats
@@ -614,9 +617,14 @@ class ImageProcessor(object):
                 master_flat = image_trim(ccd=master_flat,
                                          trim_section=slit_trim)
 
+                master_flat.header['GSP_SLIT'] = (slit_trim,
+                                                  'Slit trim section')
+
                 if self.master_bias is not None:
                     master_bias = image_trim(ccd=self.master_bias,
                                              trim_section=slit_trim)
+                    master_bias.header['GSP_SLIT'] = (slit_trim,
+                                                      'Slit trim section')
             else:
                 try:
                     master_bias = self.master_bias.copy()
@@ -649,7 +657,11 @@ class ImageProcessor(object):
                     # the size of the other data
                     # TODO (simon): Potential problem here
                     ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
+                    ccd.header['GSP_TRIM'] = (self.trim_section,
+                                              'Trimsection from TRIMSEC')
                     ccd = image_trim(ccd=ccd, trim_section=slit_trim)
+                    ccd.header['GSP_SLIT'] = (slit_trim,
+                                              'Slit trim section')
                     self.out_prefix = 'st' + self.out_prefix
 
                     if save_all:
@@ -661,6 +673,8 @@ class ImageProcessor(object):
 
                 else:
                     ccd = image_trim(ccd=ccd, trim_section=self.trim_section)
+                    ccd.header['GSP_TRIM'] = (self.trim_section,
+                                              'Trimsection from TRIMSEC')
                     self.out_prefix = 't' + self.out_prefix
 
                     if save_all:
@@ -678,7 +692,8 @@ class ImageProcessor(object):
                                                 add_keyword=False)
 
                     self.out_prefix = 'z' + self.out_prefix
-                    ccd.header.add_history('Bias subtracted image')
+                    ccd.header['GSP_BIAS'] = (self.master_bias_name,
+                                              'Master bias image')
 
                     if save_all:
                         full_path = os.path.join(
@@ -708,8 +723,8 @@ class ImageProcessor(object):
 
                     self.out_prefix = 'f' + self.out_prefix
 
-                    ccd.header.add_history('master flat norm_'
-                                           '{:s}'.format(master_flat_name))
+                    ccd.header['GSP_FLAT'] = (master_flat_name,
+                                              'Master flat image')
 
                     if save_all:
                         full_path = os.path.join(
@@ -780,7 +795,8 @@ class ImageProcessor(object):
                                                 add_keyword=False)
 
                     self.out_prefix = 'z' + self.out_prefix
-                    ccd.header.add_history('Bias subtracted image')
+                    ccd.header['GSP_BIAS'] = (self.master_bias_name,
+                                              'Master bias image')
 
                 # apply flat correction
                 ccd = ccdproc.flat_correct(ccd,
@@ -789,9 +805,8 @@ class ImageProcessor(object):
 
                 self.out_prefix = 'f' + self.out_prefix
 
-                ccd.header.add_history(
-                    'Flat corrected '
-                    '{:s}'.format(master_flat_name.split('/')[-1]))
+                ccd.header['GSP_FLAT'] = (master_flat_name.split('/')[-1],
+                                          'Master Flat image')
 
                 if self.args.clean_cosmic:
                     ccd = lacosmic_cosmicray_rejection(ccd=ccd)

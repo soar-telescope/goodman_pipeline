@@ -275,7 +275,7 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
                                     fits_section=overscan_region,
                                     add_keyword=add_keyword)
 
-    ccd.header.add_history('Applied overscan correction ' + overscan_region)
+    ccd.header['GSP_OVER'] = (overscan_region, 'Overscan region')
     return ccd
 
 
@@ -300,7 +300,7 @@ def image_trim(ccd, trim_section, add_keyword=False):
     ccd = ccdproc.trim_image(ccd=ccd,
                              fits_section=trim_section,
                              add_keyword=add_keyword)
-    ccd.header.add_history('Trimmed image to ' + trim_section)
+    ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
 
     return ccd
 
@@ -557,7 +557,7 @@ def lacosmic_cosmicray_rejection(ccd, mask_only=False):
             psfmodel='gaussy',
             verbose=False)
 
-        ccd.header.add_history("Cosmic rays rejected with LACosmic")
+        ccd.header['GSP_COSM'] = ("LACosmic", "Cosmic ray rejection method")
         log_ccd.info("Cosmic rays rejected with LACosmic")
         if mask_only:
             return ccd.mask
@@ -753,7 +753,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
         log_ccd.debug('Normalizing by mean')
         master.data /= master.data.mean()
 
-        master.header.add_history('Flat Normalized by Mean')
+        master.header['GSP_NORM'] = ('mean', 'Flat normalization method')
 
     elif method == 'simple' or method == 'full':
         log_ccd.debug('Normalizing flat by {:s} model'.format(method))
@@ -780,17 +780,20 @@ def normalize_master_flat(master, name, method='simple', order=15):
             # pythonic way to divide an array by a vector
             master.data = master.data / fit_array[None, :]
 
-            master.header.add_history('Flat Normalized by simple model')
+            # master.header.add_history('Flat Normalized by simple model')
+            master.header['GSP_NORM'] = ('simple', 'Flat normalization method')
 
         elif method == 'full':
-            log_ccd.warning('This part of the code was left here for experimental '
-                        'purposes only')
-            log_ccd.warning('This procedure takes a lot to process, you might want to'
-                     'see other method such as simple or mean.')
+            log_ccd.warning('This part of the code was left here for '
+                            'experimental purposes only')
+            log_ccd.warning('This procedure takes a lot to process, you might '
+                            'want to see other method such as "simple" or '
+                            '"mean".')
             for i in range(x_size):
                 fit = model_fitter(model_init, x_axis, master.data[i])
                 master.data[i] = master.data[i] / fit(x_axis)
-            master.header.add_history('Flat Normalized by full model')
+            # master.header.add_history('Flat Normalized by full model')
+            master.header['GSP_NORM'] = ('full', 'Flat normalization method')
 
     # write normalized flat to a file
     master.write(norm_name, clobber=True)
@@ -1201,7 +1204,7 @@ def spectroscopic_extraction(ccd, extraction,
 
     elif profile_model is None:
         log_spec.warning("Didn't receive identified targets "
-                         "from {:s}".format(ccd.header['OFNAME']))
+                         "from {:s}".format(ccd.header['GSP_FNAM']))
         raise NoTargetException
     else:
         log_spec.error('Got wrong input')
@@ -1238,7 +1241,7 @@ def identify_targets(ccd, nfind=3, plots=False):
         order = int(round(float(slit_size) / (0.15 * serial_binning)))
 
         if plots:
-            plt.title(ccd.header['OFNAME'])
+            plt.title(ccd.header['GSP_FNAM'])
             plt.imshow(ccd.data, clim=(30, 250))
             plt.xlabel('Dispersion Axis (x)')
             plt.ylabel('Spatial Axis (y)')
@@ -1522,7 +1525,7 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
     fitted_trace = fitter(trace_model, sampling_axis, sample_values)
 
     if False:
-        plt.title(ccd.header['OFNAME'])
+        plt.title(ccd.header['GSP_FNAM'])
         plt.imshow(ccd.data, clim=(30, 200))
         plt.plot(sampling_axis, sample_values, color='y', marker='o')
         plt.axhspan(lower_limit,
@@ -2040,7 +2043,7 @@ def extract(ccd,
     # create variance model
     rdnoise = float(nccd.header['RDNOISE'])
     gain = float(nccd.header['GAIN'])
-    log_spec.debug('Original Name {:s}'.format(nccd.header['OFNAME']))
+    log_spec.debug('Original Name {:s}'.format(nccd.header['GSP_FNAM']))
 
     variance_2d = (rdnoise + np.absolute(nccd.data) * gain) / gain
     cr_mask = np.ones(nccd.data.shape, dtype=int)
