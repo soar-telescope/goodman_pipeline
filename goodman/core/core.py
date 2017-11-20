@@ -303,10 +303,20 @@ def read_fits(full_path, technique='Unknown'):
                    value='none',
                    comment='Cosmic ray rejection method')
 
+    ccd.header.set('GSP_WRMS',
+                   value='none',
+                   comment='Wavelength solution RMS Error')
+
+    ccd.header.set('GSP_WPOI',
+                   value='none',
+                   comment='Number of points used to '
+                           'calculate wavelength solution')
+
+    ccd.header.set('GSP_WREJ',
+                   value='none',
+                   comment='Number of points rejected')
+
     ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --', before='GSP_VERS')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')
