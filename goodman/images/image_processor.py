@@ -722,11 +722,11 @@ class ImageProcessor(object):
                 else:
                     if norm_master_flat is None:
 
-                        norm_master_flat = normalize_master_flat(
-                            master=master_flat,
-                            name=master_flat_name,
-                            method=self.args.flat_normalize,
-                            order=self.args.norm_order)
+                        norm_master_flat, norm_master_flat_name = \
+                            normalize_master_flat(master=master_flat,
+                                                  name=master_flat_name,
+                                                  method=self.args.flat_normalize,
+                                                  order=self.args.norm_order)
 
                     ccd = ccdproc.flat_correct(ccd=ccd,
                                                flat=norm_master_flat,
@@ -735,8 +735,11 @@ class ImageProcessor(object):
                     self.out_prefix = 'f' + self.out_prefix
 
                     ccd.header['GSP_FLAT'] = (
-                        os.path.basename(master_flat_name),
+                        os.path.basename(norm_master_flat_name),
                         'Master flat image')
+
+                    # propagate master flat normalization method
+                    ccd.header['GSP_NORM'] = norm_master_flat.header['GSP_NORM']
 
                     if save_all:
                         full_path = os.path.join(

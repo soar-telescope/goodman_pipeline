@@ -8,7 +8,7 @@
 ## Keywords definition
 
 - **GSP_COMB**: Image combined
-- **GSP_VERS**: Pipeline Version
+- *GSP_VERS*: Pipeline Version
 - *GSP_FNAM*: Original File Name
 - *GSP_PATH*: Path to were the data was processed
 - *GSP_TECH*: Observing Technique

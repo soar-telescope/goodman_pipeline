@@ -33,9 +33,6 @@ from scipy import signal
 log_ccd = logging.getLogger('goodmanccd.core')
 log_spec = logging.getLogger('redspec.core')
 
-# Goodman Spectroscopic Pipeline Version
-__version__ = __import__('goodman').__version__
-
 
 def convert_time(in_time):
     """Converts time to seconds since epoch
@@ -878,7 +875,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
     # write normalized flat to a file
     master.write(norm_name, clobber=True)
 
-    return master
+    return master, norm_name
 
 
 def get_central_wavelength(grating, grt_ang, cam_ang):
