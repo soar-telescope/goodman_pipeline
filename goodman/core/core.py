@@ -259,9 +259,13 @@ def read_fits(full_path, technique='Unknown'):
                    value=goodman.__version__,
                    comment='Goodman Spectroscopic Pipeline Version')
 
-    ccd.header.set('GSP_FNAM',
+    ccd.header.set('GSP_ONAM',
                    value=os.path.basename(full_path),
                    comment='Original file name')
+
+    ccd.header.set('GSP_FNAM',
+                   value='none',
+                   comment='Current or parent file name')
 
     ccd.header.set('GSP_PATH',
                    value=os.path.dirname(full_path),
@@ -277,7 +281,7 @@ def read_fits(full_path, technique='Unknown'):
 
     ccd.header.set('GSP_OVER',
                    value='none',
-                   comment='Overscan Region')
+                   comment='Overscan region')
 
     ccd.header.set('GSP_TRIM',
                    value='none',
@@ -316,8 +320,11 @@ def read_fits(full_path, technique='Unknown'):
                    value='none',
                    comment='Number of points rejected')
 
-    ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --', before='GSP_VERS')
-    # ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
+    ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --',
+                         before='GSP_VERS')
+
+    ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
+    ccd.header.set('BUNIT', after='CCDSUM')
     # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')
