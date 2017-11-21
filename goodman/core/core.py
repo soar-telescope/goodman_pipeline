@@ -317,6 +317,7 @@ def read_fits(full_path, technique='Unknown'):
                    comment='Number of points rejected')
 
     ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --', before='GSP_VERS')
+    # ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
     # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')
