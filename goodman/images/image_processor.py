@@ -14,6 +14,7 @@ import pandas
 from astropy import units as u
 from ccdproc import CCDData
 from ..core import (read_fits,
+                    write_fits,
                     image_overscan,
                     image_trim,
                     get_slit_trim_section,
@@ -329,16 +330,20 @@ class ImageProcessor(object):
                 'Image used to create master bias')
 
         # add name of master_bias to GSP_FNAM
-        self.master_bias.header['GSP_FNAM'] = (
-            os.path.basename(self.master_bias_name),
-            'Original File Name')
+        # self.master_bias.header['GSP_ONAM'] = (
+        #     os.path.basename(self.master_bias_name),
+        #     'Original File Name')
 
-        # add observing technique to GSP_TECH
-        self.master_bias.header['GSP_TECH'] = (self.technique,
-                                               'Observing technique')
+        # # add observing technique to GSP_TECH
+        # self.master_bias.header['GSP_TECH'] = (self.technique,
+        #                                        'Observing technique')
 
         # write master bias to file
-        self.master_bias.write(self.master_bias_name, clobber=True)
+        # self.master_bias.write(self.master_bias_name, clobber=True)
+        write_fits(ccd=self.master_bias,
+                   full_path=self.master_bias_name,
+                   combined=True)
+
         self.log.info('Created master bias: ' + self.master_bias_name)
         return self.master_bias, self.master_bias_name
 
@@ -440,14 +445,10 @@ class ImageProcessor(object):
                     cleaned_flat_list[n],
                     'Image used to create master flat')
 
-            # add name of master_bias to GSP_FNAM
-            master_flat.header['GSP_FNAM'] = (
-                    os.path.basename(master_flat_name),
-                    'Original File Name')
+            write_fits(ccd=master_flat,
+                       full_path=master_flat_name,
+                       combined=True)
 
-            master_flat.write(master_flat_name, clobber=True)
-            # plt.imshow(master_flat.data, clim=(-100,0))
-            # plt.show()
             self.log.info('Created Master Flat: ' + master_flat_name)
             return master_flat, master_flat_name
             # print(master_flat_name)
@@ -670,7 +671,8 @@ class ImageProcessor(object):
                     full_path = os.path.join(self.args.red_path,
                                              self.out_prefix + science_image)
 
-                    ccd.write(full_path, clobber=True)
+                    # ccd.write(full_path, clobber=True)
+                    write_fits(ccd=ccd, full_path=full_path)
 
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match
@@ -691,7 +693,8 @@ class ImageProcessor(object):
                             self.args.red_path,
                             self.out_prefix + science_image)
 
-                        ccd.write(full_path, clobber=True)
+                        # ccd.write(full_path, clobber=True)
+                        write_fits(ccd=ccd, full_path=full_path)
 
                 else:
                     ccd = image_trim(ccd=ccd,
@@ -705,7 +708,8 @@ class ImageProcessor(object):
                             self.args.red_path,
                             self.out_prefix + science_image)
 
-                        ccd.write(full_path, clobber=True)
+                        # ccd.write(full_path, clobber=True)
+                        write_fits(ccd=ccd, full_path=full_path)
 
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
@@ -725,7 +729,8 @@ class ImageProcessor(object):
                             self.args.red_path,
                             self.out_prefix + science_image)
 
-                        ccd.write(full_path, clobber=True)
+                        # ccd.write(full_path, clobber=True)
+                        write_fits(ccd=ccd, full_path=full_path)
                 else:
                     self.log.warning('Ignoring bias correction by request.')
                 if master_flat is None or master_flat_name is None:
@@ -760,7 +765,8 @@ class ImageProcessor(object):
                             self.args.red_path,
                             self.out_prefix + science_image)
 
-                        ccd.write(full_path, clobber=True)
+                        # ccd.write(full_path, clobber=True)
+                        write_fits(ccd=ccd, full_path=full_path)
 
                 call_cosmic_rejection(ccd=ccd,
                                       image_name=science_image,
@@ -850,7 +856,8 @@ class ImageProcessor(object):
 
                 final_name = os.path.join(self.args.red_path,
                                           self.out_prefix + image_file)
-                ccd.write(final_name, clobber=True)
+                # ccd.write(final_name, clobber=True)
+                write_fits(ccd=ccd, full_path=final_name)
                 self.log.info('Created science file: {:s}'.format(final_name))
         else:
             self.log.error('Can not process data without a master flat')

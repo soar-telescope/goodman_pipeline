@@ -129,15 +129,15 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
                 ccd = CCDData.read(file_path, unit=u.adu)
+                ccd.header.set('GSP_PNAM', value=spec_file)
                 ccd.header = add_wcs_keys(header=ccd.header)
-                ccd.header['GSP_FNAM'] = (spec_file, 'Original File Name')
+                # ccd.header['GSP_FNAM'] = spec_file
                 if comp_group is not None and comp_ccd_list == []:
                     for comp_file in comp_group.file.tolist():
                         comp_path = os.path.join(full_path, comp_file)
                         comp_ccd = CCDData.read(comp_path, unit=u.adu)
                         comp_ccd.header = add_wcs_keys(header=comp_ccd.header)
-                        comp_ccd.header['GSP_FNAM'] = (comp_file,
-                                                     'Original File Name')
+                        comp_ccd.header.set('GSP_PNAM', value=comp_file)
                         comp_ccd_list.append(comp_ccd)
                         # plt.imshow(comp_ccd.data)
                         # plt.show()
@@ -2345,11 +2345,14 @@ class WavelengthCalibration(object):
         # gsp_wser = rms_error
         # gsp_wpoi = n_points
         # gsp_wrej = n_rejections
-        new_header['GSP_WRMS'] = (rms_error,
-                                  'Wavelength solution RMS Error')
-        new_header['GSP_WPOI'] = (n_points, 'Number of points used to '
-                                            'calculate wavelength solution')
-        new_header['GSP_WREJ'] = (n_rejections, 'Number of points rejected')
+        # new_header['GSP_WRMS'] = (rms_error,
+        #                           'Wavelength solution RMS Error')
+        # new_header['GSP_WPOI'] = (n_points, 'Number of points used to '
+        #                                     'calculate wavelength solution')
+        # new_header['GSP_WREJ'] = (n_rejections, 'Number of points rejected')
+        new_header.set('GSP_WRMS', value=rms_error)
+        new_header.set('GSP_WPOI', value=n_points)
+        new_header.set('GSP_WREJ', value=n_rejections)
 
         if evaluation_comment is None:
             self.evaluation_comment = 'Lamp Solution RMSE = {:.3f} ' \
@@ -2394,13 +2397,21 @@ class WavelengthCalibration(object):
                        original_filename.replace('.fits', '') + \
                        f_end
 
+        new_header.set('GSP_FNAM', value=os.path.basename(new_filename))
+
+
+
         #  print('spectrum[0]')
         # print(spectrum[0])
         # print('spectrum[1]')
         # print(spectrum[1])
         # print(len(spectrum))
 
-        fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
+        ccd = CCDData(data=spectrum[1], header=new_header, unit=u.adu)
+        ccd.write(new_filename, clobber=True)
+        print(ccd.header['GSP_FNAM'])
+
+        # fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
         self.log.info('Created new file: {:s}'.format(new_filename))
         # print new_header
         return new_header

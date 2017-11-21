@@ -263,9 +263,13 @@ def read_fits(full_path, technique='Unknown'):
                    value=os.path.basename(full_path),
                    comment='Original file name')
 
+    ccd.header.set('GSP_PNAM',
+                   value=os.path.basename(full_path),
+                   comment='Parent file name')
+
     ccd.header.set('GSP_FNAM',
-                   value='none',
-                   comment='Current or parent file name')
+                   value=os.path.basename(full_path),
+                   comment='Current file name')
 
     ccd.header.set('GSP_PATH',
                    value=os.path.dirname(full_path),
@@ -332,6 +336,32 @@ def read_fits(full_path, technique='Unknown'):
     # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')
     return ccd
+
+
+def write_fits(ccd, full_path, combined=False, parent_file=None, overwrite=True):
+    assert os.path.isdir(os.path.dirname(full_path))
+
+    # Original File Name
+    # This should be set only once.
+    if combined:
+        ccd.header.set('GSP_ONAM',
+                       value=os.path.basename(full_path))
+
+        ccd.header.set('GSP_PNAM',
+                   value='combined')
+
+    # Parent File Name
+    if not combined and parent_file is not None:
+        ccd.header.set('GSP_PNAM',
+                       value=os.path.basename(parent_file))
+
+    # Current File Name
+    ccd.header.set('GSP_FNAM', value=os.path.basename(full_path))
+
+    # write to file
+    ccd.write(full_path, overwrite=overwrite)
+    return ccd
+
 
 def image_overscan(ccd, overscan_region, add_keyword=False):
     """Apply overscan to data
@@ -694,7 +724,8 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
 
         ccd.header['GSP_COSM'] = ("DCR", "Cosmic ray rejection method")
 
-        ccd.write(full_path, clobber=True)
+        # ccd.write(full_path, clobber=True)
+        write_fits(ccd=ccd, full_path=full_path)
         log_ccd.info('Saving image: {:s}'.format(full_path))
 
         in_file = out_prefix + image_name
@@ -715,13 +746,15 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         out_prefix = prefix + out_prefix
         full_path = os.path.join(red_path, out_prefix + image_name)
 
-        ccd.write(full_path, clobber=True)
+        # ccd.write(full_path, clobber=True)
+        write_fits(ccd=ccd, full_path=full_path)
         log_ccd.info('Saving image: {:s}'.format(full_path))
 
     elif method == 'none':
         full_path = os.path.join(red_path, out_prefix + image_name)
         log_ccd.warning("--cosmic set to 'none'")
-        ccd.write(full_path, clobber=True)
+        # ccd.write(full_path, clobber=True)
+        write_fits(ccd=ccd, full_path=full_path)
         log_ccd.info('Saving image: {:s}'.format(full_path))
 
     else:
@@ -891,7 +924,10 @@ def normalize_master_flat(master, name, method='simple', order=15):
             master.header['GSP_NORM'] = ('full', 'Flat normalization method')
 
     # write normalized flat to a file
-    master.write(norm_name, clobber=True)
+    # master.write(norm_name, clobber=True)
+    write_fits(ccd=master,
+               full_path=norm_name,
+               parent_file=name)
 
     return master, norm_name
 
