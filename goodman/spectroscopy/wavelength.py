@@ -136,7 +136,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                         comp_path = os.path.join(full_path, comp_file)
                         comp_ccd = CCDData.read(comp_path, unit=u.adu)
                         comp_ccd.header = add_wcs_keys(header=comp_ccd.header)
-                        comp_ccd.header['GSP_NAM'] = (comp_file,
+                        comp_ccd.header['GSP_FNAM'] = (comp_file,
                                                      'Original File Name')
                         comp_ccd_list.append(comp_ccd)
                         # plt.imshow(comp_ccd.data)

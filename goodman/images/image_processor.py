@@ -363,6 +363,7 @@ class ImageProcessor(object):
         """
 
         flat_file_list = flat_group.file.tolist()
+        cleaned_flat_list = []
         master_flat_list = []
         master_flat_name = None
         self.log.info('Creating Master Flat')
@@ -423,6 +424,7 @@ class ImageProcessor(object):
                 # print(ccd.data.max())
                 continue
             else:
+                cleaned_flat_list.append(flat_file)
                 master_flat_list.append(ccd)
         if master_flat_list != []:
             master_flat = ccdproc.combine(master_flat_list,
@@ -431,6 +433,18 @@ class ImageProcessor(object):
                                           sigma_clip_low_thresh=1.0,
                                           sigma_clip_high_thresh=1.0,
                                           add_keyword=False)
+
+            # add name of images used to create master bias
+            for n in range(len(cleaned_flat_list)):
+                master_flat.header['GSP_IC{:02d}'.format(n + 1)] = (
+                    cleaned_flat_list[n],
+                    'Image used to create master flat')
+
+            # add name of master_bias to GSP_FNAM
+            master_flat.header['GSP_FNAM'] = (
+                    os.path.basename(master_flat_name),
+                    'Original File Name')
+
             master_flat.write(master_flat_name, clobber=True)
             # plt.imshow(master_flat.data, clim=(-100,0))
             # plt.show()
