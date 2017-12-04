@@ -555,6 +555,9 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     command = 'dcr {:s} {:s} {:s}'.format(full_path_in,
                                           full_path_out,
                                           full_path_cosmic)
+    # command = 'dcr {:s} {:s} {:s}'.format(in_file,
+    #                                       out_file,
+    #                                       cosmic_file)
 
     log_ccd.debug('DCR command:')
     log_ccd.debug(command)
