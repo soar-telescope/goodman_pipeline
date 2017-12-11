@@ -15,24 +15,54 @@ from ccdproc import CCDData
 # self.log.basicConfig(level=self.log.DEBUG)
 
 
-class WavelengthFitter(object):
-    """Contains methods to do pixel to angstrom fit"""
+class WCS(object):
 
-    def __init__(self, model='chebyshev', degree=3):
-        """Initializes the WavelengthFitter class
-
-        Args:
-            model (str): Name of the model to fit, Chebyshev (default) or Linear
-            degree (int): Degree of the model. Only needed by Chebyshev model.
-        """
+    def __init__(self):
+        # wavelength solution fitter variables
         self.log = logging.getLogger(__name__)
-        self.model_name = model
-        self.degree = degree
+        self.model_name = None
+        self.degree = None
         self.model = None
         self.model_fit = None
-        self.model_constructor()
+        self.fitted_model = None
 
-    def model_constructor(self):
+        # wavelength solution reader from header variables
+        self.ccd = None
+        self.data = None
+        self.header = None
+        self.wcs = None
+        self.wat_wcs_dict = dict()
+        self.wcs_dict = dict()
+        self.wave_intens = []
+
+    def fit(self, physical, wavelength, model_name='chebyshev', degree=3):
+        self.model_name = model_name
+        self.degree = degree
+        self._model_constructor()
+        self.fitted_model = self._fitter(physical=physical,
+                                         wavelength=wavelength)
+        return self.fitted_model
+
+    # def read(self, ccd=None, header=None):
+    def read(self, ccd=None):
+        assert isinstance(ccd, CCDData)
+        self.ccd = ccd
+        self.header = ccd.header
+        self.data = ccd.data
+        self.wcs = ccd.wcs.wcs
+
+        wcsdim = self.wcs.naxis
+        for dim in range(1, wcsdim + 1):
+            ctypen = self.wcs.ctype[0]
+            if ctypen == 'LINEAR':
+                self.log.info('Reading Linear Solution')
+                # self.wcs_dict = {'dtype': 0}
+                self.math_model = self._read_linear()
+            elif ctypen == 'MULTISPE':
+                self._read_non_linear(dim)
+        return self.wave_intens
+
+    def _model_constructor(self):
         """Generates callable mathematical model
 
         It can do chebyshev and linear model only but is easy to implement
@@ -46,7 +76,7 @@ class WavelengthFitter(object):
             self.model = models.Linear1D()
             self.model_fit = fitting.LinearLSQFitter()
 
-    def ws_fit(self, physical, wavelength):
+    def _fitter(self, physical, wavelength):
         """Wavelength solution fit
 
         Takes a list of pixel values and its respective wavelength values to do
@@ -73,59 +103,8 @@ class WavelengthFitter(object):
             self.log.error('Either model or model fitter were not constructed')
             return None
 
-
-class ReadWavelengthSolution(object):
-    """Read wavelength solutions from a fits header"""
-
-    def __init__(self, ccd):
-        """Initializes the ReadWavelengthSolution class
-
-        Args:
-            header (object): Instance of astropy.io.fits.header.Header.
-            data (array): numpy.ndarray instance. or the data attribute of a
-                ccdproc.CCDData instance.
-
-        """
-        assert isinstance(ccd, CCDData)
-        self.log = logging.getLogger(__name__)
-        self.ccd = ccd
-        self.header = ccd.header
-        self.data = ccd.data
-        self.wcs = ccd.wcs.wcs
-        self.wat_wcs_dict = dict()
-        self.wcs_dict = dict()
-        self.wave_intens = []
-        self.math_model = None
-
-    def __call__(self):
-        """call method of ReadWavelengthSolution class
-
-        Discriminates from header's keywords what kind of solution is present
-        and call the appropriate method for linear or non-linear solutions.
-        It uses the FITS standard although not all the standard has been
-        implemented.
-
-        Also call the appropriate method for reading the wavelength solution
-        itself.
-
-        Returns:
-            A two dimension list in which the first element is the wavelength
-            axis in angstrom and the second is the intensity axis in ADU.
-        """
-        # wcsdim = int(self.header['WCSDIM'])
-        wcsdim = self.wcs.naxis
-        for dim in range(1, wcsdim + 1):
-            ctypen = self.wcs.ctype[0]
-            if ctypen == 'LINEAR':
-                self.log.info('Reading Linear Solution')
-                # self.wcs_dict = {'dtype': 0}
-                self.math_model = self.linear_solution()
-            elif ctypen == 'MULTISPE':
-                self.non_linear_solution(dim)
-        return self.wave_intens
-
-
-    def non_linear_solution(self, dimension):
+    # wavelength solution reader private methods.
+    def _read_non_linear(self, dimension):
         """Non linear solutions reader
 
         Notes:
@@ -210,8 +189,8 @@ class ReadWavelengthSolution(object):
             # above actually worked which means this methods has not been fully
             # developed neither tested
 
-            function = ReadMathFunctions(self.wcs_dict)
-            solution = function.get_solution()
+            self._set_math_model()
+
             # print(solution)
             # print("%s %s" % (params, len(params)))
             wav1 = [4545.0519,
@@ -229,7 +208,6 @@ class ReadWavelengthSolution(object):
                     5572.5413,
                     5606.733,
                     5650.7043]
-            # data = fits.getdata('/data/simon/data/soar/work/goodman/test/extraction-tests/cuhear600nonlinearli.fits')
             x_axis = range(1, len(self.data) + 1)
             # x0 = range(len(self.data))
             # print('x data', x_axis[0], x_axis[-1], len(self.data))
@@ -238,49 +216,14 @@ class ReadWavelengthSolution(object):
             plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'],
                                     self.wat_wcs_dict['units']))
 
-            plt.plot(solution(x_axis), self.data)
+            plt.plot(self.model(x_axis), self.data)
             # plt.plot(solution(x0), self.data, color='g')
             for line in wav1:
                 plt.axvline(line, color='r')
             plt.show()
             # print(spec)
 
-    # def linear_solution(self):
-    #     """Linear solution reader
-    #
-    #     This method read the apropriate keywords and defines a linear wavelength
-    #     solution
-    #
-    #     Returns:
-    #         Callable wavelength solution model. Instance of
-    #             astropy.modeling.Model
-    #     """
-    #     crval = float(self.header['CRVAL1'])
-    #     crpix = int(self.header['CRPIX1'])
-    #
-    #     # workaround for some notations
-    #     try:
-    #
-    #         cdelt = float(self.header['CDELT1'])
-    #
-    #     except KeyError:
-    #         cdelt = float(self.header['CD1_1'])
-    #
-    #     self.wcs_dict = {'crval': crval,
-    #                      'crpix': crpix,
-    #                      'cdelt': cdelt,
-    #                      'dtype': 0}
-    #
-    #     math_function = ReadMathFunctions(self.wcs_dict)
-    #     solution = math_function.get_solution()
-    #
-    #     x_axis = range(len(self.data))
-    #
-    #     self.wave_intens = [solution(x_axis), self.data]
-    #
-    #     return solution
-
-    def linear_solution(self):
+    def _read_linear(self):
         """Linear solution reader
 
         This method read the apropriate keywords and defines a linear wavelength
@@ -290,101 +233,77 @@ class ReadWavelengthSolution(object):
             Callable wavelength solution model. Instance of
                 astropy.modeling.Model
         """
-        # crval = float(self.header['CRVAL1'])
-        # crpix = int(self.header['CRPIX1'])
-        #
-        # # workaround for some notations
-        # try:
-        #
-        #     cdelt = float(self.header['CDELT1'])
-        #
-        # except KeyError:
-        #     cdelt = float(self.header['CD1_1'])
-
         self.wcs_dict = {'crval': self.wcs.crval[0],
                          'crpix': self.wcs.crpix[0],
                          'cdelt': self.wcs.cd[0],
                          'dtype': 0}
 
-        math_function = ReadMathFunctions(self.wcs_dict)
-        solution = math_function.get_solution()
+        self._set_math_model()
 
         x_axis = range(len(self.data))
 
-        self.wave_intens = [solution(x_axis), self.data]
+        self.wave_intens = [self.model(x_axis), self.data]
 
-        return solution
+        return self.model
 
+    def _set_math_model(self):
 
-class ReadMathFunctions(object):
-    """Identify the mathematical function and returns it"""
-
-    def __init__(self, wcs_dict):
-        """Initializes the ReadMathFunctions class
-
-        Args:
-            wcs_dict (dict): Dictionary that contains all the information
-                regarding the wavelength solution or WCS.
-        """
-        self.log = logging.getLogger(__name__)
-        self.wcs = wcs_dict
-        self.solution = None
-        if self.wcs['dtype'] == -1:
-            self.none()
-        elif self.wcs['dtype'] == 0:
-            self.solution = self.linear_solution()
-        elif self.wcs['dtype'] == 1:
-            self.log_linear()
-        elif self.wcs['dtype'] == 2:
-            if self.wcs['ftype'] == '1':
-                self.solution = self.chebyshev()
-            elif self.wcs['ftype'] == '2':
-                self.non_linear_legendre()
-            elif self.wcs['ftype'] == '3':
-                self.non_linear_cspline()
-            elif self.wcs['ftype'] == '4':
-                self.non_linear_lspline()
-            elif self.wcs['ftype'] == '5':
+        if self.wcs_dict['dtype'] == -1:
+            self._none()
+        elif self.wcs_dict['dtype'] == 0:
+            self._linear_solution()
+        elif self.wcs_dict['dtype'] == 1:
+            self._log_linear()
+        elif self.wcs_dict['dtype'] == 2:
+            if self.wcs_dict['ftype'] == '1':
+                self._chebyshev()
+            elif self.wcs_dict['ftype'] == '2':
+                self._non_linear_legendre()
+            elif self.wcs_dict['ftype'] == '3':
+                self._non_linear_cspline()
+            elif self.wcs_dict['ftype'] == '4':
+                self._non_linear_lspline()
+            elif self.wcs_dict['ftype'] == '5':
                 # pixel coordinates
-                pass
-            elif self.wcs['ftype'] == '6':
+                raise NotImplementedError
+            elif self.wcs_dict['ftype'] == '6':
                 # sampled coordinate array
-                pass
+                raise NotImplementedError
             else:
                 self.log.error('Not Implemented')
         else:
             self.log.error('Not Implemented')
 
     @staticmethod
-    def none():
+    def _none():
+        # TODO (simon): Document why this is this way
         return 0
 
-    def linear_solution(self):
+    def _linear_solution(self):
         """Returns a linear 1D model"""
-        intercept = self.wcs['crval'] - (self.wcs['crpix'] - 1) * self.wcs['cdelt']
-        # intercept = self.wcs['crval'] - self.wcs['crpix'] * self.wcs['cdelt']
-        linear = models.Linear1D(slope=self.wcs['cdelt'], intercept=intercept)
-        return linear
+        intercept = self.wcs_dict['crval'] -\
+                    (self.wcs_dict['crpix'] - 1) *\
+                    self.wcs_dict['cdelt']
+
+        self.model = models.Linear1D(slope=self.wcs_dict['cdelt'],
+                                     intercept=intercept)
 
     @staticmethod
-    def log_linear():
+    def _log_linear():
         """Not implemented, returns False"""
         return False
 
-    def chebyshev(self):
+    def _chebyshev(self):
         """Returns a chebyshev model"""
         # TODO (simon): convert it to a staticmethod thus making it usable for
         # TODO (cont): external usage
-        cheb = models.Chebyshev1D(degree=self.wcs['order'],
-                                  domain=[self.wcs['pmin'],
-                                          self.wcs['pmax']], )
-        for param_index in range(self.wcs['order']):
+        self.model = models.Chebyshev1D(degree=self.wcs_dict['order'],
+                                        domain=[self.wcs_dict['pmin'],
+                                                self.wcs_dict['pmax']], )
+        for param_index in range(self.wcs_dict['order']):
+            self.model.parameters[param_index] = self.wcs_dict['fpar'][param_index]
 
-            cheb.parameters[param_index] = self.wcs['fpar'][param_index]
-
-        return cheb
-
-    def non_linear_legendre(self):
+    def _non_linear_legendre(self):
         """Not implemented
 
         Raises:
@@ -393,7 +312,7 @@ class ReadMathFunctions(object):
         """
         raise NotImplementedError
 
-    def non_linear_lspline(self):
+    def _non_linear_lspline(self):
         """Not implemented
 
         Raises:
@@ -402,7 +321,7 @@ class ReadMathFunctions(object):
         """
         raise NotImplementedError
 
-    def non_linear_cspline(self):
+    def _non_linear_cspline(self):
         """Not implemented
 
         Raises:
@@ -411,12 +330,15 @@ class ReadMathFunctions(object):
         """
         raise NotImplementedError
 
-    def get_solution(self):
+    def get_model(self):
         """Returns the wavelength solution model if exists."""
-        if self.solution is not None:
-            return self.solution
+        if self.model is not None:
+            return self.model
         else:
             self.log.error("The solution hasn't been found")
 
+
 if __name__ == '__main__':
     pass
+
+

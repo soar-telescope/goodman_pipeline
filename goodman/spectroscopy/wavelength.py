@@ -13,37 +13,34 @@ standard.
 # conflict with this request.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import astropy.units as u
+
 import glob
 import logging
-import numpy as np
-# import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
 import os
 import re
 import sys
-import scipy.interpolate
 
-from astropy.io import fits
-from astropy.stats import sigma_clip
-from astropy.modeling import models, fitting
+import astropy.units as u
+# import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+import numpy as np
+import scipy.interpolate
 from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
+from astropy.io import fits
+from astropy.modeling import models, fitting
+from astropy.stats import sigma_clip
 from ccdproc import CCDData
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy import signal
 
-from .wsbuilder import (ReadWavelengthSolution, WavelengthFitter)
+from goodman.wcs.wcs import WCS
 from .linelist import ReferenceData
 from ..core import (spectroscopic_extraction,
                     search_comp_group,
                     add_wcs_keys,
                     NoTargetException,
-                    NoMatchFound,
-                    NotEnoughLinesDetected,
-                    CriticalError)
-
-
+                    NoMatchFound)
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.INFO, format=FORMAT)
@@ -129,6 +126,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
                 ccd = CCDData.read(file_path, unit=u.adu)
+                # TODO (simon): Update GSP_FNAM if it differs
                 ccd.header.set('GSP_PNAM', value=spec_file)
                 ccd.header = add_wcs_keys(header=ccd.header)
                 # ccd.header['GSP_FNAM'] = spec_file
@@ -238,6 +236,7 @@ class WavelengthCalibration(object):
         self.log = logging.getLogger(__name__)
         self.args = args
         self.poly_order = 2
+        self.WCS = WCS()
         self.wsolution = None
         self.rms_error = None
         # print(self.args.reference_dir)
@@ -623,7 +622,7 @@ class WavelengthCalibration(object):
         clipped_data = sigma_clip(data, sigma=2, iters=5)
         clean_data = clipped_data[~clipped_data.mask]
         self.log.debug("Found best filling value"
-                  " at {:s}".format(np.median(clean_data)))
+                       " at {:f}".format(np.median(clean_data)))
         return np.median(clean_data)
 
     def recenter_lines(self, data, lines, plots=False):
@@ -1105,10 +1104,7 @@ class WavelengthCalibration(object):
             # TODO (simon): Evaluate if send this to interactive mode
             return None
 
-
-        read_wsolution = ReadWavelengthSolution(ccd=reference_lamp_data)
-
-        reference_lamp_wav_axis, reference_lamp_data.data = read_wsolution()
+        reference_lamp_wav_axis, reference_lamp_data.data = self.WCS.read(ccd=reference_lamp_data)
         reference_lamp_copy = reference_lamp_data.copy()
 
         if False:
@@ -1122,13 +1118,14 @@ class WavelengthCalibration(object):
                                                 gaussian_kernel)
 
         # Initialize wavelength builder class
-        wavelength_solution = WavelengthFitter(model='chebyshev',
-                                               degree=self.poly_order)
+        # wavelength_solution = self.WCS.fit(model='chebyshev',
+        #                                        degree=self.poly_order)
+
         # self.wsolution = wavelength_solution.ws_fit(pixel, auto_angs)
 
         '''detect lines in comparison lamp (not reference)'''
         lamp_lines_pixel = self.get_lines_in_lamp()
-        lamp_lines_angst = read_wsolution.math_model(lamp_lines_pixel)
+        lamp_lines_angst = self.WCS.math_model(lamp_lines_pixel)
 
         pixel_values = []
         angstrom_values = []
@@ -1168,7 +1165,7 @@ class WavelengthCalibration(object):
                            '{:s}'.format(str(correlation_value)))
 
             """record value for reference wavelength"""
-            angstrom_value_model = read_wsolution.math_model(
+            angstrom_value_model = self.WCS.math_model(
                 line_value_pixel + correlation_value)
 
             correlation_values.append(correlation_value)
@@ -1218,8 +1215,10 @@ class WavelengthCalibration(object):
         # Create a wavelength solution
         self.log.info('Creating Wavelength Solution')
 
-        self.wsolution = wavelength_solution.ws_fit(pixel_values,
-                                                    angstrom_values)
+        self.wsolution = self.WCS.fit(physical=pixel_values,
+                                      wavelength=angstrom_values,
+                                      model_name='chebyshev',
+                                      degree=self.poly_order)
 
         if self.wsolution is None:
             self.log.error('Failed to find wavelength solution using reference '
@@ -1251,8 +1250,10 @@ class WavelengthCalibration(object):
                     angstrom_values.append(_angstrom_values[i])
             self.log.info('Re-fitting wavelength solution')
 
-            self.wsolution = wavelength_solution.ws_fit(pixel_values,
-                                                        angstrom_values)
+            self.wsolution = self.WCS.fit(physical=pixel_values,
+                                          wavelength=angstrom_values,
+                                          model_name='chebyshev',
+                                          degree=self.poly_order)
 
         self.evaluate_solution()
 
@@ -1428,17 +1429,17 @@ class WavelengthCalibration(object):
         if reference_file is not None:
             self.log.info('Using reference file: {:s}'.format(reference_file))
             reference_plots_enabled = True
-            ref_data = fits.getdata(reference_file)
-            ref_header = fits.getheader(reference_file)
-            fits_ws_reader = ReadWavelengthSolution(ref_header, ref_data)
-            self.reference_solution = fits_ws_reader()
+            ref_ccd = CCDData.read(reference_file, unit=u.adu)
+            # ref_data = fits.getdata(reference_file)
+            # ref_header = fits.getheader(reference_file)
+            self.reference_solution = self.WCS.read(ccd=ref_ccd)
         else:
             reference_plots_enabled = False
             self.log.error('Please Check the OBJECT Keyword of your reference data')
 
         # update filling value
         self.raw_filling_value = self.get_best_filling_value(data=self.lamp_data)
-        self.ref_filling_value = self.get_best_filling_value(data=ref_data)
+        self.ref_filling_value = self.get_best_filling_value(data=ref_ccd.data)
 
         # ------- Plots -------
         self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = \
@@ -2219,10 +2220,11 @@ class WavelengthCalibration(object):
                     pixel.append(self.raw_data_marks_x[i])
                     angstrom.append(self.reference_marks_x[i])
 
-                wavelength_solution = WavelengthFitter(model='chebyshev',
-                                                       degree=self.poly_order)
+                self.wsolution = self.WCS.fit(physical=pixel,
+                                              wavelength=angstrom,
+                                              model_name='chebyshev',
+                                              degree=self.poly_order)
 
-                self.wsolution = wavelength_solution.ws_fit(pixel, angstrom)
                 self.evaluate_solution(plots=True)
 
         else:
@@ -2379,6 +2381,7 @@ class WavelengthCalibration(object):
         new_header['WAT0_001'] = 'system=equispec'
         new_header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
         new_header['DC-FLAG'] = 0
+        print(self.calibration_lamp)
         new_header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
 
         # print(new_header['APNUM*'])
