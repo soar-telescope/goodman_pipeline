@@ -1902,7 +1902,7 @@ def get_extraction_zone(ccd,
         return nccd
 
 
-def add_wcs_keys(header):
+def add_wcs_keys(ccd):
     """Adds generic keyword to the header
 
     Linear wavelength solutions require a set of standard fits keywords. Later
@@ -1914,27 +1914,68 @@ def add_wcs_keys(header):
         This does NOT add a WCS solution, just the keywords
 
     Args:
-        header (object): New header without WCS entries
+        ccd (object): ccdproc.CCDData instance with no wcs keywords
 
     Returns:
-        header (object): Modified header with added WCS keywords
+        ccd (object): ccdproc.CCDData instance with modified header with added
+          WCS keywords
 
     """
     try:
-        header['BANDID1'] = 'spectrum - background none, weights none, clean no'
-        header['APNUM1'] = '1 1 0 0'
-        header['WCSDIM'] = 1
-        header['CTYPE1'] = 'LINEAR'
-        header['CRVAL1'] = 1
-        header['CRPIX1'] = 1
-        header['CDELT1'] = 1
-        header['CD1_1'] = 1
-        header['LTM1_1'] = 1
-        header['WAT0_001'] = 'system=equispec'
-        header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
-        header['DC-FLAG'] = 0
-        header['DCLOG1'] = 'REFSPEC1 = non set'
-        return header
+        ccd.header.set('BANDID1',
+                   value='spectrum - background none, weights none, clean no',
+                   comment='')
+
+        ccd.header.set('APNUM1',
+                   value='1 1 0 0',
+                   comment='')
+
+        ccd.header.set('WCSDIM',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('CTYPE1',
+                   value='LINEAR',
+                   comment='')
+
+        ccd.header.set('CRVAL1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('CRPIX1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('CDELT1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('CD1_1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('LTM1_1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('WAT0_001',
+                   value='system=equispec',
+                   comment='')
+
+        ccd.header.set('WAT1_001',
+                   value='wtype=linear label=Wavelength units=angstroms',
+                   comment='')
+
+        ccd.header.set('DC-FLAG',
+                   value=0,
+                   comment='')
+
+        ccd.header.set('DCLOG1',
+                   value='REFSPEC1 = non set',
+                   comment='')
+
+        return ccd
+
     except TypeError as err:
         log_spec.error("Can't add wcs keywords to header")
         log_spec.debug(err)

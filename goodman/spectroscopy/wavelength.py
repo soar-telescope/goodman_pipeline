@@ -118,26 +118,24 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 else:
                     log.warning('Data will be extracted but not calibrated')
 
-
             COMBINE = True
             if len(object_group.file.tolist()) > 1 and COMBINE:
-                print("Combine Here")
+                print("This can be combined")
             for spec_file in object_group.file.tolist():
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
                 ccd = CCDData.read(file_path, unit=u.adu)
                 ccd.header.set('GSP_PNAM', value=spec_file)
-                ccd.header = add_wcs_keys(header=ccd.header)
+                ccd = add_wcs_keys(ccd=ccd)
                 # ccd.header['GSP_FNAM'] = spec_file
                 if comp_group is not None and comp_ccd_list == []:
                     for comp_file in comp_group.file.tolist():
                         comp_path = os.path.join(full_path, comp_file)
                         comp_ccd = CCDData.read(comp_path, unit=u.adu)
-                        comp_ccd.header = add_wcs_keys(header=comp_ccd.header)
+                        comp_ccd = add_wcs_keys(ccd=comp_ccd)
                         comp_ccd.header.set('GSP_PNAM', value=comp_file)
                         comp_ccd_list.append(comp_ccd)
-                        # plt.imshow(comp_ccd.data)
-                        # plt.show()
+
                 else:
                     log.debug('Comp Group is None or comp list already exist')
 
