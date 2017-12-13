@@ -126,7 +126,6 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
                 ccd = CCDData.read(file_path, unit=u.adu)
-                # TODO (simon): Update GSP_FNAM if it differs
                 ccd.header.set('GSP_PNAM', value=spec_file)
                 ccd.header = add_wcs_keys(header=ccd.header)
                 # ccd.header['GSP_FNAM'] = spec_file
