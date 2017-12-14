@@ -23,7 +23,7 @@ class WCS(object):
         self.model_name = None
         self.degree = None
         self.model = None
-        self.model_fit = None
+        self.model_fitter = None
         self.fitted_model = None
 
         # wavelength solution reader from header variables
@@ -33,7 +33,7 @@ class WCS(object):
         self.wcs = None
         self.wat_wcs_dict = dict()
         self.wcs_dict = dict()
-        self.wave_intens = []
+        self.wavelength_and_intensity = []
 
     def fit(self, physical, wavelength, model_name='chebyshev', degree=3):
         self.model_name = model_name
@@ -57,10 +57,13 @@ class WCS(object):
             if ctypen == 'LINEAR':
                 self.log.info('Reading Linear Solution')
                 # self.wcs_dict = {'dtype': 0}
-                self.math_model = self._read_linear()
+                self.model = self._read_linear()
             elif ctypen == 'MULTISPE':
                 self._read_non_linear(dim)
-        return self.wave_intens
+            else:
+                raise NotImplementedError("CTYPE {:s} is "
+                                          "not recognized".format(ctypen))
+        return self.wavelength_and_intensity
 
     def _model_constructor(self):
         """Generates callable mathematical model
@@ -71,10 +74,13 @@ class WCS(object):
         """
         if self.model_name == 'chebyshev':
             self.model = models.Chebyshev1D(degree=self.degree)
-            self.model_fit = fitting.LevMarLSQFitter()
+            self.model_fitter = fitting.LevMarLSQFitter()
         elif self.model_name == 'linear':
             self.model = models.Linear1D()
-            self.model_fit = fitting.LinearLSQFitter()
+            self.model_fitter = fitting.LinearLSQFitter()
+        else:
+            raise NotImplementedError("The model {:s} is "
+                                      "not implemented".format(self.model_name))
 
     def _fitter(self, physical, wavelength):
         """Wavelength solution fit
@@ -90,10 +96,12 @@ class WCS(object):
             fitted_model i.e. wavelength solution.
 
         """
-        if self.model and self.model_fit is not None:
+        if self.model and self.model_fitter is not None:
             try:
 
-                fitted_model = self.model_fit(self.model, physical, wavelength)
+                fitted_model = self.model_fitter(self.model,
+                                                 physical,
+                                                 wavelength)
                 return fitted_model
             except TypeError as error:
                 self.log.info('Unable to do fit, please add more data points.')
@@ -242,7 +250,7 @@ class WCS(object):
 
         x_axis = range(len(self.data))
 
-        self.wave_intens = [self.model(x_axis), self.data]
+        self.wavelength_and_intensity = [self.model(x_axis), self.data]
 
         return self.model
 
@@ -295,8 +303,6 @@ class WCS(object):
 
     def _chebyshev(self):
         """Returns a chebyshev model"""
-        # TODO (simon): convert it to a staticmethod thus making it usable for
-        # TODO (cont): external usage
         self.model = models.Chebyshev1D(degree=self.wcs_dict['order'],
                                         domain=[self.wcs_dict['pmin'],
                                                 self.wcs_dict['pmax']], )
