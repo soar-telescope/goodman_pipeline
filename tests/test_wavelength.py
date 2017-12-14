@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 
-def test_wavevelengthcalibration_isntantiate():
+def test_wavelength_calibration_isntantiate():
     from ..goodman.spectroscopy.wavelength import WavelengthCalibration
     from .test_redspec import test_get_args
     import os
@@ -15,4 +15,20 @@ def test_wavevelengthcalibration_isntantiate():
 
 
 def test_get_wsolution_none():
+    pass
+
+
+def test_lambda_pipeline_to_iraf():
+    pass
+
+
+def test_lamp_correlation():
+    """Cross correlate lamp
+
+    :return:
+    """
+    pass
+
+
+def test_rms_pipeline_to_iraf():
     pass
