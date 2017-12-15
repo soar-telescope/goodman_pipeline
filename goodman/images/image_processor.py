@@ -581,20 +581,22 @@ class ImageProcessor(object):
         obstype = science_group.obstype.unique()
         # print(obstype)
         if 'OBJECT' in obstype or 'COMP' in obstype:
-            object_group = science_group[(science_group.obstype == 'OBJECT') |
-                                         (science_group.obstype == 'COMP')]
+            object_comp_group = science_group[(science_group.obstype == 'OBJECT') |
+                                              (science_group.obstype == 'COMP')]
+
             if 'OBJECT' in obstype:
                 target_name = science_group.object[science_group.obstype ==
                                                    'OBJECT'].unique()[0]
 
                 self.log.info('Processing Science Target: {:s}'.format(target_name))
             else:
+                # TODO (simon): This does not make any sense
                 self.log.info('Processing Comparison Lamp: {:s}'.format(target_name))
 
             if 'FLAT' in obstype and not self.args.ignore_flats:
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']
 
-                master_flat, master_flat_name =\
+                master_flat, master_flat_name = \
                     self.create_master_flats(flat_group=flat_sub_group,
                                              target_name=target_name)
             elif self.args.ignore_flats:
@@ -603,7 +605,7 @@ class ImageProcessor(object):
                 master_flat_name = None
             else:
                 self.log.info('Attempting to find a suitable Master Flat')
-                object_list = object_group.file.tolist()
+                object_list = object_comp_group.file.tolist()
 
                 # grab a random image from the list
                 random_image = random.choice(object_list)
@@ -619,7 +621,7 @@ class ImageProcessor(object):
                     # define the master flat name
                     master_flat_name = self.name_master_flats(
                         header=ccd.header,
-                        group=object_group,
+                        group=object_comp_group,
                         get=True)
 
                     # load the best flat based on the name previously defined
@@ -633,7 +635,7 @@ class ImageProcessor(object):
                 slit_trim = get_slit_trim_section(master_flat=master_flat)
             elif self.args.ignore_flats:
                 self.log.warning('Slit Trimming will be skipped, --ignore-flats is '
-                            'activated')
+                                 'activated')
             else:
                 self.log.info('Master flat inexistent, cant find slit trim section')
             if slit_trim is not None:
@@ -653,7 +655,9 @@ class ImageProcessor(object):
                     master_bias = None
 
             norm_master_flat = None
-            for science_image in object_group.file.tolist():
+            all_object_image = []
+            all_comp_image = []
+            for science_image in object_comp_group.file.tolist():
                 self.out_prefix = ''
 
                 # define image full path
@@ -733,9 +737,11 @@ class ImageProcessor(object):
                         write_fits(ccd=ccd, full_path=full_path)
                 else:
                     self.log.warning('Ignoring bias correction by request.')
+
+                # Do flat correction
                 if master_flat is None or master_flat_name is None:
                     self.log.warning('The file {:s} will not be '
-                                'flatfielded'.format(science_image))
+                                     'flatfielded'.format(science_image))
                 elif self.args.ignore_flats:
                     self.log.warning('Ignoring flatfielding by request.')
                 else:
@@ -768,15 +774,57 @@ class ImageProcessor(object):
                         # ccd.write(full_path, clobber=True)
                         write_fits(ccd=ccd, full_path=full_path)
 
-                call_cosmic_rejection(ccd=ccd,
-                                      image_name=science_image,
-                                      out_prefix=self.out_prefix,
-                                      red_path=self.args.red_path,
-                                      dcr_par=self.args.dcr_par_dir,
-                                      keep_files=self.args.keep_cosmic_files,
-                                      method=self.args.clean_cosmic)
+                ccd, prefix = call_cosmic_rejection(
+                    ccd=ccd,
+                    image_name=science_image,
+                    out_prefix=self.out_prefix,
+                    red_path=self.args.red_path,
+                    dcr_par=self.args.dcr_par_dir,
+                    keep_files=self.args.keep_cosmic_files,
+                    method=self.args.clean_cosmic)
 
-                # print(science_group)
+                self.out_prefix = prefix
+
+                if ccd.header['OBSTYPE'] == 'OBJECT':
+                    self.log.debug("Appending OBJECT image for combination")
+                    all_object_image.append(ccd)
+                elif ccd.header['OBSTYPE'] == 'COMP':
+                    self.log.debug("Appending COMP image for combination")
+                    all_comp_image.append(ccd)
+                else:
+                    self.log.error("Unknown OBSTYPE = {:s}"
+                                   "".format(ccd.header['OBSTYPE']))
+
+            if len(all_object_image) > 1:
+                self.log.info("Combining {:d} OBJECT images"
+                              "".format(len(all_object_image)))
+
+                object_group = object_comp_group[
+                    object_comp_group.obstype == "OBJECT"]
+
+                print(object_group, len(all_object_image))
+
+                object_combined = self.combine_data(all_object_image,
+                                                    dest_path=self.args.red_path,
+                                                    prefix=self.out_prefix,
+                                                    save=True)
+            elif len(all_object_image) == 1:
+                # write_fits(all_object_image[0])
+                pass
+
+            else:
+                self.log.error("No image to write")
+
+            if len(all_comp_image) > 1:
+                self.log.info("Combining {:d} COMP images"
+                              "".format(len(all_object_image)))
+                comp_group = object_comp_group[
+                    object_comp_group.obstype == "COMP"]
+                comp_combined = self.combine_data(all_comp_image,
+                                                  dest_path=self.args.red_path,
+                                                  prefix=self.out_prefix,
+                                                  save=True)
+
         elif 'FLAT' in obstype:
             self.queue.append(science_group)
             self.log.warning('Only flats found in this group')
@@ -861,6 +909,81 @@ class ImageProcessor(object):
                 self.log.info('Created science file: {:s}'.format(final_name))
         else:
             self.log.error('Can not process data without a master flat')
+
+    @staticmethod
+    def combine_data(image_list,
+                     dest_path,
+                     prefix=None,
+                     output_name=None,
+                     method="median",
+                     save=False):
+
+        assert len(image_list) > 1
+
+        # This defines a default filename that should be deleted below
+        combined_full_path = os.path.join(dest_path, "combined.fits")
+        if output_name is not None:
+            combined_full_path = os.path.join(dest_path, output_name)
+        elif (prefix is not None):
+            combined_base_name = ''
+            target_name = image_list[0].header["OBJECT"]
+
+            grating_name = re.sub('[A-Za-z_-]',
+                                  '',
+                                  image_list[0].header["GRATING"])
+
+            slit_size = re.sub('[A-Za-z" ]',
+                               '',
+                               image_list[0].header["SLIT"])
+
+            for field in [prefix,
+                          'combined',
+                          target_name,
+                          grating_name,
+                          slit_size]:
+
+                value = re.sub('[_ /]',
+                               '',
+                               field)
+
+                combined_base_name += "{:s}_".format(value)
+
+            print(combined_base_name)
+
+            number = len(glob.glob(
+                os.path.join(dest_path,
+                             combined_base_name + "*.fits")))
+
+            combined_full_path = os.path.join(
+                dest_path,
+                combined_base_name + "_{:04d}.fits".format(number + 1))
+
+        # combine image
+        combined_image = ccdproc.combine(image_list,
+                                         method=method,
+                                         sigma_clip=True,
+                                         sigma_clip_low_thresh=1.0,
+                                         sigma_clip_high_thresh=1.0,
+                                         add_keyword=False)
+
+        # add name of files used in the combination process
+        for i in range(len(image_list)):
+            image_name = image_list[i].header['GSP_FNAM']
+            combined_image.header.set("GSP_IC{:02d}".format(i + 1),
+                                      value=image_name,
+                                      comment='Image used to create combined')
+
+
+
+        if save or True:
+            write_fits(combined_image,
+                       full_path=combined_full_path,
+                       combined=True)
+
+
+        print(combined_full_path)
+
+        return combined_image
 
 
 if __name__ == '__main__':

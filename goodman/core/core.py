@@ -508,7 +508,7 @@ def get_slit_trim_section(master_flat):
 
 
 def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
-                            delete=False):
+                            delete=False, save=True):
     """Runs an external code for cosmic ray rejection
 
     DCR was created by Wojtek Pych and the code can be obtained from
@@ -641,6 +641,15 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         except OSError as error:
             log_ccd.error(error)
 
+    # recovers the saved file and returns the CCDData instance
+    if os.path.isfile(full_path_out):
+        ccd = CCDData.read(full_path_out, unit=u.adu)
+        if not save:
+            log_ccd.warning("Removing file because the attribute 'save' "
+                            "is set to False")
+            os.unlink(full_path_out)
+        return ccd
+
 
 def lacosmic_cosmicray_rejection(ccd, mask_only=False):
     """Do cosmic ray rejection using ccdproc.LACosmic
@@ -690,12 +699,13 @@ def lacosmic_cosmicray_rejection(ccd, mask_only=False):
             return ccd
     else:
         log_ccd.debug('Skipping cosmic ray rejection for image of datatype: '
-                 '{:s}'.format(ccd.header['OBSTYPE']))
+                      '{:s}'.format(ccd.header['OBSTYPE']))
         return ccd
 
 
 def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
-                          dcr_par, keep_files=False, prefix='c', method='dcr'):
+                          dcr_par, keep_files=False, prefix='c', method='dcr',
+                          save=False):
     """Call for the appropriate cosmic ray rejection method
 
     There are three options when dealing with cosmic ray rejection in this
@@ -717,6 +727,7 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
             name.
         method (str): Method to use for cosmic ray rejection. There are three
             options: dcr, lacosmic and none.
+        save (bool): Disables by default saving the images
 
     """
 
@@ -733,11 +744,17 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
 
         in_file = out_prefix + image_name
 
-        dcr_cosmicray_rejection(data_path=red_path,
-                                in_file=in_file,
-                                prefix=prefix,
-                                dcr_par_dir=dcr_par,
-                                delete=keep_files)
+        # This is to return the prefix that will be used by dcr
+        # Not to be used by dcr_cosmicray_rejection
+        out_prefix = prefix + out_prefix
+
+        ccd = dcr_cosmicray_rejection(data_path=red_path,
+                                      in_file=in_file,
+                                      prefix=prefix,
+                                      dcr_par_dir=dcr_par,
+                                      delete=keep_files,
+                                      save=save)
+        return ccd, out_prefix
 
     elif method == 'lacosmic':
         log_ccd.warning('LACosmic does not apply the correction to images '
@@ -750,15 +767,20 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         full_path = os.path.join(red_path, out_prefix + image_name)
 
         # ccd.write(full_path, clobber=True)
-        write_fits(ccd=ccd, full_path=full_path)
         log_ccd.info('Saving image: {:s}'.format(full_path))
+        if save:
+            write_fits(ccd=ccd, full_path=full_path)
+        return ccd, out_prefix
 
     elif method == 'none':
         full_path = os.path.join(red_path, out_prefix + image_name)
         log_ccd.warning("--cosmic set to 'none'")
         # ccd.write(full_path, clobber=True)
-        write_fits(ccd=ccd, full_path=full_path)
+        if save:
+            write_fits(ccd=ccd, full_path=full_path)
         log_ccd.info('Saving image: {:s}'.format(full_path))
+
+        return ccd, out_prefix
 
     else:
         log_ccd.error('Unrecognized Cosmic Method {:s}'.format(method))
@@ -2700,6 +2722,7 @@ class SpectroscopicMode(object):
                 # print('%s %s' %(grating, _mode.wavmode))
                 # print(_mode['wavmode'].to_string)
                 return _mode['wavmode'].to_string(index=False)
+
 
 class NoTargetException(Exception):
     """Exception to be raised when no target is identified"""
