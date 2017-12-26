@@ -30,12 +30,13 @@ class DataClassifier(object):
         self.nights_dict = None
         self.instrument = None
         self.image_collection = None
+        self.no_bias_collection = None
         self.objects_collection = None
         self.technique = None
 
     def __repr__(self):
-        return str("Raw Path: {:s}\n" \
-                   "Instrument: {:s} Camera\n" \
+        return str("Raw Path: {:s}\n"
+                   "Instrument: {:s} Camera\n"
                    "Observing Technique: {:s}".format(self.raw_path,
                                                       self.instrument,
                                                       self.technique))
@@ -53,11 +54,10 @@ class DataClassifier(object):
         self.raw_path = raw_path
         self.nights_dict = {}
         self.log.debug('Raw path: ' + self.raw_path)
-        self.get_instrument(self.raw_path)
+        self._get_instrument()
         self.log.info('Instrument: ' + self.instrument + ' Camera')
-        no_bias_collection = self.image_collection[
-            self.image_collection.obstype != 'BIAS']
-        self.get_obs_technique(image_collection=no_bias_collection)
+        # self.no_bias_collection =
+        self._get_obs_technique()
         self.log.info('Observing Technique: ' + self.technique)
         if self.instrument is not None and self.technique is not None:
             # folder name is used as key for the dictionary
@@ -70,7 +70,7 @@ class DataClassifier(object):
             self.log.error('Failed to determine Instrument or Technique '
                       'for the night: {:s}'.format(self.raw_path))
 
-    def get_instrument(self, night_folder):
+    def _get_instrument(self):
         """Identify Goodman's Camera
 
         Goodman has two camera, *Blue* and *Red*. They are, as the name suggest
@@ -85,13 +85,10 @@ class DataClassifier(object):
             result the headers where updated too. But we need to keep this
             feature for *backward compatibility*
 
-        Args:
-            night_folder (str): The full path for the raw data location
-
         """
         while True:
             try:
-                ifc = ImageFileCollection(night_folder)
+                ifc = ImageFileCollection(self.raw_path)
                 self.image_collection = ifc.summary.to_pandas()
 
                 self.objects_collection = self.image_collection[
@@ -116,16 +113,16 @@ class DataClassifier(object):
             except ValueError as error:
                 if 'Inconsistent data column lengths' in str(error):
 
-                    self.log.error('There are duplicated keywords in the headers. '
-                              'Fix it first!')
+                    self.log.error('There are duplicated keywords in the '
+                                   'headers. Fix it first!')
 
-                    fix_duplicated_keywords(night_folder)
+                    fix_duplicated_keywords(self.raw_path)
                     continue
                 else:
                     self.log.error('Unknown Error: ' + str(error))
             break
 
-    def get_obs_technique(self, image_collection):
+    def _get_obs_technique(self):
         """Identify if the data is Imaging or Spectroscopy
 
         Besides the fact there are two cameras there are two observational
@@ -136,14 +133,17 @@ class DataClassifier(object):
 
         """
 
+        image_collection = self.image_collection[
+            self.image_collection.obstype != 'BIAS']
+
         if self.instrument == 'Red':
             wavmodes = image_collection.wavmode.unique()
             if len(wavmodes) == 1 and wavmodes[0] == 'Imaging':
                 self.technique = 'Imaging'
                 self.log.info('Detected Imaging Data from RED Camera')
             elif 'Imaging' in wavmodes and len(wavmodes) > 1:
-                self.log.error('There are mixed observation techniques this night. '
-                          'Please classify your data')
+                self.log.error('There are mixed observation techniques this '
+                               'night. Please classify your data')
                 self.technique = 'Unknown'
             else:
                 self.technique = 'Spectroscopy'
@@ -163,7 +163,7 @@ class DataClassifier(object):
                 self.log.info('Detected Imaging Data from BLUE Camera')
             else:
                 self.log.error('It was not possible to determine observing '
-                          'technique')
+                               'technique')
                 self.technique = 'Unknown'
 
 
