@@ -47,7 +47,8 @@ class NightOrganizer(object):
                          'filter',
                          'filter2',
                          'gain',
-                         'rdnoise']
+                         'rdnoise',
+                         'roi']
         self.file_collection = None
         self.all_datatypes = None
 
@@ -93,7 +94,8 @@ class NightOrganizer(object):
 
         readout_configurations = self.file_collection.groupby(
             ['gain',
-             'rdnoise']).size().reset_index().rename(columns={0: 'count'})
+             'rdnoise',
+             'roi']).size().reset_index().rename(columns={0: 'count'})
 
         data_container_list = []
         for i in readout_configurations.index:
@@ -105,7 +107,9 @@ class NightOrganizer(object):
                 ((self.file_collection['gain'] ==
                   self.file_collection.iloc[i]['gain']) &
                  (self.file_collection['rdnoise'] ==
-                  self.file_collection.iloc[i]['rdnoise']))]
+                  self.file_collection.iloc[i]['rdnoise']) &
+                 (self.file_collection['roi'] ==
+                  self.file_collection.iloc[i]['roi']))]
 
             self.all_datatypes = sub_collection.obstype.unique()
             if self.technique == 'Spectroscopy':
