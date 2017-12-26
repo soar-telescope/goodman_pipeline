@@ -1,25 +1,13 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import os
 import sys
-import time
-import re
 import pandas
 import logging
-import matplotlib.pyplot as plt
-import numpy as np
 from ccdproc import ImageFileCollection
-from mpl_toolkits.mplot3d import Axes3D
-from astropy.coordinates import EarthLocation
-from astropy.time import Time, TimeDelta
-from astroplan import Observer
-from astropy import units as u
 from ..core import convert_time, get_twilight_time, ra_dec_to_deg
 from ..core import NightDataContainer
 
 # log = logging.getLogger(__name__)
-
-
 
 
 class NightOrganizer(object):
@@ -103,30 +91,43 @@ class NightOrganizer(object):
                 '{:.2f}'.format(decdeg)
             # now we can compare using degrees
 
-        self.initial_checks()
-        self.all_datatypes = self.file_collection.obstype.unique()
-        if self.technique == 'Spectroscopy':
-            self.spectroscopy_night(file_collection=self.file_collection,
-                                    data_container=self.data_container)
-        elif self.technique == 'Imaging':
-            self.imaging_night()
+        readout_configurations = self.file_collection.groupby(
+            ['gain',
+             'rdnoise']).size().reset_index().rename(columns={0: 'count'})
 
-        if self.data_container.is_empty:
-            self.log.debug('data_container is empty')
-            sys.exit('ERROR: There is no data to process!')
-        else:
-            self.log.debug('Returning classified data')
-            return self.data_container
+        data_container_list = []
+        for i in readout_configurations.index:
+            if not self.data_container.is_empty:
+                print("Reset data container")
+                self.data_container.reset()
 
-    def initial_checks(self):
-        readout_confs = self.file_collection.groupby(['gain', 'rdnoise'])
-        if len(readout_confs) > 1:
+            sub_collection = self.file_collection[
+                ((self.file_collection['gain'] ==
+                  self.file_collection.iloc[i]['gain']) &
+                 (self.file_collection['rdnoise'] ==
+                  self.file_collection.iloc[i]['rdnoise']))]
 
-            self.log.warning('There are {:d} different readout modes in the '
-                        'data.'.format(len(readout_confs)))
+            self.all_datatypes = sub_collection.obstype.unique()
+            if self.technique == 'Spectroscopy':
+                self.spectroscopy_night(file_collection=sub_collection,
+                                        data_container=self.data_container)
+            elif self.technique == 'Imaging':
+                self.imaging_night()
 
-            self.log.info('Sleeping 10 seconds')
-            time.sleep(10)
+            if self.data_container.is_empty:
+                self.log.debug('data_container is empty')
+                data_container_list.append(None)
+                # sys.exit('ERROR: There is no data to process!')
+            else:
+                self.log.debug('Appending classified data')
+                data_container_list.append(self.data_container)
+
+        # Warn the user in case the list of data_container element is empty or
+        # all the elements are None
+        if len(data_container_list) == 0 or not all(data_container_list):
+            self.log.warning("It is possible that there is no valid data.")
+
+        return data_container_list
 
     def spectroscopy_night(self, file_collection, data_container):
         """Organizes data for spectroscopy
@@ -165,8 +166,8 @@ class NightOrganizer(object):
 
         if not self.ignore_bias:
             if len(bias_collection) == 0:
-                self.log.critical('There is no BIAS images. Use --ignore-bias to '
-                             'continue without BIAS.')
+                self.log.critical('There is no BIAS images. Use --ignore-bias'
+                                  'to continue without BIAS.')
                 sys.exit('CRITICAL ERROR: BIAS not Found.')
             else:
                 bias_conf = bias_collection.groupby(

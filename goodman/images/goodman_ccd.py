@@ -317,12 +317,16 @@ class MainApp(object):
                     ignore_flats=self.args.ignore_flats)
 
                 self.log.debug('Calling night_organizer instance')
-                self.data_container = night_organizer()
-                if self.data_container is None or self.data_container is None:
-                    self.log.error('Discarding night ' + str(night))
-                    break
-                process_images = ImageProcessor(self.args, self.data_container)
-                process_images()
+                data_container_list = night_organizer()
+                for self.data_container in data_container_list:
+                    if self.data_container is None:
+                        self.log.error('Discarding night ' + str(night))
+                        break
+
+                    process_images = ImageProcessor(args=self.args,
+                                                    data_container=self.data_container)
+                    process_images()
+
 
 
 if __name__ == '__main__':

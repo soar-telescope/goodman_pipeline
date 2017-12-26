@@ -2603,6 +2603,12 @@ class NightDataContainer(object):
         self.evening_twilight = evening
         self.morning_twilight = morning
 
+    def reset(self):
+        """Resets the class as it was first initialized"""
+        self.__init__(path=self.full_path,
+                      instrument=self.instrument,
+                      technique=self.technique)
+
 
 class SpectroscopicMode(object):
 

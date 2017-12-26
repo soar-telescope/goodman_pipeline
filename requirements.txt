@@ -1,3 +1,4 @@
+pandas
 ccdproc
 coveralls
 astroplan
