@@ -67,8 +67,10 @@ class NightOrganizer(object):
         imaging or spectroscopy.
 
         Returns:
-            data_container (object): Class used as storage unit for classified
-            data.
+            data_container_list (list): List of instances of NightDataContainer
+            which is the class used as storage unit for classified data. The
+            number of elements depends on the number of combinations of `GAIN`,
+            `RDNOISE` and `ROI`.
 
         """
 
