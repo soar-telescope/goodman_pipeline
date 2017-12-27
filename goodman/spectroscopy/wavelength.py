@@ -34,7 +34,7 @@ from ccdproc import CCDData
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy import signal
 
-from goodman.wcs.wcs import WCS
+from ..wcs.wcs import WCS
 from .linelist import ReferenceData
 from ..core import (spectroscopic_extraction,
                     search_comp_group,

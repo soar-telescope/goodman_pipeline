@@ -25,8 +25,6 @@ from ..core import (read_fits,
                     SpectroscopicMode)
 
 
-
-
 class ImageProcessor(object):
     """Image processing class
 
@@ -130,8 +128,8 @@ class ImageProcessor(object):
         assert technique is not None
         trim_section = None
         # TODO (simon): Consider binning and possibly ROIs for trim section
-        self.log.warning('Determining trim section. Assuming you have only one kind '
-                    'of data in this folder')
+        self.log.warning('Determining trim section. Assuming you have only one '
+                         'kind of data in this folder')
         for group in [self.bias,
                       self.day_flats,
                       self.dome_flats,
@@ -198,8 +196,8 @@ class ImageProcessor(object):
             point of the overscan region.
 
         """
-        self.log.warning('Determining Overscan Region. Assuming you have only one '
-                    'kind of binning in the data.')
+        self.log.warning('Determining Overscan Region. Assuming you have only '
+                         'one kind of binning in the data.')
         for group in [self.bias,
                       self.day_flats,
                       self.dome_flats,
@@ -264,8 +262,8 @@ class ImageProcessor(object):
                     overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
 
                 elif self.technique == 'Imaging':
-                    self.log.warning("Imaging mode doesn't have overscan region. "
-                                "Use bias instead.")
+                    self.log.warning("Imaging mode doesn't have overscan "
+                                     "region. Use bias instead.")
                     if self.bias is None:
                         self.log.warning('Bias are needed for Imaging mode')
                     overscan_region = None
@@ -416,12 +414,14 @@ class ImageProcessor(object):
                     os.path.basename(self.master_bias_name),
                     'Master bias image')
             else:
-                self.log.error('Unknown observation technique: ' + self.technique)
+                self.log.error('Unknown observation technique: ' +
+                               self.technique)
             # TODO (simon): Improve this part. One hot pixel could rule out a
             # todo (cont): perfectly expososed image.
             if ccd.data.max() > float(self.args.saturation_limit):
-                self.log.warning('Removing saturated image {:s}. Use --saturation '
-                            'to change saturation level'.format(flat_file))
+                self.log.warning('Removing saturated image {:s}. '
+                                 'Use --saturation to change saturation '
+                                 'level'.format(flat_file))
                 # import numpy as np
                 # maximum_flat = np.max(ccd.data, axis=0)
                 # plt.plot(maximum_flat)
@@ -454,7 +454,7 @@ class ImageProcessor(object):
             # print(master_flat_name)
         else:
             self.log.error('Empty flat list. Check that they do not exceed the '
-                      'saturation limit.')
+                           'saturation limit.')
             return None, None
 
     def name_master_flats(self, header, group, target_name='', get=False):
@@ -576,22 +576,26 @@ class ImageProcessor(object):
 
         target_name = ''
         slit_trim = None
+        master_bias = None
         master_flat = None
         master_flat_name = None
         obstype = science_group.obstype.unique()
         # print(obstype)
         if 'OBJECT' in obstype or 'COMP' in obstype:
-            object_comp_group = science_group[(science_group.obstype == 'OBJECT') |
-                                              (science_group.obstype == 'COMP')]
+            object_comp_group = science_group[
+                (science_group.obstype == 'OBJECT') |
+                (science_group.obstype == 'COMP')]
 
             if 'OBJECT' in obstype:
                 target_name = science_group.object[science_group.obstype ==
                                                    'OBJECT'].unique()[0]
 
-                self.log.info('Processing Science Target: {:s}'.format(target_name))
+                self.log.info('Processing Science Target: '
+                              '{:s}'.format(target_name))
             else:
                 # TODO (simon): This does not make any sense
-                self.log.info('Processing Comparison Lamp: {:s}'.format(target_name))
+                self.log.info('Processing Comparison Lamp: '
+                              '{:s}'.format(target_name))
 
             if 'FLAT' in obstype and not self.args.ignore_flats:
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']
@@ -634,10 +638,11 @@ class ImageProcessor(object):
                 self.log.debug('Attempting to find slit trim section')
                 slit_trim = get_slit_trim_section(master_flat=master_flat)
             elif self.args.ignore_flats:
-                self.log.warning('Slit Trimming will be skipped, --ignore-flats is '
-                                 'activated')
+                self.log.warning('Slit Trimming will be skipped, '
+                                 '--ignore-flats is activated')
             else:
-                self.log.info('Master flat inexistent, cant find slit trim section')
+                self.log.info('Master flat inexistent, cant find slit trim '
+                              'section')
             if slit_trim is not None:
 
                 master_flat = image_trim(ccd=master_flat,
@@ -655,6 +660,7 @@ class ImageProcessor(object):
                     master_bias = None
 
             norm_master_flat = None
+            norm_master_flat_name = None
             all_object_image = []
             all_comp_image = []
             for science_image in object_comp_group.file.tolist():
@@ -748,10 +754,11 @@ class ImageProcessor(object):
                     if norm_master_flat is None:
 
                         norm_master_flat, norm_master_flat_name = \
-                            normalize_master_flat(master=master_flat,
-                                                  name=master_flat_name,
-                                                  method=self.args.flat_normalize,
-                                                  order=self.args.norm_order)
+                            normalize_master_flat(
+                                master=master_flat,
+                                name=master_flat_name,
+                                method=self.args.flat_normalize,
+                                order=self.args.norm_order)
 
                     ccd = ccdproc.flat_correct(ccd=ccd,
                                                flat=norm_master_flat,
@@ -804,10 +811,11 @@ class ImageProcessor(object):
 
                 print(object_group, len(all_object_image))
 
-                object_combined = self.combine_data(all_object_image,
-                                                    dest_path=self.args.red_path,
-                                                    prefix=self.out_prefix,
-                                                    save=True)
+                object_combined = self.combine_data(
+                    all_object_image,
+                    dest_path=self.args.red_path,
+                    prefix=self.out_prefix,
+                    save=True)
             elif len(all_object_image) == 1:
                 # write_fits(all_object_image[0])
                 pass
@@ -924,7 +932,7 @@ class ImageProcessor(object):
         combined_full_path = os.path.join(dest_path, "combined.fits")
         if output_name is not None:
             combined_full_path = os.path.join(dest_path, output_name)
-        elif (prefix is not None):
+        elif prefix is not None:
             combined_base_name = ''
             target_name = image_list[0].header["OBJECT"]
 
@@ -973,13 +981,10 @@ class ImageProcessor(object):
                                       value=image_name,
                                       comment='Image used to create combined')
 
-
-
         if save or True:
             write_fits(combined_image,
                        full_path=combined_full_path,
                        combined=True)
-
 
         print(combined_full_path)
 

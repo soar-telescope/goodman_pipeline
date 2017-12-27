@@ -4,7 +4,7 @@ import sys
 import pandas
 import logging
 from ccdproc import ImageFileCollection
-from ..core import convert_time, get_twilight_time, ra_dec_to_deg
+from ..core import get_twilight_time, ra_dec_to_deg
 from ..core import NightDataContainer
 
 # log = logging.getLogger(__name__)
@@ -22,9 +22,12 @@ class NightOrganizer(object):
         container.
 
         Args:
-            args (object): Argparse object. Contains all the runtime arguments.
-            night_dict (dict): A dictionary that contains full path, instrument
-            and observational technique.
+            full_path (str): Full path to raw data
+            instrument (str): Name of Goodman's camera used. Red or Blue.
+            technique (str): Name of the technique used to obtain the data.
+              Imaging or Spectroscopy.
+            ignore_bias (bool): Skip all process regarding bias.
+            ignore_flats (bool): Skip all process regarding flats.
 
         """
         self.log = logging.getLogger(__name__)
@@ -166,7 +169,6 @@ class NightOrganizer(object):
         data_container.set_twilight_times(afternoon_twilight,
                                           morning_twilight)
 
-
         # process bias
         bias_collection = file_collection[file_collection.obstype == 'BIAS']
 
@@ -185,8 +187,7 @@ class NightOrganizer(object):
 
                 # bias_conf
                 for i in bias_conf.index:
-                    bias_group = bias_collection[
-                        (
+                    bias_group = bias_collection[(
                         (bias_collection['gain'] == bias_conf.iloc[i]['gain']) &
                         (bias_collection['rdnoise'] == bias_conf.iloc[i][
                             'rdnoise']) &
@@ -202,7 +203,7 @@ class NightOrganizer(object):
         if 'FLAT' not in file_collection.obstype.unique() and \
                 not self.ignore_flats:
             self.log.critical('There is no FLAT images. Use --ignore-flats to '
-                         'continue without FLATs.')
+                              'continue without FLATs.')
             sys.exit('CRITICAL ERROR: FLAT not Found.')
         elif self.ignore_flats:
             self.log.warning('Ignoring FLAT images on request.')
@@ -226,8 +227,8 @@ class NightOrganizer(object):
 
         for i in confs.index:
 
-            data_group = data_collection[
-                ((data_collection['gain'] == confs.iloc[i]['gain']) &
+            data_group = data_collection[(
+                (data_collection['gain'] == confs.iloc[i]['gain']) &
                 (data_collection['rdnoise'] == confs.iloc[i]['rdnoise']) &
                 (data_collection['grating'] == confs.iloc[i]['grating']) &
                 (data_collection['filter2'] == confs.iloc[i]['filter2']) &
@@ -290,8 +291,8 @@ class NightOrganizer(object):
 
             for i in bias_confs.index:
 
-                bias_group = bias_group[
-                    ((bias_group['gain'] == bias_confs.iloc[i]['gain']) &
+                bias_group = bias_group[(
+                    (bias_group['gain'] == bias_confs.iloc[i]['gain']) &
                     (bias_group['rdnoise'] == bias_confs.iloc[i]['rdnoise']) &
                     (bias_group['radeg'] == bias_confs.iloc[i]['radeg']) &
                     (bias_group['decdeg'] == bias_confs.iloc[i]['decdeg']))]
@@ -332,8 +333,3 @@ class NightOrganizer(object):
                  (science_data['filter'] == confs.iloc[i]['filter']))]
 
             self.data_container.add_data_group(science_group)
-
-
-
-
-

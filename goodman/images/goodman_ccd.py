@@ -1,5 +1,9 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from .data_classifier import DataClassifier
+from .night_organizer import NightOrganizer
+from .image_processor import ImageProcessor
+
 import os
 import sys
 import shutil
@@ -9,9 +13,6 @@ import logging
 import matplotlib
 matplotlib.use('Qt5Agg')
 
-from .data_classifier import DataClassifier
-from .night_organizer import NightOrganizer
-from .image_processor import ImageProcessor
 
 __author__ = 'David Sanmartim'
 __date__ = '2016-07-15'
@@ -23,7 +24,6 @@ FORMAT = '%(levelname)s: %(asctime)s: %(module)s.%(funcName)s: %(message)s'
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_ccd.log'
-
 
 
 def get_args(arguments=None):

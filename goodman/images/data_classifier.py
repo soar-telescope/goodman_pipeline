@@ -68,7 +68,7 @@ class DataClassifier(object):
                                        'technique': self.technique}
         else:
             self.log.error('Failed to determine Instrument or Technique '
-                      'for the night: {:s}'.format(self.raw_path))
+                           'for the night: {:s}'.format(self.raw_path))
 
     def _get_instrument(self):
         """Identify Goodman's Camera
@@ -169,5 +169,3 @@ class DataClassifier(object):
 
 if __name__ == '__main__':
     pass
-
-
