@@ -61,6 +61,7 @@ class NightOrganizer(object):
 
         self.day_time_data = None
         self.night_time_data = None
+        self.log.info("NightOrganizer class initialized.")
 
     def __call__(self):
         """Call method

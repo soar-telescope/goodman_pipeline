@@ -20,11 +20,10 @@ import logging
 import pandas
 import os
 import ccdproc
-import re
+
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # self.log.basicConfig(level=self.log.DEBUG, format=FORMAT)
-
 
 
 class ReferenceData(object):
@@ -32,7 +31,8 @@ class ReferenceData(object):
 
     This class stores:
         - file names for reference fits spectrum
-        - file names for CSV tables with reference lines and relative intensities
+        - file names for CSV tables with reference lines and relative
+          intensities
         - line positions only for the elements used in SOAR comparison lamps
     """
     def __init__(self, reference_dir):
@@ -49,9 +49,12 @@ class ReferenceData(object):
         self.reference_dir = reference_dir
         reference_collection = ccdproc.ImageFileCollection(self.reference_dir)
         self.ref_lamp_collection = reference_collection.summary.to_pandas()
-        self.lamps_file_list = {'cuhear': 'goodman_comp_600_BLUE_CuHeAr.fits',
-                                'hgar': 'goodman_comp_400_M2_GG455_HgAr.fits',
-                                'hgarne': 'goodman_comp_400_M2_GG455_HgArNe.fits'}
+
+        self.lamps_file_list = {
+               'cuhear': 'goodman_comp_600_BLUE_CuHeAr.fits',
+               'hgar': 'goodman_comp_400_M2_GG455_HgAr.fits',
+               'hgarne': 'goodman_comp_400_M2_GG455_HgArNe.fits'}
+
         self.line_list_files = {'cu': 'Cu_3000A-10000A_clean.csv',
                                 'he': 'He_3000A-10000A_clean.csv',
                                 'ne': 'Ne_3000A-10000A_clean.csv',
@@ -710,7 +713,9 @@ class ReferenceData(object):
             line_list(list): Sorted line list.
 
         """
-        elements = [lamp_name[i:i + 2].lower() for i in range(0, len(lamp_name), 2)]
+        elements = [lamp_name[i:i + 2].lower() for i in range(0,
+                                                              len(lamp_name),
+                                                              2)]
         line_list = []
         for element in elements:
             line_list.extend(self.line_list[element])
@@ -791,7 +796,8 @@ class ReferenceData(object):
                 keyword_to_filter = criteria.pop()
                 # print('Filter: ' + keyword_to_filter)
                 lamp_pandas_data_frame = lamp_pandas_data_frame[
-                    (lamp_pandas_data_frame[keyword_to_filter] == header[keyword_to_filter])]
+                    (lamp_pandas_data_frame[keyword_to_filter] ==
+                     header[keyword_to_filter])]
             # else:
             #     print(lamp_pandas_data_frame)
 
@@ -851,7 +857,8 @@ class ReferenceData(object):
             elements = [name[i:i + 2].lower() for i in range(0, len(name), 2)]
             for element in elements:
                 linelist_file = self.line_list_files[element]
-                pandas_data_frame = pandas.read_csv(self.reference_dir + linelist_file)
+                pandas_data_frame = pandas.read_csv(self.reference_dir +
+                                                    linelist_file)
                 # print(linelist_file, pandas_data_frame, blue, red)
 
         else:

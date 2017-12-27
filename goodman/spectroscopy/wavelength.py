@@ -27,7 +27,6 @@ import matplotlib.ticker as mtick
 import numpy as np
 import scipy.interpolate
 from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
-from astropy.io import fits
 from astropy.modeling import models, fitting
 from astropy.stats import sigma_clip
 from ccdproc import CCDData
@@ -285,7 +284,7 @@ class WavelengthCalibration(object):
         self.first = True
         self.evaluation_comment = None
         # self.binning = self.lamp_header[]
-        self.pixelcenter = []
+        self.pixel_center = []
         """this data must come parsed"""
         self.path = self.args.source
         # self.science_pack = sci_pack
@@ -325,7 +324,8 @@ class WavelengthCalibration(object):
 
         self.i_fig = None
 
-        self.log.info('Processing Science Target: {:s}'.format(ccd.header['OBJECT']))
+        self.log.info('Processing Science Target: '
+                      '{:s}'.format(ccd.header['OBJECT']))
         if comp_list is not None:
             for lamp_ccd in comp_list:
 
@@ -341,7 +341,7 @@ class WavelengthCalibration(object):
                 self.lamp_name = self.lamp_header['OBJECT']
 
                 self.log.info('Processing Comparison Lamp: '
-                         '{:s}'.format(self.lamp_name))
+                              '{:s}'.format(self.lamp_name))
 
                 self.data1 = self.interpolate(self.lamp_data)
                 # self.lines_limits = self.get_line_limits()
@@ -350,10 +350,11 @@ class WavelengthCalibration(object):
                 self.spectral = self.get_spectral_characteristics()
                 object_name = ccd.header['OBJECT']
                 if self.args.interactive_ws:
-                    self.interactive_wavelength_solution(object_name=object_name)
+                    self.interactive_wavelength_solution(
+                        object_name=object_name)
                 else:
-                    self.log.warning('Automatic Wavelength Solution might fail to '
-                                'provide accurate solutions')
+                    self.log.warning('Automatic Wavelength Solution might fail '
+                                     'to provide accurate solutions')
                     self.automatic_wavelength_solution()
                     # self.wsolution = self.wavelength_solution()
                 if self.wsolution is not None:
@@ -366,7 +367,8 @@ class WavelengthCalibration(object):
                     # for par in self.wsolution.parameters:
                     #     record += ' {:.5f}'.format(par)
                     #
-                    # os.system("echo \'{:s}\' >> parametros.txt".format(record))
+                    # os.system("echo \'{:s}\' >> parametros.txt
+                    # ".format(record))
 
                     self.linear_lamp = self.linearize_spectrum(self.lamp_data)
 
@@ -385,7 +387,6 @@ class WavelengthCalibration(object):
                         spectrum=self.linearized_sci,
                         original_filename=ccd.header['GSP_FNAM'],
                         index=object_number)
-
 
                     wavelength_solution = WavelengthSolution(
                         solution_type='non_linear',
@@ -446,7 +447,7 @@ class WavelengthCalibration(object):
                             # print(plot_path)
                             plt.savefig(plot_path, dpi=300)
                             self.log.info('Saved plot as {:s} file '
-                                     'DPI=300'.format(plot_name))
+                                          'DPI=300'.format(plot_name))
 
                         if self.args.debug_mode:
                             plt.show()
@@ -458,7 +459,7 @@ class WavelengthCalibration(object):
                     return wavelength_solution
                 else:
                     self.log.error('It was not possible to get a wavelength '
-                              'solution from this lamp.')
+                                   'solution from this lamp.')
                     return None
         else:
             print('Data should be saved anyways')
@@ -471,7 +472,8 @@ class WavelengthCalibration(object):
         #     # print('Evaluation Comment', self.evaluation_comment)
         #     # repeat for all sci
         #     for target_index in range(self.science_object.no_targets):
-        #         self.log.debug('Processing target {:d}'.format(target_index + 1))
+        #         self.log.debug('Processing target
+            # {:d}'.format(target_index + 1))
         #         new_data = self.science_pack.data[target_index]
         #         new_header = self.science_pack.headers[target_index]
         #         if self.science_object.no_targets > 1:
@@ -479,11 +481,12 @@ class WavelengthCalibration(object):
         #         else:
         #             new_index = None
         #         self.linearized_sci = self.linearize_spectrum(new_data)
-        #         self.header = self.add_wavelength_solution(new_header,
-        #                                                    self.linearized_sci,
-        #                                                    self.sci_filename,
-        #                                                    self.evaluation_comment,
-        #                                                    index=new_index)
+        #         self.header = self.add_wavelength_solution(
+        #             new_header,
+        #             self.linearized_sci,
+        #             self.sci_filename,
+        #             self.evaluation_comment,
+        #             index=new_index)
         #     return wsolution_obj
 
     def get_wsolution(self):
@@ -579,13 +582,19 @@ class WavelengthCalibration(object):
         if self.args.debug_mode:
             fig = plt.figure(1)
             fig.canvas.set_window_title('Lines Detected')
-            plt.title('Lines detected in Lamp\n{:s}'.format(lamp_header['OBJECT']))
+            plt.title('Lines detected in Lamp\n'
+                      '{:s}'.format(lamp_header['OBJECT']))
             plt.xlabel('Pixel Axis')
             plt.ylabel('Intensity (counts)')
 
             # Build legends without data to avoid repetitions
             plt.plot([], color='k', label='Comparison Lamp Data')
-            plt.plot([], color='k', linestyle=':', label='Spectral Line Detected')
+
+            plt.plot([],
+                     color='k',
+                     linestyle=':',
+                     label='Spectral Line Detected')
+
             plt.axhline(_upper_limit, color='r')
 
             for line in peaks:
@@ -736,7 +745,8 @@ class WavelengthCalibration(object):
             plt.show()
         return new_center
 
-    def recenter_broad_lines(self, lamp_data, lines, order):
+    @staticmethod
+    def recenter_broad_lines(lamp_data, lines, order):
         """Recenter broad lines
 
         Notes:
@@ -812,7 +822,8 @@ class WavelengthCalibration(object):
                    '',
                    self.lamp_header['GRATING'])) / u.mm
 
-        # print('Grating Frequency ' + '{:d}'.format(int(self.grating_frequency)))
+        # print('Grating Frequency ' +
+        # '{:d}'.format(int(self.grating_frequency)))
         self.grating_angle = float(self.lamp_header['GRT_ANG']) * u.deg
         self.camera_angle = float(self.lamp_header['CAM_ANG']) * u.deg
 
@@ -821,7 +832,8 @@ class WavelengthCalibration(object):
 
         self.pixel_count = len(self.lamp_data)
         # Calculations
-        # TODO (simon): Check whether is necessary to remove the self.slit_offset variable
+        # TODO (simon): Check whether is necessary to remove the
+        # TODO (simon): self.slit_offset variable
         self.alpha = self.grating_angle.to(u.rad)
         self.beta = self.camera_angle.to(u.rad) - self.grating_angle.to(u.rad)
 
@@ -832,23 +844,26 @@ class WavelengthCalibration(object):
             self.pixel_count *
             (self.pixel_size / self.goodman_focal_length) / 2)
 
-        self.blue_limit = ((np.sin(self.alpha) +
-                            np.sin(self.beta - limit_angle.to(u.rad))) /
-                           self.grating_frequency).to(u.angstrom) + \
-                          blue_correction_factor
+        self.blue_limit = ((
+            np.sin(self.alpha) +
+            np.sin(self.beta - limit_angle.to(u.rad))) /
+                   self.grating_frequency).to(u.angstrom) + \
+            blue_correction_factor
 
-        self.red_limit = ((np.sin(self.alpha) +
-                           np.sin(self.beta +
-                                  limit_angle.to(u.rad))) /
-                          self.grating_frequency).to(u.angstrom) +\
-                         red_correction_factor
+        self.red_limit = ((
+            np.sin(self.alpha) +
+            np.sin(self.beta +
+                   limit_angle.to(u.rad))) /
+                   self.grating_frequency).to(u.angstrom) +\
+            red_correction_factor
 
         pixel_one = 0
         pixel_two = 0
-        self.log.debug('Center Wavelength : {:.3f} Blue Limit : '
-                  '{:.3f} Red Limit : {:.3f} '.format(self.center_wavelength,
-                                                      self.blue_limit,
-                                                      self.red_limit))
+        self.log.debug(
+            'Center Wavelength : {:.3f} Blue Limit : '
+            '{:.3f} Red Limit : {:.3f} '.format(self.center_wavelength,
+                                                self.blue_limit,
+                                                self.red_limit))
         
         spectral_characteristics = {'center': self.center_wavelength,
                                     'blue': self.blue_limit,
@@ -1040,10 +1055,10 @@ class WavelengthCalibration(object):
         grating_frequency = self.grating_frequency
 
         wavelength = 10 * (1e6 / grating_frequency) * \
-                     (np.sin(alpha * np.pi / 180.) +
-                      np.sin((beta * np.pi / 180.) +
-                             np.arctan((pixel * binning - 2048) *
-                                       0.015 / 377.2)))
+            (np.sin(alpha * np.pi / 180.) +
+             np.sin((beta * np.pi / 180.) +
+             np.arctan((pixel * binning - 2048) *
+                       0.015 / 377.2)))
         return wavelength
 
     def automatic_wavelength_solution(self):
@@ -1090,7 +1105,8 @@ class WavelengthCalibration(object):
             reference_lamp_file = self.reference_data.get_exact_lamp(
                 header=self.lamp_header)
 
-            self.log.debug('Found reference lamp: {:s}'.format(reference_lamp_file))
+            self.log.debug('Found reference lamp: '
+                           '{:s}'.format(reference_lamp_file))
 
             reference_lamp_data = CCDData.read(reference_lamp_file, unit=u.adu)
         except NotImplementedError:
@@ -1101,7 +1117,9 @@ class WavelengthCalibration(object):
             # TODO (simon): Evaluate if send this to interactive mode
             return None
 
-        reference_lamp_wav_axis, reference_lamp_data.data = self.WCS.read(ccd=reference_lamp_data)
+        reference_lamp_wav_axis, reference_lamp_data.data = \
+            self.WCS.read(ccd=reference_lamp_data)
+
         reference_lamp_copy = reference_lamp_data.copy()
 
         if False:
@@ -1122,7 +1140,7 @@ class WavelengthCalibration(object):
 
         '''detect lines in comparison lamp (not reference)'''
         lamp_lines_pixel = self.get_lines_in_lamp()
-        lamp_lines_angst = self.WCS.math_model(lamp_lines_pixel)
+        lamp_lines_angst = self.WCS.model(lamp_lines_pixel)
 
         pixel_values = []
         angstrom_values = []
@@ -1162,7 +1180,7 @@ class WavelengthCalibration(object):
                            '{:s}'.format(str(correlation_value)))
 
             """record value for reference wavelength"""
-            angstrom_value_model = self.WCS.math_model(
+            angstrom_value_model = self.WCS.model(
                 line_value_pixel + correlation_value)
 
             correlation_values.append(correlation_value)
@@ -1219,7 +1237,7 @@ class WavelengthCalibration(object):
 
         if self.wsolution is None:
             self.log.error('Failed to find wavelength solution using reference '
-                      'file: {:s}'.format(self.calibration_lamp))
+                           'file: {:s}'.format(self.calibration_lamp))
             return None
 
         # finding differences in order to improve the wavelength solution
@@ -1234,8 +1252,8 @@ class WavelengthCalibration(object):
 
         if np.ma.is_masked(clipped_differences):
 
-            self.log.debug('Cleaning pixel to angstrom match to improve wavelength '
-                      'solution')
+            self.log.debug('Cleaning pixel to angstrom match to improve '
+                           'wavelength solution')
 
             _pixel_values = list(pixel_values)
             _angstrom_values = list(angstrom_values)
@@ -1416,9 +1434,11 @@ class WavelengthCalibration(object):
         except NotImplementedError:
             reference_file = self.reference_data.get_reference_lamps_by_name(
                 lamp_name=self.lamp_header['OBJECT'])
-            self.log.warning('Could not find a perfect match for reference data')
+            self.log.warning('Could not find a perfect match for reference '
+                             'data')
             # reference_file = None
-            # self.log.critical('Could not find a comparison lamp in the reference.')
+            # self.log.critical('Could not find a comparison lamp in the
+            # reference.')
 
         # reference_file = self.reference_data.get_reference_lamps_by_name(
         #     self.lamp_name)
@@ -1432,10 +1452,13 @@ class WavelengthCalibration(object):
             self.reference_solution = self.WCS.read(ccd=ref_ccd)
         else:
             reference_plots_enabled = False
-            self.log.error('Please Check the OBJECT Keyword of your reference data')
+            self.log.error('Please Check the OBJECT Keyword of your reference '
+                           'data')
 
         # update filling value
-        self.raw_filling_value = self.get_best_filling_value(data=self.lamp_data)
+        self.raw_filling_value = self.get_best_filling_value(
+            data=self.lamp_data)
+
         self.ref_filling_value = self.get_best_filling_value(data=ref_ccd.data)
 
         # ------- Plots -------
@@ -1561,7 +1584,6 @@ class WavelengthCalibration(object):
             max_after = np.max(cyaxis1)
             cyaxis1 *= max_before / max_after
 
-
         else:
             gaussian_kernel = Gaussian1DKernel(stddev=2.)
             cyaxis1 = convolve(reference, gaussian_kernel)
@@ -1570,10 +1592,13 @@ class WavelengthCalibration(object):
         # plt.plot(cyaxis2, color='r', label='New Array')
         # plt.plot(reference, color='g')
         # plt.show()
-        try:
-            ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
-        except ValueError:
-            print(cyaxis1, cyaxis2)
+        # try:
+        #     ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+        # except ValueError:
+        #     print(cyaxis1, cyaxis2)
+
+        ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+
         # print('Corr ', ccorr)
         max_index = np.argmax(ccorr)
 
@@ -1775,7 +1800,6 @@ class WavelengthCalibration(object):
         #              self.raw_data_marks_x]))
         #         print(self.raw_data_marks_x[closer_x_index])
         #         print(self.reference_marks_x[closer_x_index])
-
 
         elif event.key == 'f6' or event.key == 'l':
             self.log.info('Linearize and smoothing spectrum')
@@ -2327,12 +2351,12 @@ class WavelengthCalibration(object):
         Args:
             new_header (object): An Astropy header object
             spectrum (Array): A numpy array that corresponds to the processed
-            data
+              data
             original_filename (str): Original Image file name
             evaluation_comment (str): A comment with information regarding the
-            quality of the wavelength solution
+              quality of the wavelength solution
             index (int): If in one 2D image there are more than one target the
-            index represents the target number.
+              index represents the target number.
 
         Returns:
             new_header (object): An Astropy header object. Although not
@@ -2359,7 +2383,6 @@ class WavelengthCalibration(object):
                                       'NRej = {:d}'.format(rms_error,
                                                            n_points,
                                                            n_rejections)
-
 
         new_crpix = 1
         new_crval = spectrum[0][new_crpix - 1]
@@ -2393,13 +2416,11 @@ class WavelengthCalibration(object):
         # add .fits
 
         new_filename = self.args.destiny + \
-                       self.args.output_prefix + \
-                       original_filename.replace('.fits', '') + \
-                       f_end
+            self.args.output_prefix + \
+            original_filename.replace('.fits', '') + \
+            f_end
 
         new_header.set('GSP_FNAM', value=os.path.basename(new_filename))
-
-
 
         #  print('spectrum[0]')
         # print(spectrum[0])
@@ -2449,23 +2470,22 @@ class WavelengthCalibration(object):
                     new_line = ' '.join(split_message[e:])
                     # print(new_line, len(new_line))
                     full_message.append(new_line)
-        try:
-            self.ax4.cla()
-            self.ax4.relim()
-            self.ax4.set_xticks([])
-            self.ax4.set_yticks([])
-            self.ax4.set_title('Message')
-            for i in range(len(full_message)):
-                self.ax4.text(0.05, 0.95 - i * 0.05,
-                              full_message[i],
-                              verticalalignment='top',
-                              horizontalalignment='left',
-                              transform=self.ax4.transAxes,
-                              color=color,
-                              fontsize=15)
-            self.i_fig.canvas.draw()
-        except:
-            pass
+
+        self.ax4.cla()
+        self.ax4.relim()
+        self.ax4.set_xticks([])
+        self.ax4.set_yticks([])
+        self.ax4.set_title('Message')
+        for i in range(len(full_message)):
+            self.ax4.text(0.05, 0.95 - i * 0.05,
+                          full_message[i],
+                          verticalalignment='top',
+                          horizontalalignment='left',
+                          transform=self.ax4.transAxes,
+                          color=color,
+                          fontsize=15)
+        self.i_fig.canvas.draw()
+
         return
 
     def display_help_text(self):
@@ -2705,23 +2725,23 @@ class WavelengthSolution(object):
                             key.upper()))
 
                         self.log.info('{:s} - Solution: {:s} - New '
-                                 'Data: {:s}'.format(key.upper(),
-                                                     self.spectral_dict[key],
-                                                     new_dict[key]))
+                                      'Data: {:s}'.format(
+                                           key.upper(),
+                                           self.spectral_dict[key],
+                                           new_dict[key]))
 
                         return False
 
                     elif key in ['cam_ang',  'grt_ang'] and \
-                                    abs(new_dict[key] -
-                                                self.spectral_dict[key]) > 1:
+                            abs(new_dict[key] - self.spectral_dict[key]) > 1:
 
                         self.log.debug('Keyword: {:s} Lamp: {:s} Data: '
-                                  '{:s}'.format(key,
-                                                self.spectral_dict[key],
-                                                new_dict[key]))
+                                       '{:s}'.format(key,
+                                                     self.spectral_dict[key],
+                                                     new_dict[key]))
 
-                        self.log.info('Solution belong to a different Instrument'
-                                 'Configuration.')
+                        self.log.info('Solution belong to a different '
+                                      'Instrument Configuration.')
 
                         return False
                     # else:
@@ -2733,27 +2753,28 @@ class WavelengthSolution(object):
                                'parallel_bin'] and \
                                     new_dict[key] != self.spectral_dict[key]:
 
-                        self.log.debug('Keyword: {:s} does not Match', key.upper())
+                        self.log.debug('Keyword: {:s} does not '
+                                       'Match'.format(key.upper()))
 
                         self.log.info('{:s} - Solution: {:s} - New Data: {:s}',
-                                 key.upper(),
-                                 self.spectral_dict[key],
-                                 new_dict[key])
+                                      key.upper(),
+                                      self.spectral_dict[key],
+                                      new_dict[key])
 
                         return False
 
                     elif key in ['cam_ang',
                                  'grt_ang'] and abs(
                                 float(new_dict[key]) -
-                                float(self.spectral_dict[key]))> 1:
+                                float(self.spectral_dict[key])) > 1:
 
                         self.log.debug('Keyword: {:s} Lamp: {:s} Data: {:s}',
-                                  key,
-                                  self.spectral_dict[key],
-                                  new_dict[key])
+                                       key,
+                                       self.spectral_dict[key],
+                                       new_dict[key])
 
-                        self.log.info('Solution belong to a different Instrument '
-                                 'Configuration.')
+                        self.log.info('Solution belong to a different '
+                                      'Instrument Configuration.')
 
                         return False
                     # else:

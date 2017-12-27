@@ -12,7 +12,7 @@ Simon Torres 2016-06-28
 # TODO (simon): Change all astropy.io.fits to astropy.CCDData.read
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from .wavelength import WavelengthCalibration, process_spectroscopy_data
+from .wavelength import process_spectroscopy_data
 from ..core import (classify_spectroscopic_data)
 
 import sys
@@ -99,10 +99,11 @@ def get_args(arguments=None):
                         metavar='<Extraction Type>',
                         dest='extraction_type',
                         choices=['simple', 'optimal'],
-                        help='Choose a which extraction to perform. Simple is a '
+                        help='Choose a which extraction to perform. Simple is a'
                              'sum across the spatial direction after the '
                              'background has been removed. Optimal is a more '
-                             'advanced method that considers weights and profile'
+                             'advanced method that considers weights and '
+                             'profile'
                              'fitting.')
 
     parser.add_argument('--reference-files',
@@ -220,9 +221,7 @@ class MainApp(object):
         This method initializes the arguments for the class, if they are not
         provided it will get them.
 
-        Args:
-            args (object): argparse.Namespace instance that contains all the
-                arguments.
+
         """
 
         logging.basicConfig(level=logging.INFO,
@@ -237,6 +236,10 @@ class MainApp(object):
 
         This method call the higher level functions in order to do the
         spectroscopic data reduction.
+
+        Args:
+            args (object): argparse.Namespace instance that contains all the
+                arguments.
 
         """
         if args is None:
