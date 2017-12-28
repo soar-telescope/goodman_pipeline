@@ -22,12 +22,15 @@ class NightOrganizer(object):
         container.
 
         Args:
-            full_path (str): Full path to raw data
-            instrument (str): Name of Goodman's camera used. Red or Blue.
-            technique (str): Name of the technique used to obtain the data.
-              Imaging or Spectroscopy.
-            ignore_bias (bool): Skip all process regarding bias.
-            ignore_flats (bool): Skip all process regarding flats.
+            full_path (str): Full path to data location
+            instrument (str): Instrument name, it refers to the camera used,
+              for goodman it can be Blue or Red
+            technique (str): Technique used to obtain the data, Spectroscopy or
+              Imaging.
+            ignore_bias (bool): Flag that allows to bypass the processing of
+              Bias.
+            ignore_flats (bool): Flag that allows to bypass the processing of
+              Flats.
 
         """
         self.log = logging.getLogger(__name__)
@@ -61,7 +64,6 @@ class NightOrganizer(object):
 
         self.day_time_data = None
         self.night_time_data = None
-        self.log.info("NightOrganizer class initialized.")
 
     def __call__(self):
         """Call method
@@ -80,6 +82,19 @@ class NightOrganizer(object):
 
         ifc = ImageFileCollection(self.path, self.keywords)
         self.file_collection = ifc.summary.to_pandas()
+        # if technique is Spectroscopy, ignore all data that has
+        # WAVMODE = Imaging because assumes they are acquisition images
+        if self.technique == 'Spectroscopy':
+            self.log.warning("Ignoring all Imaging data. Assuming they are "
+                             "acquisition exposures")
+            self.file_collection = self.file_collection[
+                self.file_collection.wavmode != 'Imaging']
+        elif self.technique == 'Imaging':
+            self.log.warning("Ignoring all files where `wavmode` is not "
+                             "Imaging.")
+            self.file_collection = self.file_collection[
+                self.file_collection.wavmode == 'Imaging']
+
         # add two columns that will contain the ra and dec in degrees
 
         self.file_collection['radeg'] = ''

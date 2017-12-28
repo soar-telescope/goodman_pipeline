@@ -1,10 +1,9 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import os
 import logging
-import numpy as np
-import random
 from ccdproc import ImageFileCollection
-from ..core import fix_duplicated_keywords, remove_conflictive_keywords
+
 
 # TODO (simon): Move methods as functions to goodman_ccd.core.py
 
@@ -30,7 +29,6 @@ class DataClassifier(object):
         self.nights_dict = None
         self.instrument = None
         self.image_collection = None
-        self.no_bias_collection = None
         self.objects_collection = None
         self.technique = None
 
@@ -52,16 +50,26 @@ class DataClassifier(object):
 
         """
         self.raw_path = raw_path
+
+        # define the ImageFileCollection instance right away.
+        ifc = ImageFileCollection(self.raw_path)
+        self.image_collection = ifc.summary.to_pandas()
+
+        self.objects_collection = self.image_collection[
+            self.image_collection.obstype != 'BIAS']
+
         self.nights_dict = {}
         self.log.debug('Raw path: ' + self.raw_path)
+
         self._get_instrument()
         self.log.info('Instrument: ' + self.instrument + ' Camera')
-        # self.no_bias_collection =
+
         self._get_obs_technique()
         self.log.info('Observing Technique: ' + self.technique)
+
         if self.instrument is not None and self.technique is not None:
             # folder name is used as key for the dictionary
-            night = self.raw_path.split('/')[-1]
+            night = os.path.basename(self.raw_path)
 
             self.nights_dict[night] = {'full_path': self.raw_path,
                                        'instrument': self.instrument,
@@ -73,98 +81,53 @@ class DataClassifier(object):
     def _get_instrument(self):
         """Identify Goodman's Camera
 
-        Goodman has two camera, *Blue* and *Red*. They are, as the name suggest
-        optimized for bluer and redder wavelength respectively. Their headers
-        are different so this methods uses their differences to discover which
-        camera the data belong to. The red camera has an specific keyword that
-        says which camera is but the blue does not.
-        The result is stored as an attribute of the class.
+        The header keyword of the camera is `INSTCONF`.
 
         Notes:
-            As of April 2017 the blue camera computer was upgraded and as a
-            result the headers where updated too. But we need to keep this
-            feature for *backward compatibility*
-
+            This methods no longer offers backwards compatibility.
         """
-        while True:
-            try:
-                ifc = ImageFileCollection(self.raw_path)
-                self.image_collection = ifc.summary.to_pandas()
 
-                self.objects_collection = self.image_collection[
-                    self.image_collection.obstype != 'BIAS']
+        instconf = self.objects_collection.instconf.unique()
 
-                if len(self.objects_collection) > 0:
-
-                    indexes = self.objects_collection.index.tolist()
-                    index = random.choice(indexes)
-
-                    try:
-
-                        self.instrument = \
-                            self.objects_collection.instconf[index]
-
-                    except AttributeError as error:
-                        self.log.error(error)
-                        # print(self.objects_collection.file[index])
-                        self.instrument = 'Blue'
-                else:
-                    self.log.error('There is no useful data in this folder.')
-            except ValueError as error:
-                if 'Inconsistent data column lengths' in str(error):
-
-                    self.log.error('There are duplicated keywords in the '
-                                   'headers. Fix it first!')
-
-                    fix_duplicated_keywords(self.raw_path)
-                    continue
-                else:
-                    self.log.error('Unknown Error: ' + str(error))
-            break
+        if len(instconf) > 1:
+            self.log.warning("Camera changes are forbidden during the night")
+        elif len(instconf) == 1:
+            self.instrument = instconf[0]
+        else:
+            self.log.error("Impossible to determine which camera was used.")
 
     def _get_obs_technique(self):
         """Identify if the data is Imaging or Spectroscopy
 
-        Besides the fact there are two cameras there are two observational
-        techniques. Imaging and Spectroscopy. The red camera has an specific
-        keyword that contains that information but the blue does not.
+        For imaging data the keyword `WAVMODE` is `Imaging` therefore the logic
+        here is: If there is only one value for `WAVMODE` and it is `Imaging`
+        then the technique is `Imaging`. If `Imaging` is in the result along
+        with other then it will assume the technique is Spectroscopy and will
+        ignore all the Imaging data. If none of the conditions above are met it
+        will assume the technique is Spectroscopy.
 
         The result is stored as an attribute of the class.
 
         """
 
-        image_collection = self.image_collection[
-            self.image_collection.obstype != 'BIAS']
+        wavmodes = self.objects_collection.wavmode.unique()
 
-        if self.instrument == 'Red':
-            wavmodes = image_collection.wavmode.unique()
-            if len(wavmodes) == 1 and wavmodes[0] == 'Imaging':
+        if len(wavmodes) == 1 and wavmodes[0] == 'Imaging':
                 self.technique = 'Imaging'
-                self.log.info('Detected Imaging Data from RED Camera')
-            elif 'Imaging' in wavmodes and len(wavmodes) > 1:
-                self.log.error('There are mixed observation techniques this '
-                               'night. Please classify your data')
-                self.technique = 'Unknown'
-            else:
-                self.technique = 'Spectroscopy'
-                self.log.info('Detected Spectroscopy Data from RED Camera')
-        elif self.instrument == 'Blue':
-            file_list = self.image_collection.file.tolist()
-            remove_conflictive_keywords(path=self.raw_path,
-                                        file_list=file_list)
-            # gratings = image_collection.grating.unique()
-            cam_targ = image_collection.cam_targ.unique()
 
-            if int(np.mean(cam_targ)) != 0:
+        elif 'Imaging' in wavmodes and len(wavmodes) > 1:
+                self.log.error('There seems to be Imaging and Spectroscopic '
+                               'data. I will assume the Imaging data are '
+                               'acquisition images therefore they will be '
+                               'ignored.')
+                self.log.info("If you really have Imaging data, please process "
+                              "them in a separated folder.")
                 self.technique = 'Spectroscopy'
-                self.log.info('Detected Spectroscopy Data from BLUE Camera')
-            elif int(np.mean(cam_targ)) == 0:
-                self.technique = 'Imaging'
-                self.log.info('Detected Imaging Data from BLUE Camera')
-            else:
-                self.log.error('It was not possible to determine observing '
-                               'technique')
-                self.technique = 'Unknown'
+        else:
+                self.technique = 'Spectroscopy'
+        # inform the results, no need to return
+        self.log.info('Detected {:s} Data from {:s} '
+                      'Camera'.format(self.technique, self.instrument))
 
 
 if __name__ == '__main__':
