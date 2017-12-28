@@ -7,7 +7,7 @@ from goodman_ccd.image_processor import ImageProcessor
 
 
 def get_args(arguments=None):
-    parser = argparse.ArgumentParser(description='''Extracts goodman spectra and
+    parser = argparse.ArgumentParser(description='''Extracts pipeline spectra and
     does wavelength calibration.''')
 
     parser.add_argument('--bias-list',

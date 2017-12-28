@@ -18,7 +18,7 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-VERSION = __import__('goodman').__version__
+VERSION = __import__('pipeline').__version__
 
 # Get the long description from the README file
 #with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -81,14 +81,14 @@ setup(
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
 
-    packages=['goodman',
-              'goodman.core',
-              'goodman.images',
-              'goodman.spectroscopy'],
+    packages=['pipeline',
+              'pipeline.core',
+              'pipeline.images',
+              'pipeline.spectroscopy'],
 
-    package_dir={'goodman': 'goodman'},
+    package_dir={'pipeline': 'pipeline'},
 
-    package_data={'goodman': ['data/params/dcr.par',
+    package_data={'pipeline': ['data/params/dcr.par',
                               'data/params/*.json',
                               'data/ref_comp/*fits']},
 

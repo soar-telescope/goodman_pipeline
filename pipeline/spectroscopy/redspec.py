@@ -171,10 +171,10 @@ def get_args(arguments=None):
 
     # get full path for reference files directory
 
-    # print(sys.modules['goodman.goodman'].__file__)
+    # print(sys.modules['pipeline.pipeline'].__file__)
 
     ref_full_path = os.path.join(
-        os.path.dirname(sys.modules['goodman'].__file__),
+        os.path.dirname(sys.modules['pipeline'].__file__),
         args.reference_dir)
     if not os.path.isdir(ref_full_path):
         log.info("Reference files directory doesn't exist.")

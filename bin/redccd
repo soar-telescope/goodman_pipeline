@@ -2,7 +2,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from goodman.images import MainApp
+from pipeline.images import MainApp
 
 if __name__ == '__main__':
     GOODMAN_CCD = MainApp()

@@ -24,7 +24,7 @@ def load_config(name, config_path=None):
 
     """
     if config_path is None:
-        config_path = pkg_resources.resource_filename('goodman',
+        config_path = pkg_resources.resource_filename('pipeline',
                                                       'data/params/config.json')
 
     if os.path.isfile(config_path):

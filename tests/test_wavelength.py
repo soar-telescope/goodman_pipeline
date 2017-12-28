@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 
 def test_wavelength_calibration_isntantiate():
-    from ..goodman.spectroscopy.wavelength import WavelengthCalibration
+    from ..pipeline.spectroscopy.wavelength import WavelengthCalibration
     from .test_redspec import test_get_args
     import os
 

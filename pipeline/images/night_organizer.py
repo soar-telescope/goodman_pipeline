@@ -24,7 +24,7 @@ class NightOrganizer(object):
         Args:
             full_path (str): Full path to data location
             instrument (str): Instrument name, it refers to the camera used,
-              for goodman it can be Blue or Red
+              for pipeline it can be Blue or Red
             technique (str): Technique used to obtain the data, Spectroscopy or
               Imaging.
             ignore_bias (bool): Flag that allows to bypass the processing of

@@ -14,7 +14,7 @@ import matplotlib
 import pandas
 import shutil
 import subprocess
-import goodman
+import pipeline
 
 from threading import Timer
 
@@ -256,7 +256,7 @@ def read_fits(full_path, technique='Unknown'):
     ccd = CCDData.read(full_path, unit=u.adu)
 
     ccd.header.set('GSP_VERS',
-                   value=goodman.__version__,
+                   value=pipeline.__version__,
                    comment='Goodman Spectroscopic Pipeline Version')
 
     ccd.header.set('GSP_ONAM',

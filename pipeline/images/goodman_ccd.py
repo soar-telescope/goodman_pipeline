@@ -172,9 +172,9 @@ def get_args(arguments=None):
 
     # updated full path for default dcr.par file. If it doesn't exist it will
     # create an empty one.
-    # print(sys.modules['goodman'].__file__)
+    # print(sys.modules['pipeline'].__file__)
     dcr_par_full_path = os.path.join(
-        os.path.dirname(sys.modules['goodman'].__file__),
+        os.path.dirname(sys.modules['pipeline'].__file__),
         args.dcr_par_dir)
     # TODO (simon): Review the logic of the next if statement.
     if not os.path.isdir(dcr_par_full_path) or args.dcr_par_dir != 'data/params':

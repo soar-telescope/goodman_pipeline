@@ -58,7 +58,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     usable in case it is integrated in other application.
 
     Args:
-        data_container (object): Instance of goodman.core.NightDataContainer
+        data_container (object): Instance of pipeline.core.NightDataContainer
             class that is used to store classified data.
         args (object): Instance of argparse.Namespace that contains all the
             arguments of the pipeline.
