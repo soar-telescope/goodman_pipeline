@@ -54,7 +54,8 @@ class NightOrganizer(object):
                          'filter2',
                          'gain',
                          'rdnoise',
-                         'roi']
+                         'roi',
+                         'wavmode']
         self.file_collection = None
         self.all_datatypes = None
 
