@@ -29,9 +29,277 @@ from astropy import units as u
 from astropy.io import fits
 from astropy.modeling import (models, fitting, Model)
 from scipy import signal
+from math import floor, ceil
 
 log_ccd = logging.getLogger('goodmanccd.core')
 log_spec = logging.getLogger('redspec.core')
+
+
+def add_wcs_keys(ccd):
+    """Adds generic keyword to the header
+
+    Linear wavelength solutions require a set of standard fits keywords. Later
+    on they will be updated accordingly
+    The main goal of putting them here is to have consistent and nicely ordered
+    headers
+
+    Notes:
+        This does NOT add a WCS solution, just the keywords
+
+    Args:
+        ccd (object): ccdproc.CCDData instance with no wcs keywords
+
+    Returns:
+        ccd (object): ccdproc.CCDData instance with modified header with added
+          WCS keywords
+
+    """
+    try:
+        ccd.header.set('BANDID1',
+                   value='spectrum - background none, weights none, clean no',
+                   comment='')
+
+        ccd.header.set('APNUM1',
+                   value='1 1 0 0',
+                   comment='')
+
+        ccd.header.set('WCSDIM',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('CTYPE1',
+                   value='LINEAR',
+                   comment='')
+
+        ccd.header.set('CRVAL1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('CRPIX1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('CDELT1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('CD1_1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('LTM1_1',
+                   value=1,
+                   comment='')
+
+        ccd.header.set('WAT0_001',
+                   value='system=equispec',
+                   comment='')
+
+        ccd.header.set('WAT1_001',
+                   value='wtype=linear label=Wavelength units=angstroms',
+                   comment='')
+
+        ccd.header.set('DC-FLAG',
+                   value=0,
+                   comment='')
+
+        ccd.header.set('DCLOG1',
+                   value='REFSPEC1 = non set',
+                   comment='')
+
+        return ccd
+
+    except TypeError as err:
+        log_spec.error("Can't add wcs keywords to header")
+        log_spec.debug(err)
+
+
+def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
+                          dcr_par, keep_files=False, prefix='c', method='dcr',
+                          save=False):
+    """Call for the appropriate cosmic ray rejection method
+
+    There are three options when dealing with cosmic ray rejection in this
+    pipeline, the first is ``dcr`` which is a program written in C by Wojtek
+    Pych (http://users.camk.edu.pl/pych/DCR/) and works very well for
+    spectroscopy the only negative aspect is that integration with python was
+    difficult and not native.
+
+    Args:
+        ccd (object): a ccdproc.CCDData instance.
+        image_name (str): Science image name.
+        out_prefix (str): Partial prefix to be added to the image name. Related
+            to previous processes and not cosmic ray rejection.
+        red_path (str): Path to reduced data directory.
+        dcr_par (str): Path to dcr.par file.
+        keep_files (bool): If True, the original file and the cosmic ray mask
+            will not be deleted. Default is False.
+        prefix (str): Cosmic ray rejection related prefix to be added to image
+            name.
+        method (str): Method to use for cosmic ray rejection. There are three
+            options: dcr, lacosmic and none.
+        save (bool): Disables by default saving the images
+
+    """
+
+    if method == 'dcr':
+        log_ccd.warning('DCR does apply the correction to images if you want '
+                        'the mask use --keep-cosmic-files')
+        full_path = os.path.join(red_path, out_prefix + image_name)
+
+        ccd.header['GSP_COSM'] = ("DCR", "Cosmic ray rejection method")
+
+        # ccd.write(full_path, clobber=True)
+        write_fits(ccd=ccd, full_path=full_path)
+        log_ccd.info('Saving image: {:s}'.format(full_path))
+
+        in_file = out_prefix + image_name
+
+        # This is to return the prefix that will be used by dcr
+        # Not to be used by dcr_cosmicray_rejection
+        out_prefix = prefix + out_prefix
+
+        ccd = dcr_cosmicray_rejection(data_path=red_path,
+                                      in_file=in_file,
+                                      prefix=prefix,
+                                      dcr_par_dir=dcr_par,
+                                      delete=keep_files,
+                                      save=save)
+        return ccd, out_prefix
+
+    elif method == 'lacosmic':
+        log_ccd.warning('LACosmic does not apply the correction to images '
+                        'instead it updates the mask attribute for CCDData '
+                        'objects. For saved files the mask is a fits extension')
+
+        ccd = lacosmic_cosmicray_rejection(ccd=ccd)
+
+        out_prefix = prefix + out_prefix
+        full_path = os.path.join(red_path, out_prefix + image_name)
+
+        # ccd.write(full_path, clobber=True)
+        log_ccd.info('Saving image: {:s}'.format(full_path))
+        if save:
+            write_fits(ccd=ccd, full_path=full_path)
+        return ccd, out_prefix
+
+    elif method == 'none':
+        full_path = os.path.join(red_path, out_prefix + image_name)
+        log_ccd.warning("--cosmic set to 'none'")
+        # ccd.write(full_path, clobber=True)
+        if save:
+            write_fits(ccd=ccd, full_path=full_path)
+        log_ccd.info('Saving image: {:s}'.format(full_path))
+
+        return ccd, out_prefix
+
+    else:
+        log_ccd.error('Unrecognized Cosmic Method {:s}'.format(method))
+
+
+def classify_spectroscopic_data(path, search_pattern):
+    """Classify data by grouping them as pandas.DataFrame instances
+
+    This functions uses ImageFileCollection from ccdproc. First it creates a
+    collection of information regarding the images located in *path* that match
+    the pattern *search_pattern*
+    The information obtained are all keywords listed in the list *keywords*
+    The ImageFileCollection is translated into pandas.DataFrame and then is used
+    much like an SQL database to select and filter values and in that way put
+    them in groups that are pandas.DataFrame instances.
+
+
+    Args:
+        path (str): Path to data location
+        search_pattern (str): Prefix to match files.
+
+    Returns:
+        data_container (object): Instance of NightDataContainer
+
+    """
+
+    search_path = os.path.join(path, search_pattern + '*.fits')
+
+    file_list = glob.glob(search_path)
+
+    if file_list == []:
+        log_spec.error('No file found using search pattern '
+                       '"{:s}"'.format(search_pattern))
+
+        sys.exit('Please use the argument --search-pattern to define the '
+                 'common prefix for the files to be processed.')
+
+    data_container = NightDataContainer(path=path,
+                                        instrument=str('Red'),
+                                        technique=str('Spectroscopy'))
+
+    keywords = ['date',
+                'slit',
+                'date-obs',
+                'obstype',
+                'object',
+                'exptime',
+                'obsra',
+                'obsdec',
+                'grating',
+                'cam_targ',
+                'grt_targ',
+                'filter',
+                'filter2',
+                'gain',
+                'rdnoise']
+
+    ifc = ImageFileCollection(path, keywords=keywords, filenames=file_list)
+
+    pifc = ifc.summary.to_pandas()
+
+    pifc['radeg'] = ''
+    pifc['decdeg'] = ''
+    for i in pifc.index.tolist():
+        radeg, decdeg = ra_dec_to_deg(pifc.obsra.iloc[i], pifc.obsdec.iloc[i])
+
+        pifc.iloc[i, pifc.columns.get_loc('radeg')] = '{:.2f}'.format(radeg)
+
+        pifc.iloc[i, pifc.columns.get_loc('decdeg')] = '{:.2f}'.format(decdeg)
+        # now we can compare using degrees
+
+    confs = pifc.groupby(['slit',
+                          'radeg',
+                          'decdeg',
+                          'grating',
+                          'cam_targ',
+                          'grt_targ',
+                          'filter',
+                          'filter2',
+                          'gain',
+                          'rdnoise']).size().reset_index().rename(
+        columns={0: 'count'})
+
+    for i in confs.index:
+        spec_group = pifc[((pifc['slit'] == confs.iloc[i]['slit']) &
+                           (pifc['radeg'] == confs.iloc[i]['radeg']) &
+                           (pifc['decdeg'] == confs.iloc[i]['decdeg']) &
+                           (pifc['grating'] == confs.iloc[i]['grating']) &
+                           (pifc['cam_targ'] == confs.iloc[i]['cam_targ']) &
+                           (pifc['grt_targ'] == confs.iloc[i]['grt_targ']) &
+                           (pifc['filter'] == confs.iloc[i]['filter']) &
+                           (pifc['filter2'] == confs.iloc[i]['filter2']) &
+                           (pifc['gain'] == confs.iloc[i]['gain']) &
+                           (pifc['rdnoise'] == confs.iloc[i]['rdnoise']))]
+
+        group_obstype = spec_group.obstype.unique()
+
+        if 'COMP' in group_obstype and len(group_obstype) == 1:
+            log_spec.debug('Adding COMP group')
+            data_container.add_comp_group(comp_group=spec_group)
+        elif 'OBJECT' in group_obstype and len(group_obstype) == 1:
+            log_spec.debug('Adding OBJECT group')
+            data_container.add_object_group(object_group=spec_group)
+        else:
+            log_spec.debug('Adding OBJECT-COMP group')
+            data_container.add_spec_group(spec_group=spec_group)
+
+    return data_container
 
 
 def convert_time(in_time):
@@ -47,464 +315,57 @@ def convert_time(in_time):
     return time.mktime(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
 
 
-def fix_duplicated_keywords(night_dir):
-    """Remove duplicated keywords
+def create_background_image(ccd, profile_model, nsigma, separation):
+    """Creates a background-only image
 
-    There are some cases when the raw data comes with duplicated keywords.
-    The origin has not been tracked down. The solution is to identify the
-    duplicated keywords and the remove all but one from the end backwards.
-
-    Args:
-        night_dir (str): The full path for the raw data location
-
-    """
-    log_ccd.debug('Finding duplicated keywords')
-    log_ccd.warning('Files headers will be overwritten')
-    files = glob.glob(os.path.join(night_dir, '*.fits'))
-    # Pick a random file to find duplicated keywords
-    random_file = random.choice(files)
-    ccd = CCDData.read(random_file, unit=u.adu)
-    header = ccd.header
-    # Put the duplicated keywords in a list
-    multiple_keys = []
-    for keyword in header.keys():
-        if keyword != '':
-            if header.count(keyword) > 1:
-                if keyword not in multiple_keys:
-                    multiple_keys.append(keyword)
-    if multiple_keys != []:
-        log_ccd.debug('Found {:d} duplicated keyword '
-                 '{:s}'.format(len(multiple_keys),
-                               's' if len(multiple_keys) > 1 else ''))
-
-        for image_file in files:
-            log_ccd.debug('Processing Image File: {:s}'.format(image_file))
-            try:
-                ccd = CCDData.read(image_file, unit=u.adu)
-                for keyword in multiple_keys:
-                    while ccd.header.count(keyword) > 1:
-                        ccd.header.remove(keyword,
-                                          ccd.header.count(keyword) - 1)
-                log_ccd.warning('Overwriting file with duplicated keywords removed')
-                log_ccd.debug('File %s overwritten', image_file)
-                ccd.write(image_file, clobber=True)
-            except IOError as error:
-                log_ccd.error(error)
-
-
-def ra_dec_to_deg(right_ascension, declination):
-    """Converts right ascension and declination to degrees
+    Using a profile model and assuming the spectrum is misaligned only a little
+    bit (i.e. a couple of pixels from end to end) with respect to the lines of
+    the detector. The number of sigmas determines the width of the zone to be
+    masked and the separation is an offset that is added.
 
     Args:
-        right_ascension (str): Right ascension in the format hh:mm:ss.sss
-        declination (str): Declination in the format dd:mm:ss.sss
+        ccd (object): A ccdproc.CCDData instance.
+        profile_model (object): An astropy.modeling.Model instance. Describes
+            the spatial profile of the target.
+        nsigma (float): Number of sigmas. Used to calculate the width of the
+            target zone to be masked.
+        separation (float): Additional offset that adds to the width of the
+            target zone.
 
     Returns:
-        right_ascension_deg (float): Right ascension in degrees
-        declination_deg (float): Declination in degrees
+        A ccdproc.CCDData instance with the spectrum masked.
 
     """
-    right_ascension = right_ascension.split(":")
-    declination = declination.split(":")
+    background_ccd = ccd.copy()
+    spatial_length, dispersion_length = background_ccd.data.shape
+    target_profiles = []
+    if 'CompoundModel' in profile_model.__class__.name:
+        log_spec.debug(profile_model.submodel_names)
+        for m in range(len(profile_model.submodel_names)):
+            submodel_name = profile_model.submodel_names[m]
 
-    # RIGHT ASCENTION conversion
-    right_ascension_deg = (float(right_ascension[0])
-                           + (float(right_ascension[1])
-                              + (float(right_ascension[2]) / 60.)) / 60.) * \
-                          (360. / 24.)
-
-    # DECLINATION conversion
-    if float(declination[0]) == abs(float(declination[0])):
-        sign = 1
+            target_profiles.append(profile_model[submodel_name])
     else:
-        sign = -1
-    declination_deg = sign * (abs(float(declination[0]))
-                              + (float(declination[1])
-                                 + (float(declination[2]) / 60.)) / 60.)
-    return right_ascension_deg, declination_deg
+        target_profiles.append(profile_model)
 
+    for target in target_profiles:
+        target_mean = target.mean.value
+        target_stddev = target.stddev.value
 
-def print_spacers(message):
-    """Miscellaneous function to print uniform spacers
+        data_low_lim = np.int(np.max(
+            [0, target_mean - (nsigma / 2. + separation) * target_stddev]))
 
-    Prints a spacer of 80 columns with  and 3 rows height. The first and last
-    rows contains the symbol "=" repeated 80 times. The middle row contains the
-    message centered and the extremes has one single "=" symbol.
-    The only functionality of this is aesthetic.
+        data_high_lim = np.int(np.min([spatial_length, int(
+            target_mean + (nsigma / 2. + separation) * target_stddev)]))
 
-    Args:
-        message (str): A message to be printed
+        background_ccd.data[data_low_lim:data_high_lim, :] = 0
 
-    Returns:
-        True (bool): A True value
-
-    """
-    # define the width of the message
-    columns = 80
-    if len(message) % 2 == 1 and int(columns) % 2 != 1:
-        message += " "
-
-    bar_length = int(columns)
-
-    # compose bars top and bottom
-    spacer_bar = "=" * bar_length
-
-    blanks = bar_length - 2
-    space_length = int((blanks - len(message)) / 2)
-
-    # compose the message
-    message_bar = "=" + " " * space_length + message + " " * space_length + "="
-
-    print(spacer_bar)
-    print(message_bar)
-    print(spacer_bar)
-    return True
-
-
-def print_progress(current, total):
-    """Prints the percentage of a progress
-
-    It works for FOR loops, requires to know the full length of the loop.
-    Prints to the standard output.
-
-    Notes:
-        A possible improvement for this is to run it using multithreading
-
-    Args:
-        current (int): Current value in the range of the loop.
-        total (int): The length of the loop.
-
-    """
-    if current == total:
-        sys.stdout.write("Progress {:.2%}\n".format(1.0 * current / total))
-    else:
-        sys.stdout.write("\rProgress {:.2%}".format(1.0 * current / total))
-    sys.stdout.flush()
-    return
-
-
-def get_twilight_time(date_obs):
-    """Get end/start time of evening/morning twilight
-
-    Notes:
-        Taken from David Sanmartim's development
-
-    Args:
-        date_obs (list): List of all the dates from data.
-
-    Returns:
-        twilight_evening (str): Evening twilight time in the format
-            'YYYY-MM-DDTHH:MM:SS.SS'
-        twilight_morning (str): Morning twilight time in the format
-            'YYYY-MM-DDTHH:MM:SS.SS'
-        sun_set_time (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
-        sun_rise_time (str): Sun rise time in the format
-            'YYYY-MM-DDTHH:MM:SS.SS'
-
-    """
-    # observatory(str): Observatory name.
-    observatory = 'SOAR Telescope'
-    geodetic_location = ['-70d44m01.11s', '-30d14m16.41s', 2748]
-
-    # longitude (str): Geographic longitude in string format
-    longitude = geodetic_location[0]
-
-    # latitude (str): Geographic latitude in string format.
-    latitude = geodetic_location[1]
-
-    # elevation (int): Geographic elevation in meters above sea level
-    elevation = geodetic_location[2]
-
-    # timezone (str): Time zone.
-    timezone = 'UTC'
-
-    # description(str): Observatory description
-    description = 'Soar Telescope on Cerro Pachon, Chile'
-
-    soar_loc = EarthLocation.from_geodetic(longitude,
-                                           latitude,
-                                           elevation * u.m,
-                                           ellipsoid='WGS84')
-
-    soar = Observer(name=observatory,
-                    location=soar_loc,
-                    timezone=timezone,
-                    description=description)
-
-    time_first_frame, time_last_frame = Time(min(date_obs)), Time(max(date_obs))
-
-    twilight_evening = soar.twilight_evening_astronomical(
-        Time(time_first_frame), which='nearest').isot
-
-    twilight_morning = soar.twilight_morning_astronomical(
-        Time(time_last_frame), which='nearest').isot
-
-    sun_set_time = soar.sun_set_time(
-        Time(time_first_frame), which='nearest').isot
-
-    sun_rise_time = soar.sun_rise_time(
-        Time(time_last_frame), which='nearest').isot
-
-    log_ccd.debug('Sun Set ' + sun_set_time)
-    log_ccd.debug('Sun Rise ' + sun_rise_time)
-
-    return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
-
-
-def read_fits(full_path, technique='Unknown'):
-    assert os.path.isfile(full_path)
-    ccd = CCDData.read(full_path, unit=u.adu)
-
-    ccd.header.set('GSP_VERS',
-                   value=pipeline.__version__,
-                   comment='Goodman Spectroscopic Pipeline Version')
-
-    ccd.header.set('GSP_ONAM',
-                   value=os.path.basename(full_path),
-                   comment='Original file name')
-
-    ccd.header.set('GSP_PNAM',
-                   value=os.path.basename(full_path),
-                   comment='Parent file name')
-
-    ccd.header.set('GSP_FNAM',
-                   value=os.path.basename(full_path),
-                   comment='Current file name')
-
-    ccd.header.set('GSP_PATH',
-                   value=os.path.dirname(full_path),
-                   comment='Location at moment of reduce')
-
-    ccd.header.set('GSP_TECH',
-                   value=technique,
-                   comment='Observing technique')
-
-    ccd.header.set('GSP_DATE',
-                   value=time.strftime("%Y-%m-%d"),
-                   comment='Processing date')
-
-    ccd.header.set('GSP_OVER',
-                   value='none',
-                   comment='Overscan region')
-
-    ccd.header.set('GSP_TRIM',
-                   value='none',
-                   comment='Trim section')
-
-    ccd.header.set('GSP_SLIT',
-                   value='none',
-                   comment='Slit trim section, slit illuminated area only')
-
-    ccd.header.set('GSP_BIAS',
-                   value='none',
-                   comment='Master bias image')
-
-    ccd.header.set('GSP_FLAT',
-                   value='none',
-                   comment='Master flat image')
-
-    ccd.header.set('GSP_NORM',
-                   value='none',
-                   comment='Flat normalization method')
-
-    ccd.header.set('GSP_COSM',
-                   value='none',
-                   comment='Cosmic ray rejection method')
-
-    ccd.header.set('GSP_WRMS',
-                   value='none',
-                   comment='Wavelength solution RMS Error')
-
-    ccd.header.set('GSP_WPOI',
-                   value='none',
-                   comment='Number of points used to '
-                           'calculate wavelength solution')
-
-    ccd.header.set('GSP_WREJ',
-                   value='none',
-                   comment='Number of points rejected')
-
-    ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --',
-                         before='GSP_VERS')
-
-    ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
-    ccd.header.set('BUNIT', after='CCDSUM')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    return ccd
-
-
-def write_fits(ccd, full_path, combined=False, parent_file=None, overwrite=True):
-    assert os.path.isdir(os.path.dirname(full_path))
-
-    # Original File Name
-    # This should be set only once.
-    if combined:
-        ccd.header.set('GSP_ONAM',
-                       value=os.path.basename(full_path))
-
-        ccd.header.set('GSP_PNAM',
-                   value='combined')
-
-    # Parent File Name
-    if not combined and parent_file is not None:
-        ccd.header.set('GSP_PNAM',
-                       value=os.path.basename(parent_file))
-
-    # Current File Name
-    ccd.header.set('GSP_FNAM', value=os.path.basename(full_path))
-
-    # write to file
-    ccd.write(full_path, overwrite=overwrite)
-    return ccd
-
-
-def image_overscan(ccd, overscan_region, add_keyword=False):
-    """Apply overscan to data
-
-    Uses ccdproc.subtract_overscan to perform the task.
-
-    Notes:
-        The overscan_region argument uses FITS convention, just like IRAF,
-        therefore is 1 based. i.e. it starts in 1 not 0.
-
-    Args:
-        ccd (object): A ccdproc.CCDData instance
-        overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]'
-            where x is the spectral axis and y is the spatial axis.
-        add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-            Default False.
-
-    Returns:
-        ccd (object): Overscan corrected ccdproc.CCDData instance
-
-    """
-    log_ccd.debug('Applying overscan Correction: {:s}'.format(overscan_region))
-    ccd = ccdproc.subtract_overscan(ccd=ccd,
-                                    median=True,
-                                    fits_section=overscan_region,
-                                    add_keyword=add_keyword)
-
-    ccd.header['GSP_OVER'] = (overscan_region, 'Overscan region')
-    return ccd
-
-
-def image_trim(ccd, trim_section, trim_type, add_keyword=False):
-    """Trim image to a given section
-
-    Notes:
-        The overscan_region argument uses FITS convention, just like IRAF,
-        therefore is 1 based. i.e. it starts in 1 not 0.
-
-    Args:
-        ccd (object): A ccdproc.CCDData instance
-        trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
-            where x is the spectral axis and y is the spatial axis.
-        trim_type (str): default or slit trim
-        add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-            Default False.
-
-    Returns:
-        ccd (object): Trimmed ccdproc.CCDData instance
-
-    """
-    ccd = ccdproc.trim_image(ccd=ccd,
-                             fits_section=trim_section,
-                             add_keyword=add_keyword)
-    if trim_type == 'trimsec':
-        ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
-    elif trim_type == 'slit':
-        ccd.header['GSP_SLIT'] = (trim_section,
-                                  'Slit trim section, slit illuminated '
-                                  'area only.')
-    else:
-        log_ccd.warning('Unrecognized trim type')
-
-    return ccd
-
-
-def get_slit_trim_section(master_flat):
-    """Find the slit edges to trim all data
-
-    Using a master flat, ideally good signal to noise ratio, this function will
-    identify the edges of the slit projected into the detector. Having this data
-    will allow to reduce the overall processing time and also reduce the
-    introduction of artifacts due to non-illuminated regions in the detectors,
-    such as NaNs -INF +INF, etc.
-
-    Args:
-        master_flat (object): A ccdproc.CCDData instance
-
-    Returns:
-        slit_trim_section (str): Trim section in spatial direction in the format
-            [:,slit_lower_limit:slit_higher_limit]
-
-    """
-    x, y = master_flat.data.shape
-
-    # Using the middle point to make calculations, usually flats have good
-    # illumination already at the middle.
-    middle = int(y / 2.)
-    ccd_section = master_flat.data[:, middle:middle + 200]
-    ccd_section_median = np.median(ccd_section, axis=1)
-    spatial_axis = range(len(ccd_section_median))
-
-    # set values for initial box model definition
-    box_max = np.max(ccd_section_median)
-    box_center = len(ccd_section_median) / 2.
-    box_width = .75 * len(ccd_section_median)
-
-    # box model definition
-    box_model = models.Box1D(amplitude=box_max, x_0=box_center, width=box_width)
-
-    box_fitter = fitting.SimplexLSQFitter()
-
-    fitted_box = box_fitter(box_model, spatial_axis, ccd_section_median)
-
-    # the number of pixels that will be removed from the detected edge of the
-    # image on each side
-    offset = 10
-
-    # this defines a preliminary set of slit limit
-    l_lim = fitted_box.x_0.value - fitted_box.width.value / 2. + offset
-
-    h_lim = fitted_box.x_0.value + fitted_box.width.value / 2. - offset
-
-    # Here we force the slit limits within the boundaries of the data (image)
-    low_lim = int(np.max([0 + offset, l_lim]))
-
-    high_lim = int(np.min([h_lim, len(ccd_section_median) - offset]))
-
-    # define the slit trim section as (IRA
-    slit_trim_section = '[:,{:d}:{:d}]'.format(low_lim, high_lim)
-
-    # debugging plots that have to be manually turned on
     if False:
-        manager = plt.get_current_fig_manager()
-        manager.window.showMaximized()
-        plt.title('Slit Edge Detection')
-        plt.plot(box_model(spatial_axis), color='c', label='Initial Box1D')
-        plt.plot(fitted_box(spatial_axis), color='k', label='Fitted Box1D')
-        plt.plot(ccd_section_median, label='Median Along Disp.')
-        # plt.plot(pseudo_derivative, color='g', label='Pseudo Derivative')
-        plt.axvline(None, color='r', label='Detected Edges')
-        plt.axvline(low_lim, color='r')
-        plt.axvline(high_lim, color='r')
-        # for peak in peaks:
-        #     plt.axvline(peak, color='r')
-        plt.legend(loc='best')
+        plt.title('Background Image')
+        plt.imshow(background_ccd.data, clim=(0, 50))
         plt.show()
 
-    # plt.imshow(master_flat.data[low_lim:high_lim, :])
-    # plt.axvline(low_lim, color='r')
-    # plt.axvline(high_lim, color='r')
-    # plt.show()
-
-    return slit_trim_section
+    return background_ccd
 
 
 def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
@@ -651,139 +512,454 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         return ccd
 
 
-def lacosmic_cosmicray_rejection(ccd, mask_only=False):
-    """Do cosmic ray rejection using ccdproc.LACosmic
+def extract(ccd,
+            trace,
+            spatial_profile,
+            extraction,
+            zone,
+            background_level=0,
+            sampling_step=1,
+            plots=False):
+    """Performs spectrum extraction
 
-    This function in fact does not apply any correction, it detects the cosmic
-    rays and updates the attribute mask of the ccd object (CCDData instance).
-    The attribute mask is used later as a mask for the pixels hit by cosmic rays
+    This function is designed to perform two types of spectrum extraction, a
+    simple sum in the spatial direction and an optimal extraction.
 
-      Notes:
-          OBS: cosmic ray rejection is working pretty well by defining gain = 1.
-          It's not working when we use the real gain of the image. In this case
-          the sky level changes by a factor equal the gain.
-          Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
-
-      Args:
-          ccd (object): A ccdproc.CCDData instance.
-          mask_only (bool): In some cases you may want to obtain the cosmic
-              rays mask only.
-
-      Returns:
-          ccd (object): A CCDData instance with the mask attribute updated or an
-          array which corresponds to the mask.
-
-    """
-    if ccd.header['OBSTYPE'] == 'OBJECT':
-        value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
-        log_ccd.info('Cleaning cosmic rays... ')
-
-        ccd = ccdproc.cosmicray_lacosmic(
-            ccd,
-            sigclip=2.5,
-            sigfrac=value,
-            objlim=value,
-            gain=float(ccd.header['GAIN']),
-            readnoise=float(ccd.header['RDNOISE']),
-            satlevel=np.inf,
-            sepmed=True,
-            fsmode='median',
-            psfmodel='gaussy',
-            verbose=False)
-
-        ccd.header['GSP_COSM'] = ("LACosmic", "Cosmic ray rejection method")
-        log_ccd.info("Cosmic rays rejected with LACosmic")
-        if mask_only:
-            return ccd.mask
-        else:
-            return ccd
-    else:
-        log_ccd.debug('Skipping cosmic ray rejection for image of datatype: '
-                      '{:s}'.format(ccd.header['OBSTYPE']))
-        return ccd
-
-
-def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
-                          dcr_par, keep_files=False, prefix='c', method='dcr',
-                          save=False):
-    """Call for the appropriate cosmic ray rejection method
-
-    There are three options when dealing with cosmic ray rejection in this
-    pipeline, the first is ``dcr`` which is a program written in C by Wojtek
-    Pych (http://users.camk.edu.pl/pych/DCR/) and works very well for
-    spectroscopy the only negative aspect is that integration with python was
-    difficult and not native.
+    Notes:
+        For the beta release the optimal extraction is not implemented.
 
     Args:
-        ccd (object): a ccdproc.CCDData instance.
-        image_name (str): Science image name.
-        out_prefix (str): Partial prefix to be added to the image name. Related
-            to previous processes and not cosmic ray rejection.
-        red_path (str): Path to reduced data directory.
-        dcr_par (str): Path to dcr.par file.
-        keep_files (bool): If True, the original file and the cosmic ray mask
-            will not be deleted. Default is False.
-        prefix (str): Cosmic ray rejection related prefix to be added to image
-            name.
-        method (str): Method to use for cosmic ray rejection. There are three
-            options: dcr, lacosmic and none.
-        save (bool): Disables by default saving the images
+        ccd (object): Instance of ccdproc.CCDData containing a 2D spectrum
+        trace (object): Instance of astropy.modeling.Model, a low order
+            polynomial that defines the trace of the spectrum in the ccd object.
+        spatial_profile (object): Instance of astropy.modeling.Model, a Gaussian
+            model previously fitted to the spatial profile of the 2D spectrum
+            contained in the ccd object.
+        extraction (str): Extraction type, can be `simple`, `fractional` or
+            `optimal` for the beta release the optimal extraction is not
+            implemented yet.
+        zone (list):
+        background_level (array):
+        sampling_step (int): The optimal extraction needs to sample the spatial
+            profile, this value defines the intervals at which get such
+            sampling.
+        plots (bool): Determines whether display plots or not.
+
+    Returns:
+        ccd (object): Instance of ccdproc.CCDData containing a 1D spectrum. The
+            attribute 'data' is replaced by the 1D array resulted from the
+            extraction process.
+
+    Raises:
+        NotImplementedError: When `extraction` is optimal, this is valid for the
+            beta release
 
     """
+    assert isinstance(ccd, CCDData)
+    assert isinstance(trace, Model)
 
-    if method == 'dcr':
-        log_ccd.warning('DCR does apply the correction to images if you want '
-                        'the mask use --keep-cosmic-files')
-        full_path = os.path.join(red_path, out_prefix + image_name)
+    nccd = ccd.copy()
 
-        ccd.header['GSP_COSM'] = ("DCR", "Cosmic ray rejection method")
+    spatial_length, dispersion_length = nccd.data.shape
 
-        # ccd.write(full_path, clobber=True)
-        write_fits(ccd=ccd, full_path=full_path)
-        log_ccd.info('Saving image: {:s}'.format(full_path))
+    apnum1 = '{:d} {:d} {:d} {:d}'.format(1, 1, zone[0], zone[1])
+    log_spec.debug('APNUM1 Keyword: {:s}'.format(apnum1))
 
-        in_file = out_prefix + image_name
+    # create variance model
+    rdnoise = float(nccd.header['RDNOISE'])
+    gain = float(nccd.header['GAIN'])
+    log_spec.debug('Original Name {:s}'.format(nccd.header['GSP_FNAM']))
 
-        # This is to return the prefix that will be used by dcr
-        # Not to be used by dcr_cosmicray_rejection
-        out_prefix = prefix + out_prefix
+    model_fitter = fitting.LevMarLSQFitter()
 
-        ccd = dcr_cosmicray_rejection(data_path=red_path,
-                                      in_file=in_file,
-                                      prefix=prefix,
-                                      dcr_par_dir=dcr_par,
-                                      delete=keep_files,
-                                      save=save)
-        return ccd, out_prefix
+    # print(spatial_profile.mean.value)
+    # print(trace.c0.value)
 
-    elif method == 'lacosmic':
-        log_ccd.warning('LACosmic does not apply the correction to images '
-                        'instead it updates the mask attribute for CCDData '
-                        'objects. For saved files the mask is a fits extension')
-
-        ccd = lacosmic_cosmicray_rejection(ccd=ccd)
-
-        out_prefix = prefix + out_prefix
-        full_path = os.path.join(red_path, out_prefix + image_name)
-
-        # ccd.write(full_path, clobber=True)
-        log_ccd.info('Saving image: {:s}'.format(full_path))
-        if save:
-            write_fits(ccd=ccd, full_path=full_path)
-        return ccd, out_prefix
-
-    elif method == 'none':
-        full_path = os.path.join(red_path, out_prefix + image_name)
-        log_ccd.warning("--cosmic set to 'none'")
-        # ccd.write(full_path, clobber=True)
-        if save:
-            write_fits(ccd=ccd, full_path=full_path)
-        log_ccd.info('Saving image: {:s}'.format(full_path))
-
-        return ccd, out_prefix
-
+    if isinstance(spatial_profile, models.Gaussian1D):
+        amplitude = spatial_profile.amplitude.value
+        mean = spatial_profile.mean.value
+        stddev = spatial_profile.stddev.value
+        new_model = models.Gaussian1D(amplitude=amplitude,
+                                      mean=mean,
+                                      stddev=stddev)
+        # print('Fixed ', new_model.mean.fixed)
     else:
-        log_ccd.error('Unrecognized Cosmic Method {:s}'.format(method))
+        raise NotImplementedError
+    log_spec.debug('nccd.data is a masked array: '
+                   '{:s}'.format(str(np.ma.isMaskedArray(nccd.data))))
+
+    nccd.data = np.ma.masked_invalid(nccd.data)
+    # print(np.ma.isMaskedArray(nccd.data))
+    np.ma.set_fill_value(nccd.data, 0)
+
+    # if extraction == 'simple':
+        #
+        #
+        # # print(indexes)
+        # if plots:
+        #     indexes = np.argwhere(cr_mask == 0)
+        #     fig = plt.figure(1)
+        #     ax1 = fig.add_subplot(111)
+        #     for index in indexes:
+        #         x, y = index
+        #         ax1.plot(y, x, marker='o', color='r')
+        #
+        #     ax1.imshow(nccd.data, interpolation='none')
+        #     if plt.isinteractive():
+        #         plt.draw()
+        #         plt.pause(1)
+        #     else:
+        #         plt.show()
+        #
+        # # print(np.ma.isMaskedArray(nccd.data))
+        # # spectrum zone limit
+        # low_lim, high_lim = zone
+        # spectrum_masked = nccd.data * cr_mask
+        # # plt.imshow(spectrum_masked, clim=(10, 70))
+        # # plt.show()
+        # # TODO (simon): Add fractional pixel
+        # spectrum_sum = np.ma.sum(spectrum_masked[low_lim:high_lim, :], axis=0)
+        #
+        # background_sum = np.abs(high_lim - low_lim) * background_level
+        #
+        # nccd.data = spectrum_sum - background_sum
+        #
+        # nccd.header['APNUM1'] = apnum1
+        #
+        # if plots:
+        #     fig = plt.figure()
+        #     fig.canvas.set_window_title('Simple Extraction')
+        #     # ax = fig.add_subplot(111)
+        #     manager = plt.get_current_fig_manager()
+        #     if plt.get_backend() == u'GTK3Agg':
+        #         manager.window.maximize()
+        #     elif plt.get_backend() == u'Qt5Agg':
+        #         manager.window.showMaximized()
+        #
+        #     plt.title(nccd.header['OBJECT'])
+        #     plt.xlabel('Dispersion Axis (Pixels)')
+        #     plt.ylabel('Intensity (Counts)')
+        #     # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
+        #     plt.plot(nccd.data, color='k',
+        #              label='Simple Extracted')
+        #     plt.plot(background_sum, color='r', label='Background')
+        #     plt.plot(spectrum_sum, color='b', label='Spectrum Raw Sum')
+        #     plt.xlim((0, len(nccd.data)))
+        #     plt.legend(loc='best')
+        #     if plt.isinteractive():
+        #         plt.draw()
+        #         plt.pause(1)
+        #     else:
+        #         plt.show()
+
+    if extraction == 'fractional':
+        extracted, background = extract_fractional_pixel(
+            ccd=ccd,
+            target_trace=trace,
+            target_stddev=spatial_profile.stddev.value,
+            extraction_width=2)
+
+    elif extraction == 'optimal':
+        raise NotImplementedError
+
+    return nccd
+
+
+def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
+                             background_spacing=0.5):
+    """Performs an spectrum extraction using fractional pixels.
+
+    Args:
+        ccd (object): Image containing a 2D spectrum. Instance of CCDData.
+        target_trace (object):  Instance of astropy.modeling.models.Model.
+        target_stddev (float):
+        extraction_width (int): Width of the extraction area
+        background_spacing (float): Number of `target_stddev` to separate the
+          target extraction to the background.
+    """
+    assert isinstance(ccd, CCDData)
+    assert isinstance(target_trace, Model)
+
+    spat_length, disp_length = ccd.data.shape
+
+    disp_axis = range(disp_length)
+    trace = target_trace(disp_axis)
+
+    extracted_spectrum = []
+    background_list = []
+    for i in disp_axis:
+
+        # this defines the extraction limit for every column
+        low_limit = trace[i] - 0.5 * extraction_width * target_stddev
+        high_limit = trace[i] + 0.5 * extraction_width * target_stddev
+
+        column_sum = fractional_sum(data=ccd.data, index=i, low_limit=low_limit,
+                                    high_limit=high_limit)
+
+        # background limits
+
+        # background_spacing is the distance from the edge of the target's
+        # limits defined by `int_low_limit` and
+        # `int_high_limit` in stddev units
+
+        background_width = high_limit - low_limit
+
+        # define pixel values for background subtraction
+        # low_background_zone
+        high_1 = low_limit - background_spacing * target_stddev
+        low_1 = high_1 - background_width
+        # print(low_1,high_1)
+
+        # High background zone
+        low_2 = high_limit + background_spacing * target_stddev
+        high_2 = low_2 + background_width
+        # print(low_1,'-',high_1,':',low_2,'-',high_2,)
+
+        # validate background subtraction zones
+        background_1 = None
+        background_2 = None
+
+        # this has to be implemented, leaving it True assumes there is no
+        # restriction for background selection.
+        neighbouring_target_condition = True
+
+        if low_1 > 0 and neighbouring_target_condition:
+            # integer limits
+            background_1 = fractional_sum(data=ccd.data, index=i,
+                                          low_limit=low_1, high_limit=high_1)
+        else:
+            print("Invalid Zone 1")
+
+        if high_2 < spat_length and neighbouring_target_condition:
+            background_2 = fractional_sum(data=ccd.data, index=i,
+                                          low_limit=low_2, high_limit=high_2)
+        else:
+            print("Invalid Zone 2")
+
+        background = 0
+        if background_1 is not None and background_2 is None:
+            background = background_1
+        elif background_1 is None and background_2 is not None:
+            background = background_2
+        else:
+            background = np.mean([background_1, background_2])
+
+        # actual background subtraction
+        background_subtracted_column_sum = column_sum - background
+
+        # append column value to list
+        extracted_spectrum.append(background_subtracted_column_sum)
+        background_list.append(background)
+
+    new_ccd = ccd.copy()
+    new_ccd.data = np.asarray(extracted_spectrum)
+    return new_ccd, np.asarray(background_list)
+
+
+def extract_optimal():
+    raise NotImplementedError
+
+
+def extract_simple(ccd, target_trace, target_stddev, extraction_width,
+                             background_spacing=0.5):
+    raise NotImplementedError
+
+
+def fix_duplicated_keywords(night_dir):
+    """Remove duplicated keywords
+
+    There are some cases when the raw data comes with duplicated keywords.
+    The origin has not been tracked down. The solution is to identify the
+    duplicated keywords and the remove all but one from the end backwards.
+
+    Args:
+        night_dir (str): The full path for the raw data location
+
+    """
+    log_ccd.debug('Finding duplicated keywords')
+    log_ccd.warning('Files headers will be overwritten')
+    files = glob.glob(os.path.join(night_dir, '*.fits'))
+    # Pick a random file to find duplicated keywords
+    random_file = random.choice(files)
+    ccd = CCDData.read(random_file, unit=u.adu)
+    header = ccd.header
+    # Put the duplicated keywords in a list
+    multiple_keys = []
+    for keyword in header.keys():
+        if keyword != '':
+            if header.count(keyword) > 1:
+                if keyword not in multiple_keys:
+                    multiple_keys.append(keyword)
+    if multiple_keys != []:
+        log_ccd.debug('Found {:d} duplicated keyword '
+                 '{:s}'.format(len(multiple_keys),
+                               's' if len(multiple_keys) > 1 else ''))
+
+        for image_file in files:
+            log_ccd.debug('Processing Image File: {:s}'.format(image_file))
+            try:
+                ccd = CCDData.read(image_file, unit=u.adu)
+                for keyword in multiple_keys:
+                    while ccd.header.count(keyword) > 1:
+                        ccd.header.remove(keyword,
+                                          ccd.header.count(keyword) - 1)
+                log_ccd.warning('Overwriting file with duplicated keywords removed')
+                log_ccd.debug('File %s overwritten', image_file)
+                ccd.write(image_file, clobber=True)
+            except IOError as error:
+                log_ccd.error(error)
+
+
+def fractional_sum(data, index, low_limit, high_limit):
+    """Performs a fractional pixels sum
+
+    A fractional pixels sum is requiered several times while
+    extracting a 1D spectrum from a 2D spectrum. The method
+    is actually very simple.
+
+    It requieres the full data, the colum and the range to sum, this
+    range is given as real numbers. First it identify the extreme
+    pixels that are going to be summed complete, i.e. no fraction.
+    Then it will identify the index of the last pixel to each side,
+    the ones that contribute with only a fraction to the sum
+    and it also calculates the fraction that will be summed.
+
+    The sum is performed in one operation. It does not do
+    background subtraction, for which this very same method is used to
+    get the background sum to be subtracted later.
+
+    Args:
+        data (numpy.ndarray): 2D array that contains the 2D spectrum/image
+        index (int): Index of the colum to be summed.
+        low_limit (float): Lower limit for the range to be summed.
+        high_limit (float): Higher limit for the range to be summed.
+
+    Returns:
+        Sum in ADU of all pixels and fractions between `low_limit` and
+        `high_limit`.
+    """
+    # these are the limits whithin the full amount of flux on each pixel is
+    # summed
+    low_limit_last_full = ceil(low_limit)
+    high_limit_last_full = floor(high_limit)
+
+    # Very last pixel
+    low_last_index = floor(low_limit)
+    high_last_index = ceil(high_limit)
+
+    # Multiplying factor for the last "fractional pixel"
+    low_last_factor = low_limit_last_full - low_limit
+    high_last_factor = high_limit - high_limit_last_full
+
+    # target's sum
+    column_sum = np.sum(data[low_limit_last_full:high_limit_last_full,
+                        index]) + \
+                 data[low_last_index, index] * low_last_factor + \
+                 data[high_last_index, index] * high_last_factor
+
+    return column_sum
+
+
+def get_background_value(background_image, zone_sep=0.5, zone=None):
+    """finds background value for each dispersion line
+
+    A background image is an image whose spectrum has been masked with zeros,
+    the spectrum zone is retrieved by analyzing the pixels values and then two
+    background zones are defined at a distance from the edges of the target zone
+    defined by zone_sep, the width of the background zone is the same as the
+    target's. After validating the background zone they averaged by median along
+    the spatial direction. If there are two zones they are averaged as well.
+
+    Args:
+        background_image (object): ccdproc.CCDData instance. Spectra are masked.
+        zone_sep (float): How far the background zone should be from the edges
+            of the target zone. Default 0.5.
+        zone (list): Alternative you could parse the zone as a list with each
+            element a limit. Therefore there should be an even number of
+            elements.
+
+    Returns:
+        A 1D array the same length of the dispersion length.
+
+    """
+    spatial_length, dispersion_length = background_image.data.shape
+    if zone is None:
+        background_profile = np.median(background_image.data, axis=1)
+
+        target_zones_points = np.where(background_profile == 0)[0]
+
+        target_zones = [i + 1 for i in range(len(target_zones_points) - 1) \
+                        if
+                        target_zones_points[i + 1] - target_zones_points[i] > 1]
+
+        target_zones.append(np.argmin(target_zones_points))
+        target_zones.append(len(target_zones_points))
+        target_zones.sort()
+
+        for i in range(len(target_zones) - 1):
+
+            if target_zones[i + 1] - target_zones[i] > 2:
+
+                log_spec.debug('Found valid target zone:'
+                               ' {:d}:{:d}'.format(target_zones[i],
+                                                   target_zones[i + 1]))
+
+                full_zone = target_zones_points[
+                            target_zones[i]:target_zones[i + 1]]
+                zone = [full_zone[0], full_zone[-1]]
+                # zone_width = len(zone)
+
+
+            else:
+                log_spec.warning('Target Zone is too small')
+
+    # here do the evaluation if background zones are valid.
+    first_background = None
+    second_background = None
+    background_median = None
+
+    zone_width = zone[1] - zone[0]
+
+    # first background zone
+    back_first_low = int(zone[0] - (1 + zone_sep) * zone_width)
+    back_first_high = int(zone[0] - zone_sep * zone_width)
+    if 0 < back_first_low < back_first_high:
+
+        first_background = np.median(background_image.data[
+                                     back_first_low:back_first_high,
+                                     :],
+                                     axis=0)
+    else:
+        log_spec.debug('Zone [{:d}:{:d}] is forbidden'.format(
+            back_first_low,
+            back_first_high))
+
+    # second background zone
+    back_second_low = int(zone[-1] + zone_sep * zone_width)
+    back_second_high = int(zone[-1] + (1 + zone_sep) * zone_width)
+    if back_second_low < back_second_high < spatial_length:
+
+        second_background = np.mean(background_image.data[
+                                    back_second_low:back_second_high,
+                                    :],
+                                    axis=0)
+    else:
+        log_spec.debug('Zone [{:d}:{:d}] is forbidden'.format(
+            back_second_low,
+            back_second_high))
+
+    if first_background is not None and second_background is not None:
+        background_mean = np.mean([first_background, second_background], axis=0)
+
+        return background_mean
+    elif first_background is not None and second_background is None:
+        return first_background
+    elif first_background is None and second_background is not None:
+        return second_background
+    else:
+        log_spec.error(
+            'Not possible to get a background extraction zone')
+        return 0
 
 
 def get_best_flat(flat_name):
@@ -827,136 +1003,6 @@ def get_best_flat(flat_name):
         return None, None
 
 
-def print_default_args(args):
-    """Print default values of arguments.
-
-    This is mostly helpful for debug but people not familiar with the software
-    might find it useful as well
-
-    Notes:
-        This function is deprecated.
-
-    Notes:
-        This is not dynamically updated so use with caution
-
-    Args:
-        args (object): An argparse instance
-
-    """
-    arg_name = {'auto_clean': '--auto-clean',
-                'clean_cosmic': '-c, --cosmic',
-                'debug_mode': '--debug',
-                'flat_normalize': '--flat-normalize',
-                'ignore_bias': '--ignore-bias',
-                'log_to_file': '--log-to-file',
-                'norm_order': '--flat-norm-order',
-                'raw_path': '--raw-path',
-                'red_path': '--red-path',
-                'saturation_limit': '--saturation',
-                'destiny': '-d --proc-path',
-                'interactive_ws': '-i --interactive',
-                'lamp_all_night': '-r --reference-lamp',
-                'lamp_file': '-l --lamp-file',
-                'output_prefix': '-o --output-prefix',
-                'pattern': '-s --search-pattern',
-                'procmode': '-m --proc-mode',
-                'reference_dir': '-R --reference-files',
-                'source': '-p --data-path',
-                'save_plots': '--save-plots',
-                'dcr_par_dir': '--dcr-par-dir'}
-    for key in args.__dict__:
-        log_ccd.debug('Default value for {:s} is {:s}'.format(
-            arg_name[key],
-            str(args.__getattribute__(key))))
-
-
-def normalize_master_flat(master, name, method='simple', order=15):
-    """ Master flat normalization method
-
-    This function normalize a master flat in three possible ways:
-     *mean*: simply divide the data by its mean
-
-     *simple*: Calculates the median along the spatial axis in order to obtain
-     the dispersion profile. Then fits a Chebyshev1D model and apply this to all
-     the data.
-
-     *full*: This is for experimental purposes only because it takes a lot of
-     time to process. It will fit a model to each line along the dispersion axis
-     and then divide it by the fitted model. I do not recommend this method
-     unless you have a good reason as well as a powerful computer..
-
-    Args:
-        master (object): Master flat. Has to be a ccdproc.CCDData instance
-        name (str): Full path of master flat prior to normalization
-        method (str): Normalization method, 'mean', 'simple' or 'full'
-        order (int): Order of the polinomial to be fitted.
-
-    Returns:
-        master (object):  The normalized master flat. ccdproc.CCDData instance
-
-    """
-    assert isinstance(master, CCDData)
-
-    # define new name, base path and full new name
-    new_name = 'norm_' + name.split('/')[-1]
-    path = '/'.join(name.split('/')[0:-1])
-    norm_name = os.path.join(path, new_name)
-
-    if method == 'mean':
-        log_ccd.debug('Normalizing by mean')
-        master.data /= master.data.mean()
-
-        master.header['GSP_NORM'] = ('mean', 'Flat normalization method')
-
-    elif method == 'simple' or method == 'full':
-        log_ccd.debug('Normalizing flat by {:s} model'.format(method))
-
-        # Initialize Fitting models and fitter
-        model_init = models.Chebyshev1D(degree=order)
-        model_fitter = fitting.LevMarLSQFitter()
-
-        # get data shape
-        x_size, y_size = master.data.shape
-        x_axis = range(y_size)
-
-        if method == 'simple':
-            # get profile along dispersion axis to fit a model to use for
-            # normalization
-            profile = np.median(master.data, axis=0)
-
-            # do the actual fit
-            fit = model_fitter(model_init, x_axis, profile)
-
-            # convert fit into an array
-            fit_array = fit(x_axis)
-
-            # pythonic way to divide an array by a vector
-            master.data = master.data / fit_array[None, :]
-
-            # master.header.add_history('Flat Normalized by simple model')
-            master.header['GSP_NORM'] = ('simple', 'Flat normalization method')
-
-        elif method == 'full':
-            log_ccd.warning('This part of the code was left here for '
-                            'experimental purposes only')
-            log_ccd.warning('This procedure takes a lot to process, you might '
-                            'want to see other method such as "simple" or '
-                            '"mean".')
-            for i in range(x_size):
-                fit = model_fitter(model_init, x_axis, master.data[i])
-                master.data[i] = master.data[i] / fit(x_axis)
-            # master.header.add_history('Flat Normalized by full model')
-            master.header['GSP_NORM'] = ('full', 'Flat normalization method')
-
-    # write normalized flat to a file
-    # master.write(norm_name, clobber=True)
-    write_fits(ccd=master,
-               full_path=norm_name,
-               parent_file=name)
-
-    return master, norm_name
-
-
 def get_central_wavelength(grating, grt_ang, cam_ang):
     """Calculates the central wavelength for a given spectroscopic mode
 
@@ -992,378 +1038,284 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
     return central_wavelength
 
 
-def remove_conflictive_keywords(path, file_list):
-    """Removes problematic keywords
+def get_extraction_zone(ccd,
+                        extraction=None,
+                        trace=None,
+                        trace_index=None,
+                        model=None,
+                        n_sigma_extract=None,
+                        zone=None,
+                        plots=False):
+    """Get the minimum rectangular CCD zone that fully contains the spectrum
 
-    The blue camera has a set of keywords whose comments contain non-ascii
-    characters, in particular the degree symbol. Those keywords are not
-    needed in any stage of the data reduction therefore they are removed.
-    The data will be overwritten with the keywords removed. The user will
-    need to have backups of raw data.
-
-    Notes:
-        This function solves a problem with old data, new headers are compliant
-        with the headers.
-
-    Args:
-        path (str): Path to the folder containing the files
-        file_list (list): List of files to remove keywords
-
-    """
-    log_ccd.debug('Removing conflictive keywords in Blue Camera Headers')
-    log_ccd.warning('Files will be overwritten')
-    for blue_file in file_list:
-        full_path = os.path.join(path, blue_file)
-        log_ccd.debug('Processing file {:s}'.format(blue_file))
-        try:
-            data, header = fits.getdata(full_path,
-                                        header=True,
-                                        ignore_missing_end=True)
-
-            keys_to_remove = ['PARAM0',
-                              'PARAM61',
-                              'PARAM62',
-                              'PARAM63',
-                              'NAXIS3']
-
-            if data.ndim == 3:
-                header['NAXIS'] = 2
-                data = data[0]
-
-                log_ccd.debug('Modified file to be 2D instead of 3D '
-                              '(problematic)')
-
-            for keyword in keys_to_remove:
-                header.remove(keyword)
-
-                log_ccd.debug('Removed conflictive keyword '
-                              '{:s}'.format(keyword))
-
-            log_ccd.debug('Updated headers')
-
-            fits.writeto(full_path,
-                         data,
-                         header,
-                         clobber=True)
-
-        except KeyError as error:
-            log_ccd.debug(error)
-
-
-# spectroscopy specific functions
-
-def classify_spectroscopic_data(path, search_pattern):
-    """Classify data by grouping them as pandas.DataFrame instances
-
-    This functions uses ImageFileCollection from ccdproc. First it creates a
-    collection of information regarding the images located in *path* that match
-    the pattern *search_pattern*
-    The information obtained are all keywords listed in the list *keywords*
-    The ImageFileCollection is translated into pandas.DataFrame and then is used
-    much like an SQL database to select and filter values and in that way put
-    them in groups that are pandas.DataFrame instances.
-
-
-    Args:
-        path (str): Path to data location
-        search_pattern (str): Prefix to match files.
-
-    Returns:
-        data_container (object): Instance of NightDataContainer
-
-    """
-
-    search_path = os.path.join(path, search_pattern + '*.fits')
-
-    file_list = glob.glob(search_path)
-
-    if file_list == []:
-        log_spec.error('No file found using search pattern '
-                       '"{:s}"'.format(search_pattern))
-
-        sys.exit('Please use the argument --search-pattern to define the '
-                 'common prefix for the files to be processed.')
-
-    data_container = NightDataContainer(path=path,
-                                        instrument=str('Red'),
-                                        technique=str('Spectroscopy'))
-
-    keywords = ['date',
-                'slit',
-                'date-obs',
-                'obstype',
-                'object',
-                'exptime',
-                'obsra',
-                'obsdec',
-                'grating',
-                'cam_targ',
-                'grt_targ',
-                'filter',
-                'filter2',
-                'gain',
-                'rdnoise']
-
-    ifc = ImageFileCollection(path, keywords=keywords, filenames=file_list)
-
-    pifc = ifc.summary.to_pandas()
-
-    pifc['radeg'] = ''
-    pifc['decdeg'] = ''
-    for i in pifc.index.tolist():
-        radeg, decdeg = ra_dec_to_deg(pifc.obsra.iloc[i], pifc.obsdec.iloc[i])
-
-        pifc.iloc[i, pifc.columns.get_loc('radeg')] = '{:.2f}'.format(radeg)
-
-        pifc.iloc[i, pifc.columns.get_loc('decdeg')] = '{:.2f}'.format(decdeg)
-        # now we can compare using degrees
-
-    confs = pifc.groupby(['slit',
-                          'radeg',
-                          'decdeg',
-                          'grating',
-                          'cam_targ',
-                          'grt_targ',
-                          'filter',
-                          'filter2',
-                          'gain',
-                          'rdnoise']).size().reset_index().rename(
-        columns={0: 'count'})
-
-    for i in confs.index:
-        spec_group = pifc[((pifc['slit'] == confs.iloc[i]['slit']) &
-                           (pifc['radeg'] == confs.iloc[i]['radeg']) &
-                           (pifc['decdeg'] == confs.iloc[i]['decdeg']) &
-                           (pifc['grating'] == confs.iloc[i]['grating']) &
-                           (pifc['cam_targ'] == confs.iloc[i]['cam_targ']) &
-                           (pifc['grt_targ'] == confs.iloc[i]['grt_targ']) &
-                           (pifc['filter'] == confs.iloc[i]['filter']) &
-                           (pifc['filter2'] == confs.iloc[i]['filter2']) &
-                           (pifc['gain'] == confs.iloc[i]['gain']) &
-                           (pifc['rdnoise'] == confs.iloc[i]['rdnoise']))]
-
-        group_obstype = spec_group.obstype.unique()
-
-        if 'COMP' in group_obstype and len(group_obstype) == 1:
-            log_spec.debug('Adding COMP group')
-            data_container.add_comp_group(comp_group=spec_group)
-        elif 'OBJECT' in group_obstype and len(group_obstype) == 1:
-            log_spec.debug('Adding OBJECT group')
-            data_container.add_object_group(object_group=spec_group)
-        else:
-            log_spec.debug('Adding OBJECT-COMP group')
-            data_container.add_spec_group(spec_group=spec_group)
-
-    return data_container
-
-
-def search_comp_group(object_group, comp_groups):
-    """Search for a suitable comparison lamp group
-
-    In case a science target was observed without comparison lamps, usually
-    right before or right after, this function will look for a compatible set
-    obtained at a different time or pointing.
+    In this context, *fully contained* means the spectrum plus some region for
+    background subtraction.
 
     Notes:
-        This methodology is not recommended for radial velocity studies.
+        For Goodman HTS the alignment of the spectrum with the detector lines
+        is quite good, that's why this function does not consider the trace.
+        Also because the `model` argument is based on the median throughout all
+        the detector along the dispersion axis, so if there is a strong
+        misalignment it will result in a wider Gaussian Profile
 
     Args:
-        object_group (object): A pandas.DataFrame instances containing a group
-            of images for a given scientific target.
-        comp_groups (list): A list in which every element is a pandas.DataFrame
-            that contains information regarding groups of comparison lamps.
+        ccd (object): A ccdproc.CCDData instance, the image from which the zone
+            will be extracted
+        extraction (str): Extraction type, `simple` or `optimal`
+        trace (object): An astropy.modeling.Model instance that correspond to
+            the trace of the spectrum
+        trace_index (int): The index number of the spectrum. 0 based.
+        model (object): An astropy.modeling.Model instance that was previously
+            fitted to the spatial profile.
+        n_sigma_extract (int): Total number of sigmas to be extracted.
+        plots (bool): If True will show plots, similar to a debugging mode.
+        zone (list): Low and high limits to extract
 
     Returns:
+        nccd (object): Instance of ccdproc.CCDData that contains only the region
+            extracted from the full image. The header is updated with a new HISTORY
+            keyword that contain the region of the original image extracted.
+        model (object): Instance of astropy.modeling.Model with an updated mean
+            to match the new center in pixel units.
+        zone (list): Low and high limits of extraction zone
 
     """
-    log_spec.debug('Finding a suitable comparison lamp group')
+    # make a copy of the ccd image
+    nccd = ccd.copy()
 
-    object_confs = object_group.groupby(['slit',
-                                         'grating',
-                                         'cam_targ',
-                                         'grt_targ',
-                                         'filter',
-                                         'filter2']
-                                        ).size().reset_index()
-    # .rename(columns={0: 'count'})
+    if zone is None and extraction is not None:
+        assert (model is not None) and (n_sigma_extract is not None)
+        assert isinstance(trace, Model)
+        log_spec.debug(
+            'Extracting zone centered at: {:.3f}'.format(model.mean.value))
 
-    for comp_group in comp_groups:
+        spatial_length, dispersion_length = nccd.data.shape
 
-        if ((comp_group['slit'] == object_confs.iloc[0]['slit']) &
-                (comp_group['grating'] == object_confs.iloc[0]['grating']) &
-                (comp_group['cam_targ'] == object_confs.iloc[0]['cam_targ']) &
-                (comp_group['grt_targ'] == object_confs.iloc[0]['grt_targ']) &
-                (comp_group['filter'] == object_confs.iloc[0]['filter']) &
-                (comp_group['filter2'] == object_confs.iloc[0]['filter2'])).all():
-            log_spec.debug('Found a matching comparison lamp group')
+        # get maximum variation in spatial direction
+        trace_array = trace(range(dispersion_length))
+        trace_inclination = trace_array.max() - trace_array.min()
+        log_spec.debug(
+            'Trace Min-Max difference: {:.3f}'.format(trace_inclination))
 
-            return comp_group
+        # m_mean = model.mean.value
+        m_stddev = model.stddev.value
+        extract_width = n_sigma_extract // 2 * m_stddev
 
-    raise NoMatchFound
+        low_lim = np.max([0, int(trace_array.min() - extract_width)])
+
+        hig_lim = np.min([int(trace_array.max() + extract_width),
+                          spatial_length])
+
+        # in some rare cases the low_lim turns out larger than hig_lim which
+        # creates a series of problems regarding extraction, here I just reverse
+        # them
+        if low_lim > hig_lim:
+            low_lim, hig_lim = hig_lim, low_lim
+
+        log_spec.debug('Zone: low {:d}, high {:d}'.format(low_lim, hig_lim))
+        zone = [low_lim, hig_lim]
+
+        # This is to define the APNUM1 Keyword for the header.
+
+        apnum_1 = '{:d} {:d} {:d} {:d}'.format(trace_index + 1,
+                                               1,
+                                               low_lim,
+                                               hig_lim)
+
+        nccd.header['APNUM1'] = apnum_1
+
+        # this is necessary since we are cutting a piece of the full ccd.
+        trace.c0.value -= low_lim
+        log_spec.debug(
+            'Changing attribute c0 from trace, this is to adjust it to '
+            'the new extraction zone which is smaller that the full CCD.')
+
+        log_spec.debug('Changing attribute mean of profile model')
+        model.mean.value = extract_width
+
+        nccd.data = nccd.data[low_lim:hig_lim, :]
+        if nccd.mask is not None:
+            log_spec.debug('Trimming mask')
+            nccd.mask = nccd.mask[low_lim:hig_lim, :]
+        nccd.header['HISTORY'] = 'Subsection of CCD ' \
+                                 '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
+
+        if plots:
+            plt.imshow(ccd.data, clim=(0, 60))
+            plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
+            plt.show()
+
+        # return nccd, trace, model, zone
+        return zone
+
+    else:
+
+        low_lim, hig_lim = zone
+
+        apnum_1 = '{:d} {:d} {:d} {:d}'.format(trace_index + 1,
+                                               1,
+                                               low_lim,
+                                               hig_lim)
+
+        nccd = ccd.copy()
+        nccd.header['APNUM1'] = apnum_1
+
+        nccd.data = nccd.data[low_lim:hig_lim, :]
+        if nccd.mask is not None:
+            log_spec.debug('Trimming mask')
+            nccd.mask = nccd.mask[low_lim:hig_lim, :]
+        nccd.header['HISTORY'] = 'Subsection of CCD ' \
+                                 '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
+        return nccd
 
 
-def spectroscopic_extraction(ccd, extraction,
-                             comp_list=None,
-                             nfind=3,
-                             n_sigma_extract=10,
-                             plots=False):
-    """This function does not do the actual extraction but prepares the data
+def get_slit_trim_section(master_flat):
+    """Find the slit edges to trim all data
 
-    There are several steps involved in a spectroscopic extraction, this
-    function manages them.
+    Using a master flat, ideally good signal to noise ratio, this function will
+    identify the edges of the slit projected into the detector. Having this data
+    will allow to reduce the overall processing time and also reduce the
+    introduction of artifacts due to non-illuminated regions in the detectors,
+    such as NaNs -INF +INF, etc.
 
     Args:
-        ccd (object): A ccdproc.CCDData Instance
-        extraction (str): Extraction type name. _simple_ or _optimal_
-        comp_list (list): List of ccdproc.CCDData instances of COMP lamps data
-        nfind (int): Maximum number of targets to be returned
-        n_sigma_extract (int): Number of sigmas to be used for extraction
-        plots (bool): If plots will be shown or not.
+        master_flat (object): A ccdproc.CCDData instance
 
     Returns:
-        extracted (list): List of ccdproc.CCDData instances
-        comp_zones (list): List of ccdproc.CCDData instances
-
-    Raises:
-        NoTargetException (Exception): A NoTargetException if there is no target
-           found.
+        slit_trim_section (str): Trim section in spatial direction in the format
+            [:,slit_lower_limit:slit_higher_limit]
 
     """
+    x, y = master_flat.data.shape
 
-    assert isinstance(ccd, CCDData)
+    # Using the middle point to make calculations, usually flats have good
+    # illumination already at the middle.
+    middle = int(y / 2.)
+    ccd_section = master_flat.data[:, middle:middle + 200]
+    ccd_section_median = np.median(ccd_section, axis=1)
+    spatial_axis = range(len(ccd_section_median))
 
-    comp_zones = []
-    extracted = []
+    # set values for initial box model definition
+    box_max = np.max(ccd_section_median)
+    box_center = len(ccd_section_median) / 2.
+    box_width = .75 * len(ccd_section_median)
 
-    if comp_list is None:
-        comp_list = []
-    # print(comp_list)
+    # box model definition
+    box_model = models.Box1D(amplitude=box_max, x_0=box_center, width=box_width)
 
-    iccd = remove_background_by_median(ccd=ccd)
+    box_fitter = fitting.SimplexLSQFitter()
 
-    profile_model = identify_targets(ccd=iccd, nfind=nfind, plots=plots)
-    del (iccd)
+    fitted_box = box_fitter(box_model, spatial_axis, ccd_section_median)
 
-    if profile_model is None:
-        log_spec.critical('Target identification FAILED!')
-        raise NoTargetException
-    else:
-        background_image = create_background_image(ccd=ccd,
-                                                   profile_model=profile_model,
-                                                   nsigma=n_sigma_extract,
-                                                   separation=5)
+    # the number of pixels that will be removed from the detected edge of the
+    # image on each side
+    offset = 10
 
-    if isinstance(profile_model, Model):
-        traces = trace_targets(ccd=ccd, profile=profile_model, plots=plots)
-        # extract(ccd=ccd,
-        #         spatial_profile=profile_model,
-        #         n_sigma_extract=10,
-        #         sampling_step=5)
-        if 'CompoundModel' in profile_model.__class__.name:
-            log_spec.debug(profile_model.submodel_names)
-            for m in range(len(profile_model.submodel_names)):
-                submodel_name = profile_model.submodel_names[m]
+    # this defines a preliminary set of slit limit
+    l_lim = fitted_box.x_0.value - fitted_box.width.value / 2. + offset
 
-                ntrace = traces[m]
-                model = profile_model[submodel_name]
+    h_lim = fitted_box.x_0.value + fitted_box.width.value / 2. - offset
 
-                zone = get_extraction_zone(
-                    ccd=ccd,
-                    extraction=extraction,
-                    trace=ntrace,
-                    trace_index=m,
-                    model=profile_model[submodel_name],
-                    n_sigma_extract=n_sigma_extract,
-                    plots=plots)
+    # Here we force the slit limits within the boundaries of the data (image)
+    low_lim = int(np.max([0 + offset, l_lim]))
 
-                for comp in comp_list:
-                    comp_zone = get_extraction_zone(ccd=comp,
-                                                    extraction=extraction,
-                                                    trace=ntrace,
-                                                    trace_index=m,
-                                                    zone=zone,
-                                                    plots=plots)
-                    # since a comparison lamp only needs only the relative line
-                    # center in the dispersion direction, therefore the flux is
-                    # not important we are only calculating the median along the
-                    # spatial direction
-                    comp_zone.data = np.median(comp_zone.data, axis=0)
-                    comp_zones.append(comp_zone)
+    high_lim = int(np.min([h_lim, len(ccd_section_median) - offset]))
 
-                background_level = get_background_value(
-                    background_image=background_image,
-                    zone=zone)
+    # define the slit trim section as (IRA
+    slit_trim_section = '[:,{:d}:{:d}]'.format(low_lim, high_lim)
 
-                extracted_ccd = extract(ccd=ccd,
-                                        trace=ntrace,
-                                        spatial_profile=model,
-                                        extraction=extraction,
-                                        zone=zone,
-                                        background_level=background_level,
-                                        sampling_step=10,
-                                        plots=plots)
-                extracted.append(extracted_ccd)
+    # debugging plots that have to be manually turned on
+    if False:
+        manager = plt.get_current_fig_manager()
+        manager.window.showMaximized()
+        plt.title('Slit Edge Detection')
+        plt.plot(box_model(spatial_axis), color='c', label='Initial Box1D')
+        plt.plot(fitted_box(spatial_axis), color='k', label='Fitted Box1D')
+        plt.plot(ccd_section_median, label='Median Along Disp.')
+        # plt.plot(pseudo_derivative, color='g', label='Pseudo Derivative')
+        plt.axvline(None, color='r', label='Detected Edges')
+        plt.axvline(low_lim, color='r')
+        plt.axvline(high_lim, color='r')
+        # for peak in peaks:
+        #     plt.axvline(peak, color='r')
+        plt.legend(loc='best')
+        plt.show()
 
-                # if plots:
-                #     plt.imshow(nccd.data)
-                #     plt.show()
+    # plt.imshow(master_flat.data[low_lim:high_lim, :])
+    # plt.axvline(low_lim, color='r')
+    # plt.axvline(high_lim, color='r')
+    # plt.show()
 
-        else:
-            ntrace = traces[0]
+    return slit_trim_section
 
-            zone = get_extraction_zone(
-                ccd=ccd,
-                extraction=extraction,
-                trace=traces[0],
-                trace_index=0,
-                model=profile_model,
-                n_sigma_extract=n_sigma_extract,
-                plots=plots)
 
-            for comp in comp_list:
-                comp_zone = get_extraction_zone(ccd=comp,
-                                                extraction=extraction,
-                                                trace=ntrace,
-                                                trace_index=0,
-                                                zone=zone,
-                                                plots=plots)
+def get_twilight_time(date_obs):
+            """Get end/start time of evening/morning twilight
 
-                # since a comparison lamp only needs the relative line
-                # center in the dispersion direction, therefore the flux is not
-                # important we are only calculating the median along the spatial
-                # direction
-                comp_zone.data = np.median(comp_zone.data, axis=0)
-                comp_zones.append(comp_zone)
+            Notes:
+                Taken from David Sanmartim's development
 
-            background_level = get_background_value(
-                background_image=background_image,
-                zone=zone)
+            Args:
+                date_obs (list): List of all the dates from data.
 
-            extracted_ccd = extract(ccd=ccd,
-                                    trace=ntrace,
-                                    spatial_profile=profile_model,
-                                    extraction=extraction,
-                                    zone=zone,
-                                    background_level=background_level,
-                                    sampling_step=10,
-                                    plots=plots)
+            Returns:
+                twilight_evening (str): Evening twilight time in the format
+                    'YYYY-MM-DDTHH:MM:SS.SS'
+                twilight_morning (str): Morning twilight time in the format
+                    'YYYY-MM-DDTHH:MM:SS.SS'
+                sun_set_time (str): Sun set time in the format 'YYYY-MM-DDTHH:MM:SS.SS'
+                sun_rise_time (str): Sun rise time in the format
+                    'YYYY-MM-DDTHH:MM:SS.SS'
 
-            extracted.append(extracted_ccd)
+            """
+            # observatory(str): Observatory name.
+            observatory = 'SOAR Telescope'
+            geodetic_location = ['-70d44m01.11s', '-30d14m16.41s', 2748]
 
-            # if plots:
-            #     plt.imshow(nccd.data)
-            #     plt.show()
+            # longitude (str): Geographic longitude in string format
+            longitude = geodetic_location[0]
 
-        # print(extracted)
-        # print(comp_zones)
-        return extracted, comp_zones
+            # latitude (str): Geographic latitude in string format.
+            latitude = geodetic_location[1]
 
-    elif profile_model is None:
-        log_spec.warning("Didn't receive identified targets "
-                         "from {:s}".format(ccd.header['GSP_FNAM']))
-        raise NoTargetException
-    else:
-        log_spec.error('Got wrong input')
+            # elevation (int): Geographic elevation in meters above sea level
+            elevation = geodetic_location[2]
+
+            # timezone (str): Time zone.
+            timezone = 'UTC'
+
+            # description(str): Observatory description
+            description = 'Soar Telescope on Cerro Pachon, Chile'
+
+            soar_loc = EarthLocation.from_geodetic(longitude,
+                                                   latitude,
+                                                   elevation * u.m,
+                                                   ellipsoid='WGS84')
+
+            soar = Observer(name=observatory,
+                            location=soar_loc,
+                            timezone=timezone,
+                            description=description)
+
+            time_first_frame, time_last_frame = Time(min(date_obs)), Time(
+                max(date_obs))
+
+            twilight_evening = soar.twilight_evening_astronomical(
+                Time(time_first_frame), which='nearest').isot
+
+            twilight_morning = soar.twilight_morning_astronomical(
+                Time(time_last_frame), which='nearest').isot
+
+            sun_set_time = soar.sun_set_time(
+                Time(time_first_frame), which='nearest').isot
+
+            sun_rise_time = soar.sun_rise_time(
+                Time(time_last_frame), which='nearest').isot
+
+            log_ccd.debug('Sun Set ' + sun_set_time)
+            log_ccd.debug('Sun Rise ' + sun_rise_time)
+
+            return twilight_evening, twilight_morning, sun_set_time, sun_rise_time
 
 
 def identify_targets(ccd, nfind=3, plots=False):
@@ -1600,6 +1552,725 @@ def identify_targets(ccd, nfind=3, plots=False):
             return profile_model
 
 
+def image_overscan(ccd, overscan_region, add_keyword=False):
+    """Apply overscan to data
+
+    Uses ccdproc.subtract_overscan to perform the task.
+
+    Notes:
+        The overscan_region argument uses FITS convention, just like IRAF,
+        therefore is 1 based. i.e. it starts in 1 not 0.
+
+    Args:
+        ccd (object): A ccdproc.CCDData instance
+        overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]'
+            where x is the spectral axis and y is the spatial axis.
+        add_keyword (bool): Tells ccdproc whether to add a keyword or not.
+            Default False.
+
+    Returns:
+        ccd (object): Overscan corrected ccdproc.CCDData instance
+
+    """
+    log_ccd.debug('Applying overscan Correction: {:s}'.format(overscan_region))
+    ccd = ccdproc.subtract_overscan(ccd=ccd,
+                                    median=True,
+                                    fits_section=overscan_region,
+                                    add_keyword=add_keyword)
+
+    ccd.header['GSP_OVER'] = (overscan_region, 'Overscan region')
+    return ccd
+
+
+def image_trim(ccd, trim_section, trim_type, add_keyword=False):
+    """Trim image to a given section
+
+    Notes:
+        The overscan_region argument uses FITS convention, just like IRAF,
+        therefore is 1 based. i.e. it starts in 1 not 0.
+
+    Args:
+        ccd (object): A ccdproc.CCDData instance
+        trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
+            where x is the spectral axis and y is the spatial axis.
+        trim_type (str): default or slit trim
+        add_keyword (bool): Tells ccdproc whether to add a keyword or not.
+            Default False.
+
+    Returns:
+        ccd (object): Trimmed ccdproc.CCDData instance
+
+    """
+    ccd = ccdproc.trim_image(ccd=ccd,
+                             fits_section=trim_section,
+                             add_keyword=add_keyword)
+    if trim_type == 'trimsec':
+        ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
+    elif trim_type == 'slit':
+        ccd.header['GSP_SLIT'] = (trim_section,
+                                  'Slit trim section, slit illuminated '
+                                  'area only.')
+    else:
+        log_ccd.warning('Unrecognized trim type')
+
+    return ccd
+
+
+def lacosmic_cosmicray_rejection(ccd, mask_only=False):
+    """Do cosmic ray rejection using ccdproc.LACosmic
+
+    This function in fact does not apply any correction, it detects the cosmic
+    rays and updates the attribute mask of the ccd object (CCDData instance).
+    The attribute mask is used later as a mask for the pixels hit by cosmic rays
+
+      Notes:
+          OBS: cosmic ray rejection is working pretty well by defining gain = 1.
+          It's not working when we use the real gain of the image. In this case
+          the sky level changes by a factor equal the gain.
+          Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
+
+      Args:
+          ccd (object): A ccdproc.CCDData instance.
+          mask_only (bool): In some cases you may want to obtain the cosmic
+              rays mask only.
+
+      Returns:
+          ccd (object): A CCDData instance with the mask attribute updated or an
+          array which corresponds to the mask.
+
+    """
+    if ccd.header['OBSTYPE'] == 'OBJECT':
+        value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
+        log_ccd.info('Cleaning cosmic rays... ')
+
+        ccd = ccdproc.cosmicray_lacosmic(
+            ccd,
+            sigclip=2.5,
+            sigfrac=value,
+            objlim=value,
+            gain=float(ccd.header['GAIN']),
+            readnoise=float(ccd.header['RDNOISE']),
+            satlevel=np.inf,
+            sepmed=True,
+            fsmode='median',
+            psfmodel='gaussy',
+            verbose=False)
+
+        ccd.header['GSP_COSM'] = ("LACosmic", "Cosmic ray rejection method")
+        log_ccd.info("Cosmic rays rejected with LACosmic")
+        if mask_only:
+            return ccd.mask
+        else:
+            return ccd
+    else:
+        log_ccd.debug('Skipping cosmic ray rejection for image of datatype: '
+                      '{:s}'.format(ccd.header['OBSTYPE']))
+        return ccd
+
+
+def normalize_master_flat(master, name, method='simple', order=15):
+    """ Master flat normalization method
+
+    This function normalize a master flat in three possible ways:
+     *mean*: simply divide the data by its mean
+
+     *simple*: Calculates the median along the spatial axis in order to obtain
+     the dispersion profile. Then fits a Chebyshev1D model and apply this to all
+     the data.
+
+     *full*: This is for experimental purposes only because it takes a lot of
+     time to process. It will fit a model to each line along the dispersion axis
+     and then divide it by the fitted model. I do not recommend this method
+     unless you have a good reason as well as a powerful computer..
+
+    Args:
+        master (object): Master flat. Has to be a ccdproc.CCDData instance
+        name (str): Full path of master flat prior to normalization
+        method (str): Normalization method, 'mean', 'simple' or 'full'
+        order (int): Order of the polinomial to be fitted.
+
+    Returns:
+        master (object):  The normalized master flat. ccdproc.CCDData instance
+
+    """
+    assert isinstance(master, CCDData)
+
+    # define new name, base path and full new name
+    new_name = 'norm_' + name.split('/')[-1]
+    path = '/'.join(name.split('/')[0:-1])
+    norm_name = os.path.join(path, new_name)
+
+    if method == 'mean':
+        log_ccd.debug('Normalizing by mean')
+        master.data /= master.data.mean()
+
+        master.header['GSP_NORM'] = ('mean', 'Flat normalization method')
+
+    elif method == 'simple' or method == 'full':
+        log_ccd.debug('Normalizing flat by {:s} model'.format(method))
+
+        # Initialize Fitting models and fitter
+        model_init = models.Chebyshev1D(degree=order)
+        model_fitter = fitting.LevMarLSQFitter()
+
+        # get data shape
+        x_size, y_size = master.data.shape
+        x_axis = range(y_size)
+
+        if method == 'simple':
+            # get profile along dispersion axis to fit a model to use for
+            # normalization
+            profile = np.median(master.data, axis=0)
+
+            # do the actual fit
+            fit = model_fitter(model_init, x_axis, profile)
+
+            # convert fit into an array
+            fit_array = fit(x_axis)
+
+            # pythonic way to divide an array by a vector
+            master.data = master.data / fit_array[None, :]
+
+            # master.header.add_history('Flat Normalized by simple model')
+            master.header['GSP_NORM'] = ('simple', 'Flat normalization method')
+
+        elif method == 'full':
+            log_ccd.warning('This part of the code was left here for '
+                            'experimental purposes only')
+            log_ccd.warning('This procedure takes a lot to process, you might '
+                            'want to see other method such as "simple" or '
+                            '"mean".')
+            for i in range(x_size):
+                fit = model_fitter(model_init, x_axis, master.data[i])
+                master.data[i] = master.data[i] / fit(x_axis)
+            # master.header.add_history('Flat Normalized by full model')
+            master.header['GSP_NORM'] = ('full', 'Flat normalization method')
+
+    # write normalized flat to a file
+    # master.write(norm_name, clobber=True)
+    write_fits(ccd=master,
+               full_path=norm_name,
+               parent_file=name)
+
+    return master, norm_name
+
+
+def print_default_args(args):
+    """Print default values of arguments.
+
+    This is mostly helpful for debug but people not familiar with the software
+    might find it useful as well
+
+    Notes:
+        This function is deprecated.
+
+    Notes:
+        This is not dynamically updated so use with caution
+
+    Args:
+        args (object): An argparse instance
+
+    """
+    arg_name = {'auto_clean': '--auto-clean',
+                'clean_cosmic': '-c, --cosmic',
+                'debug_mode': '--debug',
+                'flat_normalize': '--flat-normalize',
+                'ignore_bias': '--ignore-bias',
+                'log_to_file': '--log-to-file',
+                'norm_order': '--flat-norm-order',
+                'raw_path': '--raw-path',
+                'red_path': '--red-path',
+                'saturation_limit': '--saturation',
+                'destiny': '-d --proc-path',
+                'interactive_ws': '-i --interactive',
+                'lamp_all_night': '-r --reference-lamp',
+                'lamp_file': '-l --lamp-file',
+                'output_prefix': '-o --output-prefix',
+                'pattern': '-s --search-pattern',
+                'procmode': '-m --proc-mode',
+                'reference_dir': '-R --reference-files',
+                'source': '-p --data-path',
+                'save_plots': '--save-plots',
+                'dcr_par_dir': '--dcr-par-dir'}
+    for key in args.__dict__:
+        log_ccd.debug('Default value for {:s} is {:s}'.format(
+            arg_name[key],
+            str(args.__getattribute__(key))))
+
+
+def print_progress(current, total):
+    """Prints the percentage of a progress
+
+    It works for FOR loops, requires to know the full length of the loop.
+    Prints to the standard output.
+
+    Notes:
+        A possible improvement for this is to run it using multithreading
+
+    Args:
+        current (int): Current value in the range of the loop.
+        total (int): The length of the loop.
+
+    """
+    if current == total:
+        sys.stdout.write("Progress {:.2%}\n".format(1.0 * current / total))
+    else:
+        sys.stdout.write("\rProgress {:.2%}".format(1.0 * current / total))
+    sys.stdout.flush()
+    return
+
+
+def print_spacers(message):
+    """Miscellaneous function to print uniform spacers
+
+    Prints a spacer of 80 columns with  and 3 rows height. The first and last
+    rows contains the symbol "=" repeated 80 times. The middle row contains the
+    message centered and the extremes has one single "=" symbol.
+    The only functionality of this is aesthetic.
+
+    Args:
+        message (str): A message to be printed
+
+    Returns:
+        True (bool): A True value
+
+    """
+    # define the width of the message
+    columns = 80
+    if len(message) % 2 == 1 and int(columns) % 2 != 1:
+        message += " "
+
+    bar_length = int(columns)
+
+    # compose bars top and bottom
+    spacer_bar = "=" * bar_length
+
+    blanks = bar_length - 2
+    space_length = int((blanks - len(message)) / 2)
+
+    # compose the message
+    message_bar = "=" + " " * space_length + message + " " * space_length + "="
+
+    print(spacer_bar)
+    print(message_bar)
+    print(spacer_bar)
+    return True
+
+
+def ra_dec_to_deg(right_ascension, declination):
+    """Converts right ascension and declination to degrees
+
+    Args:
+        right_ascension (str): Right ascension in the format hh:mm:ss.sss
+        declination (str): Declination in the format dd:mm:ss.sss
+
+    Returns:
+        right_ascension_deg (float): Right ascension in degrees
+        declination_deg (float): Declination in degrees
+
+    """
+    right_ascension = right_ascension.split(":")
+    declination = declination.split(":")
+
+    # RIGHT ASCENTION conversion
+    right_ascension_deg = (float(right_ascension[0])
+                           + (float(right_ascension[1])
+                              + (float(right_ascension[2]) / 60.)) / 60.) * \
+                          (360. / 24.)
+
+    # DECLINATION conversion
+    if float(declination[0]) == abs(float(declination[0])):
+        sign = 1
+    else:
+        sign = -1
+    declination_deg = sign * (abs(float(declination[0]))
+                              + (float(declination[1])
+                                 + (float(declination[2]) / 60.)) / 60.)
+    return right_ascension_deg, declination_deg
+
+
+def read_fits(full_path, technique='Unknown'):
+    assert os.path.isfile(full_path)
+    ccd = CCDData.read(full_path, unit=u.adu)
+
+    ccd.header.set('GSP_VERS',
+                   value=pipeline.__version__,
+                   comment='Goodman Spectroscopic Pipeline Version')
+
+    ccd.header.set('GSP_ONAM',
+                   value=os.path.basename(full_path),
+                   comment='Original file name')
+
+    ccd.header.set('GSP_PNAM',
+                   value=os.path.basename(full_path),
+                   comment='Parent file name')
+
+    ccd.header.set('GSP_FNAM',
+                   value=os.path.basename(full_path),
+                   comment='Current file name')
+
+    ccd.header.set('GSP_PATH',
+                   value=os.path.dirname(full_path),
+                   comment='Location at moment of reduce')
+
+    ccd.header.set('GSP_TECH',
+                   value=technique,
+                   comment='Observing technique')
+
+    ccd.header.set('GSP_DATE',
+                   value=time.strftime("%Y-%m-%d"),
+                   comment='Processing date')
+
+    ccd.header.set('GSP_OVER',
+                   value='none',
+                   comment='Overscan region')
+
+    ccd.header.set('GSP_TRIM',
+                   value='none',
+                   comment='Trim section')
+
+    ccd.header.set('GSP_SLIT',
+                   value='none',
+                   comment='Slit trim section, slit illuminated area only')
+
+    ccd.header.set('GSP_BIAS',
+                   value='none',
+                   comment='Master bias image')
+
+    ccd.header.set('GSP_FLAT',
+                   value='none',
+                   comment='Master flat image')
+
+    ccd.header.set('GSP_NORM',
+                   value='none',
+                   comment='Flat normalization method')
+
+    ccd.header.set('GSP_COSM',
+                   value='none',
+                   comment='Cosmic ray rejection method')
+
+    ccd.header.set('GSP_WRMS',
+                   value='none',
+                   comment='Wavelength solution RMS Error')
+
+    ccd.header.set('GSP_WPOI',
+                   value='none',
+                   comment='Number of points used to '
+                           'calculate wavelength solution')
+
+    ccd.header.set('GSP_WREJ',
+                   value='none',
+                   comment='Number of points rejected')
+
+    ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --',
+                         before='GSP_VERS')
+
+    ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
+    ccd.header.set('BUNIT', after='CCDSUM')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    # ccd.header.set('', value='', comment='')
+    return ccd
+
+
+def remove_background_by_median(ccd, plots=False):
+    """Remove Background of a ccd spectrum image
+
+    Notes:
+        This function works well for images without strong sky lines. Or for
+        targets embedded in extended sources.
+
+    Args:
+        ccd (object): A ccdproc.CCDData instance.
+
+    Returns:
+        ccd (object): The modified ccdproc.CCDData instance.
+
+    """
+    new_ccd = ccd.copy()
+    data = ma.masked_invalid(new_ccd.data)
+    # x, y = ccd.data.shape
+    median = ma.median(data, axis=0)
+
+    data -= median
+    data.set_fill_value(-np.inf)
+    new_ccd.data = data.filled()
+
+    # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
+    return new_ccd
+
+
+def remove_conflictive_keywords(path, file_list):
+    """Removes problematic keywords
+
+    The blue camera has a set of keywords whose comments contain non-ascii
+    characters, in particular the degree symbol. Those keywords are not
+    needed in any stage of the data reduction therefore they are removed.
+    The data will be overwritten with the keywords removed. The user will
+    need to have backups of raw data.
+
+    Notes:
+        This function solves a problem with old data, new headers are compliant
+        with the headers.
+
+    Args:
+        path (str): Path to the folder containing the files
+        file_list (list): List of files to remove keywords
+
+    """
+    log_ccd.debug('Removing conflictive keywords in Blue Camera Headers')
+    log_ccd.warning('Files will be overwritten')
+    for blue_file in file_list:
+        full_path = os.path.join(path, blue_file)
+        log_ccd.debug('Processing file {:s}'.format(blue_file))
+        try:
+            data, header = fits.getdata(full_path,
+                                        header=True,
+                                        ignore_missing_end=True)
+
+            keys_to_remove = ['PARAM0',
+                              'PARAM61',
+                              'PARAM62',
+                              'PARAM63',
+                              'NAXIS3']
+
+            if data.ndim == 3:
+                header['NAXIS'] = 2
+                data = data[0]
+
+                log_ccd.debug('Modified file to be 2D instead of 3D '
+                              '(problematic)')
+
+            for keyword in keys_to_remove:
+                header.remove(keyword)
+
+                log_ccd.debug('Removed conflictive keyword '
+                              '{:s}'.format(keyword))
+
+            log_ccd.debug('Updated headers')
+
+            fits.writeto(full_path,
+                         data,
+                         header,
+                         clobber=True)
+
+        except KeyError as error:
+            log_ccd.debug(error)
+
+
+def search_comp_group(object_group, comp_groups):
+    """Search for a suitable comparison lamp group
+
+    In case a science target was observed without comparison lamps, usually
+    right before or right after, this function will look for a compatible set
+    obtained at a different time or pointing.
+
+    Notes:
+        This methodology is not recommended for radial velocity studies.
+
+    Args:
+        object_group (object): A pandas.DataFrame instances containing a group
+            of images for a given scientific target.
+        comp_groups (list): A list in which every element is a pandas.DataFrame
+            that contains information regarding groups of comparison lamps.
+
+    Returns:
+
+    """
+    log_spec.debug('Finding a suitable comparison lamp group')
+
+    object_confs = object_group.groupby(['slit',
+                                         'grating',
+                                         'cam_targ',
+                                         'grt_targ',
+                                         'filter',
+                                         'filter2']
+                                        ).size().reset_index()
+    # .rename(columns={0: 'count'})
+
+    for comp_group in comp_groups:
+
+        if ((comp_group['slit'] == object_confs.iloc[0]['slit']) &
+                (comp_group['grating'] == object_confs.iloc[0]['grating']) &
+                (comp_group['cam_targ'] == object_confs.iloc[0]['cam_targ']) &
+                (comp_group['grt_targ'] == object_confs.iloc[0]['grt_targ']) &
+                (comp_group['filter'] == object_confs.iloc[0]['filter']) &
+                (comp_group['filter2'] == object_confs.iloc[0]['filter2'])).all():
+            log_spec.debug('Found a matching comparison lamp group')
+
+            return comp_group
+
+    raise NoMatchFound
+
+
+def spectroscopic_extraction(ccd,
+                             extraction,
+                             comp_list=None,
+                             nfind=3,
+                             n_sigma_extract=10,
+                             plots=False):
+    """This function does not do the actual extraction but prepares the data
+
+    There are several steps involved in a spectroscopic extraction, this
+    function manages them.
+
+    Args:
+        ccd (object): A ccdproc.CCDData Instance
+        extraction (str): Extraction type name. _simple_ or _optimal_
+        comp_list (list): List of ccdproc.CCDData instances of COMP lamps data
+        nfind (int): Maximum number of targets to be returned
+        n_sigma_extract (int): Number of sigmas to be used for extraction
+        plots (bool): If plots will be shown or not.
+
+    Returns:
+        extracted (list): List of ccdproc.CCDData instances
+        comp_zones (list): List of ccdproc.CCDData instances
+
+    Raises:
+        NoTargetException (Exception): A NoTargetException if there is no target
+           found.
+
+    """
+
+    assert isinstance(ccd, CCDData)
+
+    comp_zones = []
+    extracted = []
+
+    if comp_list is None:
+        comp_list = []
+    # print(comp_list)
+
+    iccd = remove_background_by_median(ccd=ccd)
+
+    profile_model = identify_targets(ccd=iccd, nfind=nfind, plots=plots)
+    del (iccd)
+
+    if profile_model is None:
+        log_spec.critical('Target identification FAILED!')
+        raise NoTargetException
+    else:
+        background_image = create_background_image(ccd=ccd,
+                                                   profile_model=profile_model,
+                                                   nsigma=n_sigma_extract,
+                                                   separation=5)
+
+    if isinstance(profile_model, Model):
+        traces = trace_targets(ccd=ccd, profile=profile_model, plots=plots)
+        # extract(ccd=ccd,
+        #         spatial_profile=profile_model,
+        #         n_sigma_extract=10,
+        #         sampling_step=5)
+        if 'CompoundModel' in profile_model.__class__.name:
+            log_spec.debug(profile_model.submodel_names)
+            for m in range(len(profile_model.submodel_names)):
+                submodel_name = profile_model.submodel_names[m]
+
+                ntrace = traces[m]
+                model = profile_model[submodel_name]
+
+                zone = get_extraction_zone(
+                    ccd=ccd,
+                    extraction=extraction,
+                    trace=ntrace,
+                    trace_index=m,
+                    model=profile_model[submodel_name],
+                    n_sigma_extract=n_sigma_extract,
+                    plots=plots)
+
+                for comp in comp_list:
+                    comp_zone = get_extraction_zone(ccd=comp,
+                                                    extraction=extraction,
+                                                    trace=ntrace,
+                                                    trace_index=m,
+                                                    zone=zone,
+                                                    plots=plots)
+                    # since a comparison lamp only needs only the relative line
+                    # center in the dispersion direction, therefore the flux is
+                    # not important we are only calculating the median along the
+                    # spatial direction
+                    comp_zone.data = np.median(comp_zone.data, axis=0)
+                    comp_zones.append(comp_zone)
+
+                background_level = get_background_value(
+                    background_image=background_image,
+                    zone=zone)
+
+                extracted_ccd = extract(ccd=ccd,
+                                        trace=ntrace,
+                                        spatial_profile=model,
+                                        extraction=extraction,
+                                        zone=zone,
+                                        background_level=background_level,
+                                        sampling_step=10,
+                                        plots=plots)
+                extracted.append(extracted_ccd)
+
+                # if plots:
+                #     plt.imshow(nccd.data)
+                #     plt.show()
+
+        else:
+            ntrace = traces[0]
+
+            zone = get_extraction_zone(
+                ccd=ccd,
+                extraction=extraction,
+                trace=traces[0],
+                trace_index=0,
+                model=profile_model,
+                n_sigma_extract=n_sigma_extract,
+                plots=plots)
+
+            for comp in comp_list:
+                comp_zone = get_extraction_zone(ccd=comp,
+                                                extraction=extraction,
+                                                trace=ntrace,
+                                                trace_index=0,
+                                                zone=zone,
+                                                plots=plots)
+
+                # since a comparison lamp only needs the relative line
+                # center in the dispersion direction, therefore the flux is not
+                # important we are only calculating the median along the spatial
+                # direction
+                comp_zone.data = np.median(comp_zone.data, axis=0)
+                comp_zones.append(comp_zone)
+
+            background_level = get_background_value(
+                background_image=background_image,
+                zone=zone)
+
+            extracted_ccd = extract(ccd=ccd,
+                                    trace=ntrace,
+                                    spatial_profile=profile_model,
+                                    extraction=extraction,
+                                    zone=zone,
+                                    background_level=background_level,
+                                    sampling_step=10,
+                                    plots=plots)
+
+            extracted.append(extracted_ccd)
+
+            # if plots:
+            #     plt.imshow(nccd.data)
+            #     plt.show()
+
+        # print(extracted)
+        # print(comp_zones)
+        return extracted, comp_zones
+
+    elif profile_model is None:
+        log_spec.warning("Didn't receive identified targets "
+                         "from {:s}".format(ccd.header['GSP_FNAM']))
+        raise NoTargetException
+    else:
+        log_spec.error('Got wrong input')
+
+
 def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
     """Find the trace of a spectrum
 
@@ -1631,6 +2302,9 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
             spectrum.
 
     """
+    # TODO (simon): modify this function in a way that does not requiere to
+    # TODO (simon): parse objects other than ccd. Models should be instantiated
+    # TODO (simon): (created) inside this function.
     spatial_length, dispersion_length = ccd.data.shape
 
     sampling_axis = range(0, dispersion_length, sampling_step)
@@ -1794,630 +2468,38 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
         return [single_trace]
 
 
-def get_extraction_zone(ccd,
-                        extraction=None,
-                        trace=None,
-                        trace_index=None,
-                        model=None,
-                        n_sigma_extract=None,
-                        zone=None,
-                        plots=False):
-    """Get the minimum rectangular CCD zone that fully contains the spectrum
-
-    In this context, *fully contained* means the spectrum plus some region for
-    background subtraction.
-
-    Notes:
-        For Goodman HTS the alignment of the spectrum with the detector lines
-        is quite good, that's why this function does not consider the trace.
-        Also because the `model` argument is based on the median throughout all
-        the detector along the dispersion axis, so if there is a strong
-        misalignment it will result in a wider Gaussian Profile
-
-    Args:
-        ccd (object): A ccdproc.CCDData instance, the image from which the zone
-            will be extracted
-        extraction (str): Extraction type, `simple` or `optimal`
-        trace (object): An astropy.modeling.Model instance that correspond to
-            the trace of the spectrum
-        trace_index (int): The index number of the spectrum. 0 based.
-        model (object): An astropy.modeling.Model instance that was previously
-            fitted to the spatial profile.
-        n_sigma_extract (int): Total number of sigmas to be extracted.
-        plots (bool): If True will show plots, similar to a debugging mode.
-        zone (list): Low and high limits to extract
-
-    Returns:
-        nccd (object): Instance of ccdproc.CCDData that contains only the region
-            extracted from the full image. The header is updated with a new HISTORY
-            keyword that contain the region of the original image extracted.
-        model (object): Instance of astropy.modeling.Model with an updated mean
-            to match the new center in pixel units.
-        zone (list): Low and high limits of extraction zone
-
-    """
-    # make a copy of the ccd image
-    nccd = ccd.copy()
-
-    if zone is None and extraction is not None:
-        assert (model is not None) and (n_sigma_extract is not None)
-        assert isinstance(trace, Model)
-        log_spec.debug('Extracting zone centered at: {:.3f}'.format(model.mean.value))
-
-        spatial_length, dispersion_length = nccd.data.shape
-
-        # get maximum variation in spatial direction
-        trace_array = trace(range(dispersion_length))
-        trace_inclination = trace_array.max() - trace_array.min()
-        log_spec.debug('Trace Min-Max difference: {:.3f}'.format(trace_inclination))
-
-        # m_mean = model.mean.value
-        m_stddev = model.stddev.value
-        extract_width = n_sigma_extract // 2 * m_stddev
-
-        low_lim = np.max([0, int(trace_array.min() - extract_width)])
-
-        hig_lim = np.min([int(trace_array.max() + extract_width),
-                          spatial_length])
-
-        # in some rare cases the low_lim turns out larger than hig_lim which
-        # creates a series of problems regarding extraction, here I just reverse
-        # them
-        if low_lim > hig_lim:
-            low_lim, hig_lim = hig_lim, low_lim
-
-        log_spec.debug('Zone: low {:d}, high {:d}'.format(low_lim, hig_lim))
-        zone = [low_lim, hig_lim]
-
-        # This is to define the APNUM1 Keyword for the header.
-
-        apnum_1 = '{:d} {:d} {:d} {:d}'.format(trace_index + 1,
-                                              1,
-                                              low_lim,
-                                              hig_lim)
-
-        nccd.header['APNUM1'] = apnum_1
-
-        # this is necessary since we are cutting a piece of the full ccd.
-        trace.c0.value -= low_lim
-        log_spec.debug('Changing attribute c0 from trace, this is to adjust it to '
-                 'the new extraction zone which is smaller that the full CCD.')
-
-        log_spec.debug('Changing attribute mean of profile model')
-        model.mean.value = extract_width
-
-
-
-        nccd.data = nccd.data[low_lim:hig_lim, :]
-        if nccd.mask is not None:
-            log_spec.debug('Trimming mask')
-            nccd.mask = nccd.mask[low_lim:hig_lim, :]
-        nccd.header['HISTORY'] = 'Subsection of CCD ' \
-                                 '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
-
-        if plots:
-            plt.imshow(ccd.data, clim=(0, 60))
-            plt.axhspan(low_lim, hig_lim, color='r', alpha=0.2)
-            plt.show()
-
-        # return nccd, trace, model, zone
-        return zone
-
-    else:
-
-        low_lim, hig_lim = zone
-
-        apnum_1 = '{:d} {:d} {:d} {:d}'.format(trace_index + 1,
-                                               1,
-                                               low_lim,
-                                               hig_lim)
-
-        nccd = ccd.copy()
-        nccd.header['APNUM1'] = apnum_1
-
-        nccd.data = nccd.data[low_lim:hig_lim, :]
-        if nccd.mask is not None:
-            log_spec.debug('Trimming mask')
-            nccd.mask = nccd.mask[low_lim:hig_lim, :]
-        nccd.header['HISTORY'] = 'Subsection of CCD ' \
-                                 '[{:d}:{:d}, :]'.format(low_lim, hig_lim)
-        return nccd
-
-
-def add_wcs_keys(ccd):
-    """Adds generic keyword to the header
-
-    Linear wavelength solutions require a set of standard fits keywords. Later
-    on they will be updated accordingly
-    The main goal of putting them here is to have consistent and nicely ordered
-    headers
-
-    Notes:
-        This does NOT add a WCS solution, just the keywords
-
-    Args:
-        ccd (object): ccdproc.CCDData instance with no wcs keywords
-
-    Returns:
-        ccd (object): ccdproc.CCDData instance with modified header with added
-          WCS keywords
-
-    """
-    try:
-        ccd.header.set('BANDID1',
-                   value='spectrum - background none, weights none, clean no',
-                   comment='')
-
-        ccd.header.set('APNUM1',
-                   value='1 1 0 0',
-                   comment='')
-
-        ccd.header.set('WCSDIM',
-                   value=1,
-                   comment='')
-
-        ccd.header.set('CTYPE1',
-                   value='LINEAR',
-                   comment='')
-
-        ccd.header.set('CRVAL1',
-                   value=1,
-                   comment='')
-
-        ccd.header.set('CRPIX1',
-                   value=1,
-                   comment='')
-
-        ccd.header.set('CDELT1',
-                   value=1,
-                   comment='')
-
-        ccd.header.set('CD1_1',
-                   value=1,
-                   comment='')
-
-        ccd.header.set('LTM1_1',
-                   value=1,
-                   comment='')
-
-        ccd.header.set('WAT0_001',
-                   value='system=equispec',
-                   comment='')
-
-        ccd.header.set('WAT1_001',
-                   value='wtype=linear label=Wavelength units=angstroms',
-                   comment='')
-
-        ccd.header.set('DC-FLAG',
-                   value=0,
-                   comment='')
-
-        ccd.header.set('DCLOG1',
-                   value='REFSPEC1 = non set',
-                   comment='')
-
-        return ccd
-
-    except TypeError as err:
-        log_spec.error("Can't add wcs keywords to header")
-        log_spec.debug(err)
-
-
-def remove_background_by_median(ccd, plots=False):
-    """Remove Background of a ccd spectrum image
-
-    Notes:
-        This function works well for images without strong sky lines. Or for
-        targets embedded in extended sources.
-
-    Args:
-        ccd (object): A ccdproc.CCDData instance.
-
-    Returns:
-        ccd (object): The modified ccdproc.CCDData instance.
-
-    """
-    new_ccd = ccd.copy()
-    data = ma.masked_invalid(new_ccd.data)
-    # x, y = ccd.data.shape
-    median = ma.median(data, axis=0)
-
-    data -= median
-    data.set_fill_value(-np.inf)
-    new_ccd.data = data.filled()
-
-    # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
-    return new_ccd
-
-
-def get_background_value(background_image, zone_sep=0.5, zone=None):
-    """finds background value for each dispersion line
-
-    A background image is an image whose spectrum has been masked with zeros,
-    the spectrum zone is retrieved by analyzing the pixels values and then two
-    background zones are defined at a distance from the edges of the target zone
-    defined by zone_sep, the width of the background zone is the same as the
-    target's. After validating the background zone they averaged by median along
-    the spatial direction. If there are two zones they are averaged as well.
-
-    Args:
-        background_image (object): ccdproc.CCDData instance. Spectra are masked.
-        zone_sep (float): How far the background zone should be from the edges
-            of the target zone. Default 0.5.
-        zone (list): Alternative you could parse the zone as a list with each
-            element a limit. Therefore there should be an even number of
-            elements.
-
-    Returns:
-        A 1D array the same length of the dispersion length.
-
-    """
-    spatial_length, dispersion_length = background_image.data.shape
-    if zone is None:
-        background_profile = np.median(background_image.data, axis=1)
-
-        target_zones_points = np.where(background_profile == 0)[0]
-
-        target_zones = [i + 1 for i in range(len(target_zones_points) - 1) \
-                        if
-                        target_zones_points[i + 1] - target_zones_points[i] > 1]
-
-        target_zones.append(np.argmin(target_zones_points))
-        target_zones.append(len(target_zones_points))
-        target_zones.sort()
-
-        for i in range(len(target_zones) - 1):
-
-            if target_zones[i + 1] - target_zones[i] > 2:
-
-                log_spec.debug('Found valid target zone:'
-                               ' {:d}:{:d}'.format(target_zones[i],
-                                                   target_zones[i + 1]))
-
-                full_zone = target_zones_points[
-                            target_zones[i]:target_zones[i + 1]]
-                zone = [full_zone[0], full_zone[-1]]
-                # zone_width = len(zone)
-
-
-            else:
-                log_spec.warning('Target Zone is too small')
-
-    # here do the evaluation if background zones are valid.
-    first_background = None
-    second_background = None
-    background_median = None
-
-    zone_width = zone[1] - zone[0]
-
-    # first background zone
-    back_first_low = int(zone[0] - (1 + zone_sep) * zone_width)
-    back_first_high = int(zone[0] - zone_sep * zone_width)
-    if 0 < back_first_low < back_first_high:
-
-        first_background = np.median(background_image.data[
-                                     back_first_low:back_first_high,
-                                     :],
-                                     axis=0)
-    else:
-        log_spec.debug('Zone [{:d}:{:d}] is forbidden'.format(
-            back_first_low,
-            back_first_high))
-
-    # second background zone
-    back_second_low = int(zone[-1] + zone_sep * zone_width)
-    back_second_high = int(zone[-1] + (1 + zone_sep) * zone_width)
-    if back_second_low < back_second_high < spatial_length:
-
-        second_background = np.mean(background_image.data[
-                                    back_second_low:back_second_high,
-                                    :],
-                                    axis=0)
-    else:
-        log_spec.debug('Zone [{:d}:{:d}] is forbidden'.format(
-            back_second_low,
-            back_second_high))
-
-    if first_background is not None and second_background is not None:
-        background_mean = np.mean([first_background, second_background], axis=0)
-
-        return background_mean
-    elif first_background is not None and second_background is None:
-        return first_background
-    elif first_background is None and second_background is not None:
-        return second_background
-    else:
-        log_spec.error(
-            'Not possible to get a background extraction zone')
-        return 0
-
-
-def create_background_image(ccd, profile_model, nsigma, separation):
-    """Creates a background-only image
-
-    Using a profile model and assuming the spectrum is misaligned only a little
-    bit (i.e. a couple of pixels from end to end) with respect to the lines of
-    the detector. The number of sigmas determines the width of the zone to be
-    masked and the separation is an offset that is added.
-
-    Args:
-        ccd (object): A ccdproc.CCDData instance.
-        profile_model (object): An astropy.modeling.Model instance. Describes
-            the spatial profile of the target.
-        nsigma (float): Number of sigmas. Used to calculate the width of the
-            target zone to be masked.
-        separation (float): Additional offset that adds to the width of the
-            target zone.
-
-    Returns:
-        A ccdproc.CCDData instance with the spectrum masked.
-
-    """
-    background_ccd = ccd.copy()
-    spatial_length, dispersion_length = background_ccd.data.shape
-    target_profiles = []
-    if 'CompoundModel' in profile_model.__class__.name:
-        log_spec.debug(profile_model.submodel_names)
-        for m in range(len(profile_model.submodel_names)):
-            submodel_name = profile_model.submodel_names[m]
-
-            target_profiles.append(profile_model[submodel_name])
-    else:
-        target_profiles.append(profile_model)
-
-    for target in target_profiles:
-        target_mean = target.mean.value
-        target_stddev = target.stddev.value
-
-        data_low_lim = np.int(np.max(
-            [0, target_mean - (nsigma / 2. + separation) * target_stddev]))
-
-        data_high_lim = np.int(np.min([spatial_length, int(
-            target_mean + (nsigma / 2. + separation) * target_stddev)]))
-
-        background_ccd.data[data_low_lim:data_high_lim, :] = 0
-
-    if False:
-        plt.title('Background Image')
-        plt.imshow(background_ccd.data, clim=(0, 50))
-        plt.show()
-
-    return background_ccd
-
-
-def extract(ccd,
-            trace,
-            spatial_profile,
-            extraction,
-            zone,
-            background_level=0,
-            sampling_step=1,
-            plots=False):
-    """Performs spectrum extraction
-
-    This function is designed to perform two types of spectrum extraction, a
-    simple sum in the spatial direction and an optimal extraction.
-
-    Notes:
-        For the beta release the optimal extraction is not implemented.
-
-    Args:
-        ccd (object): Instance of ccdproc.CCDData containing a 2D spectrum
-        trace (object): Instance of astropy.modeling.Model, a low order
-            polynomial that defines the trace of the spectrum in the ccd object.
-        spatial_profile (object): Instance of astropy.modeling.Model, a Gaussian
-            model previously fitted to the spatial profile of the 2D spectrum
-            contained in the ccd object.
-        extraction (str): Extraction type, can be `simple` or `optimal` for the
-            beta release the optimal extraction is not implemented yet.
-        zone (list):
-        background_level (array):
-        sampling_step (int): The optimal extraction needs to sample the spatial
-            profile, this value defines the intervals at which get such
-            sampling.
-        plots (bool): Determines whether display plots or not.
-
-    Returns:
-        ccd (object): Instance of ccdproc.CCDData containing a 1D spectrum. The
-            attribute 'data' is replaced by the 1D array resulted from the
-            extraction process.
-
-    Raises:
-        NotImplementedError: When `extraction` is optimal, this is valid for the
-            beta release
-
-    """
-    assert isinstance(ccd, CCDData)
-    assert isinstance(trace, Model)
-
-    nccd = ccd.copy()
-
-    spatial_length, dispersion_length = nccd.data.shape
-
-    apnum1 = '{:d} {:d} {:d} {:d}'.format(1, 1, zone[0], zone[1])
-    log_spec.debug('APNUM1 Keyword: {:s}'.format(apnum1))
-
-    # create variance model
-    rdnoise = float(nccd.header['RDNOISE'])
-    gain = float(nccd.header['GAIN'])
-    log_spec.debug('Original Name {:s}'.format(nccd.header['GSP_FNAM']))
-
-    variance_2d = (rdnoise + np.absolute(nccd.data) * gain) / gain
-    cr_mask = np.ones(nccd.data.shape, dtype=int)
-    # if nccd.mask is None and nccd.header['OBSTYPE'] == 'OBJECT':
-    #     log_spec.debug('Finding cosmic rays to create mask')
-    #     cr_mask = cosmicray_rejection(ccd=ccd, mask_only=True)
-    #     cr_mask = np.log_spec.cal_not(cr_mask).astype(int)
-    # elif nccd.mask is None and nccd.header['OBSTYPE'] != 'OBJECT':
-    #     log_spec.debug('Only OBSTYPE == OBJECT get cosmic ray rejection.')
-    #     cr_mask = np.ones(nccd.data.shape, dtype=int)
-    # else:
-    #     log_spec.debug('Cosmic ray mask already exists.')
-    #     cr_mask = np.logical_not(nccd.mask).astype(int)
-
-    model_fitter = fitting.LevMarLSQFitter()
-
-    # print(spatial_profile.mean.value)
-    # print(trace.c0.value)
-
-    if isinstance(spatial_profile, models.Gaussian1D):
-        amplitude = spatial_profile.amplitude.value
-        mean = spatial_profile.mean.value
-        stddev = spatial_profile.stddev.value
-        new_model = models.Gaussian1D(amplitude=amplitude,
-                                      mean=mean,
-                                      stddev=stddev)
-        # print('Fixed ', new_model.mean.fixed)
-    else:
-        raise NotImplementedError
-    log_spec.debug('nccd.data is a masked array: '
-                   '{:s}'.format(str(np.ma.isMaskedArray(nccd.data))))
-
-    nccd.data = np.ma.masked_invalid(nccd.data)
-    # print(np.ma.isMaskedArray(nccd.data))
-    np.ma.set_fill_value(nccd.data, 0)
-
-    if extraction == 'simple':
-
-
-        # print(indexes)
-        if plots:
-            indexes = np.argwhere(cr_mask == 0)
-            fig = plt.figure(1)
-            ax1 = fig.add_subplot(111)
-            for index in indexes:
-                x, y = index
-                ax1.plot(y, x, marker='o', color='r')
-
-            ax1.imshow(nccd.data, interpolation='none')
-            if plt.isinteractive():
-                plt.draw()
-                plt.pause(1)
-            else:
-                plt.show()
-
-        # print(np.ma.isMaskedArray(nccd.data))
-        # spectrum zone limit
-        low_lim, high_lim = zone
-        spectrum_masked = nccd.data * cr_mask
-        # plt.imshow(spectrum_masked, clim=(10, 70))
-        # plt.show()
-        # TODO (simon): Add fractional pixel
-        spectrum_sum = np.ma.sum(spectrum_masked[low_lim:high_lim, :], axis=0)
-
-        background_sum = np.abs(high_lim - low_lim) * background_level
-
-        nccd.data = spectrum_sum - background_sum
-
-        nccd.header['APNUM1'] = apnum1
-
-        if plots:
-            fig = plt.figure()
-            fig.canvas.set_window_title('Simple Extraction')
-            # ax = fig.add_subplot(111)
-            manager = plt.get_current_fig_manager()
-            if plt.get_backend() == u'GTK3Agg':
-                manager.window.maximize()
-            elif plt.get_backend() == u'Qt5Agg':
-                manager.window.showMaximized()
-
-            plt.title(nccd.header['OBJECT'])
-            plt.xlabel('Dispersion Axis (Pixels)')
-            plt.ylabel('Intensity (Counts)')
-            # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
-            plt.plot(nccd.data, color='k',
-                     label='Simple Extracted')
-            plt.plot(background_sum, color='r', label='Background')
-            plt.plot(spectrum_sum, color='b', label='Spectrum Raw Sum')
-            plt.xlim((0, len(nccd.data)))
-            plt.legend(loc='best')
-            if plt.isinteractive():
-                plt.draw()
-                plt.pause(1)
-            else:
-                plt.show()
-
-    elif extraction == 'optimal':
-        raise NotImplementedError
-        # out_spectrum = np.empty(dispersion_length)
-        # for i in range(0, dispersion_length, sampling_step):
-        #     # force the model to follow the trace
-        #     new_model.mean.value = trace(i)
-        #
-        #     # warn if the difference of the spectrum position in the trace at the
-        #     # extremes of the sampling range is larger than 1 pixel.
-        #     if np.abs(trace(i) - trace(i + sampling_step)) > 1:
-        #         log_spec.warning('Sampling step might be too large')
-        #
-        #     sample = np.median(nccd.data[:, i:i + sampling_step], axis=1)
-        #     fitted_profile = model_fitter(model=new_model,
-        #                                   x=range(len(sample)),
-        #                                   y=sample)
-        #
-        #     profile = fitted_profile(range(sample.size))
-        #
-        #     # enforce positivity
-        #     pos_profile = np.array([np.max([0, x]) for x in profile])
-        #
-        #     # enforce normalization
-        #     nor_profile = np.array([x / pos_profile.sum() for x in pos_profile])
-        #
-        #     if sampling_step > 1:
-        #         # TODO (simon): Simplify to Pythonic way
-        #         right = min((i + sampling_step), dispersion_length)
-        #
-        #         for e in range(i, right, 1):
-        #             mask = cr_mask[:, e]
-        #             data = ma.masked_invalid(nccd.data[:, e])
-        #             # print(ma.isMaskedArray(data))
-        #             V = variance_2d[:, e]
-        #             P = nor_profile
-        #             a = [(P[z] / V[z]) / np.sum(P ** 2 / V) for z in
-        #                  range(P.size)]
-        #             weights = (nor_profile / variance_2d[:, e]) / np.sum(
-        #                 nor_profile ** 2 / variance_2d[:, e])
-        #             # print('SUMN ', np.sum(a), np.sum(weights), np.sum(nor_profile), np.sum(P * weights))
-        #
-        #
-        #
-        #             # if e in range(5, 4001, 500):
-        #             #     plt.plot(nor_profile * data.max()/ nor_profile.max(), label=str(e))
-        #             #     plt.plot(data, label='Data')
-        #             #     plt.legend(loc='best')
-        #             #     plt.show()
-        #
-        #             out_spectrum[e] = np.sum(data * mask * nor_profile)
-        # nccd.data = out_spectrum
-        # if plots:
-        #     fig = plt.figure()
-        #     fig.canvas.set_window_title('Optimal Extraction')
-        #     # ax = fig.add_subplot(111)
-        #     manager = plt.get_current_fig_manager()
-        #
-        #     if plt.get_backend() == u'GTK3Agg':
-        #         manager.window.maximize()
-        #     elif plt.get_backend() == u'Qt5Agg':
-        #         manager.window.showMaximized()
-        #
-        #     plt.title(nccd.header['OBJECT'])
-        #     plt.xlabel('Dispersion Axis (Pixels)')
-        #     plt.ylabel('Intensity (Counts)')
-        #     # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
-        #     plt.plot(nccd.data, color='k',
-        #              label='Optimal Extracted')
-        #     plt.xlim((0, len(nccd.data)))
-        #     plt.legend(loc='best')
-        #     if plt.isinteractive():
-        #         plt.draw()
-        #         plt.pause(1)
-        #     else:
-        #         plt.show()
-
-    # nccd.data = out_spectrum
-    return nccd
+def write_fits(ccd, full_path, combined=False, parent_file=None, overwrite=True):
+    assert os.path.isdir(os.path.dirname(full_path))
+
+    # Original File Name
+    # This should be set only once.
+    if combined:
+        ccd.header.set('GSP_ONAM',
+                       value=os.path.basename(full_path))
+
+        ccd.header.set('GSP_PNAM',
+                   value='combined')
+
+    # Parent File Name
+    if not combined and parent_file is not None:
+        ccd.header.set('GSP_PNAM',
+                       value=os.path.basename(parent_file))
+
+    # Current File Name
+    ccd.header.set('GSP_FNAM', value=os.path.basename(full_path))
+
+    # write to file
+    ccd.write(full_path, overwrite=overwrite)
+    return ccd
 
 
 # classes definition
+
+
+class CriticalError(Exception):
+    def __init__(self, message):
+        Exception.__init__(self, message)
+
 
 class NightDataContainer(object):
     """This class is designed to be the organized data container. It doesn't
@@ -2610,6 +2692,22 @@ class NightDataContainer(object):
                       technique=self.technique)
 
 
+class NoMatchFound(Exception):
+    def __init__(self):
+        Exception.__init__(self, 'Did not find a match')
+
+
+class NoTargetException(Exception):
+    """Exception to be raised when no target is identified"""
+    def __init__(self):
+        Exception.__init__(self, 'No targets identified.')
+
+
+class NotEnoughLinesDetected(Exception):
+    def __init__(self):
+        Exception.__init__(self, 'Not enough lines detected.')
+
+
 class SpectroscopicMode(object):
 
     def __init__(self):
@@ -2728,24 +2826,3 @@ class SpectroscopicMode(object):
                 # print('%s %s' %(grating, _mode.wavmode))
                 # print(_mode['wavmode'].to_string)
                 return _mode['wavmode'].to_string(index=False)
-
-
-class NoTargetException(Exception):
-    """Exception to be raised when no target is identified"""
-    def __init__(self):
-        Exception.__init__(self, 'No targets identified.')
-
-
-class NoMatchFound(Exception):
-    def __init__(self):
-        Exception.__init__(self, 'Did not find a match')
-
-
-class NotEnoughLinesDetected(Exception):
-    def __init__(self):
-        Exception.__init__(self, 'Not enough lines detected.')
-
-
-class CriticalError(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
