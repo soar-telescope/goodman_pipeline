@@ -36,6 +36,7 @@ from scipy import signal
 from ..wcs.wcs import WCS
 from .linelist import ReferenceData
 from ..core import (spectroscopic_extraction,
+                    extract_fractional_pixel,
                     search_comp_group,
                     add_wcs_keys,
                     NoTargetException,
@@ -85,7 +86,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                           data_container.object_groups] if groups is not None]:
         for group in sub_container:
             # instantiate WavelengthCalibration here for each group.
-            get_wsolution = WavelengthCalibration(args=args)
+            wavelength_calibration = WavelengthCalibration(args=args)
             # this will contain only obstype == OBJECT
             object_group = group[group.obstype == 'OBJECT']
             # this has to be initialized here
@@ -182,9 +183,10 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                         else:
                             object_number = i + 1
 
-                        wsolution_obj = get_wsolution(ccd=extracted_ccd,
-                                                      comp_list=comps,
-                                                      object_number=object_number)
+                        wsolution_obj = wavelength_calibration(
+                            ccd=extracted_ccd,
+                            comp_list=comps,
+                            object_number=object_number)
                         # return wsolution_obj
                 except NoTargetException:
                     log.error('No target was identified in file'

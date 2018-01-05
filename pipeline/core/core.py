@@ -14,7 +14,7 @@ import matplotlib
 import pandas
 import shutil
 import subprocess
-import pipeline
+from ... import pipeline
 
 from threading import Timer
 
