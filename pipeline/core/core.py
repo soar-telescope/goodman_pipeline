@@ -14,10 +14,8 @@ import matplotlib
 import pandas
 import shutil
 import subprocess
-from ... import pipeline
 
 from threading import Timer
-
 # matplotlib.use('Qt5Agg')
 from matplotlib import pyplot as plt
 from ccdproc import CCDData, ImageFileCollection
@@ -30,6 +28,7 @@ from astropy.io import fits
 from astropy.modeling import (models, fitting, Model)
 from scipy import signal
 from math import floor, ceil
+from ... import pipeline
 
 log_ccd = logging.getLogger('goodmanccd.core')
 log_spec = logging.getLogger('redspec.core')
