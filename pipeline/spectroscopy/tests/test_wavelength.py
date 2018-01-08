@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
 
-def test_wavelength_calibration_isntantiate():
-    from ..pipeline.spectroscopy.wavelength import WavelengthCalibration
+def test_wavelength_calibration_instantiate():
+    from ..wavelength import WavelengthCalibration
     from .test_redspec import test_get_args
     import os
 
