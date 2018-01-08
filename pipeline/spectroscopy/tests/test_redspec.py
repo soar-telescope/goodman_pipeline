@@ -17,5 +17,9 @@ def test_get_args():
     return args
 
 
+def test_main_app():
+    pass
+
+
 if __name__ == '__main__':
     test_get_args()

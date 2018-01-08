@@ -323,10 +323,10 @@ class MainApp(object):
                         self.log.error('Discarding night ' + str(night))
                         break
 
-                    process_images = ImageProcessor(args=self.args,
-                                                    data_container=self.data_container)
+                    process_images = ImageProcessor(
+                        args=self.args,
+                        data_container=self.data_container)
                     process_images()
-
 
 
 if __name__ == '__main__':
