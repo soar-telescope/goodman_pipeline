@@ -11,6 +11,7 @@ https://github.com/pypa/sampleproject
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
+from pipeline.info import __version__
 
 # To use a consistent encoding
 from codecs import open
@@ -18,7 +19,9 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
-VERSION = __import__('pipeline').__version__
+
+# VERSION = __import__('pipeline').__version__
+# VERSION = __version__
 
 # Get the long description from the README file
 #with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
@@ -29,7 +32,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=VERSION,
+    version=__version__,
 
     description='Pipelines for CCD and Spectroscopic Reduction of Goodman Data',
 

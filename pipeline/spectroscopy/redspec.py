@@ -30,12 +30,6 @@ FORMAT = '%(levelname)s: %(asctime)s:%(module)s.%(funcName)s: %(message)s'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_spec.log'
 
-__author__ = 'Simon Torres'
-__date__ = '2016-06-28'
-__version__ = "1.0b1"
-__email__ = "storres@ctio.noao.edu"
-__status__ = "Development"
-
 
 def get_args(arguments=None):
     """Handles the argparse library and returns the arguments

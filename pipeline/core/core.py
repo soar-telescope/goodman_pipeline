@@ -28,7 +28,7 @@ from astropy.io import fits
 from astropy.modeling import (models, fitting, Model)
 from scipy import signal
 from math import floor, ceil
-from ... import pipeline
+from ..info import __version__
 
 log_ccd = logging.getLogger('goodmanccd.core')
 log_spec = logging.getLogger('redspec.core')
@@ -1893,7 +1893,7 @@ def read_fits(full_path, technique='Unknown'):
     ccd = CCDData.read(full_path, unit=u.adu)
 
     ccd.header.set('GSP_VERS',
-                   value=pipeline.__version__,
+                   value=__version__,
                    comment='Goodman Spectroscopic Pipeline Version')
 
     ccd.header.set('GSP_ONAM',

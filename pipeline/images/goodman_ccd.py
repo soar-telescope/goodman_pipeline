@@ -14,11 +14,11 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 
-__author__ = 'David Sanmartim'
-__date__ = '2016-07-15'
-__version__ = "1.0b2"
-__maintainer__ = "Simon Torres"
-__email__ = "storres@ctio.noao.edu"
+# __author__ = 'David Sanmartim'
+# __date__ = '2016-07-15'
+# __version__ = "1.0b2"
+# __maintainer__ = "Simon Torres"
+# __email__ = "storres@ctio.noao.edu"
 
 FORMAT = '%(levelname)s: %(asctime)s: %(module)s.%(funcName)s: %(message)s'
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'

@@ -7,7 +7,7 @@ python:
 branches:
   only:
   - master
-  - auto_test
+  - development
 
 install:
 - sudo apt-get update

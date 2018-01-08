@@ -4,4 +4,4 @@ from . import spectroscopy
 from . import images
 from . import core
 
-__version__ = '1.0b2'
+VERSION = '1.0b2'
