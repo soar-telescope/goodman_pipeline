@@ -788,19 +788,23 @@ class ImageProcessor(object):
                     red_path=self.args.red_path,
                     dcr_par=self.args.dcr_par_dir,
                     keep_files=self.args.keep_cosmic_files,
-                    method=self.args.clean_cosmic)
+                    method=self.args.clean_cosmic,
+                    save=True)
 
                 self.out_prefix = prefix
 
-                if ccd.header['OBSTYPE'] == 'OBJECT':
-                    self.log.debug("Appending OBJECT image for combination")
-                    all_object_image.append(ccd)
-                elif ccd.header['OBSTYPE'] == 'COMP':
-                    self.log.debug("Appending COMP image for combination")
-                    all_comp_image.append(ccd)
+                if ccd is not None:
+                    if ccd.header['OBSTYPE'] == 'OBJECT':
+                        self.log.debug("Appending OBJECT image for combination")
+                        all_object_image.append(ccd)
+                    elif ccd.header['OBSTYPE'] == 'COMP':
+                        self.log.debug("Appending COMP image for combination")
+                        all_comp_image.append(ccd)
+                    else:
+                        self.log.error("Unknown OBSTYPE = {:s}"
+                                       "".format(ccd.header['OBSTYPE']))
                 else:
-                    self.log.error("Unknown OBSTYPE = {:s}"
-                                   "".format(ccd.header['OBSTYPE']))
+                    self.log.warning("Cosmic ray rejection returned a None.")
 
             if len(all_object_image) > 1:
                 self.log.info("Combining {:d} OBJECT images"
