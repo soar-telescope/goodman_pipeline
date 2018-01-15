@@ -87,7 +87,7 @@ class NightOrganizer(object):
         # WAVMODE = Imaging because assumes they are acquisition images
         if self.technique == 'Spectroscopy':
             self.log.warning("Ignoring all Imaging data. Assuming they are "
-                             "acquisition exposures")
+                             "all acquisition exposures")
             self.file_collection = self.file_collection[
                 self.file_collection.wavmode != 'Imaging']
         elif self.technique == 'Imaging':
