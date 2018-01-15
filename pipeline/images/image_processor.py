@@ -13,16 +13,19 @@ import pandas
 
 from astropy import units as u
 from ccdproc import CCDData
-from ..core import (read_fits,
-                    write_fits,
+from ..core import (call_cosmic_rejection,
+                    combine_data,
+                    get_best_flat,
+                    get_slit_trim_section,
                     image_overscan,
                     image_trim,
-                    get_slit_trim_section,
                     lacosmic_cosmicray_rejection,
-                    get_best_flat,
                     normalize_master_flat,
-                    call_cosmic_rejection,
-                    SpectroscopicMode)
+                    read_fits,
+                    write_fits
+                    )
+
+from ..core import SpectroscopicMode
 
 
 class ImageProcessor(object):
@@ -807,6 +810,7 @@ class ImageProcessor(object):
                     self.log.warning("Cosmic ray rejection returned a None.")
 
             if len(all_object_image) > 1:
+                print(len(all_object_image))
                 self.log.info("Combining {:d} OBJECT images"
                               "".format(len(all_object_image)))
 
@@ -815,7 +819,7 @@ class ImageProcessor(object):
 
                 print(object_group, len(all_object_image))
 
-                object_combined = self.combine_data(
+                object_combined = combine_data(
                     all_object_image,
                     dest_path=self.args.red_path,
                     prefix=self.out_prefix,
@@ -825,14 +829,14 @@ class ImageProcessor(object):
                 pass
 
             else:
-                self.log.error("No image to write")
+                self.log.error("No OBJECT image to write")
 
             if len(all_comp_image) > 1:
                 self.log.info("Combining {:d} COMP images"
-                              "".format(len(all_object_image)))
+                              "".format(len(all_comp_image)))
                 comp_group = object_comp_group[
                     object_comp_group.obstype == "COMP"]
-                comp_combined = self.combine_data(all_comp_image,
+                comp_combined = combine_data(all_comp_image,
                                                   dest_path=self.args.red_path,
                                                   prefix=self.out_prefix,
                                                   save=True)
@@ -921,78 +925,6 @@ class ImageProcessor(object):
                 self.log.info('Created science file: {:s}'.format(final_name))
         else:
             self.log.error('Can not process data without a master flat')
-
-    @staticmethod
-    def combine_data(image_list,
-                     dest_path,
-                     prefix=None,
-                     output_name=None,
-                     method="median",
-                     save=False):
-
-        assert len(image_list) > 1
-
-        # This defines a default filename that should be deleted below
-        combined_full_path = os.path.join(dest_path, "combined.fits")
-        if output_name is not None:
-            combined_full_path = os.path.join(dest_path, output_name)
-        elif prefix is not None:
-            combined_base_name = ''
-            target_name = image_list[0].header["OBJECT"]
-
-            grating_name = re.sub('[A-Za-z_-]',
-                                  '',
-                                  image_list[0].header["GRATING"])
-
-            slit_size = re.sub('[A-Za-z" ]',
-                               '',
-                               image_list[0].header["SLIT"])
-
-            for field in [prefix,
-                          'combined',
-                          target_name,
-                          grating_name,
-                          slit_size]:
-
-                value = re.sub('[_ /]',
-                               '',
-                               field)
-
-                combined_base_name += "{:s}_".format(value)
-
-            print(combined_base_name)
-
-            number = len(glob.glob(
-                os.path.join(dest_path,
-                             combined_base_name + "*.fits")))
-
-            combined_full_path = os.path.join(
-                dest_path,
-                combined_base_name + "_{:04d}.fits".format(number + 1))
-
-        # combine image
-        combined_image = ccdproc.combine(image_list,
-                                         method=method,
-                                         sigma_clip=True,
-                                         sigma_clip_low_thresh=1.0,
-                                         sigma_clip_high_thresh=1.0,
-                                         add_keyword=False)
-
-        # add name of files used in the combination process
-        for i in range(len(image_list)):
-            image_name = image_list[i].header['GSP_FNAM']
-            combined_image.header.set("GSP_IC{:02d}".format(i + 1),
-                                      value=image_name,
-                                      comment='Image used to create combined')
-
-        if save or True:
-            write_fits(combined_image,
-                       full_path=combined_full_path,
-                       combined=True)
-
-        print(combined_full_path)
-
-        return combined_image
 
 
 if __name__ == '__main__':

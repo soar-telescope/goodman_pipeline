@@ -301,6 +301,85 @@ def classify_spectroscopic_data(path, search_pattern):
     return data_container
 
 
+def combine_data(image_list, dest_path, prefix=None, output_name=None,
+                 method="median",
+                 save=False):
+    """Combine a list of CCDData instances.
+
+    Args:
+        image_list:
+        dest_path:
+        prefix:
+        output_name:
+        method:
+        save:
+
+    Returns:
+
+    """
+    assert len(image_list) > 1
+
+    # This defines a default filename that should be deleted below
+    combined_full_path = os.path.join(dest_path, "combined.fits")
+    if output_name is not None:
+        combined_full_path = os.path.join(dest_path, output_name)
+    elif prefix is not None:
+        combined_base_name = ''
+        target_name = image_list[0].header["OBJECT"]
+
+        grating_name = re.sub('[A-Za-z_-]',
+                              '',
+                              image_list[0].header["GRATING"])
+
+        slit_size = re.sub('[A-Za-z" ]',
+                           '',
+                           image_list[0].header["SLIT"])
+
+        for field in [prefix,
+                      'combined',
+                      target_name,
+                      grating_name,
+                      slit_size]:
+
+            value = re.sub('[_ /]',
+                           '',
+                           field)
+
+            combined_base_name += "{:s}_".format(value)
+
+        print(combined_base_name)
+
+        number = len(glob.glob(
+            os.path.join(dest_path,
+                         combined_base_name + "*.fits")))
+
+        combined_full_path = os.path.join(
+            dest_path,
+            combined_base_name + "_{:04d}.fits".format(number + 1))
+
+    # combine image
+    combined_image = ccdproc.combine(image_list,
+                                     method=method,
+                                     sigma_clip=True,
+                                     sigma_clip_low_thresh=1.0,
+                                     sigma_clip_high_thresh=1.0,
+                                     add_keyword=False)
+
+    # add name of files used in the combination process
+    for i in range(len(image_list)):
+        image_name = image_list[i].header['GSP_FNAM']
+        combined_image.header.set("GSP_IC{:02d}".format(i + 1),
+                                  value=image_name,
+                                  comment='Image used to create combined')
+
+    if save or True:
+        write_fits(combined_image,
+                   full_path=combined_full_path,
+                   combined=True)
+
+    return combined_image
+
+
 def convert_time(in_time):
     """Converts time to seconds since epoch
 
@@ -1098,7 +1177,7 @@ def get_extraction_zone(ccd,
 
         # m_mean = model.mean.value
         m_stddev = model.stddev.value
-        extract_width = n_sigma_extract // 2 * m_stddev
+        extract_width = 0.5 * n_sigma_extract * m_stddev
 
         low_lim = np.max([0, int(trace_array.min() - extract_width)])
 
