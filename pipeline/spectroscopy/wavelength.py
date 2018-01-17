@@ -35,8 +35,10 @@ from scipy import signal
 
 from ..wcs.wcs import WCS
 from .linelist import ReferenceData
-from ..core import (spectroscopic_extraction,
+from ..core import (extraction,
                     extract_fractional_pixel,
+                    trace_targets,
+                    identify_targets,
                     search_comp_group,
                     add_wcs_keys,
                     NoTargetException,
@@ -48,7 +50,8 @@ from ..core import (spectroscopic_extraction,
 
 SHOW_PLOTS = False
 
-def process_spectroscopy_data(data_container, args, extraction_type='simple'):
+
+def process_spectroscopy_data(data_container, args, extraction_type='fractional'):
     """Does spectroscopic processing
 
     This is a high level method that manages all subprocess regarding the
@@ -63,7 +66,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
         args (object): Instance of argparse.Namespace that contains all the
             arguments of the pipeline.
         extraction_type (str): string that defines the type of extraction to be
-            performed. 'simple' or 'optimal'. This is required by the extraction
+            performed. 'fractional' or 'optimal'. This is required by the extraction
             function.
 
     Returns:
@@ -74,9 +77,6 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
     assert data_container.is_empty is False
     assert any(extraction_type == option for option in ['fractional',
                                                         'optimal'])
-    # to be returned
-    extracted = None
-    comps = None
     log = logging.getLogger(__name__)
 
     full_path = data_container.full_path
@@ -138,59 +138,87 @@ def process_spectroscopy_data(data_container, args, extraction_type='simple'):
                 else:
                     log.debug('Comp Group is None or comp list already exist')
 
-                try:
-                    extracted, comps = spectroscopic_extraction(
-                        ccd=ccd,
-                        extraction=extraction_type,
-                        comp_list=comp_ccd_list,
-                        nfind=args.max_n_targets,
-                        plots=SHOW_PLOTS)
+                target_list = []
+                trace_list = []
 
-                    if args.debug_mode:
-                        print(plt.get_backend())
-                        fig = plt.figure(num=0)
-                        fig.clf()
-                        fig.canvas.set_window_title('Extracted Data')
+                # identify
+                target_list = identify_targets(ccd=ccd,
+                                               nfind=3,
+                                               plots=SHOW_PLOTS)
 
-                        manager = plt.get_current_fig_manager()
-
-                        if plt.get_backend() == u'GTK3Agg':
-                            manager.window.maximize()
-                        elif plt.get_backend() == u'Qt5Agg':
-                            manager.window.showMaximized()
-
-                        for edata in extracted:
-                            plt.plot(edata.data, label=edata.header['OBJECT'])
-                            if comps != []:
-                                for comp in comps:
-                                    plt.plot(comp.data,
-                                             label=comp.header['OBJECT'])
-                        plt.legend(loc='best')
-                        if plt.isinteractive():
-                            plt.draw()
-                            plt.pause(1)
-                        else:
-                            plt.show()
-
-                    object_number = None
-                    for i in range(len(extracted)):
-                        extracted_ccd = extracted[i]
-
-                        # this is for numbering the last file.
-                        if len(extracted) == 1:
-                            object_number = None
-                        else:
-                            object_number = i + 1
-
-                        wsolution_obj = wavelength_calibration(
-                            ccd=extracted_ccd,
-                            comp_list=comps,
-                            object_number=object_number)
-                        # return wsolution_obj
-                except NoTargetException:
-                    log.error('No target was identified in file'
-                              ' {:s}'.format(spec_file))
+                # trace
+                if len(target_list) > 0:
+                    trace_list = trace_targets(ccd=ccd,
+                                               target_list=target_list,
+                                               sampling_step=5,
+                                               pol_deg=2)
+                else:
+                    log.error("The list of identified targets is empty.")
                     continue
+
+                # if len(trace_list) > 0:
+                extracted_target_and_lamps = []
+                for single_trace, single_profile in trace_list:
+                    try:
+                        # target extraction
+                        extracted = extraction(
+                            ccd=ccd,
+                            trace=single_trace,
+                            spatial_profile=single_profile,
+                            extraction=extraction_type,
+                            plots=SHOW_PLOTS)
+
+                        # lamp extraction
+                        all_lamps = []
+                        if comp_ccd_list:
+                            for comp_lamp in comp_ccd_list:
+                                extracted_lamp = extraction(
+                                    ccd=comp_lamp,
+                                    trace=single_trace,
+                                    spatial_profile=single_profile,
+                                    extraction=extraction_type,
+                                    plots=SHOW_PLOTS)
+                                all_lamps.append(extracted_lamp)
+                        extracted_target_and_lamps.append([extracted, all_lamps])
+
+                        if args.debug_mode:
+                            # print(plt.get_backend())
+                            fig = plt.figure(num=0)
+                            fig.clf()
+                            fig.canvas.set_window_title('Extracted Data')
+
+                            manager = plt.get_current_fig_manager()
+
+                            if plt.get_backend() == u'GTK3Agg':
+                                manager.window.maximize()
+                            elif plt.get_backend() == u'Qt5Agg':
+                                manager.window.showMaximized()
+
+                            for edata, comps in extracted_target_and_lamps:
+                                plt.plot(edata.data, label=edata.header['OBJECT'])
+                                if comps:
+                                    for comp in comps:
+                                        plt.plot(comp.data,
+                                                 label=comp.header['OBJECT'])
+                            plt.legend(loc='best')
+                            if plt.isinteractive():
+                                plt.draw()
+                                plt.pause(1)
+                            else:
+                                plt.show()
+
+                    except NoTargetException:
+                        log.error('No target was identified in file'
+                                  ' {:s}'.format(spec_file))
+                        continue
+                object_number = None
+                for sci_target, comp_list in extracted_target_and_lamps:
+
+                    wsolution_obj = wavelength_calibration(
+                        ccd=sci_target,
+                        comp_list=comp_list,
+                        object_number=None)
+                    # return wsolution_obj
 
     return True
 
@@ -329,13 +357,12 @@ class WavelengthCalibration(object):
                       '{:s}'.format(ccd.header['OBJECT']))
         if comp_list is not None:
             for self.lamp in comp_list:
-
                 try:
                     self.calibration_lamp = self.lamp.header['GSP_FNAM']
                 except KeyError:
                     self.calibration_lamp = ''
 
-                self.raw_pixel_axis = range(len(self.lamp.data))
+                self.raw_pixel_axis = range(self.lamp.shape[0])
                 # self.raw_pixel_axis = range(len(self.lamp.data))
                 # self.lamp.header = lamp_ccd.header.copy()
                 self.lamp_name = self.lamp.header['OBJECT']

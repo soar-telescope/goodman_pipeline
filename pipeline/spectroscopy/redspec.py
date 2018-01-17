@@ -96,12 +96,7 @@ def get_args(arguments=None):
                         metavar='<Extraction Type>',
                         dest='extraction_type',
                         choices=['fractional', 'optimal'],
-                        help='Choose a which extraction to perform. Simple is a'
-                             'sum across the spatial direction after the '
-                             'background has been removed. Optimal is a more '
-                             'advanced method that considers weights and '
-                             'profile'
-                             'fitting.')
+                        help='Only fractional pixel extraction is implemented.')
 
     parser.add_argument('--reference-files',
                         action='store',
@@ -145,6 +140,11 @@ def get_args(arguments=None):
                         action='store_true',
                         dest='save_plots',
                         help="Save all plots in a directory")
+
+    # parser.add_argument('--combine',
+    #                     action='store_true',
+    #                     dest='combine',
+    #                     help="Combine compatible data")
 
     parser.add_argument('--plot-results',
                         action='store_true',

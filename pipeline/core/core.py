@@ -594,14 +594,12 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         return ccd
 
 
-def extract(ccd,
-            trace,
-            spatial_profile,
-            extraction,
-            zone,
-            background_level=0,
-            sampling_step=1,
-            plots=False):
+def extraction(ccd,
+               trace,
+               spatial_profile,
+               extraction,
+               sampling_step=1,
+               plots=False):
     """Performs spectrum extraction
 
     This function is designed to perform two types of spectrum extraction, a
@@ -644,7 +642,7 @@ def extract(ccd,
 
     spatial_length, dispersion_length = nccd.data.shape
 
-    apnum1 = '{:d} {:d} {:d} {:d}'.format(1, 1, zone[0], zone[1])
+    apnum1 = '{:d} {:d} {:d} {:d}'.format(1, 1, 1, 1)
     log_spec.debug('APNUM1 Keyword: {:s}'.format(apnum1))
 
     # create variance model
@@ -702,7 +700,8 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     """
     assert isinstance(ccd, CCDData)
     assert isinstance(target_trace, Model)
-    log_spec.warning("Fractional Pixel Extraction")
+    log_spec.info("Fractional Pixel Extraction for "
+                  "{:s}".format(ccd.header['GSP_FNAM']))
 
     spat_length, disp_length = ccd.data.shape
 
@@ -717,67 +716,76 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
         low_limit = trace[i] - 0.5 * extraction_width * target_stddev
         high_limit = trace[i] + 0.5 * extraction_width * target_stddev
 
-        column_sum = fractional_sum(data=ccd.data, index=i, low_limit=low_limit,
+        column_sum = fractional_sum(data=ccd.data,
+                                    index=i,
+                                    low_limit=low_limit,
                                     high_limit=high_limit)
 
-        # background limits
+        if ccd.header['OBSTYPE'] == 'OBJECT':
+            # background limits
 
-        # background_spacing is the distance from the edge of the target's
-        # limits defined by `int_low_limit` and
-        # `int_high_limit` in stddev units
+            # background_spacing is the distance from the edge of the target's
+            # limits defined by `int_low_limit` and
+            # `int_high_limit` in stddev units
 
-        background_width = high_limit - low_limit
+            background_width = high_limit - low_limit
 
-        # define pixel values for background subtraction
-        # low_background_zone
-        high_1 = low_limit - background_spacing * target_stddev
-        low_1 = high_1 - background_width
-        # print(low_1,high_1)
+            # define pixel values for background subtraction
+            # low_background_zone
+            high_1 = low_limit - background_spacing * target_stddev
+            low_1 = high_1 - background_width
+            # print(low_1,high_1)
 
-        # High background zone
-        low_2 = high_limit + background_spacing * target_stddev
-        high_2 = low_2 + background_width
-        # print(low_1,'-',high_1,':',low_2,'-',high_2,)
+            # High background zone
+            low_2 = high_limit + background_spacing * target_stddev
+            high_2 = low_2 + background_width
+            # print(low_1,'-',high_1,':',low_2,'-',high_2,)
 
-        # validate background subtraction zones
-        background_1 = None
-        background_2 = None
+            # validate background subtraction zones
+            background_1 = None
+            background_2 = None
 
-        # this has to be implemented, leaving it True assumes there is no
-        # restriction for background selection.
-        neighbouring_target_condition = True
+            # this has to be implemented, leaving it True assumes there is no
+            # restriction for background selection.
+            neighbouring_target_condition = True
 
-        if low_1 > 0 and neighbouring_target_condition:
-            # integer limits
-            background_1 = fractional_sum(data=ccd.data, index=i,
-                                          low_limit=low_1, high_limit=high_1)
+            if low_1 > 0 and neighbouring_target_condition:
+                # integer limits
+                background_1 = fractional_sum(data=ccd.data,
+                                              index=i,
+                                              low_limit=low_1,
+                                              high_limit=high_1)
+            else:
+                print("Invalid Zone 1")
+
+            if high_2 < spat_length and neighbouring_target_condition:
+                background_2 = fractional_sum(data=ccd.data,
+                                              index=i,
+                                              low_limit=low_2,
+                                              high_limit=high_2)
+            else:
+                print("Invalid Zone 2")
+
+            background = 0
+            if background_1 is not None and background_2 is None:
+                background = background_1
+            elif background_1 is None and background_2 is not None:
+                background = background_2
+            else:
+                background = np.mean([background_1, background_2])
+
+            # actual background subtraction
+            background_subtracted_column_sum = column_sum - background
+
+            # append column value to list
+            extracted_spectrum.append(background_subtracted_column_sum)
+            background_list.append(background)
         else:
-            print("Invalid Zone 1")
-
-        if high_2 < spat_length and neighbouring_target_condition:
-            background_2 = fractional_sum(data=ccd.data, index=i,
-                                          low_limit=low_2, high_limit=high_2)
-        else:
-            print("Invalid Zone 2")
-
-        background = 0
-        if background_1 is not None and background_2 is None:
-            background = background_1
-        elif background_1 is None and background_2 is not None:
-            background = background_2
-        else:
-            background = np.mean([background_1, background_2])
-
-        # actual background subtraction
-        background_subtracted_column_sum = column_sum - background
-
-        # append column value to list
-        extracted_spectrum.append(background_subtracted_column_sum)
-        background_list.append(background)
+            log_spec.debug("No background subtraction of OBSTYPE != OBJECT")
+            extracted_spectrum.append(column_sum)
 
     new_ccd = ccd.copy()
     new_ccd.data = np.asarray(extracted_spectrum)
-    print(new_ccd.data.shape)
     return new_ccd, np.asarray(background_list)
 
 
@@ -1519,7 +1527,7 @@ def identify_targets(ccd, nfind=3, plots=False):
         fitter = fitting.LevMarLSQFitter()
         best_stddev = None
 
-        profile_model = None
+        profile_model = []
         for peak in selected_peaks:
             peak_value = median_profile[peak]
             gaussian = models.Gaussian1D(amplitude=peak_value,
@@ -1557,13 +1565,11 @@ def identify_targets(ccd, nfind=3, plots=False):
 
             # this ensures the profile returned are valid
             if fitted_gaussian.stddev.value > 0:
-                if profile_model is None:
-                    profile_model = fitted_gaussian
-                else:
-                    profile_model += fitted_gaussian
+                profile_model.append(fitted_gaussian)
         if plots:
             plt.plot(median_profile, color='b')
-            plt.plot(profile_model(range(len(median_profile))), color='r')
+            for profile in profile_model:
+                plt.plot(profile(range(len(median_profile))), color='r')
             plt.show()
 
         # plt.imshow(ccd.data, clim=(50, 200), cmap='gray')
@@ -1571,8 +1577,9 @@ def identify_targets(ccd, nfind=3, plots=False):
         #     plt.axhline(peak, color='r')
         # plt.show()
 
-        if profile_model is None:
-            return None
+        if profile_model == []:
+            log_spec.error("Impossible to identify targets.")
+            return profile_model
         else:
             return profile_model
 
@@ -2131,171 +2138,6 @@ def search_comp_group(object_group, comp_groups):
     raise NoMatchFound
 
 
-def spectroscopic_extraction(ccd,
-                             extraction,
-                             comp_list=None,
-                             nfind=3,
-                             n_sigma_extract=10,
-                             plots=False):
-    """This function does not do the actual extraction but prepares the data
-
-    There are several steps involved in a spectroscopic extraction, this
-    function manages them.
-
-    Args:
-        ccd (object): A ccdproc.CCDData Instance
-        extraction (str): Extraction type name. _simple_ or _optimal_
-        comp_list (list): List of ccdproc.CCDData instances of COMP lamps data
-        nfind (int): Maximum number of targets to be returned
-        n_sigma_extract (int): Number of sigmas to be used for extraction
-        plots (bool): If plots will be shown or not.
-
-    Returns:
-        extracted (list): List of ccdproc.CCDData instances
-        comp_zones (list): List of ccdproc.CCDData instances
-
-    Raises:
-        NoTargetException (Exception): A NoTargetException if there is no target
-           found.
-
-    """
-
-    assert isinstance(ccd, CCDData)
-
-    comp_zones = []
-    extracted = []
-
-    if comp_list is None:
-        comp_list = []
-    # print(comp_list)
-
-    iccd = remove_background_by_median(ccd=ccd)
-
-    profile_model = identify_targets(ccd=iccd, nfind=nfind, plots=plots)
-    del (iccd)
-
-    if profile_model is None:
-        log_spec.critical('Target identification FAILED!')
-        raise NoTargetException
-    else:
-        background_image = create_background_image(ccd=ccd,
-                                                   profile_model=profile_model,
-                                                   nsigma=n_sigma_extract,
-                                                   separation=5)
-
-    if isinstance(profile_model, Model):
-        traces = trace_targets(ccd=ccd, profile=profile_model, plots=plots)
-        # extract(ccd=ccd,
-        #         spatial_profile=profile_model,
-        #         n_sigma_extract=10,
-        #         sampling_step=5)
-        if 'CompoundModel' in profile_model.__class__.name:
-            log_spec.debug(profile_model.submodel_names)
-            for m in range(len(profile_model.submodel_names)):
-                submodel_name = profile_model.submodel_names[m]
-
-                ntrace = traces[m]
-                model = profile_model[submodel_name]
-
-                zone = get_extraction_zone(
-                    ccd=ccd,
-                    extraction=extraction,
-                    trace=ntrace,
-                    trace_index=m,
-                    model=profile_model[submodel_name],
-                    n_sigma_extract=n_sigma_extract,
-                    plots=plots)
-
-                for comp in comp_list:
-                    comp_zone = get_extraction_zone(ccd=comp,
-                                                    extraction=extraction,
-                                                    trace=ntrace,
-                                                    trace_index=m,
-                                                    zone=zone,
-                                                    plots=plots)
-                    # since a comparison lamp only needs only the relative line
-                    # center in the dispersion direction, therefore the flux is
-                    # not important we are only calculating the median along the
-                    # spatial direction
-                    comp_zone.data = np.median(comp_zone.data, axis=0)
-                    comp_zones.append(comp_zone)
-
-                background_level = get_background_value(
-                    background_image=background_image,
-                    zone=zone)
-
-                extracted_ccd = extract(ccd=ccd,
-                                        trace=ntrace,
-                                        spatial_profile=model,
-                                        extraction=extraction,
-                                        zone=zone,
-                                        background_level=background_level,
-                                        sampling_step=10,
-                                        plots=plots)
-                extracted.append(extracted_ccd)
-
-                # if plots:
-                #     plt.imshow(nccd.data)
-                #     plt.show()
-
-        else:
-            ntrace = traces[0]
-
-            zone = get_extraction_zone(
-                ccd=ccd,
-                extraction=extraction,
-                trace=traces[0],
-                trace_index=0,
-                model=profile_model,
-                n_sigma_extract=n_sigma_extract,
-                plots=plots)
-
-            for comp in comp_list:
-                comp_zone = get_extraction_zone(ccd=comp,
-                                                extraction=extraction,
-                                                trace=ntrace,
-                                                trace_index=0,
-                                                zone=zone,
-                                                plots=plots)
-
-                # since a comparison lamp only needs the relative line
-                # center in the dispersion direction, therefore the flux is not
-                # important we are only calculating the median along the spatial
-                # direction
-                comp_zone.data = np.median(comp_zone.data, axis=0)
-                comp_zones.append(comp_zone)
-
-            background_level = get_background_value(
-                background_image=background_image,
-                zone=zone)
-
-            extracted_ccd = extract(ccd=ccd,
-                                    trace=ntrace,
-                                    spatial_profile=profile_model,
-                                    extraction=extraction,
-                                    zone=zone,
-                                    background_level=background_level,
-                                    sampling_step=10,
-                                    plots=plots)
-
-            extracted.append(extracted_ccd)
-
-            # if plots:
-            #     plt.imshow(nccd.data)
-            #     plt.show()
-
-        # print(extracted)
-        # print(comp_zones)
-        return extracted, comp_zones
-
-    elif profile_model is None:
-        log_spec.warning("Didn't receive identified targets "
-                         "from {:s}".format(ccd.header['GSP_FNAM']))
-        raise NoTargetException
-    else:
-        log_spec.error('Got wrong input')
-
-
 def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
     """Find the trace of a spectrum
 
@@ -2402,7 +2244,7 @@ def trace(ccd, model, trace_model, fitter, sampling_step, nsigmas=2):
     return fitted_trace
 
 
-def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
+def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, plots=False):
     """Find the trace of the target's spectrum on the image
 
     This function defines a low order polynomial that trace the location of the
@@ -2419,8 +2261,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
 
     Args:
         ccd (object): Instance of ccdproc.CCDData
-        profile (object): Instance of astropy.modeling.Model, contains the
-            spatial profile of the 2D spectrum.
+        target_list (list): List of single target profiles.
         sampling_step (int): Frequency of sampling in pixels
         pol_deg (int): Polynomial degree for fitting the trace
         plots (bool): If True will show plots (debugging)
@@ -2433,7 +2274,7 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
 
     # added two assert for debugging purposes
     assert isinstance(ccd, CCDData)
-    assert isinstance(profile, Model)
+    assert all([isinstance(profile, Model) for profile in target_list])
 
     # Initialize model fitter
     model_fitter = fitting.LevMarLSQFitter()
@@ -2443,54 +2284,30 @@ def trace_targets(ccd, profile, sampling_step=5, pol_deg=2, plots=True):
 
     # List that will contain all the Model instances corresponding to traced
     # targets
-    all_traces = None
+    all_traces = []
 
-    if 'CompoundModel' in profile.__class__.name:
-        log_spec.debug(profile.__class__.name)
-        # TODO (simon): evaluate if targets are too close together.
-
-        stddev_keys = [key for key in profile._param_names if 'stddev' in key]
-
-        mean_keys = [key for key in profile._param_names if 'mean' in key]
-
-        stddev_values = [
-            profile.__getattribute__(key).value for key in stddev_keys]
-
-        mean_values = [
-            profile.__getattribute__(key).value for key in mean_keys]
-
-        # if len(mean_values) == 1:
-        #     nsigmas = 20
-        # else:
-        #     # get maximum width
-        #     for i in range(len(mean_values)-1):
-
-
-        for m in range(len(profile.submodel_names)):
-            submodel_name = profile.submodel_names[m]
-
-            model = profile[submodel_name]
-
-            single_trace = trace(ccd=ccd,
-                                 model=model,
-                                 trace_model=trace_model,
-                                 fitter=model_fitter,
-                                 sampling_step=sampling_step)
-
-            if all_traces is None:
-                all_traces = [single_trace]
-            else:
-                all_traces.append(single_trace)
-
-        return all_traces
-    else:
+    for profile in target_list:
         single_trace = trace(ccd=ccd,
                              model=profile,
                              trace_model=trace_model,
                              fitter=model_fitter,
                              sampling_step=sampling_step,
                              nsigmas=10)
-        return [single_trace]
+        if 0 < single_trace.c0.value < ccd.shape[0]:
+            log_spec.debug('Adding trace to list')
+            all_traces.append([single_trace, profile])
+        else:
+            print(single_trace.c0, ccd.shape[0])
+            log_spec.error('Trace is out of boundaries. Center: '
+                           '{:.4f}'.format(single_trace.c0.value))
+        # print(single_trace)
+    if plots:
+        plt.title('Traces')
+        plt.imshow(ccd.data)
+        for strace, prof in all_traces:
+            plt.plot(strace(range(ccd.data.shape[1])), color='r')
+        plt.show()
+    return all_traces
 
 
 def write_fits(ccd, full_path, combined=False, parent_file=None, overwrite=True):
