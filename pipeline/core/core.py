@@ -2364,6 +2364,9 @@ class NightDataContainer(object):
         self.full_path = path
         self.instrument = instrument
         self.technique = technique
+        self.gain = None
+        self.rdnoise = None
+        self.roi = None
         self.is_empty = True
 
         """For imaging use"""
@@ -2396,6 +2399,30 @@ class NightDataContainer(object):
         self.evening_twilight = None
         self.morning_twilight = None
 
+    def __repr__(self):
+        if self.is_empty:
+            return str("Empty Data Container")
+        else:
+
+            class_info = str("{:s}\n"
+                               "Full Path: {:s}\n"
+                               "Instrument: {:s}\n"
+                               "Technique: {:s}".format(self.__class__,
+                                                        self.full_path,
+                                                        self.instrument,
+                                                        self.technique,))
+
+            if all([self.gain, self.rdnoise, self.roi]):
+                class_info += str("\nGain: {:.2f}\n"
+                                    "Readout Noise: {:.2f}\n"
+                                    "ROI: {:s}".format(
+                                        self.gain,
+                                        self.rdnoise,
+                                        self.roi))
+            class_info += str("\nIs Empty: {:s}".format(str(self.is_empty)))
+
+            return class_info
+
     def add_bias(self, bias_group):
         """Adds a bias group
 
@@ -2409,7 +2436,7 @@ class NightDataContainer(object):
             if self.technique == 'Imaging':
 
                 log_ccd.error('Imaging mode needs BIAS to work properly. '
-                          'Go find some.')
+                              'Go find some.')
 
             else:
                 log_ccd.warning('BIAS are needed for optimal results.')
@@ -2527,11 +2554,16 @@ class NightDataContainer(object):
         self.evening_twilight = evening
         self.morning_twilight = morning
 
-    def reset(self):
-        """Resets the class as it was first initialized"""
-        self.__init__(path=self.full_path,
-                      instrument=self.instrument,
-                      technique=self.technique)
+    def set_readout(self, gain, rdnoise, roi):
+        self.gain = gain
+        self.rdnoise = rdnoise
+        self.roi = roi
+
+    # def reset(self):
+    #     """Resets the class as it was first initialized"""
+    #     self.__init__(path=self.full_path,
+    #                   instrument=self.instrument,
+    #                   technique=self.technique)
 
 
 class NoMatchFound(Exception):

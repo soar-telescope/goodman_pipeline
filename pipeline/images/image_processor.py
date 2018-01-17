@@ -776,7 +776,7 @@ class ImageProcessor(object):
                     dcr_par=self.args.dcr_par_dir,
                     keep_files=self.args.keep_cosmic_files,
                     method=self.args.clean_cosmic,
-                    save=True)
+                    save=not self.args.combine)
 
                 self.out_prefix = prefix
 
@@ -793,7 +793,7 @@ class ImageProcessor(object):
                 else:
                     self.log.warning("Cosmic ray rejection returned a None.")
 
-            if len(all_object_image) > 1:
+            if self.args.combine and len(all_object_image) > 1:
                 print(len(all_object_image))
                 self.log.info("Combining {:d} OBJECT images"
                               "".format(len(all_object_image)))
@@ -815,7 +815,7 @@ class ImageProcessor(object):
             else:
                 self.log.error("No OBJECT image to write")
 
-            if len(all_comp_image) > 1:
+            if self.args.combine and len(all_comp_image) > 1:
                 self.log.info("Combining {:d} COMP images"
                               "".format(len(all_comp_image)))
                 comp_group = object_comp_group[

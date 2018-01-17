@@ -66,6 +66,11 @@ def get_args(arguments=None):
                              "'dcr', 'lacosmic' or 'none'. Default is 'dcr'. "
                              "See manual for full description of dcr.")
 
+    parser.add_argument('--combine',
+                        action='store_true',
+                        dest='combine',
+                        help="Combine compatible data")
+
     parser.add_argument('--dcr-par-dir',
                         action='store',
                         default='data/params',
@@ -322,14 +327,17 @@ class MainApp(object):
                 self.log.debug('Calling night_organizer instance')
                 data_container_list = night_organizer()
                 for self.data_container in data_container_list:
-                    if self.data_container is None:
-                        self.log.error('Discarding night ' + str(night))
-                        break
+                    print(self.data_container)
+                    if self.data_container is None or self.data_container.is_empty:
+                        self.log.error('Discarding night {:s} '
+                                       '(or part of it)'.format(str(night)))
+                    else:
+                        process_images = ImageProcessor(
+                            args=self.args,
+                            data_container=self.data_container)
+                        process_images()
 
-                    process_images = ImageProcessor(
-                        args=self.args,
-                        data_container=self.data_container)
-                    process_images()
+
 
 
 if __name__ == '__main__':

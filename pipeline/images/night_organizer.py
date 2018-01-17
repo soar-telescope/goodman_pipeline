@@ -122,16 +122,27 @@ class NightOrganizer(object):
         data_container_list = []
         for i in readout_configurations.index:
             if not self.data_container.is_empty:
-                print("Reset data container")
-                self.data_container.reset()
+                self.log.debug("Reset data container")
+                self.data_container = NightDataContainer(
+                    path=self.path,
+                    instrument=self.instrument,
+                    technique=self.technique)
+
+            self.data_container.set_readout(
+                gain=readout_configurations.iloc[i]['gain'],
+                rdnoise=readout_configurations.iloc[i]['rdnoise'],
+                roi=readout_configurations.iloc[i]['roi'])
+
+            # print(self.data_container)
 
             sub_collection = self.file_collection[
                 ((self.file_collection['gain'] ==
-                  self.file_collection.iloc[i]['gain']) &
+                  readout_configurations.iloc[i]['gain']) &
                  (self.file_collection['rdnoise'] ==
-                  self.file_collection.iloc[i]['rdnoise']) &
+                  readout_configurations.iloc[i]['rdnoise']) &
                  (self.file_collection['roi'] ==
-                  self.file_collection.iloc[i]['roi']))]
+                  readout_configurations.iloc[i]['roi']))]
+            print(sub_collection)
 
             self.all_datatypes = sub_collection.obstype.unique()
             if self.technique == 'Spectroscopy':
@@ -150,6 +161,7 @@ class NightOrganizer(object):
 
         # Warn the user in case the list of data_container element is empty or
         # all the elements are None
+        # print(data_container_list)
         if len(data_container_list) == 0 or not all(data_container_list):
             self.log.warning("It is possible that there is no valid data.")
 
@@ -193,7 +205,8 @@ class NightOrganizer(object):
             if len(bias_collection) == 0:
                 self.log.critical('There is no BIAS images. Use --ignore-bias'
                                   'to continue without BIAS.')
-                sys.exit('CRITICAL ERROR: BIAS not Found.')
+                # sys.exit('CRITICAL ERROR: BIAS not Found.')
+                return False
             else:
                 bias_conf = bias_collection.groupby(
                     ['gain',
