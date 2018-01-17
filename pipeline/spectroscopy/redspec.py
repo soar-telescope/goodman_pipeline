@@ -26,7 +26,10 @@ import warnings
 
 
 warnings.filterwarnings('ignore')
-FORMAT = '%(levelname)s: %(asctime)s:%(module)s.%(funcName)s: %(message)s'
+if '--debug' in sys.argv:
+    FORMAT = '%(levelname)s: %(asctime)s:%(module)s.%(funcName)s: %(message)s'
+else:
+    FORMAT = '%(levelname)s: %(asctime)s: %(message)s'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_spec.log'
 
@@ -88,11 +91,11 @@ def get_args(arguments=None):
 
     parser.add_argument('--extraction',
                         action='store',
-                        default='simple',
+                        default='fractional',
                         type=str,
                         metavar='<Extraction Type>',
                         dest='extraction_type',
-                        choices=['simple', 'optimal'],
+                        choices=['fractional', 'optimal'],
                         help='Choose a which extraction to perform. Simple is a'
                              'sum across the spatial direction after the '
                              'background has been removed. Optimal is a more '
@@ -168,7 +171,7 @@ def get_args(arguments=None):
     # print(sys.modules['goodman.pipeline'].__file__)
 
     ref_full_path = os.path.join(
-        os.path.dirname(sys.modules['goodman.pipeline'].__file__),
+        os.path.dirname(sys.modules['pipeline'].__file__),
         args.reference_dir)
     if not os.path.isdir(ref_full_path):
         log.info("Reference files directory doesn't exist.")

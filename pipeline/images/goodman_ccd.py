@@ -20,7 +20,10 @@ matplotlib.use('Qt5Agg')
 # __maintainer__ = "Simon Torres"
 # __email__ = "storres@ctio.noao.edu"
 
-FORMAT = '%(levelname)s: %(asctime)s: %(module)s.%(funcName)s: %(message)s'
+if '--debug' in sys.argv:
+    FORMAT = '%(levelname)s: %(asctime)s:%(module)s.%(funcName)s: %(message)s'
+else:
+    FORMAT = '%(levelname)s: %(asctime)s: %(message)s'
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_ccd.log'

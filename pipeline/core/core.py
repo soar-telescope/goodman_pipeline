@@ -307,14 +307,18 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
     """Combine a list of CCDData instances.
 
     Args:
-        image_list:
-        dest_path:
-        prefix:
-        output_name:
-        method:
-        save:
+        image_list (list): Each element should an instance of CCDData
+        dest_path (str): Path to where the new image should saved
+        prefix (str): Prefix to add to the image file name
+        output_name (str): Alternatively a file name can be parsed, this will
+          ignore `prefix`.
+        method (str): Method for doing the combination, this goes straight to
+          the call of `ccdproc.combine` function
+        save (bool): If True will save the combined images. If False it will
+        ignore `prefix` or `output_name`.
 
     Returns:
+        A combined image as a CCDData object.
 
     """
     assert len(image_list) > 1
@@ -372,7 +376,7 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
                                   value=image_name,
                                   comment='Image used to create combined')
 
-    if save or True:
+    if save:
         write_fits(combined_image,
                    full_path=combined_full_path,
                    combined=True)
@@ -670,72 +674,13 @@ def extract(ccd,
     # print(np.ma.isMaskedArray(nccd.data))
     np.ma.set_fill_value(nccd.data, 0)
 
-    # if extraction == 'simple':
-        #
-        #
-        # # print(indexes)
-        # if plots:
-        #     indexes = np.argwhere(cr_mask == 0)
-        #     fig = plt.figure(1)
-        #     ax1 = fig.add_subplot(111)
-        #     for index in indexes:
-        #         x, y = index
-        #         ax1.plot(y, x, marker='o', color='r')
-        #
-        #     ax1.imshow(nccd.data, interpolation='none')
-        #     if plt.isinteractive():
-        #         plt.draw()
-        #         plt.pause(1)
-        #     else:
-        #         plt.show()
-        #
-        # # print(np.ma.isMaskedArray(nccd.data))
-        # # spectrum zone limit
-        # low_lim, high_lim = zone
-        # spectrum_masked = nccd.data * cr_mask
-        # # plt.imshow(spectrum_masked, clim=(10, 70))
-        # # plt.show()
-        # # TODO (simon): Add fractional pixel
-        # spectrum_sum = np.ma.sum(spectrum_masked[low_lim:high_lim, :], axis=0)
-        #
-        # background_sum = np.abs(high_lim - low_lim) * background_level
-        #
-        # nccd.data = spectrum_sum - background_sum
-        #
-        # nccd.header['APNUM1'] = apnum1
-        #
-        # if plots:
-        #     fig = plt.figure()
-        #     fig.canvas.set_window_title('Simple Extraction')
-        #     # ax = fig.add_subplot(111)
-        #     manager = plt.get_current_fig_manager()
-        #     if plt.get_backend() == u'GTK3Agg':
-        #         manager.window.maximize()
-        #     elif plt.get_backend() == u'Qt5Agg':
-        #         manager.window.showMaximized()
-        #
-        #     plt.title(nccd.header['OBJECT'])
-        #     plt.xlabel('Dispersion Axis (Pixels)')
-        #     plt.ylabel('Intensity (Counts)')
-        #     # plt.plot(simple_sum, label='Simple Sum', color='k', alpha=0.5)
-        #     plt.plot(nccd.data, color='k',
-        #              label='Simple Extracted')
-        #     plt.plot(background_sum, color='r', label='Background')
-        #     plt.plot(spectrum_sum, color='b', label='Spectrum Raw Sum')
-        #     plt.xlim((0, len(nccd.data)))
-        #     plt.legend(loc='best')
-        #     if plt.isinteractive():
-        #         plt.draw()
-        #         plt.pause(1)
-        #     else:
-        #         plt.show()
-
     if extraction == 'fractional':
         extracted, background = extract_fractional_pixel(
             ccd=ccd,
             target_trace=trace,
             target_stddev=spatial_profile.stddev.value,
             extraction_width=2)
+        return extracted
 
     elif extraction == 'optimal':
         raise NotImplementedError
@@ -757,6 +702,7 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     """
     assert isinstance(ccd, CCDData)
     assert isinstance(target_trace, Model)
+    log_spec.warning("Fractional Pixel Extraction")
 
     spat_length, disp_length = ccd.data.shape
 
@@ -831,6 +777,7 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
 
     new_ccd = ccd.copy()
     new_ccd.data = np.asarray(extracted_spectrum)
+    print(new_ccd.data.shape)
     return new_ccd, np.asarray(background_list)
 
 
@@ -2556,7 +2503,7 @@ def write_fits(ccd, full_path, combined=False, parent_file=None, overwrite=True)
                        value=os.path.basename(full_path))
 
         ccd.header.set('GSP_PNAM',
-                   value='combined')
+                       value='combined')
 
     # Parent File Name
     if not combined and parent_file is not None:

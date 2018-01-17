@@ -330,17 +330,6 @@ class ImageProcessor(object):
                 bias_file_list[n],
                 'Image used to create master bias')
 
-        # add name of master_bias to GSP_FNAM
-        # self.master_bias.header['GSP_ONAM'] = (
-        #     os.path.basename(self.master_bias_name),
-        #     'Original File Name')
-
-        # # add observing technique to GSP_TECH
-        # self.master_bias.header['GSP_TECH'] = (self.technique,
-        #                                        'Observing technique')
-
-        # write master bias to file
-        # self.master_bias.write(self.master_bias_name, clobber=True)
         write_fits(ccd=self.master_bias,
                    full_path=self.master_bias_name,
                    combined=True)
@@ -425,11 +414,6 @@ class ImageProcessor(object):
                 self.log.warning('Removing saturated image {:s}. '
                                  'Use --saturation to change saturation '
                                  'level'.format(flat_file))
-                # import numpy as np
-                # maximum_flat = np.max(ccd.data, axis=0)
-                # plt.plot(maximum_flat)
-                # plt.show()
-                # print(ccd.data.max())
                 continue
             else:
                 cleaned_flat_list.append(flat_file)
@@ -837,9 +821,9 @@ class ImageProcessor(object):
                 comp_group = object_comp_group[
                     object_comp_group.obstype == "COMP"]
                 comp_combined = combine_data(all_comp_image,
-                                                  dest_path=self.args.red_path,
-                                                  prefix=self.out_prefix,
-                                                  save=True)
+                                             dest_path=self.args.red_path,
+                                             prefix=self.out_prefix,
+                                             save=True)
 
         elif 'FLAT' in obstype:
             self.queue.append(science_group)
