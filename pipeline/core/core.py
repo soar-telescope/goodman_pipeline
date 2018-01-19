@@ -501,6 +501,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     # command = 'dcr {:s} {:s} {:s}'.format(in_file,
     #                                       out_file,
     #                                       cosmic_file)
+    # print(command)
 
     log_ccd.debug('DCR command:')
     log_ccd.debug(command)
@@ -565,12 +566,16 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
             sys.exit('Your system can not locate the executable file dcr, try '
                      'moving it to /bin or create a symbolic link\n\n\tcd '
                      '/bin\n\tsudo ln -s /full/path/to/dcr')
+    elif b'ERROR' in stdout:
+        for output_line in stdout.split(b'\n'):
+            log_ccd.error(output_line.decode("utf-8"))
     else:
         for output_line in stdout.split(b'\n'):
             log_ccd.debug(output_line)
 
     # delete extra files only if the execution ended without error
-    if delete and stderr == b'' and b'USAGE:' not in stdout:
+    if delete and stderr == b'' and b'USAGE:' not in stdout \
+            and b'ERROR! calc_submean() failed' not in stdout:
         try:
             log_ccd.warning('Removing input file: {:s}'.format(full_path_in))
             os.unlink(full_path_in)
@@ -1244,18 +1249,28 @@ def get_slit_trim_section(master_flat):
     # image on each side
     offset = 10
 
-    # this defines a preliminary set of slit limit
-    l_lim = fitted_box.x_0.value - fitted_box.width.value / 2. + offset
-
-    h_lim = fitted_box.x_0.value + fitted_box.width.value / 2. - offset
-
+    if fitted_box.width.value < x:
+        log_ccd.debug("Slit detected. Adding a 10 pixels offset")
+    else:
+        log_ccd.debug("Slit limits not detected. Setting additional "
+                      "offset to 0")
+        offset = 0
     # Here we force the slit limits within the boundaries of the data (image)
-    low_lim = int(np.max([0 + offset, l_lim]))
+    # this defines a preliminary set of slit limit
+    l_lim = fitted_box.x_0.value - 0.5 * fitted_box.width.value + offset
+
+    h_lim = fitted_box.x_0.value + 0.5 * fitted_box.width.value - offset
+
+    low_lim = int(np.max([1 + offset, l_lim]))
 
     high_lim = int(np.min([h_lim, len(ccd_section_median) - offset]))
 
-    # define the slit trim section as (IRA
-    slit_trim_section = '[:,{:d}:{:d}]'.format(low_lim, high_lim)
+    # define the slit trim section as (IRAF)
+    # convert o 1-based
+    slit_trim_section = '[1:{:d},{:d}:{:d}]'.format(y,
+                                                    low_lim,
+                                                    high_lim)
+    # print(slit_trim_section)
 
     # debugging plots that have to be manually turned on
     if False:
@@ -1266,9 +1281,10 @@ def get_slit_trim_section(master_flat):
         plt.plot(fitted_box(spatial_axis), color='k', label='Fitted Box1D')
         plt.plot(ccd_section_median, label='Median Along Disp.')
         # plt.plot(pseudo_derivative, color='g', label='Pseudo Derivative')
-        plt.axvline(None, color='r', label='Detected Edges')
-        plt.axvline(low_lim, color='r')
-        plt.axvline(high_lim, color='r')
+        # plt.axvline(None, color='r', label='Detected Edges')
+        # -1 to make it zero-based.
+        plt.axvline(low_lim - 1, color='r', label='Detected Edges')
+        plt.axvline(high_lim - 1, color='r')
         # for peak in peaks:
         #     plt.axvline(peak, color='r')
         plt.legend(loc='best')
@@ -1604,13 +1620,19 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
         ccd (object): Overscan corrected ccdproc.CCDData instance
 
     """
-    log_ccd.debug('Applying overscan Correction: {:s}'.format(overscan_region))
-    ccd = ccdproc.subtract_overscan(ccd=ccd,
-                                    median=True,
-                                    fits_section=overscan_region,
-                                    add_keyword=add_keyword)
+    if overscan_region is not None:
+        log_ccd.debug(
+            'Applying overscan Correction: {:s}'.format(overscan_region))
+        ccd = ccdproc.subtract_overscan(ccd=ccd,
+                                        median=True,
+                                        fits_section=overscan_region,
+                                        add_keyword=add_keyword)
 
-    ccd.header['GSP_OVER'] = (overscan_region, 'Overscan region')
+        ccd.header['GSP_OVER'] = (overscan_region, 'Overscan region')
+    else:
+        log_ccd.debug("Overscan region is None, returning the original data.")
+        # ccd.header['GSP_OVER'] = ('none', 'Overscan region')
+
     return ccd
 
 
@@ -1633,17 +1655,22 @@ def image_trim(ccd, trim_section, trim_type, add_keyword=False):
         ccd (object): Trimmed ccdproc.CCDData instance
 
     """
-    ccd = ccdproc.trim_image(ccd=ccd,
-                             fits_section=trim_section,
-                             add_keyword=add_keyword)
-    if trim_type == 'trimsec':
-        ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
-    elif trim_type == 'slit':
-        ccd.header['GSP_SLIT'] = (trim_section,
-                                  'Slit trim section, slit illuminated '
-                                  'area only.')
+    if trim_section is not None:
+        ccd = ccdproc.trim_image(ccd=ccd,
+                                 fits_section=trim_section,
+                                 add_keyword=add_keyword)
+        if trim_type == 'trimsec':
+            ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
+        elif trim_type == 'slit':
+            ccd.header['GSP_SLIT'] = (trim_section,
+                                      'Slit trim section, slit illuminated '
+                                      'area only.')
+        else:
+            log_ccd.warning('Unrecognized trim type')
     else:
-        log_ccd.warning('Unrecognized trim type')
+        log_ccd.info("{:s} trim section is not "
+                     "defined.".format(trim_type.capitalize()))
+        log_ccd.debug("Trim section is None, returning the same data.")
 
     return ccd
 
@@ -2332,6 +2359,7 @@ def write_fits(ccd, full_path, combined=False, parent_file=None, overwrite=True)
 
     # write to file
     ccd.write(full_path, overwrite=overwrite)
+    assert os.path.isfile(full_path)
     return ccd
 
 
@@ -2405,12 +2433,13 @@ class NightDataContainer(object):
         else:
 
             class_info = str("{:s}\n"
-                               "Full Path: {:s}\n"
-                               "Instrument: {:s}\n"
-                               "Technique: {:s}".format(self.__class__,
-                                                        self.full_path,
-                                                        self.instrument,
-                                                        self.technique,))
+                             "Full Path: {:s}\n"
+                             "Instrument: {:s}\n"
+                             "Technique: {:s}".format(str(self.__class__),
+                                                      self.full_path,
+                                                      self.instrument,
+                                                      self.technique))
+            print(class_info)
 
             if all([self.gain, self.rdnoise, self.roi]):
                 class_info += str("\nGain: {:.2f}\n"
