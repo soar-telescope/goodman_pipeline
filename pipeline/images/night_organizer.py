@@ -202,7 +202,7 @@ class NightOrganizer(object):
 
         if not self.ignore_bias:
             if len(bias_collection) == 0:
-                self.log.critical('There is no BIAS images. Use --ignore-bias'
+                self.log.critical('There is no BIAS images. Use --ignore-bias '
                                   'to continue without BIAS.')
                 # sys.exit('CRITICAL ERROR: BIAS not Found.')
                 return False

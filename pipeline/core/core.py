@@ -351,7 +351,7 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
 
             combined_base_name += "{:s}_".format(value)
 
-        print(combined_base_name)
+        # print(combined_base_name)
 
         number = len(glob.glob(
             os.path.join(dest_path,

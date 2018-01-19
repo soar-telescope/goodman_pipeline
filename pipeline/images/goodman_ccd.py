@@ -327,7 +327,7 @@ class MainApp(object):
                 self.log.debug('Calling night_organizer instance')
                 data_container_list = night_organizer()
                 for self.data_container in data_container_list:
-                    print(self.data_container)
+                    # print(self.data_container)
                     if self.data_container is None or self.data_container.is_empty:
                         self.log.error('Discarding night {:s} '
                                        '(or part of it)'.format(str(night)))
