@@ -49,6 +49,9 @@ class ImageProcessor(object):
         self.args = args
         self.instrument = data_container.instrument
         self.technique = data_container.technique
+        self.gain = data_container.gain
+        self.rdnoise = data_container.rdnoise
+        self.roi = data_container.roi
         self.bias = data_container.bias
         self.day_flats = data_container.day_flats
         self.dome_flats = data_container.dome_flats
@@ -60,8 +63,18 @@ class ImageProcessor(object):
         self.evening_twilight = data_container.evening_twilight
         self.pixel_scale = 0.15 * u.arcsec
         self.queue = None
-        self.trim_section = self.define_trim_section(technique=self.technique)
-        self.overscan_region = self.get_overscan_region()
+        if self.roi is not None and self.roi in ['Spectroscopic 1x1',
+                                                 'Spectroscopic 2x2',
+                                                 'Spectroscopic 3x3']:
+            self.trim_section = self.define_trim_section(
+                technique=self.technique)
+            self.overscan_region = self.get_overscan_region()
+        else:
+            self.log.warning("ROI {:s} does not have a well "
+                             "defined trim section neither an "
+                             "overscan region.".format(self.roi))
+            self.trim_section = None
+            self.overscan_region = None
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
         self.master_bias_name = None
@@ -147,6 +160,7 @@ class ImageProcessor(object):
 
                 # serial binning - dispersion binning
                 # parallel binngin - spatial binning
+                spatial_length, dispersion_length = ccd.data.shape
                 serial_binning, \
                     parallel_binning = [int(x) for x
                                         in ccd.header['CCDSUM'].split()]
@@ -168,7 +182,10 @@ class ImageProcessor(object):
                     # t = int(1896 / parallel_binning)
                     # TODO (simon): Need testing
                     # trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
-                    trim_section = '[{:d}:{:d},:]'.format(l, r)
+                    trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l,
+                                                                  r,
+                                                                  1,
+                                                                  spatial_length)
 
                 elif technique == 'Imaging':
                     trim_section = ccd.header['TRIMSEC']
@@ -199,8 +216,8 @@ class ImageProcessor(object):
             point of the overscan region.
 
         """
-        self.log.warning('Determining Overscan Region. Assuming you have only '
-                         'one kind of binning in the data.')
+        # self.log.warning('Determining Overscan Region. Assuming you have only '
+        #                  'one kind of binning in the data.')
         for group in [self.bias,
                       self.day_flats,
                       self.dome_flats,
@@ -215,7 +232,7 @@ class ImageProcessor(object):
                 ccd = CCDData.read(sample_image, unit=u.adu)
 
                 # Image height - spatial direction
-                h = ccd.data.shape[0]
+                spatial_length, dispersion_length = ccd.data.shape
 
                 # Image width - spectral direction
                 # w = ccd.data.shape[1]
@@ -248,7 +265,7 @@ class ImageProcessor(object):
                         # bottom
                         b = 1
                         # top
-                        t = h
+                        t = spatial_length
                     elif self.instrument == 'Blue':
                         # 16 is the length of the overscan region with no
                         # binning.
@@ -260,7 +277,7 @@ class ImageProcessor(object):
                         # bottom
                         b = 1
                         # top
-                        t = h
+                        t = spatial_length
 
                     overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
 
@@ -308,7 +325,7 @@ class ImageProcessor(object):
             self.log.debug('Loading bias image: ' + image_full_path)
             if self.technique == 'Spectroscopy':
                 self.log.debug(
-                    'Overscan Region: {:s}'.format(self.overscan_region))
+                    'Overscan Region: {:s}'.format(str(self.overscan_region)))
                 ccd = image_overscan(ccd=ccd,
                                      overscan_region=self.overscan_region)
             ccd = image_trim(ccd,
@@ -776,7 +793,7 @@ class ImageProcessor(object):
                     dcr_par=self.args.dcr_par_dir,
                     keep_files=self.args.keep_cosmic_files,
                     method=self.args.clean_cosmic,
-                    save=not self.args.combine)
+                    save=True)
 
                 self.out_prefix = prefix
 

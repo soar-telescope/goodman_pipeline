@@ -142,7 +142,6 @@ class NightOrganizer(object):
                   readout_configurations.iloc[i]['rdnoise']) &
                  (self.file_collection['roi'] ==
                   readout_configurations.iloc[i]['roi']))]
-            print(sub_collection)
 
             self.all_datatypes = sub_collection.obstype.unique()
             if self.technique == 'Spectroscopy':
