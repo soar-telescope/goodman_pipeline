@@ -12,6 +12,7 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib
 import pandas
+import scipy
 import shutil
 import subprocess
 
@@ -359,7 +360,7 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
 
         combined_full_path = os.path.join(
             dest_path,
-            combined_base_name + "_{:04d}.fits".format(number + 1))
+            combined_base_name + "{:02d}.fits".format(number + 1))
 
     # combine image
     combined_image = ccdproc.combine(image_list,
@@ -713,6 +714,8 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     disp_axis = range(disp_length)
     trace = target_trace(disp_axis)
 
+    apnum1 = None # '{:d} {:d} {:d} {:d}'.format(1, 1, 1, 1)
+
     extracted_spectrum = []
     background_list = []
     for i in disp_axis:
@@ -720,6 +723,13 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
         # this defines the extraction limit for every column
         low_limit = trace[i] - 0.5 * extraction_width * target_stddev
         high_limit = trace[i] + 0.5 * extraction_width * target_stddev
+
+        if apnum1 is None:
+            # TODO (simon): add secondary targets
+            apnum1 = '{:d} {:d} {:.2f} {:.2f}'.format(1, 1, low_limit, high_limit)
+            ccd.header.set('APNUM1',
+                           value=apnum1,
+                           comment="Aperture in first column")
 
         column_sum = fractional_sum(data=ccd.data,
                                     index=i,
@@ -1675,6 +1685,37 @@ def image_trim(ccd, trim_section, trim_type, add_keyword=False):
     return ccd
 
 
+def interpolate(spectrum, interpolation_size):
+    """Creates an interpolated version of the input spectrum
+
+    This method creates an interpolated version of the input array, it is
+    used mainly for a spectrum but it can also be used with any
+    unidimensional array, assuming you are happy with the interpolation_size
+    attribute defined for this class. The reason for doing interpolation is
+    that it allows to find the lines and its respective center more
+    precisely. The default interpolation size is 200 (two hundred) points.
+
+    Args:
+        spectrum (array): an uncalibrated spectrum or any unidimensional
+            array.
+
+    Returns:
+        Two dimensional array containing x-axis and interpolated array.
+            The x-axis preserves original pixel values.
+
+    """
+    x_axis = range(spectrum.size)
+    first_x = x_axis[0]
+    last_x = x_axis[-1]
+
+    new_x_axis = np.linspace(first_x,
+                             last_x,
+                             spectrum.size * interpolation_size)
+
+    tck = scipy.interpolate.splrep(x_axis, spectrum, s=0)
+    new_spectrum = scipy.interpolate.splev(new_x_axis, tck, der=0)
+    return [new_x_axis, new_spectrum]
+
 def lacosmic_cosmicray_rejection(ccd, mask_only=False):
     """Do cosmic ray rejection using ccdproc.LACosmic
 
@@ -2338,6 +2379,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, plots=False):
 
 
 def write_fits(ccd, full_path, combined=False, parent_file=None, overwrite=True):
+    assert isinstance(ccd, CCDData)
     assert os.path.isdir(os.path.dirname(full_path))
 
     # Original File Name

@@ -35,6 +35,9 @@ class WCS(object):
         self.wcs_dict = dict()
         self.wavelength_and_intensity = []
 
+    def __call__(self, *args, **kwargs):
+        self.log.error("Please use the method read(), fit() or get_model().")
+
     def fit(self, physical, wavelength, model_name='chebyshev', degree=3):
         self.model_name = model_name
         self.degree = degree

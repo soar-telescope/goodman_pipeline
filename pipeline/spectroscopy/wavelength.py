@@ -167,6 +167,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
                             spatial_profile=single_profile,
                             extraction=extraction_type,
                             plots=SHOW_PLOTS)
+                        print(spec_file)
 
                         # lamp extraction
                         all_lamps = []
@@ -882,37 +883,6 @@ class WavelengthCalibration(object):
                                     'pix1': pixel_one,
                                     'pix2': pixel_two}
         return spectral_characteristics
-
-    def interpolate(self, spectrum):
-        """Creates an interpolated version of the input spectrum
-
-        This method creates an interpolated version of the input array, it is
-        used mainly for a spectrum but it can also be used with any
-        unidimensional array, assuming you are happy with the interpolation_size
-        attribute defined for this class. The reason for doing interpolation is
-        that it allows to find the lines and its respective center more
-        precisely. The default interpolation size is 200 (two hundred) points.
-
-        Args:
-            spectrum (array): an uncalibrated spectrum or any unidimensional
-                array.
-
-        Returns:
-            Two dimensional array containing x-axis and interpolated array.
-                The x-axis preserves original pixel values.
-
-        """
-        x_axis = range(spectrum.size)
-        first_x = x_axis[0]
-        last_x = x_axis[-1]
-
-        new_x_axis = np.linspace(first_x,
-                                 last_x,
-                                 spectrum.size * self.interpolation_size)
-
-        tck = scipy.interpolate.splrep(x_axis, spectrum, s=0)
-        new_spectrum = scipy.interpolate.splev(new_x_axis, tck, der=0)
-        return [new_x_axis, new_spectrum]
 
     def recenter_line_by_data(self, data_name, x_data):
         """Finds a better center for a click-selected line
@@ -2096,15 +2066,17 @@ class WavelengthCalibration(object):
 
             clipping_sigma = 2.
             # print(differences)
-            clipped_differences = sigma_clip(differences,
-                                             sigma=clipping_sigma,
-                                             iters=5,
-                                             cenfunc=np.ma.median)
-
-            once_clipped_differences = sigma_clip(differences,
-                                                  sigma=clipping_sigma,
-                                                  iters=1,
-                                                  cenfunc=np.ma.median)
+            # clipped_differences = sigma_clip(differences,
+            #                                  sigma=clipping_sigma,
+            #                                  iters=5,
+            #                                  cenfunc=np.ma.median)
+            #
+            # once_clipped_differences = sigma_clip(differences,
+            #                                       sigma=clipping_sigma,
+            #                                       iters=1,
+            #                                       cenfunc=np.ma.median)
+            clipped_differences = differences
+            once_clipped_differences = differences
 
             npoints = len(clipped_differences)
             n_rejections = np.ma.count_masked(clipped_differences)
