@@ -1993,18 +1993,21 @@ def read_fits(full_path, technique='Unknown'):
     assert os.path.isfile(full_path)
     ccd = CCDData.read(full_path, unit=u.adu)
 
+    all_keys = [key for key in ccd.header.keys()]
+
     ccd.header.set('GSP_VERS',
                    value=__version__,
                    comment='Goodman Spectroscopic Pipeline Version')
 
-    ccd.header.set('GSP_ONAM',
-                   value=os.path.basename(full_path),
-                   comment='Original file name')
-
-    ccd.header.set('GSP_PNAM',
-                   value=os.path.basename(full_path),
-                   comment='Parent file name')
-
+    if 'GSP_ONAM' not in all_keys:
+        ccd.header.set('GSP_ONAM',
+                       value=os.path.basename(full_path),
+                       comment='Original file name')
+    if 'GSP_ONAM' not in all_keys:
+        ccd.header.set('GSP_PNAM',
+                       value=os.path.basename(full_path),
+                       comment='Parent file name')
+        
     ccd.header.set('GSP_FNAM',
                    value=os.path.basename(full_path),
                    comment='Current file name')
@@ -2013,59 +2016,72 @@ def read_fits(full_path, technique='Unknown'):
                    value=os.path.dirname(full_path),
                    comment='Location at moment of reduce')
 
-    ccd.header.set('GSP_TECH',
-                   value=technique,
-                   comment='Observing technique')
+    if 'GSP_TECH' not in all_keys:
+        ccd.header.set('GSP_TECH',
+                       value=technique,
+                       comment='Observing technique')
 
-    ccd.header.set('GSP_DATE',
-                   value=time.strftime("%Y-%m-%d"),
-                   comment='Processing date')
+    if 'GSP_DATE' not in all_keys:
+        ccd.header.set('GSP_DATE',
+                       value=time.strftime("%Y-%m-%d"),
+                       comment='Processing date')
 
-    ccd.header.set('GSP_OVER',
-                   value='none',
-                   comment='Overscan region')
+    if 'GSP_OVER' not in all_keys:
+        ccd.header.set('GSP_OVER',
+                       value='none',
+                       comment='Overscan region')
 
-    ccd.header.set('GSP_TRIM',
-                   value='none',
-                   comment='Trim section')
+    if 'GSP_TRIM' not in all_keys:
+        ccd.header.set('GSP_TRIM',
+                       value='none',
+                       comment='Trim section')
 
-    ccd.header.set('GSP_SLIT',
-                   value='none',
-                   comment='Slit trim section, slit illuminated area only')
+    if 'GSP_SLIT' not in all_keys:
+        ccd.header.set('GSP_SLIT',
+                       value='none',
+                       comment='Slit trim section, slit illuminated area only')
 
-    ccd.header.set('GSP_BIAS',
-                   value='none',
-                   comment='Master bias image')
+    if 'GSP_BIAS' not in all_keys:
+        ccd.header.set('GSP_BIAS',
+                       value='none',
+                       comment='Master bias image')
 
-    ccd.header.set('GSP_FLAT',
-                   value='none',
-                   comment='Master flat image')
+    if 'GSP_FLAT' not in all_keys:
+        ccd.header.set('GSP_FLAT',
+                       value='none',
+                       comment='Master flat image')
 
-    ccd.header.set('GSP_NORM',
-                   value='none',
-                   comment='Flat normalization method')
+    if 'GSP_NORM' not in all_keys:
+        ccd.header.set('GSP_NORM',
+                       value='none',
+                       comment='Flat normalization method')
 
-    ccd.header.set('GSP_COSM',
-                   value='none',
-                   comment='Cosmic ray rejection method')
+    if 'GSP_COSM' not in all_keys:
+        ccd.header.set('GSP_COSM',
+                       value='none',
+                       comment='Cosmic ray rejection method')
 
-    ccd.header.set('GSP_WRMS',
-                   value='none',
-                   comment='Wavelength solution RMS Error')
+    if 'GSP_WRMS' not in all_keys:
+        ccd.header.set('GSP_WRMS',
+                       value='none',
+                       comment='Wavelength solution RMS Error')
 
-    ccd.header.set('GSP_WPOI',
-                   value='none',
-                   comment='Number of points used to '
-                           'calculate wavelength solution')
+    if 'GSP_WPOI' not in all_keys:
+        ccd.header.set('GSP_WPOI',
+                       value='none',
+                       comment='Number of points used to '
+                               'calculate wavelength solution')
 
-    ccd.header.set('GSP_WREJ',
-                   value='none',
-                   comment='Number of points rejected')
+    if 'GSP_WREJ' not in all_keys:
+        ccd.header.set('GSP_WREJ',
+                       value='none',
+                       comment='Number of points rejected')
+    if '' not in all_keys:
+        ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --',
+                             before='GSP_VERS')
+        
+        ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
 
-    ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --',
-                         before='GSP_VERS')
-
-    ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
     ccd.header.set('BUNIT', after='CCDSUM')
     # ccd.header.set('', value='', comment='')
     # ccd.header.set('', value='', comment='')

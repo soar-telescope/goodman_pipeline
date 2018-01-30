@@ -589,9 +589,10 @@ class WavelengthCalibration(object):
             # lines_center = peaks
             lines_center = self.recenter_lines(no_nan_lamp_data, peaks)
 
-        if self.args.debug_mode:
+        if self.args.debug_mode or True:
+            print(new_order, slit_size, )
             fig = plt.figure(1)
-            fig.canvas.set_window_title('Lines Detected')
+            # fig.canvas.set_window_title('Lines Detected')
             plt.title('Lines detected in Lamp\n'
                       '{:s}'.format(lamp_header['OBJECT']))
             plt.xlabel('Pixel Axis')
@@ -608,7 +609,7 @@ class WavelengthCalibration(object):
             plt.axhline(_upper_limit, color='r')
 
             for line in peaks:
-                plt.axvline(line + 1, color='k', linestyle=':')
+                plt.axvline(line, color='k', linestyle=':')
 
             # plt.axhline(median + stddev, color='g')
             # for rc_line in lines_center:
@@ -725,9 +726,9 @@ class WavelengthCalibration(object):
             if max(differences) / min(differences) >= 2.:
                 if plots:
                     plt.axvspan(line - 1, line + 1, color='g', alpha=0.3)
-                new_center.append(line + 1)
+                new_center.append(line)
             else:
-                new_center.append(centroid + 1)
+                new_center.append(centroid)
         if plots:
             fig = plt.figure(1)
             fig.canvas.set_window_title('Lines Detected in Lamp')
