@@ -9,7 +9,7 @@ import logging
 import matplotlib.pyplot as plt
 import shlex
 
-from astropy.modeling import models, fitting
+from astropy.modeling import models, fitting, Model
 from ccdproc import CCDData
 
 # self.log.basicConfig(level=self.log.DEBUG)
@@ -39,6 +39,16 @@ class WCS(object):
         self.log.error("Please use the method read(), fit() or get_model().")
 
     def fit(self, physical, wavelength, model_name='chebyshev', degree=3):
+        """Fits a mathematical model
+
+        Args:
+            physical (list): List of line centers in pixel
+            wavelength (list): List of line centers in Angstroms
+            model_name (str): Name of the Mathematical model that needs to be
+              created
+            degree (int): Degree or order of the mathematical model (usually is
+              some kind of polynomial).
+        """
         self.model_name = model_name
         self.degree = degree
         self._model_constructor()
@@ -67,6 +77,38 @@ class WCS(object):
                 raise NotImplementedError("CTYPE {:s} is "
                                           "not recognized".format(ctypen))
         return self.wavelength_and_intensity
+
+    @staticmethod
+    def write_gsp_wcs(ccd, model):
+        assert isinstance(ccd, CCDData)
+        assert isinstance(model, Model)
+
+        ccd.header.set('GSP_FUNC', value=model.__class__.name,
+                       comment="Mathematical model")
+        ccd.header.set('GSP_ORDR', value=model.degree,
+                       comment="Mathematical model order")
+        ccd.header.set('GSP_NPIX', value=ccd.size,
+                       comment="Number of Pixels")
+        for i in range(model.degree + 1):
+            ccd.header.set('GSP_C{:03d}'.format(i),
+                           value=model.__getattr__('c{:d}'.format(i)).value,
+                           comment="Value of parameter c{:d}".format(i))
+        return ccd
+
+    def read_gsp_wcs(self, ccd):
+        assert isinstance(ccd, CCDData)
+        self.model_name = ccd.header['GSP_FUNC']
+        self.degree = ccd.header['GSP_ORDR']
+
+        if self.model_name == 'Chebyshev1D':
+            self.model = models.Chebyshev1D(degree=self.degree)
+            for i in range(ccd.header['GSP_ORDR'] + 1):
+                self.model.__getattr__('c{:d}'.format(i)).value = ccd.header[
+                    'GSP_C{:03d}'.format(i)]
+            self.wavelength_and_intensity = [
+                self.model(range(ccd.header['GSP_NPIX'])), ccd.data]
+
+            return self.model
 
     def _model_constructor(self):
         """Generates callable mathematical model
