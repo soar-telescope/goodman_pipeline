@@ -167,7 +167,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
                             spatial_profile=single_profile,
                             extraction=extraction_type,
                             plots=SHOW_PLOTS)
-                        print(spec_file)
+                        # print(spec_file)
 
                         # lamp extraction
                         all_lamps = []
@@ -219,7 +219,6 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
                         ccd=sci_target,
                         comp_list=comp_list,
                         object_number=None)
-                    # return wsolution_obj
 
     return True
 
@@ -432,9 +431,12 @@ class WavelengthCalibration(object):
                         eval_comment=self.evaluation_comment,
                         header=self.header)
 
-                    if self.args.plot_results or self.args.debug_mode or \
-                            self.args.save_plots:
+                    print(self.wsolution)
 
+                    if self.args.plot_results or self.args.debug_mode or \
+                             self.args.save_plots:
+
+                        plt.close(1)
                         if not self.args.debug_mode:
                             plt.ion()
                             # plt.show()
@@ -449,9 +451,9 @@ class WavelengthCalibration(object):
                         fig_title = 'Wavelength Calibrated Data : ' \
                                     '{:s}\n{:s}'.format(object_name, grating)
 
-                        fig = plt.figure()
+                        fig, ax1 = plt.subplots(1)
                         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
-                        ax1 = fig.add_subplot(111)
+                        # ax1 = fig.add_subplot(111)
                         manager = plt.get_current_fig_manager()
                         if plt.get_backend() == u'GTK3Agg':
                             manager.window.maximize()
@@ -462,6 +464,7 @@ class WavelengthCalibration(object):
                         ax1.set_xlabel('Wavelength (Angstrom)')
                         ax1.set_ylabel('Intensity (ADU)')
                         ax1.set_xlim((wavelength_axis[0], wavelength_axis[-1]))
+                        # plt.close(1)
 
                         ax1.plot(wavelength_axis,
                                  ccd.data,
@@ -469,7 +472,7 @@ class WavelengthCalibration(object):
                                  label='Data')
 
                         ax1.legend(loc='best')
-                        plt.tight_layout()
+                        fig.tight_layout()
                         if self.args.save_plots:
                             self.log.info('Saving plots')
                             plots_dir = os.path.join(self.args.destiny, 'plots')
@@ -589,10 +592,10 @@ class WavelengthCalibration(object):
             # lines_center = peaks
             lines_center = self.recenter_lines(no_nan_lamp_data, peaks)
 
-        if self.args.debug_mode or True:
+        if self.args.debug_mode:
             print(new_order, slit_size, )
-            fig = plt.figure(1)
-            # fig.canvas.set_window_title('Lines Detected')
+            fig = plt.figure(9)
+            fig.canvas.set_window_title('Lines Detected')
             plt.title('Lines detected in Lamp\n'
                       '{:s}'.format(lamp_header['OBJECT']))
             plt.xlabel('Pixel Axis')
@@ -730,7 +733,7 @@ class WavelengthCalibration(object):
             else:
                 new_center.append(centroid)
         if plots:
-            fig = plt.figure(1)
+            fig = plt.figure(9)
             fig.canvas.set_window_title('Lines Detected in Lamp')
             plt.axhline(median, color='b')
 
@@ -2306,7 +2309,7 @@ class WavelengthCalibration(object):
                          alpha=0.5,
                          label='Smoothed Linearized Data')
 
-                plt.tight_layout()
+                fig6.tight_layout()
                 plt.legend(loc=3)
                 plt.show()
 
@@ -2316,7 +2319,7 @@ class WavelengthCalibration(object):
                 fig7.canvas.set_window_title('Wavelength Solution')
                 plt.plot(x_axis, color='b', label='Non linear wavelength-axis')
                 plt.plot(new_x_axis, color='r', label='Linear wavelength-axis')
-                plt.tight_layout()
+                fig7.tight_layout()
                 plt.legend(loc=3)
                 plt.show()
 
@@ -2421,7 +2424,7 @@ class WavelengthCalibration(object):
 
         ccd = CCDData(data=spectrum[1], header=new_header, unit=u.adu)
         ccd.write(new_filename, clobber=True)
-        print(ccd.header['GSP_FNAM'])
+        # print(ccd.header['GSP_FNAM'])
 
         # fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
         self.log.info('Created new file: {:s}'.format(new_filename))
