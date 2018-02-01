@@ -5,11 +5,39 @@ import re
 import matplotlib.pyplot as plt
 import time
 from threading import Thread
+import sys
+
+"""Tool to record angstrom values for lines already recorded in pixels.
+
+Usage:
+  >>> ./line_matcher.py ll_*.fits
+  
+  A plot will show up. Clicking on the plot will trigger a function (which runs
+  as a separated thread). Then you should go to the terminal an enter the
+  corresponding Angstrom value for the line requested. For all the lines.
+  
+Notes:
+  1. You can only enter values that can be converted to float.
+  2. If you run the tool again on the same image will update the values.
+  
+
+"""
 
 
 class LineMatcher(object):
 
     def __init__(self, search_pattern='ll_*fits'):
+        """Tool created to record Angstrom values to matching pixel values
+
+        Detected emission lines are recorded in the header of comparison lamps
+        Also there is a placeholder for recording angstrom values.
+
+        This tool shows a plot of the comparison lamp with the line values and
+        ask you what are the angstrom values for each line recorded.
+
+        :param search_pattern: Pattern search for `glob.glob()` to filter data
+        :type search_pattern: str
+        """
         self.file_list = glob.glob(search_pattern)
         self.fig = None
         self.ax = None
@@ -19,6 +47,7 @@ class LineMatcher(object):
         self.lock_identify = False
 
     def __call__(self):
+        """Run the tool for all the images matching `search_pattern`"""
         for fits_file in self.file_list:
             print(fits_file)
             self.ccd = CCDData.read(fits_file, unit=u.adu)
@@ -26,6 +55,17 @@ class LineMatcher(object):
             self.ccd.write(fits_file, overwrite=True)
 
     def identify_matching_line(self):
+        """Interactive recording lines
+
+        This function runs in an independent thread and is triggered by a click
+        event on the plot.
+
+        There is a very rudimentary locking system defined by a boolean
+        `self.lock_identify`. This lock is activated at the beginning and
+        deactivated at the end of the execution of this function.
+
+        :return:
+        """
         self.lock_identify = True
         line_key_list = self.ccd.header[r'GSP_P*']
         for key in line_key_list:
@@ -52,40 +92,53 @@ class LineMatcher(object):
         plt.close('all')
 
     def _print_header(self):
+        """Prints keywords and values for a header, without the comments"""
         for key in self.ccd.header.keys():
             print("{:8s} = {:s}".format(key, str(self.ccd.header[key])))
 
     def _on_click(self, event):
+        """Creates the thread for the line matching routine.
+
+        The thread will run `self.identify_matching_lines` which in turn will
+        activate the `self.lock_identify` lock. Therefore it can't create
+        thread for an image already in process.
+
+        :param event:
+        :return:
+        """
         if not self.lock_identify:
             print("Threading")
             thread = Thread(target=self.identify_matching_line)
             thread.start()
 
-
     def _key_pressed(self, event):
+        """Closes all plots when the `enter` key is pressed"""
         if event.key == 'enter':
             plt.close('all')
 
-    def _add_arrow(self, x_loc, y_loc, value):
-        if self.arrow is not None:
-            try:
-                self.arrow.remove()
-                self.ax.relim()
-            except:
-                pass
-        bbox_props = dict(boxstyle="rarrow,pad=0.3", fc="cyan", ec="b", lw=2)
-        # self.arrow = self.ax.text(x_loc, y_loc, value,
-        #                           ha="center",
-        #                           va="center",
-        #                           rotation=45,
-        #                           size=15,
-        #                           bbox=bbox_props)
-        self.arrow, = self.ax.plot(x_loc, y_loc, ha='top', va='top', linestyle='None', marker='o', color='r')
-        # plt.draw()
-        print("drawing")
-        self.fig.canvas.draw()
+    # def _add_arrow(self, x_loc, y_loc, value):
+    #     if self.arrow is not None:
+    #         try:
+    #             self.arrow.remove()
+    #             self.ax.relim()
+    #         except:
+    #             pass
+    #
+    #     self.arrow, = self.ax.plot(x_loc, y_loc,
+    #                                ha='top',
+    #                                va='top',
+    #                                linestyle='None',
+    #                                marker='o',
+    #                                color='r')
+    #     # plt.draw()
+    #     print("drawing")
+    #     self.fig.canvas.draw()
 
     def _create_plot(self):
+        """Creates reference plot of lamp and all registered lines.
+
+        :return:
+        """
         if self.fig is not None:
             self.ax.cla()
             self.ax.relim()
@@ -113,9 +166,11 @@ class LineMatcher(object):
         plt.show()
 
 
-
 if __name__ == '__main__':
-    line_matcher = LineMatcher()
+    try:
+        line_matcher = LineMatcher(search_pattern=sys.argv[1])
+    except IndexError:
+        line_matcher = LineMatcher()
     line_matcher()
 
 
