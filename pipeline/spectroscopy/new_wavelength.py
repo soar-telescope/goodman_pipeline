@@ -9,6 +9,7 @@ from astropy.io.fits.header import Header
 from astropy.modeling import (models, fitting, Model)
 from astropy.convolution import (convolve, Gaussian1DKernel, Box1DKernel)
 import re
+import glob
 
 import sys
 
@@ -26,159 +27,9 @@ class DataValidationError(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
 
-# def identify_lines(lamp):
-#     print("identifying lines in lamp ", lamp.header['GSP_FNAM'])
-#
-#     interpolation_size = 200
-#
-#     x_axis, data = interpolate(lamp.data, interpolation_size)
-#
-#     filtered_data = np.where(
-#         np.abs(data > data.min() + 0.03 * data.max()),
-#         data,
-#         np.zeros(data.shape))
-#
-#     peaks = signal.argrelmax(filtered_data, axis=0, order=7 * 200)[0]
-#
-#     slit_size = interpolation_size * float(re.sub('[a-zA-Z" ]', '', lamp.header['slit']))
-#     print(slit_size)
-#     for peak in peaks:
-#         recenter_line(data=data, center=peak, slit_size=slit_size)
-#         print(x_axis[peak], peak)
-#         # plt.axvline(x_axis[peak], color='r')
-#     plt.plot(lamp.data)
-#     plt.show()
-#
-# def validate_emission_line(data, line_center, left_limit, right_limit,slit_size):
-#
-#     data_sample = data[left_limit:right_limit]
-#     data_x_axis = np.linspace(left_limit, right_limit, len(data_sample))
-#     model_fitter = fitting.LevMarLSQFitter()
-#     box_width = slit_size / 0.15
-#     slit_model = models.Box1D(amplitude=data[int(line_center)],
-#                               x_0=line_center,
-#                               width=box_width)
-#     gaussian_model = models.Gaussian1D(amplitude=data[int(line_center)],
-#                                        mean=line_center,
-#                                        stddev=right_limit - left_limit)
-#
-#     fitted_gaussian = model_fitter(gaussian_model * slit_model,
-#                                    data_x_axis,
-#                                    data_sample)
-#
-#     final_model = fitted_gaussian
-#     print(final_model)
-#
-#     plt.title("Data and Model")
-#     plt.plot(data_x_axis, data_sample, label="Data")
-#     plt.plot(data_x_axis, final_model(data_x_axis), label="Final Model")
-#     # plt.xlim(left_limit - .75 * (right_limit - left_limit),
-#     #          right_limit + .75 * (right_limit - left_limit))
-#     # plt.ylim(- .3 * data.max(), data.max() + .3 * data.max())
-#     plt.legend(loc='best')
-#     plt.show()
-#
-# def recenter_line(data, center, slit_size, interpolation_size=200):
-#
-#     interp_x_axis, interp_data = interpolate(
-#         spectrum=data,
-#         interpolation_size=interpolation_size)
-#
-#     center_index = np.argmin(abs(interp_x_axis - center))
-#     print("Index ", center_index)
-#     int_center = int(round(center))
-#     peak_value = interp_data[center_index]
-#
-#     filtered = np.where(np.abs(interp_data < 0.5 * peak_value), interp_data,
-#                         np.zeros(interp_data.shape))
-#
-#     half_maximum = 0.5 * peak_value
-#
-#     # filtered = np.where(np.abs(data < 0.5 * peak_value), data,
-#     #                     np.zeros(data.shape))
-#
-#
-#     left_side_pix = center_index
-#     right_side_pix = center_index
-#     print("Center ", center_index)
-#     print(filtered[center_index])
-#     # plt.plot(data)
-#     # plt.plot(interp_x_axis, filtered)
-#     # plt.axvline(interp_x_axis[center_index])
-#     # plt.show()
-#     i = 1
-#     while left_side_pix == center_index or right_side_pix == center_index:
-#         left = center_index - i
-#         right = center_index + i
-#
-#         # print(filtered[left], left , filtered[right], right)
-#         print(left, right)
-#         if filtered[left] > 0.01 and left > 0 and left_side_pix == center_index:
-#             # print("Left ", left)
-#             left_side_pix = left
-#         elif left <= 0 and left_side_pix == center_index:
-#             left_side_pix = 0
-#         if filtered[right] > 0.01 and right < len(
-#                 interp_data) - 1 and right_side_pix == center_index:
-#             # print("Right ", right)
-#             right_side_pix = right
-#         else:
-#             pass
-#             # print(left, right)
-#         i += 1
-#         # print(i)
-#         # if left_side_pix != center_index and right_side_pix != center_index:
-#         #     break
-#
-#
-#     print("data limits ", interp_data[left_side_pix], interp_data[right_side_pix])
-#
-#     left_weight = filtered[left_side_pix] / (
-#         filtered[left_side_pix] + filtered[right_side_pix])
-#
-#     right_weight = filtered[right_side_pix] / (
-#         filtered[left_side_pix] + filtered[right_side_pix])
-#     print(left_weight, right_weight)
-#     # print(1/(half_maximum - filtered[left_side_pix]), 1/(half_maximum - filtered[right_side_pix]))
-#
-#     estimated_center = np.mean([interp_x_axis[left_side_pix], interp_x_axis[right_side_pix]])
-#     weighted_center = np.average([left_side_pix, right_side_pix],
-#                                  weights=[left_weight, right_weight])
-#
-#     # validate_emission_line(data=data,
-#     #                        line_center=estimated_center,
-#     #                        left_limit=left_side_pix,
-#     #                        right_limit=right_side_pix,
-#     #                        slit_size=slit_size)
-#
-#     print("Estimated Center ", estimated_center)
-#
-#     plt.title("Initial Center: {:.3f}\nCorrected Center: {:.3f}".format(center,
-#                                                                         estimated_center))
-#     if left_side_pix != right_side_pix:
-#         plt.axvline(interp_x_axis[left_side_pix], color='c')
-#         plt.axvline(interp_x_axis[right_side_pix], color='c')
-#
-#     plt.plot(interp_x_axis, interp_data, color='b')
-#     plt.plot(data, color='k', alpha=0.3)
-#     plt.axvline(center, color='r', alpha=.4, label='Initial Center')
-#     plt.axhline(peak_value, color='g')
-#     plt.axhline(half_maximum, color='y')
-#     plt.plot(interp_x_axis, filtered)
-#     plt.xlim(center - .75 * (interp_x_axis[right_side_pix] - interp_x_axis[left_side_pix]),
-#              center + .75 * (interp_x_axis[right_side_pix] - interp_x_axis[left_side_pix]))
-#     plt.ylim(- .3 * peak_value, peak_value + .3 * peak_value)
-#     plt.axvline(weighted_center, color='m', alpha=.4,
-#                 label='Weighted Center {:.3f}'.format(weighted_center))
-#     plt.axvline(estimated_center, color='k',
-#                 label="Estimated Center {:.3f}".format(estimated_center))
-#     plt.legend(loc='best')
-#     plt.show()
-#
-#     return estimated_center
-
 
 class WavelengthCalibration(object):
+
     def __init__(self, data_path=None):
         """The class is initialized only with the path to the data
         then instance is called for each image."""
@@ -188,34 +39,32 @@ class WavelengthCalibration(object):
         self.image_collection = ImageFileCollection(self.path)
         self.spectroscopic_mode = SpectroscopicMode()
         self.wcs = WCS()
+        self.record_lines = False
 
-    def __call__(self, file_name, lamps=None):
-        print(file_name)
-        if os.path.isabs(file_name) and os.path.isfile(file_name):
-            print("is abs path")
-            self._wavelength_solution(ccd_data=file_name, lamps=lamps)
-        elif os.path.isfile(os.path.join(self.path, file_name)):
-            print("file exist")
-            full_path = os.path.join(self.path, file_name)
-            self._wavelength_solution(ccd_data=full_path, lamps=lamps)
-        else:
-            print("Can't locate file: {:s}".format(os.path.join(self.path,
-                                                                file_name)))
+    def __call__(self, ccd, lamps=None, **kwargs):
+        self.record_lines = kwargs.get('record_lines', False)
+        # print(file_name)
+        # if os.path.isabs(file_name) and os.path.isfile(file_name):
+        #     print("is abs path")
+        #     self._wavelength_solution(ccd_data=file_name, lamps=lamps)
+        # full_path = os.path.join(self.path, file_name)
+        # if os.path.isfile(full_path):
+        #     print("file exist")
+        self._wavelength_solution(ccd_data=ccd, lamps=lamps)
+        # else:
+        #     print("Can't locate file: {:s}".format(os.path.join(self.path,
+        #                                                        file_name)))
 
-    def _get_wavelength_solution(self, comp_lamps):
-        assert isinstance(comp_lamps, list)
-        assert all([isinstance(lamp, CCDData) for lamp in comp_lamps])
-        lamp_lines = []
-        for lamp in comp_lamps:
-            lamp_lines = self._identify_lines(ccd=lamp)
-            lamp = self._add_pixel_lines(ccd=lamp, line_list=lamp_lines)
-            lamp = self._add_angstrom_lines_slot(ccd=lamp, line_list=lamp_lines)
-
-            new_name = 'll_' + lamp.header['GSP_FNAM']
-
-            write_fits(ccd=lamp,
-                       full_path=os.path.join(self.path, new_name),
-                       parent_file=lamp.header['GSP_FNAM'])
+    @staticmethod
+    def _add_angstrom_lines_slot(ccd, line_list):
+        assert isinstance(ccd, CCDData)
+        assert isinstance(line_list, list)
+        for i in range(len(line_list)):
+            print("GSP_A{:03d}".format(i + 1), line_list[i])
+            ccd.header.set("GSP_A{:03d}".format(i + 1),
+                           value=0,
+                           comment="Line location in angstrom value")
+        return ccd
 
     @staticmethod
     def _add_pixel_lines(ccd, line_list):
@@ -228,16 +77,27 @@ class WavelengthCalibration(object):
                            comment="Line location in pixel value")
         return ccd
 
-    @staticmethod
-    def _add_angstrom_lines_slot(ccd, line_list):
-        assert isinstance(ccd, CCDData)
-        assert isinstance(line_list, list)
-        for i in range(len(line_list)):
-            print("GSP_A{:03d}".format(i + 1), line_list[i])
-            ccd.header.set("GSP_A{:03d}".format(i + 1),
-                           value=0,
-                           comment="Line location in angstrom value")
-        return ccd
+    def _get_wavelength_solution(self, comp_lamps, record_lines=False):
+        # MAKE SURE THIS WILL RECORD THE LINES ONLY ON COMPARISON LAMPS
+        assert isinstance(comp_lamps, list)
+        assert all([isinstance(lamp, CCDData) for lamp in comp_lamps])
+        lamp_lines = []
+        for lamp in comp_lamps:
+            lamp_lines = self._identify_lines(ccd=lamp)
+            if record_lines:
+                print("Recording Lines")
+                lamp = self._add_pixel_lines(ccd=lamp, line_list=lamp_lines)
+                lamp = self._add_angstrom_lines_slot(ccd=lamp,
+                                                     line_list=lamp_lines)
+
+                new_name = 'll_' + lamp.header['GSP_FNAM']
+
+                write_fits(ccd=lamp,
+                           full_path=os.path.join(self.path, new_name),
+                           parent_file=lamp.header['GSP_FNAM'])
+
+            # if lamp_lines:
+            #     self.get_
 
     def _identify_lines(self, ccd, show_plots=False):
         assert isinstance(ccd, CCDData)
@@ -589,7 +449,8 @@ class WavelengthCalibration(object):
             print('OBJECT')
             if lamps_list is not None:
                 print("Lamp is a list or CCData or a filename")
-                self._get_wavelength_solution(comp_lamps=lamps_list)
+                self._get_wavelength_solution(comp_lamps=lamps_list,
+                                              record_lines=self.record_lines)
             else:
                 print("No lamps provided")
                 print("save non-calibrated object")
@@ -600,7 +461,8 @@ class WavelengthCalibration(object):
 
         elif ccd.header['OBSTYPE'] == 'COMP':
             print('Input is a comparison Lamp COMP')
-            self._get_wavelength_solution(comp_lamps=[ccd])
+            self._get_wavelength_solution(comp_lamps=[ccd],
+                                          record_lines=self.record_lines)
 
         else:
             print(ccd.header['OBSTYPE'])
@@ -613,17 +475,17 @@ if __name__ == '__main__':
     file_2 = 'cfzsto_0131_CuHeAr_G1200M2_slit103.fits'
     file_3 = 'gcfzsto_0144_Abell36_G1200M2_slit103.fits'
 
-    files = ["ext_cfzsto_0029-0033_goodman_comp_400M1_CuHeAr.fits",
-             "ext_cfzsto_0041-0045_goodman_comp_930M3_GG385_CuHeAr.fits",
-             "ext_cfzsto_0046-0050_goodman_comp_930M6_OG570_CuHeAr.fits",
-             "ext_cfzsto_0050-0054_goodman_comp_600Red_GG495_CuHeAr.fits",
-             "ext_cfzsto_0051-0056_goodman_comp_930M6_OG570_CuHeAr.fits",
-             "ext_cfzsto_0063-0067_goodman_comp_1200M6_GG495_CuHeAr.fits",
-             "ext_cfzsto_0068-0072_goodman_comp_930M4_GG495_CuHeAr.fits",
-             "ext_cfzsto_0077-0081_goodman_comp_400M2_GG455_CuHeAr.fits",
-             "ext_cfzsto_0108-0112_goodman_comp_600UV_CuHeAr.fits",
-             "ext_cfzsto_0119-0123_goodman_comp_1200M7_OG570_CuHeAr.fits",
-             "ext_cfzsto_0149-0153_goodman_comp_930M5_GG495_CuHeAr.fits"]
+    # files = ["ext_cfzsto_0029-0033_goodman_comp_400M1_CuHeAr.fits",
+    #          "ext_cfzsto_0041-0045_goodman_comp_930M3_GG385_CuHeAr.fits",
+    #          "ext_cfzsto_0046-0050_goodman_comp_930M6_OG570_CuHeAr.fits",
+    #          "ext_cfzsto_0050-0054_goodman_comp_600Red_GG495_CuHeAr.fits",
+    #          "ext_cfzsto_0051-0056_goodman_comp_930M6_OG570_CuHeAr.fits",
+    #          "ext_cfzsto_0063-0067_goodman_comp_1200M6_GG495_CuHeAr.fits",
+    #          "ext_cfzsto_0068-0072_goodman_comp_930M4_GG495_CuHeAr.fits",
+    #          "ext_cfzsto_0077-0081_goodman_comp_400M2_GG455_CuHeAr.fits",
+    #          "ext_cfzsto_0108-0112_goodman_comp_600UV_CuHeAr.fits",
+    #          "ext_cfzsto_0119-0123_goodman_comp_1200M7_OG570_CuHeAr.fits",
+    #          "ext_cfzsto_0149-0153_goodman_comp_930M5_GG495_CuHeAr.fits"]
 
     lamps_list = ['gcfzsto_0137_CuHeAr_G1200M2_slit103.fits',
                   'gcfzsto_0157_CuHeAr_G1200M2_slit103.fits',
@@ -634,8 +496,11 @@ if __name__ == '__main__':
 
     lamps = [os.path.join(path, lamp_file) for lamp_file in lamps_list]
 
+    files = glob.glob(path + "/ext_*fits")
+
     wavelength_calibration = WavelengthCalibration(data_path=path)
     for file in files:
-        full_path = os.path.join(path, file)
-        wavelength_calibration(full_path)
-    # wavelength_calibration(file_3)
+        # full_path = os.path.join(path, file)
+        # wavelength_calibration(full_path)
+        print(file)
+        wavelength_calibration(file, record_lines=True)

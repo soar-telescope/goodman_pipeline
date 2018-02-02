@@ -84,22 +84,22 @@ class CombineAndExtract(object):
 
             extracted = self._extract_lamp(ccd=combined,
                                            output_name=extracted_name)
-            ext_copy = extracted.copy()
+            # ext_copy = extracted.copy()
 
             # ADD COPY AND THEN ADD THE GSP WAY OF WCS TO THE HEADER
 
             # self._create_plot(ccd=extracted, x_label="Dispersion (pixels)",
             #                   y_label='Intensity (ADU)')
 
-            ws_model = self._wavelength_calibration(ccd=extracted)
-
-            if ws_model is not None:
-                nccd = self.wcs.write_gsp_wcs(ccd=ext_copy, model=ws_model)
-
-                gsp_name = os.path.join(self.output_path,
-                                        re.sub('ext_', 'gsp_', extracted_name))
-                print(gsp_name)
-                nccd.write(gsp_name, overwrite=True)
+            # ws_model = self._wavelength_calibration(ccd=extracted)
+            #
+            # if ws_model is not None:
+            #     nccd = self.wcs.write_gsp_wcs(ccd=ext_copy, model=ws_model)
+            #
+            #     gsp_name = os.path.join(self.output_path,
+            #                             re.sub('ext_', 'gsp_', extracted_name))
+            #     print(gsp_name)
+            #     nccd.write(gsp_name, overwrite=True)
 
 
 
@@ -151,7 +151,7 @@ class CombineAndExtract(object):
         # plt.plot(self.target_trace(range(dispersion)), color='g')
         # plt.show()
         # return 0
-
+        print("Saving File: {:s}".format(output_name))
         write_fits(ccd=extracted, full_path=os.path.join(self.output_path,
                                                          output_name))
         return extracted

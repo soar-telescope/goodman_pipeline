@@ -2,7 +2,7 @@ from astropy.io import fits
 from astropy.modeling import models, fitting
 import numpy as np
 import matplotlib.pyplot as plt
-import cPickle as pickle
+import pickle
 
 
 class DataSimulator(object):
@@ -46,7 +46,7 @@ def make_2d_spectra(separation_fwhm=0, n_targets=1, fwhm=8., intens=0., noise_le
     if targets > 1:
         target_location = [y / 2. - target_separation_fwhm / float(targets) * fwhm,
                            y / 2. + target_separation_fwhm / float(targets) * fwhm]
-        print separation_fwhm, int(y / 2.), target_location, (target_separation_fwhm / targets) * fwhm
+        print(separation_fwhm, int(y / 2.), target_location, (target_separation_fwhm / targets) * fwhm)
     else:
         target_location = [y / 2.]
 

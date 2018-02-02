@@ -8,7 +8,7 @@ from threading import Thread
 import numpy as np
 import sys
 
-from pipeline.spectroscopy.new_wavelength import WavelengthCalibration
+# from pipeline.spectroscopy.new_wavelength import WavelengthCalibration
 
 """Tool to record angstrom values for lines already recorded in pixels.
 
@@ -25,6 +25,92 @@ Notes:
   
 
 """
+
+
+def get_spectral_characteristics(ccd):
+    """Calculates some Goodman's specific spectroscopic values.
+
+    From the header value for Grating, Grating Angle and Camera Angle it is
+    possible to estimate what are the wavelength values at the edges as well
+    as in the center. It was necessary to add offsets though, since the
+    formulas provided are slightly off. The values are only an estimate.
+
+    Returns:
+        spectral_characteristics (dict): Contains the following parameters:
+            center: Center Wavelength
+            blue: Blue limit in Angstrom
+            red: Red limit in Angstrom
+            alpha: Angle
+            beta: Angle
+            pix1: Pixel One
+            pix2: Pixel Two
+
+
+    """
+    pixel_size = 15 * u.micrometer
+    pixel_scale = 0.15 * u.arcsec
+    goodman_focal_length = 377.3 * u.mm
+    # TODO (simon): find a definite solution for this, this only work
+    # TODO (simon): (a little) for one configuration
+    blue_correction_factor = -50 * u.angstrom
+    red_correction_factor = -37 * u.angstrom
+
+    grating_frequency = float(
+        re.sub('[A-Za-z_-]',
+               '',
+               ccd.header['GRATING'])) / u.mm
+
+    # print('Grating Frequency ' +
+    # '{:d}'.format(int(grating_frequency)))
+    grating_angle = float(ccd.header['GRT_ANG']) * u.deg
+    camera_angle = float(ccd.header['CAM_ANG']) * u.deg
+
+    serial_binning, parallel_binning = [
+        int(x) for x in ccd.header['CCDSUM'].split()]
+
+    pixel_count = len(ccd.data)
+    # Calculations
+    # TODO (simon): Check whether is necessary to remove the
+    # TODO (simon): slit_offset variable
+    alpha = grating_angle.to(u.rad)
+    beta = camera_angle.to(u.rad) - grating_angle.to(u.rad)
+
+    center_wavelength = (np.sin(alpha) +
+                              np.sin(beta)) / grating_frequency
+
+    limit_angle = np.arctan(
+        pixel_count *
+        (pixel_size / goodman_focal_length) / 2)
+
+    blue_limit = ((
+                           np.sin(alpha) +
+                           np.sin(beta - limit_angle.to(u.rad))) /
+                       grating_frequency).to(u.angstrom) + \
+                      blue_correction_factor
+
+    red_limit = ((
+                          np.sin(alpha) +
+                          np.sin(beta +
+                                 limit_angle.to(u.rad))) /
+                      grating_frequency).to(u.angstrom) + \
+                     red_correction_factor
+
+    pixel_one = 0
+    pixel_two = 0
+    # log.debug(
+    #     'Center Wavelength : {:.3f} Blue Limit : '
+    #     '{:.3f} Red Limit : {:.3f} '.format(center_wavelength,
+    #                                         blue_limit,
+    #                                         red_limit))
+
+    spectral_characteristics = {'center': center_wavelength,
+                                'blue': blue_limit,
+                                'red': red_limit,
+                                'alpha': alpha,
+                                'beta': beta,
+                                'pix1': pixel_one,
+                                'pix2': pixel_two}
+    return spectral_characteristics
 
 
 class LineMatcher(object):
@@ -162,16 +248,13 @@ class LineMatcher(object):
             self.ccd.header['OBJECT'],
             self.ccd.header['WAVMODE'],
             self.ccd.header['SLIT']), color='b')
+
         sec_ax = self.ax.twiny()
-
-        wave_char = WavelengthCalibration.get_spectral_characteristics(
-            ccd=self.ccd)
-
+        wave_char = get_spectral_characteristics(ccd=self.ccd)
         # print(wave_char)
         theoretical_angstrom_ax = np.linspace(wave_char['blue'],
                                               wave_char['red'],
                                               len(self.ccd.data))
-
         sec_ax.plot(theoretical_angstrom_ax, self.ccd.data, alpha=0)
         sec_ax.set_xlabel("Theoretical Angstrom Values")
 
