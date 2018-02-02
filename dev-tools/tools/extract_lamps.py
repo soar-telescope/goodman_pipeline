@@ -64,42 +64,44 @@ class CombineAndExtract(object):
         image_collection = ImageFileCollection(location=self.data_path,
                                                keywords=self.keywords,
                                                glob_include=glob_include)
-        self.image_collection = image_collection.summary.to_pandas()
+        if image_collection is not None:
 
-        grouped_data = self._classify_images(ic=self.image_collection)
+            self.image_collection = image_collection.summary.to_pandas()
 
-        for group in grouped_data:
-            file_list = group.file.tolist()
-            for _file in file_list:
-                print(_file)
-            output_name = self._get_combined_name(file_list=file_list,
-                                                  prefix='comb_')
+            grouped_data = self._classify_images(ic=self.image_collection)
 
-            combined = self._combine_data(file_list=file_list,
-                                          output_name=output_name,
-                                          data_path=self.data_path,
-                                          out_path=self.output_path)
+            for group in grouped_data:
+                file_list = group.file.tolist()
+                for _file in file_list:
+                    print(_file)
+                output_name = self._get_combined_name(file_list=file_list,
+                                                      prefix='comb_')
 
-            extracted_name = self._get_extracted_name(combined_name=output_name)
+                combined = self._combine_data(file_list=file_list,
+                                              output_name=output_name,
+                                              data_path=self.data_path,
+                                              out_path=self.output_path)
 
-            extracted = self._extract_lamp(ccd=combined,
-                                           output_name=extracted_name)
-            # ext_copy = extracted.copy()
+                extracted_name = self._get_extracted_name(combined_name=output_name)
 
-            # ADD COPY AND THEN ADD THE GSP WAY OF WCS TO THE HEADER
+                extracted = self._extract_lamp(ccd=combined,
+                                               output_name=extracted_name)
+                # ext_copy = extracted.copy()
 
-            # self._create_plot(ccd=extracted, x_label="Dispersion (pixels)",
-            #                   y_label='Intensity (ADU)')
+                # ADD COPY AND THEN ADD THE GSP WAY OF WCS TO THE HEADER
 
-            # ws_model = self._wavelength_calibration(ccd=extracted)
-            #
-            # if ws_model is not None:
-            #     nccd = self.wcs.write_gsp_wcs(ccd=ext_copy, model=ws_model)
-            #
-            #     gsp_name = os.path.join(self.output_path,
-            #                             re.sub('ext_', 'gsp_', extracted_name))
-            #     print(gsp_name)
-            #     nccd.write(gsp_name, overwrite=True)
+                # self._create_plot(ccd=extracted, x_label="Dispersion (pixels)",
+                #                   y_label='Intensity (ADU)')
+
+                # ws_model = self._wavelength_calibration(ccd=extracted)
+                #
+                # if ws_model is not None:
+                #     nccd = self.wcs.write_gsp_wcs(ccd=ext_copy, model=ws_model)
+                #
+                #     gsp_name = os.path.join(self.output_path,
+                #                             re.sub('ext_', 'gsp_', extracted_name))
+                #     print(gsp_name)
+                #     nccd.write(gsp_name, overwrite=True)
 
 
 
