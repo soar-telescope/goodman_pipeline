@@ -5,7 +5,10 @@ import re
 import matplotlib.pyplot as plt
 import time
 from threading import Thread
+import numpy as np
 import sys
+
+from pipeline.spectroscopy.new_wavelength import WavelengthCalibration
 
 """Tool to record angstrom values for lines already recorded in pixels.
 
@@ -45,13 +48,22 @@ class LineMatcher(object):
         self.lines = []
         self.ccd = None
         self.lock_identify = False
+        self.threads = []
 
     def __call__(self):
         """Run the tool for all the images matching `search_pattern`"""
         for fits_file in self.file_list:
             print(fits_file)
             self.ccd = CCDData.read(fits_file, unit=u.adu)
-            self._create_plot()
+            if not self.threads:
+                # plot_thread = Thread(target=self._create_plot)
+                # plot_thread.start()
+                id_thread = Thread(target=self.identify_matching_line)
+                id_thread.start()
+                # self.identify_matching_line()
+                # self.threads.
+                self._create_plot()
+                id_thread.join()
             self.ccd.write(fits_file, overwrite=True)
 
     def identify_matching_line(self):
@@ -106,10 +118,11 @@ class LineMatcher(object):
         :param event:
         :return:
         """
-        if not self.lock_identify:
-            print("Threading")
-            thread = Thread(target=self.identify_matching_line)
-            thread.start()
+        pass
+        # if not self.lock_identify:
+        #     print("Threading")
+        #     thread = Thread(target=self.identify_matching_line)
+        #     thread.start()
 
     def _key_pressed(self, event):
         """Closes all plots when the `enter` key is pressed"""
@@ -143,25 +156,39 @@ class LineMatcher(object):
             self.ax.cla()
             self.ax.relim()
         self.fig = plt.figure(11)
+        self.fig.canvas.set_window_title(self.ccd.header['GSP_FNAM'])
         self.ax = self.fig.add_subplot(111)
-        self.ax.set_title("Lamp: {:s}\nGrating: {:s}\nSlit: {:s}".format(
+        self.ax.set_title("Lamp: {:s}\nGrating: {:s}\nSlit: {:s}\n\n\n".format(
             self.ccd.header['OBJECT'],
             self.ccd.header['WAVMODE'],
-            self.ccd.header['SLIT']))
+            self.ccd.header['SLIT']), color='b')
+        sec_ax = self.ax.twiny()
+
+        wave_char = WavelengthCalibration.get_spectral_characteristics(
+            ccd=self.ccd)
+
+        # print(wave_char)
+        theoretical_angstrom_ax = np.linspace(wave_char['blue'],
+                                              wave_char['red'],
+                                              len(self.ccd.data))
+
+        sec_ax.plot(theoretical_angstrom_ax, self.ccd.data, alpha=0)
+        sec_ax.set_xlabel("Theoretical Angstrom Values")
+
         line_key_list = self.ccd.header[r'GSP_P*']
         for key in line_key_list:
             if re.match(r'GSP_P\d{3}', key) is not None:
                 self.ax.axvline(self.ccd.header[key], color='r', alpha=0.4)
                 x_loc = self.ccd.header[key]
                 y_loc = self.ccd.data[int(round(x_loc))]
-                self.ax.text(x_loc, y_loc, x_loc, rotation=90, size=15)
+                self.ax.text(x_loc, y_loc, x_loc, rotation=90, size=13)
         self.ax.plot(self.ccd.data)
         self.ax.set_xlabel("Pixels")
         self.ax.set_ylabel("Intensity (ADU)")
         self.fig.tight_layout()
         fig_manager = plt.get_current_fig_manager()
         fig_manager.window.showMaximized()
-        self.fig.canvas.mpl_connect('button_press_event', self._on_click)
+        # self.fig.canvas.mpl_connect('button_press_event', self._on_click)
         # self.fig.canvas.mpl_connect('key_press_event', self._key_pressed)
         plt.show()
 
