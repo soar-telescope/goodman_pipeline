@@ -63,18 +63,18 @@ class ImageProcessor(object):
         self.evening_twilight = data_container.evening_twilight
         self.pixel_scale = 0.15 * u.arcsec
         self.queue = None
-        if self.roi is not None and self.roi in ['Spectroscopic 1x1',
-                                                 'Spectroscopic 2x2',
-                                                 'Spectroscopic 3x3']:
-            self.trim_section = self.define_trim_section(
-                technique=self.technique)
-            self.overscan_region = self.get_overscan_region()
-        else:
-            self.log.warning("ROI {:s} does not have a well "
-                             "defined trim section neither an "
-                             "overscan region.".format(self.roi))
-            self.trim_section = None
-            self.overscan_region = None
+        # if self.roi is not None and self.roi in ['Spectroscopic 1x1',
+        #                                          'Spectroscopic 2x2',
+        #                                          'Spectroscopic 3x3']:
+        self.trim_section = self.define_trim_section(
+            technique=self.technique)
+        self.overscan_region = self.get_overscan_region()
+        # else:
+        #     self.log.warning("ROI {:s} does not have a well "
+        #                      "defined trim section neither an "
+        #                      "overscan region.".format(self.roi))
+        #     self.trim_section = None
+        #     self.overscan_region = None
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
         self.master_bias_name = None
