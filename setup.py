@@ -87,7 +87,8 @@ setup(
     packages=['pipeline',
               'pipeline.core',
               'pipeline.images',
-              'pipeline.spectroscopy'],
+              'pipeline.spectroscopy',
+              'pipeline.wcs'],
 
     package_dir={'pipeline': 'pipeline'},
 
