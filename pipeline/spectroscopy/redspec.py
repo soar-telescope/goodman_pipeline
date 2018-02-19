@@ -84,7 +84,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--output-prefix',
                         action='store',
-                        default='g',
+                        default='w',
                         metavar='<Out Prefix>',
                         dest='output_prefix',
                         help="Prefix to add to calibrated spectrum.")

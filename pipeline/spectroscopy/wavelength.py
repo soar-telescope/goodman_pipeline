@@ -41,6 +41,7 @@ from ..core import (extraction,
                     identify_targets,
                     search_comp_group,
                     add_wcs_keys,
+                    save_extracted,
                     NoTargetException,
                     NoMatchFound)
 
@@ -167,6 +168,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
                             spatial_profile=single_profile,
                             extraction=extraction_type,
                             plots=SHOW_PLOTS)
+                        save_extracted(ccd=extracted, destination=args.destiny)
                         # print(spec_file)
 
                         # lamp extraction
@@ -179,8 +181,12 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
                                     spatial_profile=single_profile,
                                     extraction=extraction_type,
                                     plots=SHOW_PLOTS)
+                                save_extracted(ccd=extracted_lamp,
+                                               destination=args.destiny)
                                 all_lamps.append(extracted_lamp)
-                        extracted_target_and_lamps.append([extracted, all_lamps])
+                        extracted_target_and_lamps.append([extracted,
+                                                           all_lamps])
+
 
                         if args.debug_mode:
                             # print(plt.get_backend())

@@ -2184,6 +2184,28 @@ def remove_conflictive_keywords(path, file_list):
             log_ccd.debug(error)
 
 
+def save_extracted(ccd, destination):
+    """Save extracted spectrum using `e` as prefix
+
+    Args:
+        ccd (object): CCDData instance
+        destination (str): Path where the file will be saved.
+
+    Returns:
+        CCDData instance
+
+    """
+    assert isinstance(ccd, CCDData)
+    assert os.path.isdir(destination)
+
+    file_name = ccd.header['GSP_FNAM']
+    new_file_name = 'e' + file_name
+    log_spec.info("Saving extracted spectrum to File".format(new_file_name))
+    full_path = os.path.join(destination, new_file_name)
+    write_fits(ccd=ccd, full_path=full_path, parent_file=file_name)
+    return ccd
+
+
 def search_comp_group(object_group, comp_groups):
     """Search for a suitable comparison lamp group
 
