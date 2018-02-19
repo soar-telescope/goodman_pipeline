@@ -11,6 +11,7 @@ import ccdproc
 import numpy as np
 import numpy.ma as ma
 import matplotlib
+import math
 import pandas
 import scipy
 import shutil
@@ -693,7 +694,7 @@ def extraction(ccd,
 
 
 def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
-                             background_spacing=0.5):
+                             background_spacing=3):
     """Performs an spectrum extraction using fractional pixels.
 
     Args:
@@ -716,13 +717,19 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
 
     apnum1 = None # '{:d} {:d} {:d} {:d}'.format(1, 1, 1, 1)
 
+
+    non_background_sub = []
     extracted_spectrum = []
     background_list = []
+
     for i in disp_axis:
 
         # this defines the extraction limit for every column
         low_limit = trace[i] - 0.5 * extraction_width * target_stddev
         high_limit = trace[i] + 0.5 * extraction_width * target_stddev
+
+        # low_limits_list.append(low_limit)
+        # high_limits_list.append(high_limit)
 
         if apnum1 is None:
             # TODO (simon): add secondary targets
@@ -735,6 +742,7 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
                                     index=i,
                                     low_limit=low_limit,
                                     high_limit=high_limit)
+        non_background_sub.append(column_sum)
 
         if ccd.header['OBSTYPE'] == 'OBJECT':
             # background limits
@@ -798,6 +806,14 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
         else:
             log_spec.debug("No background subtraction of OBSTYPE != OBJECT")
             extracted_spectrum.append(column_sum)
+    # plt.plot(low_limits_list, color='r')
+    # plt.plot(high_limits_list, color='r')
+    # plt.show()
+    # plt.plot(non_background_sub, color='b', label='RAW')
+    # plt.plot(extracted_spectrum, color='k', label='Extracted')
+    # plt.plot(background_list, color='r', label='Background')
+    # plt.legend(loc='best')
+    # plt.show()
 
     new_ccd = ccd.copy()
     new_ccd.data = np.asarray(extracted_spectrum)
@@ -865,7 +881,7 @@ def fractional_sum(data, index, low_limit, high_limit):
     extracting a 1D spectrum from a 2D spectrum. The method
     is actually very simple.
 
-    It requieres the full data, the colum and the range to sum, this
+    It requires the full data, the colum and the range to sum, this
     range is given as real numbers. First it identify the extreme
     pixels that are going to be summed complete, i.e. no fraction.
     Then it will identify the index of the last pixel to each side,
@@ -888,22 +904,13 @@ def fractional_sum(data, index, low_limit, high_limit):
     """
     # these are the limits whithin the full amount of flux on each pixel is
     # summed
-    low_limit_last_full = ceil(low_limit)
-    high_limit_last_full = floor(high_limit)
+    low_fraction, low_integer = math.modf(low_limit)
+    high_fraction, high_integer = math.modf(high_limit)
+    print(low_limit, high_limit, low_integer, high_integer)
 
-    # Very last pixel
-    low_last_index = floor(low_limit)
-    high_last_index = ceil(high_limit)
-
-    # Multiplying factor for the last "fractional pixel"
-    low_last_factor = low_limit_last_full - low_limit
-    high_last_factor = high_limit - high_limit_last_full
-
-    # target's sum
-    column_sum = np.sum(data[low_limit_last_full:high_limit_last_full,
-                        index]) + \
-                 data[low_last_index, index] * low_last_factor + \
-                 data[high_last_index, index] * high_last_factor
+    column_sum = np.sum(data[int(low_integer):int(high_integer), index]) - \
+                 data[int(low_integer), index] * low_fraction + \
+                 data[int(high_integer), index] * high_fraction
 
     return column_sum
 
