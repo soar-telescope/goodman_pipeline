@@ -80,6 +80,26 @@ class WCS(object):
 
     @staticmethod
     def write_gsp_wcs(ccd, model):
+        """Writes a GSP-specific wavelength solution
+
+        In an effort to easily write non-linear wavelength solutions into a fits
+        header this method add a set of keywords that describes a pixel to
+        angstrom relationship by means of using the astropy's modeling tools.
+
+        GSP stands for Goodman Spectroscopic Pipeline.
+
+        Notes:
+            A limited amount of mathematical models are implemented on the read
+            side. So you have to be careful what you write.
+
+        Args:
+            ccd (object): CCDData instance. Its header attribute will be
+              modified
+            model (object): astropy.modeling.Model instance.
+
+        Returns:
+
+        """
         assert isinstance(ccd, CCDData)
         assert isinstance(model, Model)
 
@@ -96,6 +116,15 @@ class WCS(object):
         return ccd
 
     def read_gsp_wcs(self, ccd):
+        """Read a GSP-specific wavelength solution
+
+        Args:
+            ccd (object): CCDData instance
+
+        Returns:
+            astropy.modeling.Model instance
+
+        """
         assert isinstance(ccd, CCDData)
         self.model_name = ccd.header['GSP_FUNC']
         self.degree = ccd.header['GSP_ORDR']
