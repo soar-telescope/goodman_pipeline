@@ -168,7 +168,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
                             spatial_profile=single_profile,
                             extraction=extraction_type,
                             plots=SHOW_PLOTS)
-                        save_extracted(ccd=extracted, destination=args.destiny)
+                        save_extracted(ccd=extracted, destination=args.destination)
                         # print(spec_file)
 
                         # lamp extraction
@@ -182,7 +182,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
                                     extraction=extraction_type,
                                     plots=SHOW_PLOTS)
                                 save_extracted(ccd=extracted_lamp,
-                                               destination=args.destiny)
+                                               destination=args.destination)
                                 all_lamps.append(extracted_lamp)
                         extracted_target_and_lamps.append([extracted,
                                                            all_lamps])
@@ -403,11 +403,11 @@ class WavelengthCalibration(object):
                     # os.system("echo \'{:s}\' >> parametros.txt
                     # ".format(record))
                     # print(self.wsolution)
-                    # self.lamp.write(os.path.join(self.args.destiny, 'non-linear-raw-1d.fits'))
+                    # self.lamp.write(os.path.join(self.args.destination, 'non-linear-raw-1d.fits'))
                     # linear = self.lamp.copy()
                     self.linear_lamp = self.linearize_spectrum(self.lamp.data)
                     # linear.data = self.linear_lamp[1]
-                    # linear.write(os.path.join(self.args.destiny, 'linear-raw-1d.fits'))
+                    # linear.write(os.path.join(self.args.destination, 'linear-raw-1d.fits'))
 
                     self.lamp.header = self.add_wavelength_solution(
                         new_header=self.lamp.header,
@@ -416,7 +416,7 @@ class WavelengthCalibration(object):
                         index=object_number)
 
                     # self.lamp.write(
-                    #     os.path.join(self.args.destiny, 'linear-with-ws-1d.fits'))
+                    #     os.path.join(self.args.destination, 'linear-with-ws-1d.fits'))
 
                     # print(ccd.header)
 
@@ -437,7 +437,7 @@ class WavelengthCalibration(object):
                         eval_comment=self.evaluation_comment,
                         header=self.header)
 
-                    print(self.wsolution)
+                    # print(self.wsolution)
 
                     if self.args.plot_results or self.args.debug_mode or \
                              self.args.save_plots:
@@ -481,7 +481,7 @@ class WavelengthCalibration(object):
                         fig.tight_layout()
                         if self.args.save_plots:
                             self.log.info('Saving plots')
-                            plots_dir = os.path.join(self.args.destiny, 'plots')
+                            plots_dir = os.path.join(self.args.destination, 'plots')
                             if not os.path.isdir(plots_dir):
                                 os.mkdir(plots_dir)
                             plot_name = re.sub('.fits',
@@ -1327,18 +1327,18 @@ class WavelengthCalibration(object):
                 out_file_name = 'automatic-solution_' + self.lamp.header[
                     'OBJECT']
 
-                file_count = len(glob.glob(os.path.join(self.args.destiny,
+                file_count = len(glob.glob(os.path.join(self.args.destination,
                                                         out_file_name + '*')))
 
                 out_file_name += '_{:04d}.pdf'.format(file_count)
                 pdf_pages = PdfPages(
-                    os.path.join(self.args.destiny, out_file_name))
+                    os.path.join(self.args.destination, out_file_name))
                 plt.savefig(pdf_pages, format='pdf')
                 pdf_pages.close()
 
                 # saves png images
 
-                plots_path = os.path.join(self.args.destiny, 'plots')
+                plots_path = os.path.join(self.args.destination, 'plots')
                 if not os.path.isdir(plots_path):
                     os.path.os.makedirs(plots_path)
                 plot_name = os.path.join(plots_path, out_file_name + '.eps')
@@ -2401,7 +2401,7 @@ class WavelengthCalibration(object):
         new_header['WAT0_001'] = 'system=equispec'
         new_header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
         new_header['DC-FLAG'] = 0
-        print(self.calibration_lamp)
+        # print(self.calibration_lamp)
         new_header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
 
         # print(new_header['APNUM*'])
@@ -2415,7 +2415,7 @@ class WavelengthCalibration(object):
         # modify in to _1, _2 etc in case there are multitargets
         # add .fits
 
-        new_filename = self.args.destiny + \
+        new_filename = self.args.destination + \
             self.args.output_prefix + \
             original_filename.replace('.fits', '') + \
             f_end
@@ -2433,7 +2433,7 @@ class WavelengthCalibration(object):
         # print(ccd.header['GSP_FNAM'])
 
         # fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
-        self.log.info('Created new file: {:s}'.format(new_filename))
+        self.log.info('Saving wavelength-calibrated file: {:s}'.format(new_filename))
         # print new_header
         return new_header
 

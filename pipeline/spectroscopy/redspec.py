@@ -70,7 +70,7 @@ def get_args(arguments=None):
                         default='./',
                         type=str,
                         metavar='<Destination Path>',
-                        dest='destiny',
+                        dest='destination',
                         help='Path for destination of processed data. Default '
                              '<./>')
 
@@ -171,7 +171,7 @@ def get_args(arguments=None):
     # print(sys.modules['goodman.pipeline'].__file__)
 
     ref_full_path = os.path.join(
-        os.path.dirname(sys.modules['pipeline'].__file__),
+        os.path.dirname(sys.modules['goodman.pipeline'].__file__),
         args.reference_dir)
     if not os.path.isdir(ref_full_path):
         log.info("Reference files directory doesn't exist.")
@@ -188,12 +188,12 @@ def get_args(arguments=None):
         leave = True
         log.error("Source Directory doesn't exist.")
 
-    if not os.path.isdir(args.destiny):
+    if not os.path.isdir(args.destination):
         leave = True
         log.error("Destination folder doesn't exist.")
         try:
-            os.path.os.makedirs(args.destiny)
-            log.info('Destination folder created: %s', args.destiny)
+            os.path.os.makedirs(args.destination)
+            log.info('Destination folder created: %s', args.destination)
         except OSError as err:
             log.error(err)
 
