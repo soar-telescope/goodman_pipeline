@@ -7,7 +7,7 @@ def test_get_args():
     arguments = ['--data-path', './',
                  '--proc-path', './',
                  '--search-pattern', 'test-pattern',
-                 '--output-prefix', 'g',
+                 '--output-prefix', 'w',
                  '--extraction', 'fractional']
 
     args = get_args(arguments)
