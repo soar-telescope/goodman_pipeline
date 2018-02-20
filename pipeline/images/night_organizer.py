@@ -329,6 +329,7 @@ class NightOrganizer(object):
                 self.data_container.add_bias(bias_group)
         else:
             self.log.error('Not enough bias images.')
+            sys.exit("Bias required for imaging.")
 
         # flats separation
         flat_data = self.file_collection[self.file_collection.obstype == 'FLAT']

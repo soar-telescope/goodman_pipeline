@@ -29,8 +29,8 @@
         "--data-path":"./",
         "--proc-path":"./",
         "--search-pattern":"cfzsto",
-        "--output-prefix":"o",
-        "--extraction":"simple",
+        "--output-prefix":"w",
+        "--extraction":"fractional",
         "--reference-files":"refdata/",
         "--interactive":"False",
         "--debug":"False",
@@ -38,5 +38,10 @@
         "--max-targets":"3",
         "--save-plots":"False",
         "--plot-results":"False"
-    }
+    },
+  "genpars":{
+        "backg-sep":3,
+        "extraction-width":1,
+        "n-targets":1
+  }
 }
