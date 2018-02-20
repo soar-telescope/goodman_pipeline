@@ -104,7 +104,6 @@ class CombineAndExtract(object):
                 #     nccd.write(gsp_name, overwrite=True)
 
 
-
     def _create_plot(self, ccd, x_label='', y_label=''):
         plt.title("Lamp: {:s}\nGrating: {:s}\nSlit: {:s}".format(
             ccd.header['OBJECT'],

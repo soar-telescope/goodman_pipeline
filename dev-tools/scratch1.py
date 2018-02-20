@@ -64,7 +64,7 @@ parser.add_argument('--proc-path',
                     default='./',
                     type=str,
                     metavar='<Destination Path>',
-                    dest='destiny',
+                    dest='destination',
                     help='Path for destination of processed data. Default '
                          '<./>')
 

@@ -185,7 +185,7 @@ class LineMatcher(object):
                         print(angstrom_key, angstrom_value)
                         break
 
-        self._print_header()
+        # self._print_header()
         self.lock_identify = False
         plt.close('all')
 

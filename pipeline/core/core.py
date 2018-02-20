@@ -906,7 +906,7 @@ def fractional_sum(data, index, low_limit, high_limit):
     # summed
     low_fraction, low_integer = math.modf(low_limit)
     high_fraction, high_integer = math.modf(high_limit)
-    print(low_limit, high_limit, low_integer, high_integer)
+    # print(low_limit, high_limit, low_integer, high_integer)
 
     column_sum = np.sum(data[int(low_integer):int(high_integer), index]) - \
                  data[int(low_integer), index] * low_fraction + \
@@ -1888,7 +1888,7 @@ def print_default_args(args):
                 'raw_path': '--raw-path',
                 'red_path': '--red-path',
                 'saturation_limit': '--saturation',
-                'destiny': '-d --proc-path',
+                'destination': '-d --proc-path',
                 'interactive_ws': '-i --interactive',
                 'lamp_all_night': '-r --reference-lamp',
                 'lamp_file': '-l --lamp-file',
@@ -2200,7 +2200,7 @@ def save_extracted(ccd, destination):
 
     file_name = ccd.header['GSP_FNAM']
     new_file_name = 'e' + file_name
-    log_spec.info("Saving extracted spectrum to File".format(new_file_name))
+    log_spec.info("Saving uncalibrated(w) extracted spectrum to file: {:s}".format(new_file_name))
     full_path = os.path.join(destination, new_file_name)
     write_fits(ccd=ccd, full_path=full_path, parent_file=file_name)
     return ccd
