@@ -877,7 +877,7 @@ def fix_duplicated_keywords(night_dir):
 def fractional_sum(data, index, low_limit, high_limit):
     """Performs a fractional pixels sum
 
-    A fractional pixels sum is requiered several times while
+    A fractional pixels sum is required several times while
     extracting a 1D spectrum from a 2D spectrum. The method
     is actually very simple.
 
@@ -906,11 +906,11 @@ def fractional_sum(data, index, low_limit, high_limit):
     # summed
     low_fraction, low_integer = math.modf(low_limit)
     high_fraction, high_integer = math.modf(high_limit)
-    # print(low_limit, high_limit, low_integer, high_integer)
 
     column_sum = np.sum(data[int(low_integer):int(high_integer), index]) - \
                  data[int(low_integer), index] * low_fraction + \
                  data[int(high_integer), index] * high_fraction
+    # print(low_limit, high_limit, low_integer, high_integer, high_integer + 1, high_fraction, column_sum)
 
     return column_sum
 

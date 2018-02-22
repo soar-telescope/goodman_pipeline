@@ -250,6 +250,7 @@ class WCS(object):
             max_pix_val = int(float(spec[14]))
             # resto = list(spec[9:])
             params = [float(i) for i in spec[15:]]
+            # TODO (simon): Document self.wcs_dict (what is what).
             self.wcs_dict = {'aperture': aperture,
                              'beam': beam,
                              'dtype': disp_type,

@@ -1,5 +1,9 @@
 from __future__ import absolute_import
 
+from unittest import TestCase, skip
+from ccdproc import CCDData
+from astropy.io import fits
+import numpy as np
 
 # import all classes in core.py
 from ..core import (CriticalError,
@@ -8,6 +12,8 @@ from ..core import (CriticalError,
                     NotEnoughLinesDetected,
                     NoTargetException,
                     SpectroscopicMode)
+
+from ..core import models
 
 # import of functions in core.py
 from ..core import (add_wcs_keys,
@@ -98,10 +104,6 @@ def test_extract():
     pass
 
 
-def test_extract_fractional_pixel():
-    pass
-
-
 def test_extract_optimal():
     pass
 
@@ -114,12 +116,58 @@ def test_fix_duplicated_keywords():
     pass
 
 
-def test_fractional_sum():
-    pass
+class FractionalExtraction(TestCase):
 
+    def test_fractional_extraction(self):
 
-def test_get_background_value():
-    pass
+        # Create fake image
+        fake_image = CCDData(data=np.ones((100, 100)),
+                             meta=fits.Header(),
+                             unit='adu')
+
+        fake_image.header['OBSTYPE'] = 'COMP'
+        fake_image.header['GSP_FNAM'] = 'fake-image.fits'
+        print(fake_image.header)
+
+        # Create model aligned with pixels - represents the trace
+        model = models.Linear1D(slope=0, intercept=50.3)
+
+        # Calculate the STDDEV
+        stddev = 8.4
+
+        # Calculate how many STDDEV will be extracted - N_STDDEV
+        n_stddev = 2
+
+        # Calculate how far the background is from the the center.
+        distance = 1
+
+        # Perform extraction
+        extracted_array, background = extract_fractional_pixel(ccd=fake_image,
+                                                   target_trace=model,
+                                                   target_stddev=stddev,
+                                                   extraction_width=n_stddev,
+                                                   background_spacing=distance)
+        assert isinstance(fake_image, CCDData)
+        assert isinstance(extracted_array, CCDData)
+
+        reference = np.ones(100) * stddev * n_stddev
+        np.testing.assert_array_almost_equal(extracted_array, reference)
+
+    def test_fractional_sum(self):
+
+        fake_image = np.ones((100, 100))
+        low_limit = 50 + np.random.random()
+        high_limit = 60 + np.random.random()
+
+        sum = fractional_sum(fake_image, 50, low_limit, high_limit)
+        self.assertEqual(sum, high_limit - low_limit)
+
+class BackgroundValue(TestCase):
+
+    @skip
+    def test_get_background_value(self):
+
+        self.fail("Test of fractional sum not finished.")
 
 
 def test_get_best_flat():
