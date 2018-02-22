@@ -162,6 +162,7 @@ class FractionalExtraction(TestCase):
         sum = fractional_sum(fake_image, 50, low_limit, high_limit)
         self.assertEqual(sum, high_limit - low_limit)
 
+
 class BackgroundValue(TestCase):
 
     @skip
@@ -182,8 +183,28 @@ def test_get_extraction_zone():
     pass
 
 
-def test_get_slit_trim_section():
-    pass
+class SlitTrim(TestCase):
+
+    def test_get_slit_trim_section(self):
+
+        # Create fake image
+        fake_image = CCDData(data=np.ones((100, 100)),
+                             meta=fits.Header(),
+                             unit='adu')
+
+        # define
+        slit_low_limit = 5
+        slit_high_limit = 95
+
+        reference_slit_trim = '[1:100,{:d}:{:d}]'.format(slit_low_limit + 10,
+                                                        slit_high_limit - 10)
+
+        # make a flat-like structure
+        fake_image.data[slit_low_limit:slit_high_limit, :] = 100
+        slit_trim = get_slit_trim_section(master_flat=fake_image)
+        print(fake_image.data[:,5])
+        print(slit_trim)
+        self.assertEqual(slit_trim, reference_slit_trim)
 
 
 def test_get_twilight_time():

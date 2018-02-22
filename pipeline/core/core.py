@@ -1274,9 +1274,9 @@ def get_slit_trim_section(master_flat):
         offset = 0
     # Here we force the slit limits within the boundaries of the data (image)
     # this defines a preliminary set of slit limit
-    l_lim = fitted_box.x_0.value - 0.5 * fitted_box.width.value + offset
+    l_lim = 1 + fitted_box.x_0.value - 0.5 * fitted_box.width.value + offset
 
-    h_lim = fitted_box.x_0.value + 0.5 * fitted_box.width.value - offset
+    h_lim = 1 + fitted_box.x_0.value + 0.5 * fitted_box.width.value - offset
 
     low_lim = int(np.max([1 + offset, l_lim]))
 
