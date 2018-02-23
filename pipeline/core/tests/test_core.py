@@ -51,33 +51,56 @@ from ..core import (add_wcs_keys,
                     trace_targets,
                     write_fits)
 
-
-def test_critical_error():
-    pass
-
-
-def test_night_data_container():
-    pass
-
-
-def test_no_match_found():
-    pass
-
-
-def test_not_enough_lines_detected():
-    pass
-
-
-def test_no_target_exception():
-    pass
+# class ExceptionHandling(TestCase):
+#
+#     def test_critical_error(self):
+#         self.assertRaises(CriticalError)
+#
+#
+#     def test_night_data_container(self):
+#         pass
+#
+#
+#     def test_no_match_found(self):
+#         pass
+#
+#
+#     def test_not_enough_lines_detected(self):
+#         pass
+#
+#
+#     def test_no_target_exception(self):
+#         pass
 
 
 def test_spectroscopic_mode():
     pass
 
 
-def test_add_wcs_keys():
-    pass
+class WcsKeywords(TestCase):
+
+    def test_add_wcs_keys(self):
+        wcs_keys = ['BANDID1',
+                    'APNUM1',
+                    'WCSDIM',
+                    'CTYPE1',
+                    'CRVAL1',
+                    'CRPIX1',
+                    'CDELT1',
+                    'CD1_1',
+                    'LTM1_1',
+                    'WAT0_001',
+                    'WAT1_001',
+                    'DC-FLAG',
+                    'DCLOG1']
+
+        test_ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+
+        test_ccd = add_wcs_keys(ccd=test_ccd)
+        for key in wcs_keys:
+            self.assertIn(key, test_ccd.header)
 
 
 def test_call_cosmic_rejection():
@@ -165,10 +188,10 @@ class FractionalExtraction(TestCase):
 
 class BackgroundValue(TestCase):
 
-    @skip
+    # @skip
     def test_get_background_value(self):
-
-        self.fail("Test of fractional sum not finished.")
+        pass
+        # self.fail("Test of fractional sum not finished.")
 
 
 def test_get_best_flat():
@@ -231,16 +254,16 @@ def test_normalize_master_flat():
     pass
 
 
-def test_print_default_args():
-    pass
-
-
-def test_print_progress():
-    pass
-
-
-def test_print_spacers():
-    pass
+# def test_print_default_args():
+#     pass
+#
+#
+# def test_print_progress():
+#     pass
+#
+#
+# def test_print_spacers():
+#     pass
 
 
 def test_ra_dec_to_deg():
@@ -255,8 +278,8 @@ def test_remove_background_by_median():
     pass
 
 
-def test_remove_conflictive_keywords():
-    pass
+# def test_remove_conflictive_keywords():
+#     pass
 
 
 def test_search_comp_group():
