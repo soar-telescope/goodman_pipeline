@@ -202,8 +202,8 @@ class SlitTrim(TestCase):
         # make a flat-like structure
         fake_image.data[slit_low_limit:slit_high_limit, :] = 100
         slit_trim = get_slit_trim_section(master_flat=fake_image)
-        print(fake_image.data[:,5])
-        print(slit_trim)
+        # print(fake_image.data[:,5])
+        # print(slit_trim)
         self.assertEqual(slit_trim, reference_slit_trim)
 
 
