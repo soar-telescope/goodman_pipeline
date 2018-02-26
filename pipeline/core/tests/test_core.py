@@ -220,7 +220,7 @@ class SlitTrim(TestCase):
         slit_high_limit = 95
 
         reference_slit_trim = '[1:100,{:d}:{:d}]'.format(slit_low_limit + 10,
-                                                        slit_high_limit - 10)
+                                                         slit_high_limit - 10)
 
         # make a flat-like structure
         fake_image.data[slit_low_limit:slit_high_limit, :] = 100
