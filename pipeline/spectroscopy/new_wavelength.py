@@ -77,6 +77,10 @@ class WavelengthCalibration(object):
                            comment="Line location in pixel value")
         return ccd
 
+    def calculate_wcs_model(self, ccd):
+        assert isinstance(ccd, CCDData)
+        pass
+
     def _get_wavelength_solution(self, comp_lamps, record_lines=False):
         # MAKE SURE THIS WILL RECORD THE LINES ONLY ON COMPARISON LAMPS
         assert isinstance(comp_lamps, list)
