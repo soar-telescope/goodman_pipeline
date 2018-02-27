@@ -170,15 +170,22 @@ class LineMatcher(object):
             if re.match(r'GSP_P\d{3}', key) is not None:
                 angstrom_key = re.sub('_P', '_A', key)
                 while True:
-                    try:
-                        angstrom_value = float(input("Enter the angstrom value "
-                                                     "for the line at "
-                                                     "{:f}({:f}):".format(
+                    incoming_value = input("Enter the angstrom value "
+                                           "for the line at "
+                                           "{:f}({:f}):".format(
                             self.ccd.header[key],
-                            self.ccd.header[angstrom_key])))
+                            self.ccd.header[angstrom_key]))
+                    try:
+                        angstrom_value = float(incoming_value)
                     except ValueError:
-                        print("Please enter a valid Angstrom Value")
-                        continue
+                        if incoming_value == "":
+                            print("Keeping same value for keyword "
+                                  "{:s}".format(angstrom_key))
+                            break
+                        else:
+                            # print(incoming_value)
+                            print("Please enter a valid Angstrom Value")
+                            continue
                     else:
 
                         self.ccd.header[angstrom_key] = angstrom_value
