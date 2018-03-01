@@ -142,6 +142,11 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         save (bool): Disables by default saving the images
 
     """
+    if ccd.header['OBSTYPE'] == 'COMP':
+        log_ccd.info("Setting cosmic ray rejection method to 'none' for "
+                     "comparison lamp. 'c' prefix will be added anyways.")
+        method = 'none'
+        out_prefix = prefix + out_prefix
 
     if method == 'dcr':
         log_ccd.warning('DCR does apply the correction to images if you want '
