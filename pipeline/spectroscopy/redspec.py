@@ -12,6 +12,7 @@ Simon Torres 2016-06-28
 # TODO (simon): Change all astropy.io.fits to astropy.CCDData.read
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+
 from .wavelength import process_spectroscopy_data
 from ..core import (classify_spectroscopic_data)
 
@@ -20,6 +21,7 @@ import os
 import textwrap
 import argparse
 import logging
+from ..info import __version__
 # import matplotlib
 # matplotlib.use('Qt5Agg')
 import warnings
@@ -233,6 +235,7 @@ class MainApp(object):
         self.log = logging.getLogger(__name__)
         self.args = None
         self.wavelength_solution_obj = None
+        self._pipeline_version = __version__
 
     def __call__(self, args=None):
         """Call method for the MainApp class
@@ -245,11 +248,12 @@ class MainApp(object):
                 arguments.
 
         """
+
         if args is None:
             self.args = get_args()
         else:
             self.args = args
-
+        self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
         # data_container instance of NightDataContainer defined in core
         data_container = classify_spectroscopic_data(
             path=self.args.source,

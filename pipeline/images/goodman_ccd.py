@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function,
 from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
+from ..info import __version__
 
 import os
 import sys
@@ -27,7 +28,11 @@ else:
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_ccd.log'
+logging.basicConfig(level=logging.INFO,
+                            format=FORMAT,
+                            datefmt=DATE_FORMAT)
 
+log = logging.getLogger(__name__)
 
 def get_args(arguments=None):
     """Get command line arguments.
@@ -210,10 +215,6 @@ class MainApp(object):
         execution of the program.
         Other attributes will be initialized as None.
         """
-
-        logging.basicConfig(level=logging.INFO,
-                            format=FORMAT,
-                            datefmt=DATE_FORMAT)
         self.log = logging.getLogger(__name__)
         self.args = None
         self.log.debug('Initializing DataClassifier instance')
@@ -222,6 +223,7 @@ class MainApp(object):
         self.full_path = None
         # self.instrument = None
         # self.technique = None
+        self._pipeline_version = __version__
     
     def __call__(self, args=None):
         """Call method for MainApp
@@ -242,7 +244,7 @@ class MainApp(object):
             self.args = get_args()
         else:
             self.args = args
-
+        self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
         # Division point for the future implementation of *live reduction mode*
 
         folders = glob.glob(os.path.join(self.args.raw_path, '*'))
