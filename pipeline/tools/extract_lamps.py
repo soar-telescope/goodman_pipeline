@@ -233,14 +233,14 @@ class CombineAndExtract(object):
 if __name__ == '__main__':
     data_path = '/user/simon/data/soar/comp_lamp_lib/work/'
     destination = '/user/simon/data/soar/comp_lamp_lib/work/goodman_comp'
-    directories = ["2017-12-17_GSP/RED",
-                   "2017-12-19_GSP/RED",
-                   "2017-12-20_GSP/RED",
-                   "2017-12-22_GSP/RED",
-                   "2018-01-11_GSP/RED",
-                   "2018-01-17_GSP/RED",
-                   "2018-01-18_GSP/RED"]
-
+    # directories = ["2017-12-17_GSP/RED",
+    #                "2017-12-19_GSP/RED",
+    #                "2017-12-20_GSP/RED",
+    #                "2017-12-22_GSP/RED",
+    #                "2018-01-11_GSP/RED",
+    #                "2018-01-17_GSP/RED",
+    #                "2018-01-18_GSP/RED"]
+    directories = ["2017-12-19_GSP/RED"]
     combine_and_extract = CombineAndExtract()
 
     for folder in directories:
