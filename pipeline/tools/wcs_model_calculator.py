@@ -7,6 +7,7 @@ import numpy as np
 import pandas
 from pipeline.wcs import WCS
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 class GSPWcsCalculator(object):
@@ -37,6 +38,12 @@ class GSPWcsCalculator(object):
                 angstrom = np.asarray(self.angstrom, dtype=float)
                 wcs_model = self.wcs.fit(physical=pixel,
                                          wavelength=angstrom)
+                self.ccd = self.wcs.write_gsp_wcs(self.ccd, wcs_model)
+                image_name = os.path.basename(image_file)
+                new_name = os.path.join(self.path, image_name[24:])
+                # print(new_name)
+                self.ccd.write(new_name, overwrite=True)
+
                 self._pdf_generator(model=wcs_model)
 
     def _recover_lines(self):
@@ -59,6 +66,11 @@ class GSPWcsCalculator(object):
         # self.angstrom = np.asarray(self.angstrom, dtype=float)
 
     def _validate_lines(self):
+        """Calls all available validation methods
+
+        Returns:
+            True if none of the validation fails.
+        """
         assert len(self.pixel) == len(self.angstrom)
         if not self._order_validation(self.pixel):
             return False
@@ -71,6 +83,7 @@ class GSPWcsCalculator(object):
 
     @staticmethod
     def _order_validation(lines_array):
+        """Checks that the array of lines only increases."""
         previous = None
         for line_value in lines_array:
             # print(line_value)
@@ -103,6 +116,15 @@ class GSPWcsCalculator(object):
             self.nist[key] = nist_data
 
     def _validate_line_existence(self):
+        """Check if a line actually exists in any table of NIST
+        Notes:
+            It does not actually check NIST, it loads six csv tables
+            from NIST's strong lines for the elements used in lamps.
+            Ar,  Cu, Fe, He, Hg, Ne. It does not work perfect so far
+            so the it is not checking existence actually but if it finds it
+            it will get the value at "spectrum" column in NIST tables which
+            correspond to the source of the line for instance Ne I, Ar II.
+            """
 
         lamp_elements = []
         lamp_name = self.ccd.header['OBJECT']
@@ -129,43 +151,60 @@ class GSPWcsCalculator(object):
             print(self.angstrom[i], self.spectrum[i])
 
     def _pdf_generator(self, model):
-        plt.figure(1, (20, 10))
-        plt.plot(model(range(len(self.ccd.data))), self.ccd.data, color='k')
-        line_spacer = 0
+        """Creates a pdf file Using Reference lines."""
+        file_name = self.ccd.header['GSP_FNAM']
+        pdf_file_name = os.path.join(
+            os.path.join(os.path.dirname(sys.modules['pipeline'].__file__),
+                         '../docs/goodman_comp_pdf'),
+            re.sub('.fits', '.pdf', file_name[24:]))
 
-        top_lim = 1.3 * self.ccd.data.max()
-        bottom_lim = self.ccd.data.min() - 0.05 * self.ccd.data.max()
-        plt.ylim((bottom_lim, top_lim))
-        plt.xlim((model(0), model(len(self.ccd.data))))
+        with PdfPages(pdf_file_name) as pdf:
+            plt.figure(1, (20, 10))
+            plt.plot(model(range(len(self.ccd.data))), self.ccd.data, color='k')
+            line_spacer = 0
 
-        for i in range(len(self.angstrom)):
-            line_str = "{:.4f} {:s}".format(self.angstrom[i], str(self.spectrum[i]))
-            try:
-                if self.angstrom[i+1] - self.angstrom[i] < 25:
-                    line_spacer = (25 - (self.angstrom[i+1] - self.angstrom[i]))
-                elif line_spacer > 0:
-                    line_spacer *= -1
-                else:
+            top_lim = 1.3 * self.ccd.data.max()
+            bottom_lim = self.ccd.data.min() - 0.05 * self.ccd.data.max()
+            plt.ylim((bottom_lim, top_lim))
+            plt.xlim((model(0), model(len(self.ccd.data))))
+
+            for i in range(len(self.angstrom)):
+                line_str = "{:.4f} {:s}".format(self.angstrom[i], str(self.spectrum[i]))
+                try:
+                    if self.angstrom[i+1] - self.angstrom[i] < 25:
+                        line_spacer = (25 - (self.angstrom[i+1] - self.angstrom[i]))
+                    elif line_spacer > 0:
+                        line_spacer *= -1
+                    else:
+                        line_spacer = 0
+                    # print(line_spacer)
+                except IndexError:
                     line_spacer = 0
-                print(line_spacer)
-            except IndexError:
-                line_spacer = 0
-            x_pos = self.angstrom[i]
-            y_pos = np.max((self.ccd.data[int(np.floor(self.pixel[i]))],
-                            self.ccd.data[int(np.ceil(self.pixel[i]))]))
-            y_offset = 0.05 * self.ccd.data.max()
-            # plt.plot(x_pos, y_pos, x_pos - line_spacer, y_pos + y_offset, color='r')
-            # y_min = y_pos / self.ccd.data.max()
-            # y_max = (y_pos + y_offset) / self.ccd.data.max()
-            # plt.axvline(x=x_pos, ymin=y_min, ymax=y_max, color='r')
-            plt.text(x_pos - line_spacer, y_pos + y_offset, line_str, rotation=90,
-                     verticalalignment='bottom',
-                     horizontalalignment='center')
-            # plt.axvline(aline, color='r', alpha=0.5)
+                x_pos = self.angstrom[i]
+                y_pos = np.max((self.ccd.data[int(np.floor(self.pixel[i]))],
+                                self.ccd.data[int(np.ceil(self.pixel[i]))]))
+                y_offset = 0.05 * self.ccd.data.max()
+                # plt.plot(x_pos, y_pos, x_pos - line_spacer, y_pos + y_offset, color='r')
+                # y_min = y_pos / self.ccd.data.max()
+                # y_max = (y_pos + y_offset) / self.ccd.data.max()
+                # plt.axvline(x=x_pos, ymin=y_min, ymax=y_max, color='r')
+                plt.text(x_pos - line_spacer, y_pos + y_offset, line_str, rotation=90,
+                         verticalalignment='bottom',
+                         horizontalalignment='center')
+                # plt.axvline(aline, color='r', alpha=0.5)
 
+            title = "{:s} - {:s} - {:s}".format(self.ccd.header['OBJECT'],
+                                                self.ccd.header['WAVMODE'],
+                                                self.ccd.header['SLIT'])
+            plt.title(title)
+            plt.xlabel('Wavelength (Angstrom)')
+            plt.ylabel('Intensity (ADU)')
+            plt.tight_layout()
+            pdf.savefig()
+            # pdf.close()
+            # plt.show()
+            plt.close()
 
-        plt.tight_layout()
-        plt.show()
 
 
 if __name__ == '__main__':
