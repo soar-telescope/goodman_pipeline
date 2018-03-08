@@ -42,6 +42,7 @@ from ..core import (extraction,
                     search_comp_group,
                     add_wcs_keys,
                     save_extracted,
+                    write_fits,
                     NoTargetException,
                     NoMatchFound)
 
@@ -82,6 +83,7 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
 
     full_path = data_container.full_path
 
+
     for sub_container in [groups for groups in [data_container.spec_groups,
                           data_container.object_groups] if groups is not None]:
         for group in sub_container:
@@ -92,35 +94,14 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
             # this has to be initialized here
             comp_group = None
             comp_ccd_list = []
-            if 'COMP' in group.obstype.unique():
-                log.debug('Group has comparison lamps')
-                comp_group = group[group.obstype == 'COMP']
-                log.debug('Adding comparison lamps group to data container')
-                data_container.add_comp_group(comp_group=comp_group)
-            else:
-                log.debug('Group does not have comparison lamps')
-                if data_container.comp_groups is not None:
-                    log.debug('There are comparison lamp group candidates')
 
-                    try:
-
-                        comp_group = search_comp_group(
-                            object_group=object_group,
-                            comp_groups=data_container.comp_groups)
-
-                        log.warning('This comparison lamp might not be optimal '
-                                    'if you are doing radial velocity studies')
-
-                    except NoMatchFound:
-
-                        log.error('It was not possible to find a comparison '
-                                  'group')
-                else:
-                    log.warning('Data will be extracted but not calibrated')
+            comp_group = find_comparison_lamps(args=args,
+                                               group=group,
+                                               data_container=data_container)
 
             COMBINE = True
             if len(object_group.file.tolist()) > 1 and COMBINE:
-                print("This can be combined")
+                log.debug("This can be combined")
             for spec_file in object_group.file.tolist():
                 log.info('Processing Science File: {:s}'.format(spec_file))
                 file_path = os.path.join(full_path, spec_file)
@@ -228,6 +209,73 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
 
     return True
 
+def find_comparison_lamps(args, group, data_container):
+    reference_data = ReferenceData(reference_dir=args.reference_dir)
+    log = logging.getLogger(__name__)
+    object_group = group[group.obstype == 'OBJECT']
+    if 'COMP' in group.obstype.unique():
+        log.debug('Group has comparison lamps')
+        comp_group = group[group.obstype == 'COMP']
+        confs = comp_group.groupby(['object',
+                                             'grating',
+                                             'cam_targ',
+                                             'grt_targ']
+                                            ).size().reset_index()
+
+
+        usable_lamps = [
+            reference_data.reference_lamp_exists(
+                object=confs.iloc[index]['object'],
+                grating=confs.iloc[index]['grating'],
+                grt_targ=confs.iloc[index]['cam_targ'],
+                cam_targ=confs.iloc[index]['grt_targ']) for index in confs.index]
+        if any(usable_lamps):
+            print("Usable lamps")
+        else:
+            print("Not usable lamps")
+            try:
+                comp_group = search_comp_group(
+                    object_group=object_group,
+                    comp_groups=data_container.comp_groups)
+                print(comp_group)
+
+                log.warning('This comparison lamp might not be optimal '
+                            'if you are doing radial velocity studies')
+                return comp_group
+
+            except NoMatchFound:
+
+                log.error('It was not possible to find a comparison '
+                          'group')
+                return None
+
+
+
+            # if reference_data.reference_lamp_exists(object=)
+            # log.debug('Adding comparison lamps group to data container')
+            # data_container.add_comp_group(comp_group=comp_group)
+    else:
+        log.debug('Group does not have comparison lamps')
+        if data_container.comp_groups is not None:
+            log.debug('There are comparison lamp group candidates')
+
+            try:
+
+                comp_group = search_comp_group(
+                    object_group=object_group,
+                    comp_groups=data_container.comp_groups)
+
+                log.warning('This comparison lamp might not be optimal '
+                            'if you are doing radial velocity studies')
+                return comp_group
+
+            except NoMatchFound:
+
+                log.error('It was not possible to find a comparison '
+                          'group')
+        else:
+            log.warning('Data will be extracted but not calibrated')
+
 
 class WavelengthCalibration(object):
     """Wavelength Calibration Class
@@ -267,8 +315,10 @@ class WavelengthCalibration(object):
         self.log = logging.getLogger(__name__)
         self.args = args
         self.poly_order = 2
-        self.WCS = WCS()
+        self.wcs = WCS()
         self.wsolution = None
+        self.n_points = None
+        self.n_rejections = None
         self.rms_error = None
         # print(self.args.reference_dir)
         self.reference_data = ReferenceData(self.args.reference_dir)
@@ -391,42 +441,35 @@ class WavelengthCalibration(object):
                     self.automatic_wavelength_solution()
                     # self.wsolution = self.wavelength_solution()
                 if self.wsolution is not None:
-                    # TODO (simon): plug in a record system
-                    # record = '{:s} {:.3f} {:.3f}'.format(
-                    #     self.lamp.header['GRATING'],
-                    #     self.lamp.header['GRT_TARG'],
-                    #     self.lamp.header['CAM_TARG'])
-                    #
-                    # for par in self.wsolution.parameters:
-                    #     record += ' {:.5f}'.format(par)
-                    #
-                    # os.system("echo \'{:s}\' >> parametros.txt
-                    # ".format(record))
-                    # print(self.wsolution)
-                    # self.lamp.write(os.path.join(self.args.destination, 'non-linear-raw-1d.fits'))
-                    # linear = self.lamp.copy()
-                    self.linear_lamp = self.linearize_spectrum(self.lamp.data)
-                    # linear.data = self.linear_lamp[1]
-                    # linear.write(os.path.join(self.args.destination, 'linear-raw-1d.fits'))
 
-                    self.lamp.header = self.add_wavelength_solution(
-                        new_header=self.lamp.header,
-                        spectrum=self.linear_lamp,
+                    linear_x_axis, self.lamp.data = self.linearize_spectrum(
+                        self.lamp.data)
+
+                    self.lamp = self.wcs.write_gsp_wcs(ccd=self.lamp,
+                                                       model=self.wsolution)
+
+                    self.lamp = self.add_wavelength_solution(
+                        ccd=self.lamp,
+                        x_axis=linear_x_axis)
+
+                    self.save_wavelength_calibrated(
+                        ccd=self.lamp,
                         original_filename=self.calibration_lamp,
                         index=object_number)
 
-                    # self.lamp.write(
-                    #     os.path.join(self.args.destination, 'linear-with-ws-1d.fits'))
+                    """Save science data"""
+                    linear_x_axis, ccd.data = self.linearize_spectrum(ccd.data)
 
-                    # print(ccd.header)
+                    ccd = self.wcs.write_gsp_wcs(ccd=ccd,
+                                                 model=self.wsolution)
 
-                    self.linearized_sci = self.linearize_spectrum(ccd.data)
+                    ccd = self.add_wavelength_solution(
+                        ccd=ccd,
+                        x_axis=linear_x_axis)
 
-                    self.header = self.add_wavelength_solution(
-                        new_header=ccd.header,
-                        spectrum=self.linearized_sci,
-                        original_filename=ccd.header['GSP_FNAM'],
-                        index=object_number)
+                    self.save_wavelength_calibrated(
+                        ccd=ccd,
+                        original_filename=ccd.header['GSP_FNAM'])
 
                     wavelength_solution = WavelengthSolution(
                         solution_type='non_linear',
@@ -435,7 +478,7 @@ class WavelengthCalibration(object):
                         model=self.wsolution,
                         ref_lamp=self.calibration_lamp,
                         eval_comment=self.evaluation_comment,
-                        header=self.header)
+                        header=ccd.header)
 
                     # print(self.wsolution)
 
@@ -599,7 +642,7 @@ class WavelengthCalibration(object):
             lines_center = self.recenter_lines(no_nan_lamp_data, peaks)
 
         if self.args.debug_mode:
-            print(new_order, slit_size, )
+            # print(new_order, slit_size, )
             fig = plt.figure(9)
             fig.canvas.set_window_title('Lines Detected')
             plt.title('Lines detected in Lamp\n'
@@ -1050,6 +1093,24 @@ class WavelengthCalibration(object):
                        0.015 / 377.2)))
         return wavelength
 
+    # def automatic_wavelength_solution(self):
+    #     try:
+    #         reference_lamp_ccd = self.reference_data.get_reference_lamp(
+    #             header=self.lamp.header)
+    #
+    #         correlation = self.cross_correlation(
+    #             reference=reference_lamp_ccd.data,
+    #             new_array=self.lamp.data)
+    #         plt.title("{:.4f}".format(correlation))
+    #
+    #         plt.plot(reference_lamp_ccd.data, label='Reference Data')
+    #         plt.plot(range(len(self.lamp.data)) + correlation, self.lamp.data, label='New Lamp')
+    #         plt.legend(loc='best')
+    #         plt.show()
+    #
+    #     except NotImplementedError:
+    #         pass
+
     def automatic_wavelength_solution(self):
         """Finds a Wavelength Solution Automatically
 
@@ -1091,25 +1152,23 @@ class WavelengthCalibration(object):
         try:
             # reference_lamp_file = self.reference_data.get_best_reference_lamp(
             #     header=self.lamp.header)
-            reference_lamp_file = self.reference_data.get_exact_lamp(
+            reference_lamp_ccd = self.reference_data.get_reference_lamp(
                 header=self.lamp.header)
 
             self.log.debug('Found reference lamp: '
-                           '{:s}'.format(reference_lamp_file))
-
-            reference_lamp_data = CCDData.read(reference_lamp_file, unit=u.adu)
+                           '{:s}'.format(reference_lamp_ccd.header['GSP_FNAM']))
         except NotImplementedError:
 
             self.log.warning('This configuration is not supported in '
-                        'automatic mode.')
+                             'automatic mode.')
 
             # TODO (simon): Evaluate if send this to interactive mode
             return None
 
-        reference_lamp_wav_axis, reference_lamp_data.data = \
-            self.WCS.read(ccd=reference_lamp_data)
+        reference_lamp_wav_axis, reference_lamp_ccd.data = \
+            self.wcs.read_gsp_wcs(ccd=reference_lamp_ccd)
 
-        reference_lamp_copy = reference_lamp_data.copy()
+        reference_lamp_copy = reference_lamp_ccd.copy()
 
         if False:
             box_kernel = Box1DKernel(width=33)
@@ -1122,14 +1181,15 @@ class WavelengthCalibration(object):
                                                 gaussian_kernel)
 
         # Initialize wavelength builder class
-        # wavelength_solution = self.WCS.fit(model='chebyshev',
+        # wavelength_solution = self.wcs.fit(model='chebyshev',
         #                                        degree=self.poly_order)
 
         # self.wsolution = wavelength_solution.ws_fit(pixel, auto_angs)
 
         '''detect lines in comparison lamp (not reference)'''
         lamp_lines_pixel = self.get_lines_in_lamp()
-        lamp_lines_angst = self.WCS.model(lamp_lines_pixel)
+        lamp_lines_angst = self.wcs.model(lamp_lines_pixel)
+        refr_lines_angst = self.reference_data.lines_angstrom
 
         pixel_values = []
         angstrom_values = []
@@ -1160,7 +1220,7 @@ class WavelengthCalibration(object):
             # print(xmin, xmax, self.lamp.data.size)
             # TODO (simon): Convolve to match wider lines such as those from
             # TODO (cont): the slit of 5 arseconds
-            ref_sample = reference_lamp_data.data[xmin:xmax]
+            ref_sample = reference_lamp_ccd.data[xmin:xmax]
             ref_wavele = reference_lamp_wav_axis[xmin:xmax]
             lamp_sample = self.lamp.data[xmin:xmax]
 
@@ -1169,12 +1229,14 @@ class WavelengthCalibration(object):
                            '{:s}'.format(str(correlation_value)))
 
             """record value for reference wavelength"""
-            angstrom_value_model = self.WCS.model(
+            angstrom_value_model = self.wcs.model(
                 line_value_pixel + correlation_value)
 
+            # print(correlation_value, angstrom_value_model)
             correlation_values.append(correlation_value)
             angstrom_differences.append(angstrom_value_model - line_value_angst)
             angstrom_values.append(angstrom_value_model)
+            # print(angstrom_values)
             pixel_values.append(line_value_pixel)
 
             if False:
@@ -1202,24 +1264,28 @@ class WavelengthCalibration(object):
         # correlation results
         clipped_values = sigma_clip(correlation_values,
                                     sigma=2,
-                                    iters=1,
+                                    iters=2,
                                     cenfunc=np.ma.median)
+        # print(clipped_values)
 
         if np.ma.is_masked(clipped_values):
             _pixel_values = list(pixel_values)
             _angstrom_values = list(angstrom_values)
+            # print(_angstrom_values)
             pixel_values = []
             angstrom_values = []
             for i in range(len(clipped_values)):
                 if clipped_values[i] is not np.ma.masked:
                     pixel_values.append(_pixel_values[i])
                     # print(_angstrom_values[i][0])
-                    angstrom_values.append(_angstrom_values[i][0])
+                    angstrom_values.append(_angstrom_values[i])
 
         # Create a wavelength solution
         self.log.info('Creating Wavelength Solution')
 
-        self.wsolution = self.WCS.fit(physical=pixel_values,
+        # print(pixel_values, angstrom_values)
+
+        self.wsolution = self.wcs.fit(physical=pixel_values,
                                       wavelength=angstrom_values,
                                       model_name='chebyshev',
                                       degree=self.poly_order)
@@ -1254,12 +1320,13 @@ class WavelengthCalibration(object):
                     angstrom_values.append(_angstrom_values[i])
             self.log.info('Re-fitting wavelength solution')
 
-            self.wsolution = self.WCS.fit(physical=pixel_values,
+            self.wsolution = self.wcs.fit(physical=pixel_values,
                                           wavelength=angstrom_values,
                                           model_name='chebyshev',
                                           degree=self.poly_order)
 
-        self.evaluate_solution()
+        # self.evaluate_solution()
+        self._evaluate_solution(clipped_differences=clipped_differences)
 
         if self.args.plot_results or self.args.debug_mode:
             plt.switch_backend('Qt5Agg')
@@ -1294,7 +1361,7 @@ class WavelengthCalibration(object):
                 self.ax1.axvline(val2, color='c', linestyle='--', zorder=0)
 
             self.ax1.plot(reference_lamp_wav_axis,
-                          reference_lamp_data.data,
+                          reference_lamp_ccd.data,
                           label='Reference',
                           color='k',
                           alpha=1, zorder=0)
@@ -1351,6 +1418,24 @@ class WavelengthCalibration(object):
                 plt.ioff()
                 plt.close()
                 # plt.close(self.i_fig)
+
+    def _evaluate_solution(self, clipped_differences):
+        self.n_points = len(clipped_differences)
+        self.n_rejections = np.ma.count_masked(clipped_differences)
+        square_differences = []
+        for i in range(len(clipped_differences)):
+            if clipped_differences[i] is not np.ma.masked:
+                square_differences.append(clipped_differences[i] ** 2)
+        # old_rms_error = None
+        # if self.rms_error is not None:
+        #     old_rms_error = float(self.rms_error)
+        self.rms_error = np.sqrt(
+            np.sum(square_differences) / len(square_differences))
+
+        # print(self.n_points, self.n_rejections, self.rms_error)
+
+        self.log.info('RMS Error : {:.3f}'.format(self.rms_error))
+        return self.rms_error, self.n_points, self.n_rejections
 
     def interactive_wavelength_solution(self, object_name=''):
         """Find the wavelength solution interactively
@@ -1418,7 +1503,7 @@ class WavelengthCalibration(object):
         plt.rcParams['keymap.fullscreen'] = [u'ctrl+f']
 
         try:
-            reference_file = self.reference_data.get_best_reference_lamp(
+            reference_file = self.reference_data.get_reference_lamp(
                 header=self.lamp.header)
         except NotImplementedError:
             reference_file = self.reference_data.get_reference_lamps_by_name(
@@ -1438,7 +1523,7 @@ class WavelengthCalibration(object):
             ref_ccd = CCDData.read(reference_file, unit=u.adu)
             # ref_data = fits.getdata(reference_file)
             # ref_header = fits.getheader(reference_file)
-            self.reference_solution = self.WCS.read(ccd=ref_ccd)
+            self.reference_solution = self.wcs.read(ccd=ref_ccd)
         else:
             reference_plots_enabled = False
             self.log.error('Please Check the OBJECT Keyword of your reference '
@@ -2035,6 +2120,27 @@ class WavelengthCalibration(object):
             self.ax3.legend(loc=2)
             self.i_fig.canvas.draw()
 
+    def save_wavelength_calibrated(self, ccd, original_filename, index=None):
+        if index is None:
+            f_end = '.fits'
+        else:
+            f_end = '_{:d}.fits'.format(index)
+        # idea
+        #  remove .fits from original_filename
+        # define a base original name
+        # modify in to _1, _2 etc in case there are multitargets
+        # add .fits
+
+        new_filename = self.args.destination + \
+            self.args.output_prefix + \
+            original_filename.replace('.fits', '') + \
+            f_end
+
+        write_fits(ccd=ccd, full_path=new_filename, parent_file=original_filename)
+
+        self.log.info('Wavelength-calibrated file saved to: '
+                      '{:s}'.format(new_filename))
+
     def evaluate_solution(self, plots=False):
         """Calculate the Root Mean Square Error of the solution
 
@@ -2061,18 +2167,45 @@ class WavelengthCalibration(object):
         if self.wsolution is not None:
             differences = np.array([])
             wavelength_line_centers = self.wsolution(self.lines_center)
+            ref_lines = self.reference_data.lines_angstrom
+            # for it in wavelength_line_centers:
+            #     print(it)
+            # for it in ref_lines:
+            #     print(it)
+            #
+            # min_len = np.min([len(wavelength_line_centers), len(ref_lines)])
+            # lag = 0
+            # for i in range(min_len):
+            #     while abs(ref_lines[i] - wavelength_line_centers[i - lag]) > 2 and i < min_len and i - lag > 0:
+            #         lag -= 1
+            #     diff = ref_lines[i] - wavelength_line_centers[i - lag]
+            #     print(i, i - lag, diff)
+
 
             for wline in wavelength_line_centers:
                 closer_index = np.argmin(
-                    abs(self.reference_data.get_line_list_by_name(
-                        self.lamp_name) - wline))
+                    abs(self.reference_data.lines_angstrom - wline))
+                # print("Closer Index ", closer_index)
+                # print(abs(self.reference_data.lines_angstrom - wline)[closer_index])
 
-                rline = self.reference_data.get_line_list_by_name(
-                    self.lamp_name)[closer_index]
+                rline = self.reference_data.lines_angstrom[closer_index]
 
                 rw_difference = wline - rline
-                # print 'Difference w - r ', rw_difference, rline
+                print('Difference w - r {:.4f} {:.4f} - {:.4f}'.format(rw_difference, wline, rline))
                 differences = np.append(differences, rw_difference)
+
+            # plt.plot(self.lines_center,
+            #          wavelength_line_centers,
+            #          label='New Data')
+            #
+            # plt.plot(self.reference_data.lines_pixel,
+            #          self.reference_data.lines_angstrom,
+            #          color='r',
+            #          label='Reference Data')
+            # plt.xlabel("Pixels")
+            # plt.ylabel("Angstroms")
+            # plt.legend(loc='best')
+            # plt.show()
 
             clipping_sigma = 2.
             # print(differences)
@@ -2232,7 +2365,7 @@ class WavelengthCalibration(object):
                     pixel.append(self.raw_data_marks_x[i])
                     angstrom.append(self.reference_marks_x[i])
 
-                self.wsolution = self.WCS.fit(physical=pixel,
+                self.wsolution = self.wcs.fit(physical=pixel,
                                               wavelength=angstrom,
                                               model_name='chebyshev',
                                               degree=self.poly_order)
@@ -2333,11 +2466,9 @@ class WavelengthCalibration(object):
             return linear_data
 
     def add_wavelength_solution(self,
-                                new_header,
-                                spectrum,
-                                original_filename,
-                                evaluation_comment=None,
-                                index=None):
+                                ccd,
+                                x_axis,
+                                evaluation_comment=None):
         """Add wavelength solution to the new FITS header
 
         Defines FITS header keyword values that will represent the wavelength
@@ -2349,9 +2480,7 @@ class WavelengthCalibration(object):
             in separated methods to have more control on either process.
 
         Args:
-            new_header (object): An Astropy header object
-            spectrum (Array): A numpy array that corresponds to the processed
-              data
+            ccd (object): Instance of CCDData
             original_filename (str): Original Image file name
             evaluation_comment (str): A comment with information regarding the
               quality of the wavelength solution
@@ -2359,11 +2488,13 @@ class WavelengthCalibration(object):
               index represents the target number.
 
         Returns:
-            new_header (object): An Astropy header object. Although not
-            necessary since there is no further processing
+            ccd (object): A ccdproc.CCDData instance with linear wavelength
+              solution on it.
 
         """
-        rms_error, n_points, n_rejections = self.evaluate_solution()
+        if not all([self.n_points, self.n_rejections, self.rms_error]):
+            self.rms_error, self.n_points, self.n_rejections = \
+                self.evaluate_solution()
 
         # gsp_wser = rms_error
         # gsp_wpoi = n_points
@@ -2373,69 +2504,41 @@ class WavelengthCalibration(object):
         # new_header['GSP_WPOI'] = (n_points, 'Number of points used to '
         #                                     'calculate wavelength solution')
         # new_header['GSP_WREJ'] = (n_rejections, 'Number of points rejected')
-        new_header.set('GSP_WRMS', value=rms_error)
-        new_header.set('GSP_WPOI', value=n_points)
-        new_header.set('GSP_WREJ', value=n_rejections)
+        ccd.header.set('GSP_WRMS', value=self.rms_error)
+        ccd.header.set('GSP_WPOI', value=self.n_points)
+        ccd.header.set('GSP_WREJ', value=self.n_rejections)
 
         if evaluation_comment is None:
             self.evaluation_comment = 'Lamp Solution RMSE = {:.3f} ' \
                                       'Npoints = {:d}, ' \
-                                      'NRej = {:d}'.format(rms_error,
-                                                           n_points,
-                                                           n_rejections)
+                                      'NRej = {:d}'.format(self.rms_error,
+                                                           self.n_points,
+                                                           self.n_rejections)
 
         new_crpix = 1
-        new_crval = spectrum[0][new_crpix - 1]
-        new_cdelt = spectrum[0][new_crpix] - spectrum[0][new_crpix - 1]
+        new_crval = x_axis[new_crpix - 1]
+        new_cdelt = x_axis[new_crpix] - x_axis[new_crpix - 1]
 
-        new_header['BANDID1'] = 'spectrum - background none, weights none, ' \
+        ccd.header['BANDID1'] = 'spectrum - background none, weights none, ' \
                                 'clean no'
-        # new_header['APNUM1'] = '1 1 1452.06 1454.87'
-        new_header['WCSDIM'] = 1
-        new_header['CTYPE1'] = 'LINEAR  '
-        new_header['CRVAL1'] = new_crval
-        new_header['CRPIX1'] = new_crpix
-        new_header['CDELT1'] = new_cdelt
-        new_header['CD1_1'] = new_cdelt
-        new_header['LTM1_1'] = 1.
-        new_header['WAT0_001'] = 'system=equispec'
-        new_header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
-        new_header['DC-FLAG'] = 0
+        # ccd.header['APNUM1'] = '1 1 1452.06 1454.87'
+        ccd.header['WCSDIM'] = 1
+        ccd.header['CTYPE1'] = 'LINEAR  '
+        ccd.header['CRVAL1'] = new_crval
+        ccd.header['CRPIX1'] = new_crpix
+        ccd.header['CDELT1'] = new_cdelt
+        ccd.header['CD1_1'] = new_cdelt
+        ccd.header['LTM1_1'] = 1.
+        ccd.header['WAT0_001'] = 'system=equispec'
+        ccd.header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
+        ccd.header['DC-FLAG'] = 0
         # print(self.calibration_lamp)
-        new_header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
+        ccd.header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
 
-        # print(new_header['APNUM*'])
-        if index is None:
-            f_end = '.fits'
-        else:
-            f_end = '_{:d}.fits'.format(index)
-        # idea
-        #  remove .fits from original_filename
-        # define a base original name
-        # modify in to _1, _2 etc in case there are multitargets
-        # add .fits
+        # print(ccd.header['APNUM*'])
 
-        new_filename = self.args.destination + \
-            self.args.output_prefix + \
-            original_filename.replace('.fits', '') + \
-            f_end
-
-        new_header.set('GSP_FNAM', value=os.path.basename(new_filename))
-
-        #  print('spectrum[0]')
-        # print(spectrum[0])
-        # print('spectrum[1]')
-        # print(spectrum[1])
-        # print(len(spectrum))
-
-        ccd = CCDData(data=spectrum[1], header=new_header, unit=u.adu)
-        ccd.write(new_filename, clobber=True)
-        # print(ccd.header['GSP_FNAM'])
-
-        # fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
-        self.log.info('Saving wavelength-calibrated file: {:s}'.format(new_filename))
-        # print new_header
-        return new_header
+        # print ccd.header
+        return ccd
 
     def display_onscreen_message(self, message='', color='red'):
         """Uses the fourth subplot to display a message

@@ -10,6 +10,7 @@ from astropy.modeling import (models, fitting, Model)
 from astropy.convolution import (convolve, Gaussian1DKernel, Box1DKernel)
 import re
 import glob
+import logging
 
 import sys
 
@@ -34,6 +35,7 @@ class WavelengthCalibration(object):
         """The class is initialized only with the path to the data
         then instance is called for each image."""
         assert os.path.isdir(data_path)
+        self.log = logging.getLogger(__name__)
         self.path = data_path
         self.comparison_lamps = None
         self.image_collection = ImageFileCollection(self.path)
@@ -55,12 +57,12 @@ class WavelengthCalibration(object):
         #     print("Can't locate file: {:s}".format(os.path.join(self.path,
         #                                                        file_name)))
 
-    @staticmethod
-    def _add_angstrom_lines_slot(ccd, line_list):
+    def _add_angstrom_lines_slot(self, ccd, line_list):
+        """Adds keyords for registering Angstrom values"""
         assert isinstance(ccd, CCDData)
         assert isinstance(line_list, list)
         for i in range(len(line_list)):
-            print("GSP_A{:03d}".format(i + 1), line_list[i])
+            # self.log.info("GSP_A{:03d}".format(i + 1), line_list[i])
             ccd.header.set("GSP_A{:03d}".format(i + 1),
                            value=0,
                            comment="Line location in angstrom value")
@@ -474,10 +476,11 @@ class WavelengthCalibration(object):
 
 if __name__ == '__main__':
     # path = '/user/simon/data/soar/work/aller/2017-06-11/RED'
-    path = '/user/simon/data/soar/comp_lamp_lib/work/goodman_comp'
-    file_1 = 'gcfzsto_0131_CuHeAr_G1200M2_slit103.fits'
-    file_2 = 'cfzsto_0131_CuHeAr_G1200M2_slit103.fits'
-    file_3 = 'gcfzsto_0144_Abell36_G1200M2_slit103.fits'
+    # path = '/user/simon/data/soar/comp_lamp_lib/work/goodman_comp'
+    path = '/user/simon/data/soar/work/2018-02-08_David/comp'
+    # file_1 = 'gcfzsto_0131_CuHeAr_G1200M2_slit103.fits'
+    # file_2 = 'cfzsto_0131_CuHeAr_G1200M2_slit103.fits'
+    # file_3 = 'gcfzsto_0144_Abell36_G1200M2_slit103.fits'
 
     # files = ["ext_cfzsto_0029-0033_goodman_comp_400M1_CuHeAr.fits",
     #          "ext_cfzsto_0041-0045_goodman_comp_930M3_GG385_CuHeAr.fits",
@@ -491,14 +494,14 @@ if __name__ == '__main__':
     #          "ext_cfzsto_0119-0123_goodman_comp_1200M7_OG570_CuHeAr.fits",
     #          "ext_cfzsto_0149-0153_goodman_comp_930M5_GG495_CuHeAr.fits"]
 
-    lamps_list = ['gcfzsto_0137_CuHeAr_G1200M2_slit103.fits',
-                  'gcfzsto_0157_CuHeAr_G1200M2_slit103.fits',
-                  'gcfzsto_0174_CuHeAr_G1200M2_slit103.fits',
-                  'gcfzsto_0142_CuHeAr_G1200M3_slit103.fits',
-                  'gcfzsto_0161_CuHeAr_G1200M2_slit103.fits',
-                  'gcfzsto_0177_CuHeAr_G1200M2_slit103.fits']
-
-    lamps = [os.path.join(path, lamp_file) for lamp_file in lamps_list]
+    # lamps_list = ['gcfzsto_0137_CuHeAr_G1200M2_slit103.fits',
+    #               'gcfzsto_0157_CuHeAr_G1200M2_slit103.fits',
+    #               'gcfzsto_0174_CuHeAr_G1200M2_slit103.fits',
+    #               'gcfzsto_0142_CuHeAr_G1200M3_slit103.fits',
+    #               'gcfzsto_0161_CuHeAr_G1200M2_slit103.fits',
+    #               'gcfzsto_0177_CuHeAr_G1200M2_slit103.fits']
+    #
+    # lamps = [os.path.join(path, lamp_file) for lamp_file in lamps_list]
 
     files = glob.glob(path + "/ext_*fits")
 
