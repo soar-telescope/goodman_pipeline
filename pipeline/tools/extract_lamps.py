@@ -84,8 +84,9 @@ class CombineAndExtract(object):
 
                 extracted_name = self._get_extracted_name(combined_name=output_name)
 
-                extracted = self._extract_lamp(ccd=combined,
-                                               output_name=extracted_name)
+                if combined.header['OBSTYPE'] == 'COMP':
+                    extracted = self._extract_lamp(ccd=combined,
+                                                   output_name=extracted_name)
                 # ext_copy = extracted.copy()
 
                 # ADD COPY AND THEN ADD THE GSP WAY OF WCS TO THE HEADER
@@ -231,16 +232,14 @@ class CombineAndExtract(object):
 
 
 if __name__ == '__main__':
-    data_path = '/user/simon/data/soar/comp_lamp_lib/work/'
-    destination = '/user/simon/data/soar/comp_lamp_lib/work/goodman_comp'
-    # directories = ["2017-12-17_GSP/RED",
-    #                "2017-12-19_GSP/RED",
-    #                "2017-12-20_GSP/RED",
-    #                "2017-12-22_GSP/RED",
-    #                "2018-01-11_GSP/RED",
-    #                "2018-01-17_GSP/RED",
-    #                "2018-01-18_GSP/RED"]
-    directories = ["2017-12-19_GSP/RED"]
+    # data_path = '/user/simon/data/soar/comp_lamp_lib/work/'
+    # destination = '/user/simon/data/soar/comp_lamp_lib/work/goodman_comp'
+    #
+    # directories = ["2017-12-19_GSP/RED"]
+    data_path = '/user/simon/data/soar/work/2018-02-08_David/'
+    destination = '/user/simon/data/soar/work/2018-02-08_David/comp'
+
+    directories = ["RED"]
     combine_and_extract = CombineAndExtract()
 
     for folder in directories:
@@ -248,4 +247,4 @@ if __name__ == '__main__':
         print("Processing folder: {:s}".format(path))
         combine_and_extract(data_path=path,
                             output_path=destination,
-                            glob_include='cfzsto_????_*')
+                            glob_include='cfzsto*fits')

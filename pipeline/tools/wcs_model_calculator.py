@@ -24,7 +24,7 @@ class GSPWcsCalculator(object):
 
     def __call__(self, path, *args, **kwargs):
         print("Working on: {:s}".format(path))
-        pattern = kwargs.get('pattern', '*.fits')
+        pattern = kwargs.get('pattern', 'll*.fits')
         self.path = path
         self.files = glob(pathname=os.path.join(path, pattern))
         for image_file in self.files:
@@ -41,7 +41,7 @@ class GSPWcsCalculator(object):
                 self.ccd = self.wcs.write_gsp_wcs(self.ccd, wcs_model)
                 image_name = os.path.basename(image_file)
                 new_name = os.path.join(self.path, image_name[24:])
-                # print(new_name)
+                # print(new_name, image_name)
                 self.ccd.write(new_name, overwrite=True)
 
                 self._pdf_generator(model=wcs_model)
@@ -163,7 +163,7 @@ class GSPWcsCalculator(object):
             plt.plot(model(range(len(self.ccd.data))), self.ccd.data, color='k')
             line_spacer = 0
 
-            top_lim = 1.3 * self.ccd.data.max()
+            top_lim = 1.1 * self.ccd.data.max()
             bottom_lim = self.ccd.data.min() - 0.05 * self.ccd.data.max()
             plt.ylim((bottom_lim, top_lim))
             plt.xlim((model(0), model(len(self.ccd.data))))
@@ -210,5 +210,5 @@ class GSPWcsCalculator(object):
 if __name__ == '__main__':
     calculator = GSPWcsCalculator()
     path = '/data/simon/data/soar/comp_lamp_lib/work/comparison_lamp_library/completed'
-
-    calculator(path=path)
+    path_david = '/user/simon/data/soar/work/2018-02-08_David/comp/completed'
+    calculator(path=path_david)
