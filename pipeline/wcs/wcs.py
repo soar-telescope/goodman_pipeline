@@ -104,7 +104,7 @@ class WCS(object):
         assert isinstance(model, Model)
 
         ccd.header.set('GSP_FUNC', value=model.__class__.name,
-                       comment="Mathematical model")
+                       comment="Mathematical model of non-linearized data")
         ccd.header.set('GSP_ORDR', value=model.degree,
                        comment="Mathematical model order")
         ccd.header.set('GSP_NPIX', value=ccd.size,
@@ -137,7 +137,7 @@ class WCS(object):
             self.wavelength_and_intensity = [
                 self.model(range(ccd.header['GSP_NPIX'])), ccd.data]
 
-            return self.model
+            return self.wavelength_and_intensity
 
     def _model_constructor(self):
         """Generates callable mathematical model
