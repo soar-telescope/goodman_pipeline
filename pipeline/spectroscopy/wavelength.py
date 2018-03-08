@@ -94,10 +94,71 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
             # this has to be initialized here
             comp_group = None
             comp_ccd_list = []
+            if 'COMP' in group.obstype.unique():
+                log.debug('Group has comparison lamps')
+                comp_group = group[group.obstype == 'COMP']
+                # confs = comp_group.groupby(['object',
+                #                             'grating',
+                #                             'cam_targ',
+                #                             'grt_targ']
+                #                            ).size().reset_index()
+                #
+                # usable_lamps = [
+                #     reference_data.reference_lamp_exists(
+                #         object=confs.iloc[index]['object'],
+                #         grating=confs.iloc[index]['grating'],
+                #         grt_targ=confs.iloc[index]['cam_targ'],
+                #         cam_targ=confs.iloc[index]['grt_targ']) for index in
+                #     confs.index]
+                # if any(usable_lamps):
+                #     print("Usable lamps")
+                # else:
+                #     print("Not usable lamps")
+                #     try:
+                #         comp_group = search_comp_group(
+                #             object_group=object_group,
+                #             comp_groups=data_container.comp_groups)
+                #         print(comp_group)
+                #
+                #         log.warning('This comparison lamp might not be optimal '
+                #                     'if you are doing radial velocity studies')
+                #         return comp_group
+                #
+                #     except NoMatchFound:
+                #
+                #         log.error('It was not possible to find a comparison '
+                #                   'group')
+                #         return None
 
-            comp_group = find_comparison_lamps(args=args,
-                                               group=group,
-                                               data_container=data_container)
+
+
+                # if reference_data.reference_lamp_exists(object=)
+                log.debug('Adding comparison lamps group to data container')
+                data_container.add_comp_group(comp_group=comp_group)
+            else:
+                log.debug('Group does not have comparison lamps')
+                if data_container.comp_groups is not None:
+                    log.debug('There are comparison lamp group candidates')
+
+                    try:
+
+                        comp_group = search_comp_group(
+                            object_group=object_group,
+                            comp_groups=data_container.comp_groups)
+
+                        log.warning('This comparison lamp might not be optimal '
+                                    'if you are doing radial velocity studies')
+
+                    except NoMatchFound:
+
+                        log.error('It was not possible to find a comparison '
+                                  'group')
+                else:
+                    log.warning('Data will be extracted but not calibrated')
+
+            # comp_group = find_comparison_lamps(args=args,
+            #                                    group=group,
+            #                                    data_container=data_container)
 
             COMBINE = True
             if len(object_group.file.tolist()) > 1 and COMBINE:
@@ -209,72 +270,72 @@ def process_spectroscopy_data(data_container, args, extraction_type='fractional'
 
     return True
 
-def find_comparison_lamps(args, group, data_container):
-    reference_data = ReferenceData(reference_dir=args.reference_dir)
-    log = logging.getLogger(__name__)
-    object_group = group[group.obstype == 'OBJECT']
-    if 'COMP' in group.obstype.unique():
-        log.debug('Group has comparison lamps')
-        comp_group = group[group.obstype == 'COMP']
-        confs = comp_group.groupby(['object',
-                                             'grating',
-                                             'cam_targ',
-                                             'grt_targ']
-                                            ).size().reset_index()
-
-
-        usable_lamps = [
-            reference_data.reference_lamp_exists(
-                object=confs.iloc[index]['object'],
-                grating=confs.iloc[index]['grating'],
-                grt_targ=confs.iloc[index]['cam_targ'],
-                cam_targ=confs.iloc[index]['grt_targ']) for index in confs.index]
-        if any(usable_lamps):
-            print("Usable lamps")
-        else:
-            print("Not usable lamps")
-            try:
-                comp_group = search_comp_group(
-                    object_group=object_group,
-                    comp_groups=data_container.comp_groups)
-                print(comp_group)
-
-                log.warning('This comparison lamp might not be optimal '
-                            'if you are doing radial velocity studies')
-                return comp_group
-
-            except NoMatchFound:
-
-                log.error('It was not possible to find a comparison '
-                          'group')
-                return None
-
-
-
-            # if reference_data.reference_lamp_exists(object=)
-            # log.debug('Adding comparison lamps group to data container')
-            # data_container.add_comp_group(comp_group=comp_group)
-    else:
-        log.debug('Group does not have comparison lamps')
-        if data_container.comp_groups is not None:
-            log.debug('There are comparison lamp group candidates')
-
-            try:
-
-                comp_group = search_comp_group(
-                    object_group=object_group,
-                    comp_groups=data_container.comp_groups)
-
-                log.warning('This comparison lamp might not be optimal '
-                            'if you are doing radial velocity studies')
-                return comp_group
-
-            except NoMatchFound:
-
-                log.error('It was not possible to find a comparison '
-                          'group')
-        else:
-            log.warning('Data will be extracted but not calibrated')
+# def find_comparison_lamps(args, group, data_container):
+#     reference_data = ReferenceData(reference_dir=args.reference_dir)
+#     log = logging.getLogger(__name__)
+#     object_group = group[group.obstype == 'OBJECT']
+#     if 'COMP' in group.obstype.unique():
+#         log.debug('Group has comparison lamps')
+#         comp_group = group[group.obstype == 'COMP']
+#         confs = comp_group.groupby(['object',
+#                                              'grating',
+#                                              'cam_targ',
+#                                              'grt_targ']
+#                                             ).size().reset_index()
+#
+#
+#         usable_lamps = [
+#             reference_data.reference_lamp_exists(
+#                 object=confs.iloc[index]['object'],
+#                 grating=confs.iloc[index]['grating'],
+#                 grt_targ=confs.iloc[index]['cam_targ'],
+#                 cam_targ=confs.iloc[index]['grt_targ']) for index in confs.index]
+#         if any(usable_lamps):
+#             print("Usable lamps")
+#         else:
+#             print("Not usable lamps")
+#             try:
+#                 comp_group = search_comp_group(
+#                     object_group=object_group,
+#                     comp_groups=data_container.comp_groups)
+#                 print(comp_group)
+#
+#                 log.warning('This comparison lamp might not be optimal '
+#                             'if you are doing radial velocity studies')
+#                 return comp_group
+#
+#             except NoMatchFound:
+#
+#                 log.error('It was not possible to find a comparison '
+#                           'group')
+#                 return None
+#
+#
+#
+#             # if reference_data.reference_lamp_exists(object=)
+#             # log.debug('Adding comparison lamps group to data container')
+#             # data_container.add_comp_group(comp_group=comp_group)
+#     else:
+#         log.debug('Group does not have comparison lamps')
+#         if data_container.comp_groups is not None:
+#             log.debug('There are comparison lamp group candidates')
+#
+#             try:
+#
+#                 comp_group = search_comp_group(
+#                     object_group=object_group,
+#                     comp_groups=data_container.comp_groups)
+#
+#                 log.warning('This comparison lamp might not be optimal '
+#                             'if you are doing radial velocity studies')
+#                 return comp_group
+#
+#             except NoMatchFound:
+#
+#                 log.error('It was not possible to find a comparison '
+#                           'group')
+#         else:
+#             log.warning('Data will be extracted but not calibrated')
 
 
 class WavelengthCalibration(object):

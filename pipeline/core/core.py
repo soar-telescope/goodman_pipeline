@@ -2234,8 +2234,7 @@ def search_comp_group(object_group, comp_groups):
     """
     log_spec.debug('Finding a suitable comparison lamp group')
 
-    object_confs = object_group.groupby(['slit',
-                                         'grating',
+    object_confs = object_group.groupby(['grating',
                                          'cam_targ',
                                          'grt_targ',
                                          'filter',
@@ -2245,8 +2244,7 @@ def search_comp_group(object_group, comp_groups):
 
     for comp_group in comp_groups:
 
-        if ((comp_group['slit'] == object_confs.iloc[0]['slit']) &
-                (comp_group['grating'] == object_confs.iloc[0]['grating']) &
+        if ((comp_group['grating'] == object_confs.iloc[0]['grating']) &
                 (comp_group['cam_targ'] == object_confs.iloc[0]['cam_targ']) &
                 (comp_group['grt_targ'] == object_confs.iloc[0]['grt_targ']) &
                 (comp_group['filter'] == object_confs.iloc[0]['filter']) &
@@ -2417,7 +2415,11 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, plots=False):
             log_spec.debug('Adding trace to list')
             all_traces.append([single_trace, profile])
         else:
-            print(single_trace.c0, ccd.shape[0])
+            # print(profile)
+            # plt.plot(profile(range(ccd.shape[0])))
+            # plt.plot(np.median(ccd.data, axis=1))
+            # plt.show()
+            # print(single_trace.c0, ccd.shape[0])
             log_spec.error('Trace is out of boundaries. Center: '
                            '{:.4f}'.format(single_trace.c0.value))
         # print(single_trace)
@@ -2650,6 +2652,9 @@ class NightDataContainer(object):
             self.spec_groups.append(spec_group)
         if self.spec_groups is not None:
             self.is_empty = False
+        comp_group = spec_group[spec_group.obstype == 'COMP']
+        self.add_comp_group(comp_group=comp_group)
+        # print(comp_group)
 
     def set_sun_times(self, sun_set, sun_rise):
         """Sets values for sunset and sunrise
