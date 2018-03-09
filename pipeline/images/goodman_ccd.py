@@ -34,6 +34,7 @@ logging.basicConfig(level=logging.INFO,
 
 log = logging.getLogger(__name__)
 
+
 def get_args(arguments=None):
     """Get command line arguments.
 
