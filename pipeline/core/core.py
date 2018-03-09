@@ -2551,16 +2551,23 @@ class NightDataContainer(object):
             if self.technique == 'Spectroscopy':
 
                 group_info += "COMP Group:\n"
-                group_info += self._print_groups(self.comp_groups)
+                group_info += self._get_group_repr(self.comp_groups)
                 group_info += "OBJECT Group\n"
-                group_info += self._print_groups(self.object_groups)
+                group_info += self._get_group_repr(self.object_groups)
                 group_info += "OBJECT + COMP Group:\n"
-                group_info += self._print_groups(self.spec_groups)
+                group_info += self._get_group_repr(self.spec_groups)
 
-            class_info += group_info
+                class_info += group_info
             return class_info
 
-    def _print_groups(self, group):
+    @staticmethod
+    def _get_group_repr(group):
+        """Converts the file names in each group to string
+
+        This class has a __repr__ method and in this method the file names
+        contained in the different groups gets formatted as a string for
+        displaying in a readable way.
+        """
         group_str = ""
         if group is not None:
             for i in range(len(group)):
