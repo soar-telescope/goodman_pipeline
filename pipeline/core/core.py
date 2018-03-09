@@ -32,8 +32,8 @@ from scipy import signal
 from math import floor, ceil
 from ..info import __version__
 
-log_ccd = logging.getLogger('goodmanccd.core')
-log_spec = logging.getLogger('redspec.core')
+log_ccd = logging.getLogger(__name__)
+log_spec = logging.getLogger(__name__)
 
 
 def add_wcs_keys(ccd):
@@ -305,7 +305,7 @@ def classify_spectroscopic_data(path, search_pattern):
             log_spec.debug('Adding OBJECT-COMP group')
             data_container.add_spec_group(spec_group=spec_group)
 
-    print(data_container)
+    # print(data_container)
     return data_container
 
 
@@ -2214,7 +2214,7 @@ def save_extracted(ccd, destination):
     return ccd
 
 
-def search_comp_group(object_group, comp_groups):
+def search_comp_group(object_group, comp_groups, reference):
     """Search for a suitable comparison lamp group
 
     In case a science target was observed without comparison lamps, usually
@@ -2250,9 +2250,10 @@ def search_comp_group(object_group, comp_groups):
                 (comp_group['grt_targ'] == object_confs.iloc[0]['grt_targ']) &
                 (comp_group['filter'] == object_confs.iloc[0]['filter']) &
                 (comp_group['filter2'] == object_confs.iloc[0]['filter2'])).all():
-            log_spec.debug('Found a matching comparison lamp group')
-
-            return comp_group
+            if reference.check_comp_group(comp_group) is not None:
+                # print(comp_group)
+                log_spec.debug('Found a matching comparison lamp group')
+                return comp_group
 
     raise NoMatchFound
 
