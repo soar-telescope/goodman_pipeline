@@ -98,7 +98,7 @@ class ReferenceData(object):
         else:
             raise NotImplementedError
 
-    def reference_lamp_exists(self, object, grating, grt_targ, cam_targ):
+    def lamp_exists(self, object, grating, grt_targ, cam_targ):
         filtered_collection = self.ref_lamp_collection[
             (self.ref_lamp_collection['object'] == object) &
             (self.ref_lamp_collection['grating'] == grating) &
@@ -113,6 +113,36 @@ class ReferenceData(object):
         else:
             raise NotImplementedError
         
+    def check_comp_group(self, comp_group):
+        lamps = comp_group.groupby(['object',
+                                    'grating',
+                                    'grt_targ',
+                                    'cam_targ']).size().reset_index(
+                                    ).rename(columns={0: 'count'})
+
+        for i in lamps.index:
+            if self.lamp_exists(
+                    object=lamps.iloc[i]['object'],
+                    grating=lamps.iloc[i]['grating'],
+                    grt_targ=lamps.iloc[i]['grt_targ'],
+                    cam_targ=lamps.iloc[i]['cam_targ']):
+                new_group = comp_group[
+                    (comp_group['object'] == lamps.iloc[i]['object']) &
+                    (comp_group['grating'] == lamps.iloc[i]['grating']) &
+                    (comp_group['grt_targ'] == lamps.iloc[i]['grt_targ']) &
+                    (comp_group['cam_targ'] == lamps.iloc[i]['cam_targ'])]
+                # print(new_group.file)
+                return new_group
+            else:
+                # print(lamps.iloc[i])
+                # print(comp_group.file)
+                self.log.warning("The target's comparison lamps do not have "
+                                 "reference lamps.")
+                self.log.debug("In this case a compatible lamp will be obtained"
+                               "from all the lamps obtained in the data or"
+                               "present in the files.")
+        return None
+
     def _recover_lines(self):
         self.lines_pixel = []
         self.lines_angstrom = []
