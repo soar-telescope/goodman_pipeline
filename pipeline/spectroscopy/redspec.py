@@ -13,19 +13,27 @@ Simon Torres 2016-06-28
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from .wavelength import process_spectroscopy_data
-from ..core import (classify_spectroscopic_data)
+from .wavelength import WavelengthCalibration
+from ..core import (classify_spectroscopic_data,
+                    search_comp_group,
+                    add_wcs_keys,identify_targets,trace_targets,extraction,save_extracted,)
+from ..core import (NoMatchFound,NoTargetException)
 
 import sys
 import os
 import textwrap
 import argparse
+import astropy.units as u
 import logging
+from .linelist import ReferenceData
+from ccdproc import CCDData
 from ..info import __version__
 # import matplotlib
 # matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
 import warnings
 
+SHOW_PLOTS = False
 
 warnings.filterwarnings('ignore')
 if '--debug' in sys.argv:
@@ -235,6 +243,8 @@ class MainApp(object):
         self.log = logging.getLogger(__name__)
         self.args = None
         self.wavelength_solution_obj = None
+        self.wavelength_calibration = None
+        self.reference = None
         self._pipeline_version = __version__
 
     def __call__(self, args=None):
@@ -253,32 +263,192 @@ class MainApp(object):
             self.args = get_args()
         else:
             self.args = args
+
+        self.reference = ReferenceData(reference_dir=self.args.reference_dir)
         self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
         # data_container instance of NightDataContainer defined in core
         data_container = classify_spectroscopic_data(
             path=self.args.source,
             search_pattern=self.args.pattern)
+
         self.log.debug("Got data container")
+
         if data_container.is_empty:
             sys.exit("Unable to find or classify data")
 
-        # print('data_container.bias')
-        # print(data_container.bias)
-        # print('data_container.day_flats')
-        # print(data_container.day_flats)
-        # print('data_container.dome_flats')
-        # print(data_container.dome_flats)
-        # print('data_container.sky_flats')
-        # print(data_container.sky_flats)
-        # print('data_container.data_groups')
-        # print(data_container.data_groups)
-        # print('data_container.spec_groups')
-        # print(data_container.spec_groups)
+        self._run(data_container=data_container,
+                  extraction_type=self.args.extraction_type)
 
-        self.wavelength_solution_obj = process_spectroscopy_data(
-            data_container=data_container,
-            args=self.args,
-            extraction_type=self.args.extraction_type)
+        sys.exit("END")
+
+    def _run(self, data_container,extraction_type):
+        assert data_container.is_empty is False
+        assert any(extraction_type == option for option in ['fractional',
+                                                            'optimal'])
+        log = logging.getLogger(__name__)
+
+        full_path = data_container.full_path
+
+        for sub_container in [groups for groups in [data_container.spec_groups,
+                                                    data_container.object_groups]
+                              if groups is not None]:
+            for group in sub_container:
+                # instantiate WavelengthCalibration here for each group.
+                self.wavelength_calibration = WavelengthCalibration(args=self.args)
+                # this will contain only obstype == OBJECT
+                object_group = group[group.obstype == 'OBJECT']
+                obj_groupby = object_group.groupby(['object']).size(
+
+                ).reset_index().rename(columns={0: 'count'})
+                self.log.info('\n')
+                self.log.info("Processing Science Target: "
+                              "{:s} with {:d} files."
+                              "".format(obj_groupby.iloc[0]['object'],
+                              obj_groupby.iloc[0]['count']))
+                # this has to be initialized here
+                comp_group = None
+                comp_ccd_list = []
+                if 'COMP' in group.obstype.unique():
+                    log.debug('Group has comparison lamps')
+                    comp_group = group[group.obstype == 'COMP']
+                    comp_group = self.reference.check_comp_group(comp_group)
+
+                if comp_group is None:
+                    self.log.debug('Group does not have comparison lamps')
+                    if data_container.comp_groups is not None:
+                        self.log.debug('There are comparison lamp group '
+                                       'candidates')
+
+                        try:
+
+                            comp_group = search_comp_group(
+                                object_group=object_group,
+                                comp_groups=data_container.comp_groups,
+                                reference=self.reference)
+
+                            self.log.warning(
+                                'This comparison lamp might not be optimal '
+                                'if you are doing radial velocity studies')
+
+                        except NoMatchFound:
+
+                            log.error(
+                                'It was not possible to find a comparison '
+                                'group')
+                    else:
+                        log.warning('Data will be extracted but not calibrated')
+
+                COMBINE = True
+                if len(object_group.file.tolist()) > 1 and COMBINE:
+                    log.debug("This can be combined")
+                for spec_file in object_group.file.tolist():
+                    log.info('Processing Science File: {:s}'.format(spec_file))
+                    file_path = os.path.join(full_path, spec_file)
+                    ccd = CCDData.read(file_path, unit=u.adu)
+                    ccd.header.set('GSP_PNAM', value=spec_file)
+                    ccd = add_wcs_keys(ccd=ccd)
+                    # ccd.header['GSP_FNAM'] = spec_file
+                    if comp_group is not None and comp_ccd_list == []:
+                        for comp_file in comp_group.file.tolist():
+                            comp_path = os.path.join(full_path, comp_file)
+                            comp_ccd = CCDData.read(comp_path, unit=u.adu)
+                            comp_ccd = add_wcs_keys(ccd=comp_ccd)
+                            comp_ccd.header.set('GSP_PNAM', value=comp_file)
+                            comp_ccd_list.append(comp_ccd)
+
+                    else:
+                        log.debug(
+                            'Comp Group is None or comp list already exist')
+
+                    target_list = []
+                    trace_list = []
+
+                    # identify
+                    target_list = identify_targets(ccd=ccd,
+                                                   nfind=3,
+                                                   plots=SHOW_PLOTS)
+
+                    # trace
+                    if len(target_list) > 0:
+                        trace_list = trace_targets(ccd=ccd,
+                                                   target_list=target_list,
+                                                   sampling_step=5,
+                                                   pol_deg=2)
+                    else:
+                        log.error("The list of identified targets is empty.")
+                        continue
+
+                    # if len(trace_list) > 0:
+                    extracted_target_and_lamps = []
+                    for single_trace, single_profile in trace_list:
+                        try:
+                            # target extraction
+                            extracted = extraction(
+                                ccd=ccd,
+                                trace=single_trace,
+                                spatial_profile=single_profile,
+                                extraction=extraction_type,
+                                plots=SHOW_PLOTS)
+                            save_extracted(ccd=extracted,
+                                           destination=self.args.destination)
+                            # print(spec_file)
+
+                            # lamp extraction
+                            all_lamps = []
+                            if comp_ccd_list:
+                                for comp_lamp in comp_ccd_list:
+                                    extracted_lamp = extraction(
+                                        ccd=comp_lamp,
+                                        trace=single_trace,
+                                        spatial_profile=single_profile,
+                                        extraction=extraction_type,
+                                        plots=SHOW_PLOTS)
+                                    save_extracted(ccd=extracted_lamp,
+                                                   destination=self.args.destination)
+                                    all_lamps.append(extracted_lamp)
+                            extracted_target_and_lamps.append([extracted,
+                                                               all_lamps])
+
+                            if self.args.debug_mode:
+                                # print(plt.get_backend())
+                                fig = plt.figure(num=0)
+                                fig.clf()
+                                fig.canvas.set_window_title('Extracted Data')
+
+                                manager = plt.get_current_fig_manager()
+
+                                if plt.get_backend() == u'GTK3Agg':
+                                    manager.window.maximize()
+                                elif plt.get_backend() == u'Qt5Agg':
+                                    manager.window.showMaximized()
+
+                                for edata, comps in extracted_target_and_lamps:
+                                    plt.plot(edata.data,
+                                             label=edata.header['OBJECT'])
+                                    if comps:
+                                        for comp in comps:
+                                            plt.plot(comp.data,
+                                                     label=comp.header[
+                                                         'OBJECT'])
+                                plt.legend(loc='best')
+                                if plt.isinteractive():
+                                    plt.draw()
+                                    plt.pause(1)
+                                else:
+                                    plt.show()
+
+                        except NoTargetException:
+                            log.error('No target was identified in file'
+                                      ' {:s}'.format(spec_file))
+                            continue
+                    object_number = None
+                    for sci_target, comp_list in extracted_target_and_lamps:
+                        self.wavelength_solution_obj = self.wavelength_calibration(
+                            ccd=sci_target,
+                            comp_list=comp_list,
+                            object_number=None)
+
+        return True
 
 
 if __name__ == '__main__':
