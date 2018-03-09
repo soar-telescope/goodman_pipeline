@@ -34,7 +34,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from scipy import signal
 
 from ..wcs.wcs import WCS
-from .linelist import ReferenceData
+
 from ..core import (extraction,
                     extract_fractional_pixel,
                     trace_targets,
@@ -42,9 +42,10 @@ from ..core import (extraction,
                     search_comp_group,
                     add_wcs_keys,
                     save_extracted,
-                    write_fits,
-                    NoTargetException,
-                    NoMatchFound)
+                    write_fits)
+from ..core import (NoTargetException,
+                    NoMatchFound,
+                    ReferenceData)
 
 # FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 # log.basicConfig(level=log.INFO, format=FORMAT)

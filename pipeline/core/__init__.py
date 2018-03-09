@@ -7,6 +7,7 @@ from .core import (CriticalError,
                    NoMatchFound,
                    NotEnoughLinesDetected,
                    NoTargetException,
+                   ReferenceData,
                    SpectroscopicMode)
 
 # import of functions in core.py

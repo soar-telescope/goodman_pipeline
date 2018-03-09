@@ -17,7 +17,9 @@ from .wavelength import WavelengthCalibration
 from ..core import (classify_spectroscopic_data,
                     search_comp_group,
                     add_wcs_keys,identify_targets,trace_targets,extraction,save_extracted,)
-from ..core import (NoMatchFound,NoTargetException)
+from ..core import (NoMatchFound,
+                    NoTargetException,
+                    ReferenceData)
 
 import sys
 import os
@@ -25,7 +27,6 @@ import textwrap
 import argparse
 import astropy.units as u
 import logging
-from .linelist import ReferenceData
 from ccdproc import CCDData
 from ..info import __version__
 # import matplotlib
