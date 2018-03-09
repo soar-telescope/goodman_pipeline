@@ -305,6 +305,7 @@ def classify_spectroscopic_data(path, search_pattern):
             log_spec.debug('Adding OBJECT-COMP group')
             data_container.add_spec_group(spec_group=spec_group)
 
+    print(data_container)
     return data_container
 
 
@@ -2535,7 +2536,7 @@ class NightDataContainer(object):
                                                       self.full_path,
                                                       self.instrument,
                                                       self.technique))
-            print(class_info)
+            # print(class_info)
 
             if all([self.gain, self.rdnoise, self.roi]):
                 class_info += str("\nGain: {:.2f}\n"
@@ -2544,9 +2545,32 @@ class NightDataContainer(object):
                                         self.gain,
                                         self.rdnoise,
                                         self.roi))
-            class_info += str("\nIs Empty: {:s}".format(str(self.is_empty)))
+            class_info += str("\nIs Empty: {:s}\n".format(str(self.is_empty)))
 
+            group_info = "\n Data Grouping Information\n"
+            if self.technique == 'Spectroscopy':
+
+                group_info += "COMP Group:\n"
+                group_info += self._print_groups(self.comp_groups)
+                group_info += "OBJECT Group\n"
+                group_info += self._print_groups(self.object_groups)
+                group_info += "OBJECT + COMP Group:\n"
+                group_info += self._print_groups(self.spec_groups)
+
+            class_info += group_info
             return class_info
+
+    def _print_groups(self, group):
+        group_str = ""
+        if group is not None:
+            for i in range(len(group)):
+                group_str += " Group {:d}\n".format(i + 1)
+                for _file in group[i]['file']:
+                    group_str += "  {:s}\n".format(_file)
+            return group_str
+        else:
+
+            return "  Group is Empty\n"
 
     def add_bias(self, bias_group):
         """Adds a bias group
