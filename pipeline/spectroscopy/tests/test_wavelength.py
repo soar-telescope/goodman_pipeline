@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
-from ..wavelength import (process_spectroscopy_data,
-                          WavelengthCalibration,
+from ..wavelength import (WavelengthCalibration,
                           WavelengthSolution)
 
 # TODO (simon): Figure out what tests are required and/or if some major
