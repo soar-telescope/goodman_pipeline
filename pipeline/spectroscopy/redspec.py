@@ -60,7 +60,8 @@ def get_args(arguments=None):
         system
 
     """
-    log = logging.getLogger(__name__)
+    # getLogger without __name__ so that we get the root logger.
+    log = logging.getLogger()
     global LOG_FILENAME
     leave = False
     parser = argparse.ArgumentParser(
@@ -186,7 +187,7 @@ def get_args(arguments=None):
             os.path.dirname(sys.modules['goodman.pipeline'].__file__),
             args.reference_dir)
     except KeyError as error:
-        log.debug(error)
+        log.debug("KeyError ", error)
         ref_full_path = os.path.join(
             os.path.dirname(sys.modules['pipeline'].__file__),
             args.reference_dir)
@@ -237,11 +238,8 @@ class MainApp(object):
 
 
         """
-
-        logging.basicConfig(level=logging.INFO,
-                            format=FORMAT,
-                            datefmt=DATE_FORMAT)
         self.log = logging.getLogger(__name__)
+        print(self.log.name)
         self.args = None
         self.wavelength_solution_obj = None
         self.wavelength_calibration = None
