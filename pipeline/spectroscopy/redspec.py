@@ -239,7 +239,6 @@ class MainApp(object):
 
         """
         self.log = logging.getLogger(__name__)
-        print(self.log.name)
         self.args = None
         self.wavelength_solution_obj = None
         self.wavelength_calibration = None
@@ -308,7 +307,7 @@ class MainApp(object):
                 comp_group = None
                 comp_ccd_list = []
                 if 'COMP' in group.obstype.unique():
-                    log.debug('Group has comparison lamps')
+                    self.log.debug('Group has comparison lamps')
                     comp_group = group[group.obstype == 'COMP']
                     comp_group = self.reference.check_comp_group(comp_group)
 
@@ -331,17 +330,18 @@ class MainApp(object):
 
                         except NoMatchFound:
 
-                            log.error(
+                            self.log.error(
                                 'It was not possible to find a comparison '
                                 'group')
                     else:
-                        log.warning('Data will be extracted but not calibrated')
+                        self.log.warning('Data will be extracted but not '
+                                         'calibrated')
 
                 COMBINE = True
                 if len(object_group.file.tolist()) > 1 and COMBINE:
-                    log.debug("This can be combined")
+                    self.log.debug("This can be combined")
                 for spec_file in object_group.file.tolist():
-                    log.info('Processing Science File: {:s}'.format(spec_file))
+                    self.log.info('Processing Science File: {:s}'.format(spec_file))
                     file_path = os.path.join(full_path, spec_file)
                     ccd = CCDData.read(file_path, unit=u.adu)
                     ccd.header.set('GSP_PNAM', value=spec_file)
@@ -356,7 +356,7 @@ class MainApp(object):
                             comp_ccd_list.append(comp_ccd)
 
                     else:
-                        log.debug(
+                        self.log.debug(
                             'Comp Group is None or comp list already exist')
 
                     target_list = []
@@ -374,7 +374,7 @@ class MainApp(object):
                                                    sampling_step=5,
                                                    pol_deg=2)
                     else:
-                        log.error("The list of identified targets is empty.")
+                        self.log.error("The list of identified targets is empty.")
                         continue
 
                     # if len(trace_list) > 0:
@@ -437,15 +437,15 @@ class MainApp(object):
                                     plt.show()
 
                         except NoTargetException:
-                            log.error('No target was identified in file'
-                                      ' {:s}'.format(spec_file))
+                            self.log.error('No target was identified in file'
+                                           ' {:s}'.format(spec_file))
                             continue
                     object_number = None
                     for sci_target, comp_list in extracted_target_and_lamps:
                         self.wavelength_solution_obj = self.wavelength_calibration(
                             ccd=sci_target,
                             comp_list=comp_list,
-                            object_number=None)
+                            object_number=object_number)
 
         return True
 

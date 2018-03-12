@@ -35,20 +35,8 @@ from scipy import signal
 
 from ..wcs.wcs import WCS
 
-from ..core import (extraction,
-                    extract_fractional_pixel,
-                    trace_targets,
-                    identify_targets,
-                    search_comp_group,
-                    add_wcs_keys,
-                    save_extracted,
-                    write_fits)
-from ..core import (NoTargetException,
-                    NoMatchFound,
-                    ReferenceData)
-
-# FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
-# log.basicConfig(level=log.INFO, format=FORMAT)
+from ..core import (write_fits)
+from ..core import (ReferenceData)
 
 
 SHOW_PLOTS = False
@@ -213,8 +201,6 @@ class WavelengthCalibration(object):
                     self.interactive_wavelength_solution(
                         object_name=object_name)
                 else:
-                    self.log.warning('Automatic Wavelength Solution might fail '
-                                     'to provide accurate solutions')
                     self.automatic_wavelength_solution()
                     # self.wsolution = self.wavelength_solution()
                 if self.wsolution is not None:
@@ -320,10 +306,10 @@ class WavelengthCalibration(object):
                             plt.pause(2)
                             plt.ioff()
 
-                    return wavelength_solution
+                    # return wavelength_solution
                 else:
                     self.log.error('It was not possible to get a wavelength '
-                                   'solution from this lamp.')
+                                   'solution from lamp {:s} {:s}.'.format(self.lamp.header['GSP_FNAM'], self.lamp.header['OBJECT']))
                     return None
         else:
             print('Data should be saved anyways')
