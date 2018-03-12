@@ -28,9 +28,9 @@ else:
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_ccd.log'
-logging.basicConfig(level=logging.INFO,
-                            format=FORMAT,
-                            datefmt=DATE_FORMAT)
+# logging.basicConfig(level=logging.INFO,
+#                             format=FORMAT,
+#                             datefmt=DATE_FORMAT)
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ def get_args(arguments=None):
             attributes
 
     """
-    log = logging.getLogger(__name__)
+    log = logging.getLogger()
     global LOG_FILENAME
 
     parser = argparse.ArgumentParser(
@@ -339,8 +339,6 @@ class MainApp(object):
                             args=self.args,
                             data_container=self.data_container)
                         process_images()
-
-
 
 
 if __name__ == '__main__':
