@@ -1451,7 +1451,8 @@ def identify_targets(ccd, nfind=3, plots=False):
         new_profile = clipped_profile[~clipped_profile.mask]
 
         # also the indexes are different
-        new_x_axis = [i for i in range(len(clipped_profile)) if not clipped_profile.mask[i]]
+        new_x_axis = [i for i in range(len(clipped_profile))
+                      if not clipped_profile.mask[i]]
 
         fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
 
@@ -2797,8 +2798,11 @@ class ReferenceData(object):
         # print(header['GSP_FNAM'])
 
         filtered_collection = self.ref_lamp_collection[
+            # TODO (simon): User input for OBJECT keyword can differ from Reference Library
             (self.ref_lamp_collection['object'] == header['object']) &
+            # TODO (simon): Wavemode can be custom (GRT_TARG, CAM_TARG, GRATING)
             (self.ref_lamp_collection['wavmode'] == header['wavmode'])]
+
         # print(filtered_collection)
         if filtered_collection.empty:
             raise NotImplementedError("It was not possible to find any lamps "
@@ -2862,6 +2866,7 @@ class ReferenceData(object):
         return None
 
     def _recover_lines(self):
+        self.log.info("Recovering line information from reference Lamp.")
         self.lines_pixel = []
         self.lines_angstrom = []
         pixel_keys = self._ccd.header['GSP_P*']
@@ -2928,7 +2933,7 @@ class ReferenceData(object):
             os.path.join(os.path.dirname(sys.modules['pipeline'].__file__),
                          'data/nist_list'))
         assert os.path.isdir(nist_path)
-        nist_files = glob(os.path.join(nist_path, "*.txt"))
+        nist_files = glob.glob(os.path.join(nist_path, "*.txt"))
         for nist_file in nist_files:
             key = os.path.basename(nist_file)[22:-4]
             nist_data = pandas.read_csv(nist_file, names=['intensity',

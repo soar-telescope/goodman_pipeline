@@ -733,11 +733,10 @@ class WavelengthCalibration(object):
             pseudo_center = np.argmin(abs(self.reference_solution[0] - x_data))
 
             reference_line_index = np.argmin(
-                abs(self.reference_data.get_line_list_by_name(
-                    self.lamp_name) - x_data))
+                abs(self.reference_data.lines_angstrom - x_data))
 
-            reference_line_value = self.reference_data.get_line_list_by_name(
-                self.lamp_name)[reference_line_index]
+            reference_line_value = self.reference_data.lines_angstrom[
+                reference_line_index]
 
             sub_x = self.reference_solution[0][
                     pseudo_center - 10: pseudo_center + 10]
@@ -784,10 +783,12 @@ class WavelengthCalibration(object):
             pseudo_center = np.argmin(abs(self.raw_pixel_axis - x_data))
             raw_line_index = np.argmin(abs(self.lines_center - x_data))
             raw_line_value = self.lines_center[raw_line_index]
-            # print(raw_line_value)
+            # print(raw_line_value, x_data)
             sub_x = self.raw_pixel_axis[pseudo_center - 10: pseudo_center + 10]
             sub_y = self.lamp.data[pseudo_center - 10: pseudo_center + 10]
             center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
+            self.log.debug("Centroid found but is not used: Centroid "
+                           "{:.4f}".format(center_of_mass))
             # print 'centroid ', center_of_mass
             # plt.figure(3)
             # if self.ax4_plots is not None or self.ax4_com is not None or
@@ -1266,37 +1267,41 @@ class WavelengthCalibration(object):
         plt.rcParams['keymap.fullscreen'] = [u'ctrl+f']
 
         try:
-            reference_file = self.reference_data.get_reference_lamp(
+            reference_lamp = self.reference_data.get_reference_lamp(
                 header=self.lamp.header)
         except NotImplementedError:
-            reference_file = self.reference_data.get_reference_lamps_by_name(
-                lamp_name=self.lamp.header['OBJECT'])
+            reference_lamp = None
+            # reference_lamp = self.reference_data.get_reference_lamps_by_name(
+            #     lamp_name=self.lamp.header['OBJECT'])
             self.log.warning('Could not find a perfect match for reference '
                              'data')
-            # reference_file = None
+            # reference_lamp = None
             # self.log.critical('Could not find a comparison lamp in the
             # reference.')
 
-        # reference_file = self.reference_data.get_reference_lamps_by_name(
+        # reference_lamp = self.reference_data.get_reference_lamps_by_name(
         #     self.lamp_name)
 
-        if reference_file is not None:
-            self.log.info('Using reference file: {:s}'.format(reference_file))
+        if isinstance(reference_lamp, CCDData):
+            self.log.info('Using reference file: '
+                          '{:s}'.format(reference_lamp.header['GSP_FNAM']))
             reference_plots_enabled = True
-            ref_ccd = CCDData.read(reference_file, unit=u.adu)
-            # ref_data = fits.getdata(reference_file)
-            # ref_header = fits.getheader(reference_file)
-            self.reference_solution = self.wcs.read(ccd=ref_ccd)
+            # ref_ccd = CCDData.read(reference_lamp, unit=u.adu)
+            # ref_data = fits.getdata(reference_lamp)
+            # ref_header = fits.getheader(reference_lamp)
+            self.reference_solution = self.wcs.read_gsp_wcs(reference_lamp)
         else:
             reference_plots_enabled = False
             self.log.error('Please Check the OBJECT Keyword of your reference '
                            'data')
+            return False
 
         # update filling value
         self.raw_filling_value = self.get_best_filling_value(
             data=self.lamp.data)
 
-        self.ref_filling_value = self.get_best_filling_value(data=ref_ccd.data)
+        self.ref_filling_value = self.get_best_filling_value(
+            data=reference_lamp.data)
 
         # ------- Plots -------
         self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = \
@@ -1351,7 +1356,7 @@ class WavelengthCalibration(object):
                       color='r',
                       label='Reference Line Values')
 
-        for rline in self.reference_data.get_line_list_by_name(self.lamp_name):
+        for rline in self.reference_data.lines_angstrom:
             self.ax3.axvline(rline, linestyle=':', color='r')
 
         if reference_plots_enabled:
@@ -1765,11 +1770,9 @@ class WavelengthCalibration(object):
                 # self.reference_data.get_line_list_by_name(self.lamp_name)]
 
                 closer_index = np.argmin(
-                    abs(self.reference_data.get_line_list_by_name(
-                        self.lamp_name) - wlines[i]))
+                    abs(self.reference_data.lines_angstrom - wlines[i]))
 
-                rline = self.reference_data.get_line_list_by_name(
-                    self.lamp_name)[closer_index]
+                rline = self.reference_data.lines_angstrom[closer_index]
 
                 rw_difference = wlines[i] - rline
                 # print('Difference w - r ', rw_difference, rline)
@@ -1899,7 +1902,9 @@ class WavelengthCalibration(object):
             original_filename.replace('.fits', '') + \
             f_end
 
-        write_fits(ccd=ccd, full_path=new_filename, parent_file=original_filename)
+        write_fits(ccd=ccd,
+                   full_path=new_filename,
+                   parent_file=original_filename)
 
         self.log.info('Wavelength-calibrated file saved to: '
                       '{:s}'.format(new_filename))
@@ -2132,6 +2137,11 @@ class WavelengthCalibration(object):
                                               wavelength=angstrom,
                                               model_name='chebyshev',
                                               degree=self.poly_order)
+                raw_angstrom = self.wsolution(self.raw_data_marks_x)
+
+                differences_angstrom = self.reference_marks_x - raw_angstrom
+                print(differences_angstrom)
+                print(self._evaluate_solution(clipped_differences=differences_angstrom))
 
                 self.evaluate_solution(plots=True)
 
