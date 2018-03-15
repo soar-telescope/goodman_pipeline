@@ -322,7 +322,7 @@ class MainApp(object):
                             comp_group = search_comp_group(
                                 object_group=object_group,
                                 comp_groups=data_container.comp_groups,
-                                reference=self.reference)
+                                reference_data=self.reference)
 
                             self.log.warning(
                                 'This comparison lamp might not be optimal '
@@ -384,10 +384,9 @@ class MainApp(object):
                             # target extraction
                             extracted = extraction(
                                 ccd=ccd,
-                                trace=single_trace,
+                                target_trace=single_trace,
                                 spatial_profile=single_profile,
-                                extraction=extraction_type,
-                                plots=SHOW_PLOTS)
+                                extraction_name=extraction_type)
                             save_extracted(ccd=extracted,
                                            destination=self.args.destination)
                             # print(spec_file)
@@ -398,10 +397,9 @@ class MainApp(object):
                                 for comp_lamp in comp_ccd_list:
                                     extracted_lamp = extraction(
                                         ccd=comp_lamp,
-                                        trace=single_trace,
+                                        target_trace=single_trace,
                                         spatial_profile=single_profile,
-                                        extraction=extraction_type,
-                                        plots=SHOW_PLOTS)
+                                        extraction_name=extraction_type)
                                     save_extracted(ccd=extracted_lamp,
                                                    destination=self.args.destination)
                                     all_lamps.append(extracted_lamp)

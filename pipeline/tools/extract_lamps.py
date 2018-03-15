@@ -141,9 +141,9 @@ class CombineAndExtract(object):
         self.target_trace.c0.value = center
 
         extracted = extraction(ccd=ccd,
-                               trace=self.target_trace,
+                               target_trace=self.target_trace,
                                spatial_profile=self.gaussian_profile,
-                               extraction='fractional')
+                               extraction_name='fractional')
 
 
         # print(center - fifteen_percent, center + fifteen_percent)

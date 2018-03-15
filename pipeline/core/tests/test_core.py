@@ -25,13 +25,10 @@ from ..core import (add_wcs_keys,
                     extraction,
                     extract_fractional_pixel,
                     extract_optimal,
-                    extract_simple,
                     fix_duplicated_keywords,
                     fractional_sum,
-                    get_background_value,
                     get_best_flat,
                     get_central_wavelength,
-                    get_extraction_zone,
                     get_slit_trim_section,
                     get_twilight_time,
                     identify_targets,
@@ -45,7 +42,6 @@ from ..core import (add_wcs_keys,
                     ra_dec_to_deg,
                     read_fits,
                     remove_background_by_median,
-                    remove_conflictive_keywords,
                     search_comp_group,
                     trace,
                     trace_targets,
@@ -131,10 +127,6 @@ def test_extract_optimal():
     pass
 
 
-def test_extract_simple():
-    pass
-
-
 def test_fix_duplicated_keywords():
     pass
 
@@ -186,12 +178,7 @@ class FractionalExtraction(TestCase):
         self.assertEqual(sum, high_limit - low_limit)
 
 
-class BackgroundValue(TestCase):
-
-    # @skip
-    def test_get_background_value(self):
-        pass
-        # self.fail("Test of fractional sum not finished.")
+# class BackgroundValue(TestCase):
 
 
 def test_get_best_flat():
@@ -199,10 +186,6 @@ def test_get_best_flat():
 
 
 def test_get_central_wavelength():
-    pass
-
-
-def test_get_extraction_zone():
     pass
 
 

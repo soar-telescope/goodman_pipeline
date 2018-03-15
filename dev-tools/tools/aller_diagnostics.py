@@ -82,14 +82,14 @@ def extract_from_file(image_list, clim=None):
         traces = trace(ccd=ccd,
                        model=target[0],
                        trace_model=trace_model,
-                       fitter=trace_fitter,
+                       model_fitter=trace_fitter,
                        sampling_step=5)
         all_traces.append([traces, image])
         print(traces)
         extracted = extraction(ccd=ccd,
-                               trace=traces,
+                               target_trace=traces,
                                spatial_profile=target[0],
-                               extraction='fractional')
+                               extraction_name='fractional')
         # print(traces)
 
 
