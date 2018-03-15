@@ -8,7 +8,7 @@ import time
 import logging
 from ccdproc import CCDData
 
-logging.basicConfig(level=logging.INFO,
+logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -19,6 +19,7 @@ class EventHandler(FileSystemEventHandler):
         self.log = logging.getLogger(__name__)
 
     def dispatch(self, event):
+        print(dir(event))
         if isinstance(event, FileCreatedEvent):
             time.sleep(1)
             self.print_object(event)
@@ -28,7 +29,7 @@ class EventHandler(FileSystemEventHandler):
             else:
                 self.log.info("File {:s}: {:s}".format(event.event_type,
                                                        os.path.basename(event.src_path)))
-            # print(dir(event))
+            #
             # self.log.info()
             # self.log.info(event.__class__.__name__)
 
@@ -65,7 +66,8 @@ class MainApp(object):
         self.observer.start()
         try:
             while True:
-                time.sleep(1)
+                # time.sleep(1)
+                pass
         except KeyboardInterrupt:
             self.observer.stop()
         self.observer.join()
