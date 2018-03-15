@@ -33,18 +33,18 @@ log = logging.getLogger(__name__)
 
 
 def add_wcs_keys(ccd):
-    """Adds generic keyword to the header
+    """Adds generic keyword for linear wavelength solution to the header
 
     Linear wavelength solutions require a set of standard fits keywords. Later
-    on they will be updated accordingly
+    on they will be updated accordingly.
     The main goal of putting them here is to have consistent and nicely ordered
-    headers
+    headers.
 
     Notes:
-        This does NOT add a WCS solution, just the keywords
+        This does NOT add a WCS solution, just the keywords.
 
     Args:
-        ccd (object): ccdproc.CCDData instance with no wcs keywords
+        ccd (object): ccdproc.CCDData instance with no wcs keywords.
 
     Returns:
         ccd (object): ccdproc.CCDData instance with modified header with added
@@ -120,9 +120,14 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
 
     There are three options when dealing with cosmic ray rejection in this
     pipeline, the first is ``dcr`` which is a program written in C by Wojtek
-    Pych (http://users.camk.edu.pl/pych/DCR/) and works very well for
+    Pych (http://users.camk.edu.pl/pych/DCR/) that works very well for
     spectroscopy the only negative aspect is that integration with python was
-    difficult and not native.
+    difficult and not natively (through subprocess). The second option is
+    `lacosmic` or `ccdproc.cosmicray_lacosmic`
+    (http://www.astro.yale.edu/dokkum/lacosmic/) by Pieter G. van Dokkum. The
+    negative aspect is that it does not work well with spectroscopic data and it
+    does not apply the correction to the images instead it updates the mask
+    attribute. And the third is not doing any correction.
 
     Args:
         ccd (object): a ccdproc.CCDData instance.
@@ -136,8 +141,16 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         prefix (str): Cosmic ray rejection related prefix to be added to image
             name.
         method (str): Method to use for cosmic ray rejection. There are three
-            options: dcr, lacosmic and none.
+            options: `dcr`, `lacosmic` and `none`.
         save (bool): Disables by default saving the images
+
+    Returns:
+        ccdproc.CCDData instance and `out_prefix` which is the prefix added to
+          the image name.
+
+    Raises:
+        NotImplementedError if the `method` argument is not `dcr`, `lacosmic`
+          nor `none`.
 
     """
     if ccd.header['OBSTYPE'] == 'COMP':
@@ -157,7 +170,6 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
                        value="DCR",
                        comment="Cosmic ray rejection method")
 
-        # ccd.write(full_path, clobber=True)
         write_fits(ccd=ccd, full_path=full_path)
         log.info('Saving image: {:s}'.format(full_path))
 
@@ -185,28 +197,27 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         out_prefix = prefix + out_prefix
         full_path = os.path.join(red_path, out_prefix + image_name)
 
-        # ccd.write(full_path, clobber=True)
-        log.info('Saving image: {:s}'.format(full_path))
         if save:
+            log.info('Saving image: {:s}'.format(full_path))
             write_fits(ccd=ccd, full_path=full_path)
         return ccd, out_prefix
 
     elif method == 'none':
         full_path = os.path.join(red_path, out_prefix + image_name)
         log.warning("--cosmic set to 'none'")
-        # ccd.write(full_path, clobber=True)
         if save:
+            log.info('Saving image: {:s}'.format(full_path))
             write_fits(ccd=ccd, full_path=full_path)
-        log.info('Saving image: {:s}'.format(full_path))
 
         return ccd, out_prefix
 
     else:
         log.error('Unrecognized Cosmic Method {:s}'.format(method))
+        raise NotImplementedError
 
 
 def classify_spectroscopic_data(path, search_pattern):
-    """Classify data by grouping them as pandas.DataFrame instances
+    """Classify data by grouping them by a set of keywords.
 
     This functions uses ImageFileCollection from ccdproc. First it creates a
     collection of information regarding the images located in *path* that match
@@ -216,13 +227,23 @@ def classify_spectroscopic_data(path, search_pattern):
     much like an SQL database to select and filter values and in that way put
     them in groups that are pandas.DataFrame instances.
 
+    The keywords retrieved are: 'date', 'slit', 'date-obs', 'obstype', 'object',
+    'exptime', 'obsra', 'obsdec', 'grating', 'cam_targ', 'grt_targ', 'filter',
+    'filter2', 'gain' and 'rdnoise'. Then all data is grouped by matching the
+    following keywords: 'slit', 'radeg', 'decdeg', 'grating', 'cam_targ',
+    'grt_targ', 'filter', 'filter2', 'gain' and 'rdnoise' and finally every
+    group is classified as: a comparison lamp-only group, an object-only group
+    or a group of object and comparison lamps. The comparison lamps present in
+    the last group (COMP + OBJECT) are also added in the first one (COMP-only).
+
 
     Args:
         path (str): Path to data location
         search_pattern (str): Prefix to match files.
 
     Returns:
-        data_container (object): Instance of NightDataContainer
+        data_container (object): Instance of
+          `goodman.pipeline.core.NightDataContainer`
 
     """
     log.debug("Spectroscopic Data Classification")
@@ -308,7 +329,6 @@ def classify_spectroscopic_data(path, search_pattern):
             log.debug('Adding OBJECT-COMP group')
             data_container.add_spec_group(spec_group=spec_group)
 
-    # print(data_container)
     return data_container
 
 
@@ -318,20 +338,22 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
     """Combine a list of CCDData instances.
 
     Args:
-        image_list (list): Each element should an instance of CCDData
+        image_list (list): Each element should be an instance of ccdproc.CCDData
         dest_path (str): Path to where the new image should saved
         prefix (str): Prefix to add to the image file name
         output_name (str): Alternatively a file name can be parsed, this will
           ignore `prefix`.
         method (str): Method for doing the combination, this goes straight to
-          the call of `ccdproc.combine` function
+          the call of `ccdproc.combine` function.
         save (bool): If True will save the combined images. If False it will
-        ignore `prefix` or `output_name`.
+          ignore `prefix` or `output_name`.
 
     Returns:
         A combined image as a CCDData object.
 
     """
+    # TODO (simon): apparently dest_path is not needed all the time, the full
+    # method should be reviewed.
     assert len(image_list) > 1
 
     # This defines a default filename that should be deleted below
@@ -408,59 +430,6 @@ def convert_time(in_time):
     return time.mktime(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
 
 
-def create_background_image(ccd, profile_model, nsigma, separation):
-    """Creates a background-only image
-
-    Using a profile model and assuming the spectrum is misaligned only a little
-    bit (i.e. a couple of pixels from end to end) with respect to the lines of
-    the detector. The number of sigmas determines the width of the zone to be
-    masked and the separation is an offset that is added.
-
-    Args:
-        ccd (object): A ccdproc.CCDData instance.
-        profile_model (object): An astropy.modeling.Model instance. Describes
-            the spatial profile of the target.
-        nsigma (float): Number of sigmas. Used to calculate the width of the
-            target zone to be masked.
-        separation (float): Additional offset that adds to the width of the
-            target zone.
-
-    Returns:
-        A ccdproc.CCDData instance with the spectrum masked.
-
-    """
-    background_ccd = ccd.copy()
-    spatial_length, dispersion_length = background_ccd.data.shape
-    target_profiles = []
-    if 'CompoundModel' in profile_model.__class__.name:
-        log.debug(profile_model.submodel_names)
-        for m in range(len(profile_model.submodel_names)):
-            submodel_name = profile_model.submodel_names[m]
-
-            target_profiles.append(profile_model[submodel_name])
-    else:
-        target_profiles.append(profile_model)
-
-    for target in target_profiles:
-        target_mean = target.mean.value
-        target_stddev = target.stddev.value
-
-        data_low_lim = np.int(np.max(
-            [0, target_mean - (nsigma / 2. + separation) * target_stddev]))
-
-        data_high_lim = np.int(np.min([spatial_length, int(
-            target_mean + (nsigma / 2. + separation) * target_stddev)]))
-
-        background_ccd.data[data_low_lim:data_high_lim, :] = 0
-
-    if False:
-        plt.title('Background Image')
-        plt.imshow(background_ccd.data, clim=(0, 50))
-        plt.show()
-
-    return background_ccd
-
-
 def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
                             delete=False, save=True):
     """Runs an external code for cosmic ray rejection
@@ -471,16 +440,17 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     update the mask attribute since it doesn't work with CCDData instances.
 
     The binary takes three positional arguments, they are: 1. input image,
-    2. output image and 3. cosmic rays images. Also it needs that a dcr.par file
-    is located in the directory. All this is implemented in this function if
-    delete is True it will remove the original image and the cosmic rays image.
-    The removal of the original image is absolutely safe when used in the
+    2. output image and 3. cosmic rays image. Also it needs that a dcr.par file
+    is located in the directory. All this is implemented in this function, if
+    `delete` is True it will remove the original image and the cosmic rays
+    image. The removal of the original image is absolutely safe when used in the
     context of the goodman pipeline, however if you want to implement it
     somewhere else, be careful.
 
     Notes:
         This function operates an external code therefore it doesn't return
-        anything, instead it creates a new image.
+        anything natively, instead it creates a new image. A workaround has been
+        created that loads the new image and deletes the file.
 
     Args:
         data_path (str): Data location
@@ -488,7 +458,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         prefix (str): Prefix to add to the file with the cosmic rays removed
         dcr_par_dir (str): Directory of default dcr.par file
         delete (bool): True for deleting the input and cosmic ray file.
-        save (bool):
+        save (bool): Toggles the option of saving the image.
 
     """
 
@@ -510,10 +480,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     command = 'dcr {:s} {:s} {:s}'.format(full_path_in,
                                           full_path_out,
                                           full_path_cosmic)
-    # command = 'dcr {:s} {:s} {:s}'.format(in_file,
-    #                                       out_file,
-    #                                       cosmic_file)
-    # print(command)
 
     log.debug('DCR command:')
     log.debug(command)
@@ -687,7 +653,7 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     disp_axis = range(disp_length)
     trace_points = target_trace(disp_axis)
 
-    apnum1 = None  # '{:d} {:d} {:d} {:d}'.format(1, 1, 1, 1)
+    apnum1 = None
 
     non_background_sub = []
     extracted_spectrum = []
@@ -785,14 +751,6 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
             background_list.append(background)
         else:
             extracted_spectrum.append(column_sum)
-    # plt.plot(low_limits_list, color='r')
-    # plt.plot(high_limits_list, color='r')
-    # plt.show()
-    # plt.plot(non_background_sub, color='b', label='RAW')
-    # plt.plot(extracted_spectrum, color='k', label='Extracted')
-    # plt.plot(background_list, color='r', label='Background')
-    # plt.legend(loc='best')
-    # plt.show()
 
     new_ccd = ccd.copy()
     new_ccd.data = np.asarray(extracted_spectrum)
@@ -800,52 +758,12 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
 
 
 def extract_optimal():
-    raise NotImplementedError
+    """Placeholder for optimal extraction method.
 
-
-def fix_duplicated_keywords(night_dir):
-    """Remove duplicated keywords
-
-    There are some cases when the raw data comes with duplicated keywords.
-    The origin has not been tracked down. The solution is to identify the
-    duplicated keywords and the remove all but one from the end backwards.
-
-    Args:
-        night_dir (str): The full path for the raw data location
-
+    Raises:
+        NotImplementedError
     """
-    log.debug('Finding duplicated keywords')
-    log.warning('Files headers will be overwritten')
-    files = glob.glob(os.path.join(night_dir, '*.fits'))
-    # Pick a random file to find duplicated keywords
-    random_file = random.choice(files)
-    ccd = CCDData.read(random_file, unit=u.adu)
-    header = ccd.header
-    # Put the duplicated keywords in a list
-    multiple_keys = []
-    for keyword in header.keys():
-        if keyword != '':
-            if header.count(keyword) > 1:
-                if keyword not in multiple_keys:
-                    multiple_keys.append(keyword)
-    if multiple_keys != []:
-        log.debug('Found {:d} duplicated keyword '
-                  '{:s}'.format(len(multiple_keys),
-                                's' if len(multiple_keys) > 1 else ''))
-
-        for image_file in files:
-            log.debug('Processing Image File: {:s}'.format(image_file))
-            try:
-                ccd = CCDData.read(image_file, unit=u.adu)
-                for keyword in multiple_keys:
-                    while ccd.header.count(keyword) > 1:
-                        ccd.header.remove(keyword,
-                                          ccd.header.count(keyword) - 1)
-                log.warning('Overwriting file with duplicated keywords removed')
-                log.debug('File %s overwritten', image_file)
-                ccd.write(image_file, clobber=True)
-            except IOError as error:
-                log.error(error)
+    raise NotImplementedError
 
 
 def fractional_sum(data, index, low_limit, high_limit):
@@ -884,14 +802,6 @@ def fractional_sum(data, index, low_limit, high_limit):
         data[int(low_integer), index] * low_fraction + \
         data[int(high_integer), index] * high_fraction
 
-    # print(low_limit,
-    #       high_limit,
-    #       low_integer,
-    #       high_integer,
-    #       high_integer + 1,
-    #       high_fraction,
-    #       column_sum)
-
     return column_sum
 
 
@@ -905,16 +815,16 @@ def get_best_flat(flat_name):
     time gap, etc.
     After it identifies the file it will load it using ccdproc.CCDData and
     return it along the filename.
-    In case if fails it will return None instead of master_flat and another
+    In the case it fails it will return None instead of master_flat and another
     None instead of master_flat_name.
 
     Args:
-        flat_name (str): Full path of masterflat basename. Ends in '*.fits' for
-            globbing.
+        flat_name (str): Full path of master flat basename. Ends in '*.fits' for
+          using glob.
 
     Returns:
-        master_flat (object): A ccdproc.CCDData instance
-        master_flat_name (str): Full path to the chosen masterflat.
+        master_flat (object): A ccdproc.CCDData instance.
+        master_flat_name (str): Full path to the chosen master flat.
 
     """
     flat_list = glob.glob(flat_name)
@@ -974,14 +884,14 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 def get_slit_trim_section(master_flat):
     """Find the slit edges to trim all data
 
-    Using a master flat, ideally good signal to noise ratio, this function will
-    identify the edges of the slit projected into the detector. Having this data
-    will allow to reduce the overall processing time and also reduce the
+    Using a master flat, ideally with good signal to noise ratio, this function
+    will identify the edges of the slit projected into the detector. Having this
+    done will allow to reduce the overall processing time and also reduce the
     introduction of artifacts due to non-illuminated regions in the detectors,
     such as NaNs -INF +INF, etc.
 
     Args:
-        master_flat (object): A ccdproc.CCDData instance
+        master_flat (object): A ccdproc.CCDData instance.
 
     Returns:
         slit_trim_section (str): Trim section in spatial direction in the format
@@ -1034,7 +944,7 @@ def get_slit_trim_section(master_flat):
     slit_trim_section = '[1:{:d},{:d}:{:d}]'.format(y,
                                                     low_lim,
                                                     high_lim)
-    # print(slit_trim_section)
+    log.debug("Slit Trim Section: {:s}".format(slit_trim_section))
 
     # debugging plots that have to be manually turned on
     if False:
@@ -1053,11 +963,6 @@ def get_slit_trim_section(master_flat):
         #     plt.axvline(peak, color='r')
         plt.legend(loc='best')
         plt.show()
-
-    # plt.imshow(master_flat.data[low_lim:high_lim, :])
-    # plt.axvline(low_lim, color='r')
-    # plt.axvline(high_lim, color='r')
-    # plt.show()
 
     return slit_trim_section
 
@@ -1145,19 +1050,23 @@ def identify_targets(ccd, nfind=3, plots=False):
     background has been removed it will equal to zero all negative values. It
     will perform a new sigma clipping but this time to determinate the
     background amplitude. Finally it finds all the peaks above the background
-    level and pick the n largets ones. n is defined by nfind.
+    level and pick the `nfind` largest ones.
 
     Args:
-        ccd (object): a ccdproc.CCDData instance
-        nfind (int): Maximum number of targets to be returned
-        plots (bool): to show debugging plots
+        ccd (object): a ccdproc.CCDData instance.
+        nfind (int): Maximum number of targets to be returned.
+        plots (bool): To show debugging plots.
 
     Returns:
         profile_model (object): an astropy.modeling.Model instance, it could be
-            a Gaussian1D or CompoundModel (several Gaussian1D). Each of them
-            represent a point source spectrum found.
+          a Gaussian1D or a list of  Gaussian1D. Each of them represent a
+          point source spectrum found. In the past a `CompoundModel` was
+          returned but the processing of those was slightly more complicated
+          than a list of Gaussian1Ds.
 
     """
+    # TODO (simon): This method is a bit too crowded or not straightforward
+    # TODO (simon): therefore some refactoring might be needed.
     if isinstance(ccd, CCDData):
         slit_size = re.sub('[a-zA-Z"]', '', ccd.header['SLIT'])
         serial_binning = int(ccd.header['CCDSUM'].split()[0])
@@ -1374,7 +1283,7 @@ def identify_targets(ccd, nfind=3, plots=False):
 
 
 def image_overscan(ccd, overscan_region, add_keyword=False):
-    """Apply overscan to data
+    """Apply overscan correction to data
 
     Uses ccdproc.subtract_overscan to perform the task.
 
@@ -1383,11 +1292,11 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
         therefore is 1 based. i.e. it starts in 1 not 0.
 
     Args:
-        ccd (object): A ccdproc.CCDData instance
+        ccd (object): A ccdproc.CCDData instance to be overscan corrected.
         overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]'
-            where x is the spectral axis and y is the spatial axis.
+          where x is the spectral axis and y is the spatial axis.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-            Default False.
+          Default False.
 
     Returns:
         ccd (object): Overscan corrected ccdproc.CCDData instance
@@ -1417,12 +1326,12 @@ def image_trim(ccd, trim_section, trim_type, add_keyword=False):
         therefore is 1 based. i.e. it starts in 1 not 0.
 
     Args:
-        ccd (object): A ccdproc.CCDData instance
+        ccd (object): A ccdproc.CCDData instance.
         trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
-            where x is the spectral axis and y is the spatial axis.
-        trim_type (str): default or slit trim
+          where x is the spectral axis and y is the spatial axis.
+        trim_type (str): default or slit trim.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-            Default False.
+          Default False.
 
     Returns:
         ccd (object): Trimmed ccdproc.CCDData instance
@@ -1433,7 +1342,7 @@ def image_trim(ccd, trim_section, trim_type, add_keyword=False):
                                  fits_section=trim_section,
                                  add_keyword=add_keyword)
         if trim_type == 'trimsec':
-            ccd.header['GSP_TRIM'] = (trim_section, 'Trimsection from TRIMSEC')
+            ccd.header['GSP_TRIM'] = (trim_section, 'Trim section from TRIMSEC')
         elif trim_type == 'slit':
             ccd.header['GSP_SLIT'] = (trim_section,
                                       'Slit trim section, slit illuminated '
@@ -1453,10 +1362,9 @@ def interpolate(spectrum, interpolation_size):
 
     This method creates an interpolated version of the input array, it is
     used mainly for a spectrum but it can also be used with any
-    unidimensional array, assuming you are happy with the interpolation_size
-    attribute defined for this class. The reason for doing interpolation is
+    unidimensional array. The reason for doing interpolation is
     that it allows to find the lines and its respective center more
-    precisely. The default interpolation size is 200 (two hundred) points.
+    precisely.
 
     Args:
         spectrum (array): an uncalibrated spectrum or any unidimensional
@@ -1465,8 +1373,7 @@ def interpolate(spectrum, interpolation_size):
           between two existing ones)
     Returns:
         Two dimensional array containing x-axis and interpolated array.
-            The x-axis preserves original pixel values.
-
+          The x-axis preserves original pixel values.
 
     """
     x_axis = range(spectrum.size)
@@ -1483,17 +1390,20 @@ def interpolate(spectrum, interpolation_size):
 
 
 def lacosmic_cosmicray_rejection(ccd, mask_only=False):
-    """Do cosmic ray rejection using ccdproc.LACosmic
+    """Do cosmic ray rejection using `ccdproc.cosmicray_lacosmic`
 
     This function in fact does not apply any correction, it detects the cosmic
     rays and updates the attribute mask of the ccd object (CCDData instance).
     The attribute mask is used later as a mask for the pixels hit by cosmic rays
 
-      Notes:
-          OBS: cosmic ray rejection is working pretty well by defining gain = 1.
-          It's not working when we use the real gain of the image. In this case
-          the sky level changes by a factor equal the gain.
-          Function to determine the sigfrac and objlim: y = 0.16 * exptime + 1.2
+    Notes:
+        OBS: cosmic ray rejection is working pretty well by defining gain = 1.
+        It's not working when we use the real gain of the image. In this case
+        the sky level changes by a factor equal to the gain.
+        Function to determine the `sigfrac` and `objlim`:
+
+    .. math::
+       y = 0.16 * exptime + 1.2
 
       Args:
           ccd (object): A ccdproc.CCDData instance.
@@ -1529,13 +1439,13 @@ def lacosmic_cosmicray_rejection(ccd, mask_only=False):
         else:
             return ccd
     else:
-        log.debug('Skipping cosmic ray rejection for image of datatype: '
+        log.debug('Skipping cosmic ray rejection for image of OBSTYPE: '
                   '{:s}'.format(ccd.header['OBSTYPE']))
         return ccd
 
 
 def normalize_master_flat(master, name, method='simple', order=15):
-    """ Master flat normalization method
+    """Master flat normalization method
 
     This function normalize a master flat in three possible ways:
      *mean*: simply divide the data by its mean
@@ -1547,23 +1457,23 @@ def normalize_master_flat(master, name, method='simple', order=15):
      *full*: This is for experimental purposes only because it takes a lot of
      time to process. It will fit a model to each line along the dispersion axis
      and then divide it by the fitted model. I do not recommend this method
-     unless you have a good reason as well as a powerful computer..
+     unless you have a good reason as well as a very powerful computer.
 
     Args:
-        master (object): Master flat. Has to be a ccdproc.CCDData instance
-        name (str): Full path of master flat prior to normalization
-        method (str): Normalization method, 'mean', 'simple' or 'full'
-        order (int): Order of the polinomial to be fitted.
+        master (object): Master flat. Has to be a ccdproc.CCDData instance.
+        name (str): Full path of master flat prior to normalization.
+        method (str): Normalization method, 'mean', 'simple' or 'full'.
+        order (int): Order of the polynomial to be fitted.
 
     Returns:
-        master (object):  The normalized master flat. ccdproc.CCDData instance
+        master (object):  The normalized master flat. ccdproc.CCDData instance.
 
     """
     assert isinstance(master, CCDData)
 
     # define new name, base path and full new name
-    new_name = 'norm_' + name.split('/')[-1]
-    path = '/'.join(name.split('/')[0:-1])
+    new_name = 'norm_' + os.path.basename(name)
+    path = os.path.dirname(name)
     norm_name = os.path.join(path, new_name)
 
     if method == 'mean':
@@ -1609,118 +1519,14 @@ def normalize_master_flat(master, name, method='simple', order=15):
             for i in range(x_size):
                 fit = model_fitter(model_init, x_axis, master.data[i])
                 master.data[i] = master.data[i] / fit(x_axis)
-            # master.header.add_history('Flat Normalized by full model')
             master.header['GSP_NORM'] = ('full', 'Flat normalization method')
 
     # write normalized flat to a file
-    # master.write(norm_name, clobber=True)
     write_fits(ccd=master,
                full_path=norm_name,
                parent_file=name)
 
     return master, norm_name
-
-
-def print_default_args(args):
-    """Print default values of arguments.
-
-    This is mostly helpful for debug but people not familiar with the software
-    might find it useful as well
-
-    Notes:
-        This function is deprecated.
-
-    Notes:
-        This is not dynamically updated so use with caution
-
-    Args:
-        args (object): An argparse instance
-
-    """
-    arg_name = {'auto_clean': '--auto-clean',
-                'clean_cosmic': '-c, --cosmic',
-                'debug_mode': '--debug',
-                'flat_normalize': '--flat-normalize',
-                'ignore_bias': '--ignore-bias',
-                'log_to_file': '--log-to-file',
-                'norm_order': '--flat-norm-order',
-                'raw_path': '--raw-path',
-                'red_path': '--red-path',
-                'saturation_limit': '--saturation',
-                'destination': '-d --proc-path',
-                'interactive_ws': '-i --interactive',
-                'lamp_all_night': '-r --reference-lamp',
-                'lamp_file': '-l --lamp-file',
-                'output_prefix': '-o --output-prefix',
-                'pattern': '-s --search-pattern',
-                'procmode': '-m --proc-mode',
-                'reference_dir': '-R --reference-files',
-                'source': '-p --data-path',
-                'save_plots': '--save-plots',
-                'dcr_par_dir': '--dcr-par-dir'}
-    for key in args.__dict__:
-        log.debug('Default value for {:s} is {:s}'.format(
-            arg_name[key],
-            str(args.__getattribute__(key))))
-
-
-def print_progress(current, total):
-    """Prints the percentage of a progress
-
-    It works for FOR loops, requires to know the full length of the loop.
-    Prints to the standard output.
-
-    Notes:
-        A possible improvement for this is to run it using multithreading
-
-    Args:
-        current (int): Current value in the range of the loop.
-        total (int): The length of the loop.
-
-    """
-    if current == total:
-        sys.stdout.write("Progress {:.2%}\n".format(1.0 * current / total))
-    else:
-        sys.stdout.write("\rProgress {:.2%}".format(1.0 * current / total))
-    sys.stdout.flush()
-    return
-
-
-def print_spacers(message):
-    """Miscellaneous function to print uniform spacers
-
-    Prints a spacer of 80 columns with  and 3 rows height. The first and last
-    rows contains the symbol "=" repeated 80 times. The middle row contains the
-    message centered and the extremes has one single "=" symbol.
-    The only functionality of this is aesthetic.
-
-    Args:
-        message (str): A message to be printed
-
-    Returns:
-        True (bool): A True value
-
-    """
-    # define the width of the message
-    columns = 80
-    if len(message) % 2 == 1 and int(columns) % 2 != 1:
-        message += " "
-
-    bar_length = int(columns)
-
-    # compose bars top and bottom
-    spacer_bar = "=" * bar_length
-
-    blanks = bar_length - 2
-    space_length = int((blanks - len(message)) / 2)
-
-    # compose the message
-    message_bar = "=" + " " * space_length + message + " " * space_length + "="
-
-    print(spacer_bar)
-    print(message_bar)
-    print(spacer_bar)
-    return True
 
 
 def ra_dec_to_deg(right_ascension, declination):
@@ -1738,7 +1544,7 @@ def ra_dec_to_deg(right_ascension, declination):
     right_ascension = right_ascension.split(":")
     declination = declination.split(":")
 
-    # RIGHT ASCENTION conversion
+    # RIGHT ASCENSION conversion
     right_ascension_deg = (float(right_ascension[0])
                            + (float(right_ascension[1])
                               + (float(right_ascension[2]) / 60.)) / 60.) * \
@@ -1756,6 +1562,15 @@ def ra_dec_to_deg(right_ascension, declination):
 
 
 def read_fits(full_path, technique='Unknown'):
+    """
+
+    Args:
+        full_path:
+        technique:
+
+    Returns:
+
+    """
     assert os.path.isfile(full_path)
     ccd = CCDData.read(full_path, unit=u.adu)
 

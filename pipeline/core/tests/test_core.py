@@ -20,12 +20,10 @@ from ..core import (add_wcs_keys,
                     call_cosmic_rejection,
                     classify_spectroscopic_data,
                     convert_time,
-                    create_background_image,
                     dcr_cosmicray_rejection,
                     extraction,
                     extract_fractional_pixel,
                     extract_optimal,
-                    fix_duplicated_keywords,
                     fractional_sum,
                     get_best_flat,
                     get_central_wavelength,
@@ -36,9 +34,6 @@ from ..core import (add_wcs_keys,
                     image_trim,
                     lacosmic_cosmicray_rejection,
                     normalize_master_flat,
-                    print_default_args,
-                    print_progress,
-                    print_spacers,
                     ra_dec_to_deg,
                     read_fits,
                     remove_background_by_median,
@@ -111,10 +106,6 @@ def test_convert_time():
     pass
 
 
-def test_create_background_image():
-    pass
-
-
 def test_dcr_cosmicray_rejection():
     pass
 
@@ -124,10 +115,6 @@ def test_extract():
 
 
 def test_extract_optimal():
-    pass
-
-
-def test_fix_duplicated_keywords():
     pass
 
 
