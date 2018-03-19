@@ -36,7 +36,6 @@ from ..core import (add_wcs_keys,
                     normalize_master_flat,
                     ra_dec_to_deg,
                     read_fits,
-                    remove_background_by_median,
                     search_comp_group,
                     trace,
                     trace_targets,
@@ -242,14 +241,6 @@ def test_ra_dec_to_deg():
 
 def test_read_fits():
     pass
-
-
-def test_remove_background_by_median():
-    pass
-
-
-# def test_remove_conflictive_keywords():
-#     pass
 
 
 def test_search_comp_group():

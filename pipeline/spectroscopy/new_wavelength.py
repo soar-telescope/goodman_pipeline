@@ -476,8 +476,8 @@ class WavelengthCalibration(object):
 
 if __name__ == '__main__':
     # path = '/user/simon/data/soar/work/aller/2017-06-11/RED'
-    # path = '/user/simon/data/soar/comp_lamp_lib/work/goodman_comp'
-    path = '/user/simon/data/soar/work/2018-02-08_David/comp'
+    path = '/user/simon/data/soar/comp_lamp_lib/work/goodman_comp'
+    # path = '/user/simon/data/soar/work/2018-02-08_David/comp'
     # file_1 = 'gcfzsto_0131_CuHeAr_G1200M2_slit103.fits'
     # file_2 = 'cfzsto_0131_CuHeAr_G1200M2_slit103.fits'
     # file_3 = 'gcfzsto_0144_Abell36_G1200M2_slit103.fits'

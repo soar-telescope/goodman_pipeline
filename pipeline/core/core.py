@@ -1562,13 +1562,40 @@ def ra_dec_to_deg(right_ascension, declination):
 
 
 def read_fits(full_path, technique='Unknown'):
-    """
+    """Read fits files while adding important information to the header
+
+    It is necessary to record certain data to the image header so that's the
+    reason for this wrapper of `ccdproc.CCDData.read()` to exist. It will add
+    the following keywords. In most cases, if the keyword already exist it will
+    skip it except for `GSP_FNAM`, `GSP_PATH` and `BUNIT`.
+      GSP_VERS: Goodman Spectroscopic Pipeline version number
+      GSP_ONAM: Original File name
+      GSP_PNAM: Parent file name or name of the file from which this one
+        originated after some process or just a copy.
+      GSP_FNAM: Current file name.
+      GSP_PATH: Path to file at the moment of reading.
+      GSP_TECH: Observing technique. `Spectroscopy` or `Imaging`.
+      GSP_DATE: Date of first reading.
+      GSP_OVER: Overscan region.
+      GSP_TRIM: Trim section (region).
+      GSP_SLIT: Slit trim section, obtained from the slit illuminated area.
+      GSP_BIAS: Master bias image used. Default `none`.
+      GSP_FLAT: Master flat image used. Default `none`.
+      GSP_NORM: Flat normalization method.
+      GSP_COSM: Cosmic ray rejection method.
+      GSP_WRMS: Wavelength solution RMS Error.
+      GSP_WPOI: Number of points used to calculate the wavelength solution
+        Error.
+      GSP_WREJ: Number of points rejected.
+
 
     Args:
-        full_path:
-        technique:
+        full_path (str): Full path to file.
+        technique (str): Observing technique. 'Imaging' or 'Spectroscopy'.
 
     Returns:
+        Instance of `ccdproc.CCDData` corresponding to the file from
+          `full_path`.
 
     """
     assert os.path.isfile(full_path)
@@ -1584,7 +1611,7 @@ def read_fits(full_path, technique='Unknown'):
         ccd.header.set('GSP_ONAM',
                        value=os.path.basename(full_path),
                        comment='Original file name')
-    if 'GSP_ONAM' not in all_keys:
+    if 'GSP_PNAM' not in all_keys:
         ccd.header.set('GSP_PNAM',
                        value=os.path.basename(full_path),
                        comment='Parent file name')
@@ -1673,49 +1700,24 @@ def read_fits(full_path, technique='Unknown'):
     return ccd
 
 
-def remove_background_by_median(ccd):
-    """Remove Background of a ccd spectrum image
-
-    Notes:
-        This function works well for images without strong sky lines. Or for
-        targets embedded in extended sources.
-
-    Args:
-        ccd (object): A ccdproc.CCDData instance.
-
-    Returns:
-        ccd (object): The modified ccdproc.CCDData instance.
-
-    """
-    new_ccd = ccd.copy()
-    data = ma.masked_invalid(new_ccd.data)
-    # x, y = ccd.data.shape
-    median = ma.median(data, axis=0)
-
-    data -= median
-    data.set_fill_value(-np.inf)
-    new_ccd.data = data.filled()
-
-    # ccd.write('/user/simon/dummy_{:d}.fits'.format(g), clobber=True)
-    return new_ccd
-
-
-def save_extracted(ccd, destination):
-    """Save extracted spectrum using `e` as prefix
+def save_extracted(ccd, destination, prefix='e'):
+    """Save extracted spectrum while adding a prefix.
 
     Args:
         ccd (object): CCDData instance
         destination (str): Path where the file will be saved.
+        prefix (str): Prefix to be added to images. Default `e`.
 
     Returns:
-        CCDData instance
+        `ccdproc.CCDData` instance of the image just recorded. although is not
+        really necessary.
 
     """
     assert isinstance(ccd, CCDData)
     assert os.path.isdir(destination)
 
     file_name = ccd.header['GSP_FNAM']
-    new_file_name = 'e' + file_name
+    new_file_name = prefix + file_name
     log.info("Saving uncalibrated(w) extracted spectrum to file: "
              "{:s}".format(new_file_name))
     full_path = os.path.join(destination, new_file_name)
@@ -1774,16 +1776,17 @@ def search_comp_group(object_group, comp_groups, reference_data):
 def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
     """Find the trace of a spectrum
 
-    This function is called by the `trace_targets` targets, the difference is
-    that it only takes single models only not CompoundModels so this function
-    is called for every single target.
+    This function is called by the `trace_targets` function, the difference is
+    that it only takes single models only not `CompoundModels` so this function
+    is called for every single target. `CompoundModels` are a bit tricky when
+    you need each model separated so all `CompoundModels` have been removed.
 
     Notes:
         This method forces the trace to go withing a rectangular region of
         center `model.mean.value` and width `2 * nsigmas`, this is for allowing
-        the trace of low SNR targets. The assumption is valid since the spectra
-        are always well aligned to the detectors's pixel columns. (dispersion
-        axis)
+        the tracing of low SNR targets. The assumption is valid since the
+        spectra are always well aligned to the detectors's pixel columns.
+        (dispersion axis)
 
     Args:
         ccd (object): A ccdproc.CCDData instance, 2D image.
@@ -1798,13 +1801,15 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
           searching the trace.
 
     Returns:
-        An astropy.modeling.Model instance, that defines the trace of the
+        An `astropy.modeling.Model` instance, that defines the trace of the
           spectrum.
 
     """
-    # TODO (simon): modify this function in a way that does not requiere to
-    # TODO (simon): parse objects other than ccd. Models should be instantiated
-    # TODO (simon): (created) inside this function.
+    assert isinstance(ccd, CCDData)
+    assert isinstance(model, Model)
+    assert isinstance(trace_model, Model)
+    assert isinstance(model_fitter, fitting.Fitter)
+
     spatial_length, dispersion_length = ccd.data.shape
 
     sampling_axis = range(0, dispersion_length, sampling_step)
@@ -1873,10 +1878,6 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
             plt.pause(2)
         else:
             plt.show()
-        # print(dispersion_length)
-        # print(sampling_axis)
-
-    # fitted_trace = None
 
     return fitted_trace
 
@@ -1893,8 +1894,8 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, plots=False):
 
     Notes:
         This doesn't work for extended sources. Also this calls for the function
-        trace for doing the actual trace, the difference is that this method is
-        at a higher level.
+        `trace` for doing the actual trace, the difference is that this method
+        is at a higher level.
 
     Args:
         ccd (object): Instance of ccdproc.CCDData
@@ -1924,25 +1925,22 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, plots=False):
     all_traces = []
 
     for profile in target_list:
+
         single_trace = trace(ccd=ccd,
                              model=profile,
                              trace_model=trace_model,
                              model_fitter=model_fitter,
                              sampling_step=sampling_step,
                              nsigmas=10)
+
         if 0 < single_trace.c0.value < ccd.shape[0]:
             log.debug('Adding trace to list')
             all_traces.append([single_trace, profile])
         else:
-            # print(profile)
-            # plt.plot(profile(range(ccd.shape[0])))
-            # plt.plot(np.median(ccd.data, axis=1))
-            # plt.show()
-            # print(single_trace.c0, ccd.shape[0])
             log.error("Unable to trace target.")
             log.error('Trace is out of boundaries. Center: '
                       '{:.4f}'.format(single_trace.c0.value))
-        # print(single_trace)
+
     if plots:
         plt.title('Traces')
         plt.imshow(ccd.data)
@@ -1957,6 +1955,18 @@ def write_fits(ccd,
                combined=False,
                parent_file=None,
                overwrite=True):
+    """
+
+    Args:
+        ccd:
+        full_path:
+        combined:
+        parent_file:
+        overwrite:
+
+    Returns:
+
+    """
     assert isinstance(ccd, CCDData)
     assert os.path.isdir(os.path.dirname(full_path))
 
