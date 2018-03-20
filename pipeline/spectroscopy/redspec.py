@@ -188,7 +188,8 @@ def get_args(arguments=None):
             os.path.dirname(sys.modules['goodman.pipeline'].__file__),
             args.reference_dir)
     except KeyError as error:
-        log.debug("KeyError ", error)
+        print(str(error))
+        log.debug("KeyError {:s}".format(str(error)))
         ref_full_path = os.path.join(
             os.path.dirname(sys.modules['pipeline'].__file__),
             args.reference_dir)

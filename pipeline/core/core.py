@@ -1808,7 +1808,6 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
     assert isinstance(ccd, CCDData)
     assert isinstance(model, Model)
     assert isinstance(trace_model, Model)
-    assert isinstance(model_fitter, fitting.Fitter)
 
     spatial_length, dispersion_length = ccd.data.shape
 
