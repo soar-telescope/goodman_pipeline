@@ -1,5 +1,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+
 from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
@@ -15,22 +16,14 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 
-# __author__ = 'David Sanmartim'
-# __date__ = '2016-07-15'
-# __version__ = "1.0b2"
-# __maintainer__ = "Simon Torres"
-# __email__ = "storres@ctio.noao.edu"
-
 if '--debug' in sys.argv:
     FORMAT = '%(levelname)s: %(asctime)s:%(module)s.%(funcName)s: %(message)s'
 else:
     FORMAT = '%(levelname)s: %(asctime)s: %(message)s'
+
 # DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
 DATE_FORMAT = '%I:%M:%S%p'
 LOG_FILENAME = 'goodman_ccd.log'
-# logging.basicConfig(level=logging.INFO,
-#                             format=FORMAT,
-#                             datefmt=DATE_FORMAT)
 
 log = logging.getLogger(__name__)
 
@@ -40,7 +33,7 @@ def get_args(arguments=None):
 
     The list of arguments can be obtained by using the argument ``--help``.
     All the arguments start with two dashes and single-character arguments where
-    avoided in order to eliminate confussion.
+    avoided in order to eliminate confusion.
 
     Args:
         arguments (list): A list containing the arguments as elements.
@@ -50,7 +43,7 @@ def get_args(arguments=None):
             attributes
 
     """
-    log = logging.getLogger()
+    arg_log = logging.getLogger()
     global LOG_FILENAME
 
     parser = argparse.ArgumentParser(
@@ -167,19 +160,19 @@ def get_args(arguments=None):
     if args.log_file != LOG_FILENAME:
         LOG_FILENAME = args.log_file
 
-    log.info('Logging to file {:s}'.format(LOG_FILENAME))
+    arg_log.info('Logging to file {:s}'.format(LOG_FILENAME))
     file_handler = logging.FileHandler(filename=LOG_FILENAME)
     # file_handler.setLevel(level=logging.INFO)
     formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
     file_handler.setFormatter(fmt=formatter)
-    log.addHandler(file_handler)
+    arg_log.addHandler(file_handler)
 
     if args.debug_mode:
-        log.info('Changing log level to DEBUG.')
-        log.setLevel(level=logging.DEBUG)
+        arg_log.info('Changing log level to DEBUG.')
+        arg_log.setLevel(level=logging.DEBUG)
     if os.path.isdir(args.raw_path):
         args.raw_path = os.path.abspath(args.raw_path)
-        log.debug(os.path.abspath(args.raw_path))
+        arg_log.debug(os.path.abspath(args.raw_path))
     else:
         parser.print_help()
         parser.exit("Raw data folder doesn't exist")
@@ -191,14 +184,16 @@ def get_args(arguments=None):
         os.path.dirname(sys.modules['pipeline'].__file__),
         args.dcr_par_dir)
     # TODO (simon): Review the logic of the next if statement.
-    if not os.path.isdir(dcr_par_full_path) or args.dcr_par_dir != 'data/params':
-        log.info("dcr.par default location doesn't exist.")
+    if not os.path.isdir(dcr_par_full_path) or \
+            args.dcr_par_dir != 'data/params':
+        arg_log.info("dcr.par default location doesn't exist.")
         try:
             os.path.os.makedirs(dcr_par_full_path)
-            log.info('Created dcr.par empty directory: %s', dcr_par_full_path)
+            arg_log.info('Created dcr.par empty directory: '
+                         '{:s}'.format(dcr_par_full_path))
             args.dcr_par_dir = dcr_par_full_path
         except OSError as err:
-            log.error(err)
+            arg_log.error(err)
     else:
         args.dcr_par_dir = dcr_par_full_path
     # print_default_args(args)
@@ -230,7 +225,7 @@ class MainApp(object):
         """Call method for MainApp
 
         From the arguments this method finds the raw_path attribute and checks
-        its contents for the existance of files containing the '.fits' string.
+        its contents for the existence of files containing the '.fits' string.
         If there is none it will assume every item is a different data directory
         and they will be treated independently. If there are '.fits' files the
         program will assume is a single data directory.
@@ -258,17 +253,13 @@ class MainApp(object):
             self.args.raw_path = data_folder
 
             try:
-                # self.data_classifier = DataClassifier()
-                self.log.debug('Calling data_classifier Instance of DataClassifier')
+                self.log.debug('Calling data_classifier '
+                               'Instance of DataClassifier')
                 self.data_classifier(raw_path=self.args.raw_path)
-                # self.instrument = self.data_classifier.instrument
-                # self.technique = self.data_classifier.technique
-                # print(self.instrument)
-                # print(self.technique)
             except AttributeError as error:
                 self.log.error(error)
                 self.log.error('Empty or Invalid data directory:'
-                          '{:s}'.format(data_folder))
+                               '{:s}'.format(data_folder))
                 continue
 
             # # check start
@@ -276,7 +267,7 @@ class MainApp(object):
             if self.args.red_path == './RED' or len(folders) > 1:
 
                 self.log.info('No special reduced data path defined. '
-                         'Proceeding with defaults.')
+                              'Proceeding with defaults.')
 
                 if self.args.raw_path not in self.args.red_path:
                     self.args.red_path = os.path.join(self.args.raw_path, 'RED')
@@ -291,18 +282,19 @@ class MainApp(object):
                                 os.unlink(os.path.join(self.args.red_path,
                                                        _file))
                             except OSError as error:
-                                self.log.error('OSError: {:s}'.format(str(error)))
+                                self.log.error(
+                                    'OSError: {:s}'.format(str(error)))
                                 self.log.warning('Removing Directory '
-                                            '{:s}'.format(_file))
+                                                 '{:s}'.format(_file))
 
                                 shutil.rmtree(os.path.join(self.args.red_path,
                                                            _file))
 
                         self.log.info('Cleaned Reduced data directory:'
-                                 ' {:s}'.format(self.args.red_path))
+                                      ' {:s}'.format(self.args.red_path))
                     else:
-                        self.log.error('Please clean the reduced data folder or '
-                                  'use --auto-clean')
+                        self.log.error('Please clean the reduced data folder '
+                                       'or use --auto-clean')
                         break
                 self.args.red_path = os.path.abspath(self.args.red_path)
                 self.log.debug(os.path.abspath(self.args.red_path))
@@ -331,7 +323,8 @@ class MainApp(object):
                 data_container_list = night_organizer()
                 for self.data_container in data_container_list:
                     # print(self.data_container)
-                    if self.data_container is None or self.data_container.is_empty:
+                    if self.data_container is None or \
+                            self.data_container.is_empty:
                         self.log.error('Discarding night {:s} '
                                        '(or part of it)'.format(str(night)))
                     else:
