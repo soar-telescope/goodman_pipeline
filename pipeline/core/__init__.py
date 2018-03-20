@@ -2,8 +2,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 # import all classes in core.py
-from .core import (CriticalError,
-                   NightDataContainer,
+from .core import (NightDataContainer,
                    NoMatchFound,
                    NotEnoughLinesDetected,
                    NoTargetException,

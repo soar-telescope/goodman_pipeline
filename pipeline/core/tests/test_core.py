@@ -6,8 +6,7 @@ from astropy.io import fits
 import numpy as np
 
 # import all classes in core.py
-from ..core import (CriticalError,
-                    NightDataContainer,
+from ..core import (NightDataContainer,
                     NoMatchFound,
                     NotEnoughLinesDetected,
                     NoTargetException,

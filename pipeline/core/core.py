@@ -1955,16 +1955,21 @@ def write_fits(ccd,
                combined=False,
                parent_file=None,
                overwrite=True):
-    """
+    """Write fits while adding information to the header.
+
+    This is a wrapper for allowing to save files while being able to add
+    information into the header. Mostly for historical reasons.
 
     Args:
-        ccd:
-        full_path:
-        combined:
-        parent_file:
-        overwrite:
+        ccd (object): `ccdproc.CCDData` instance to be saved to fits.
+        full_path (str): Full path of file.
+        combined (bool): True if `ccd` is the result of combining images.
+        parent_file (str): Name of the file from which ccd originated. If
+          combined is True this will be set to `combined`.
+        overwrite (bool): Overwrite files, default True.
 
     Returns:
+        `ccdproc.CCDData` instance.
 
     """
     assert isinstance(ccd, CCDData)
@@ -1996,14 +2001,9 @@ def write_fits(ccd,
 # classes definition
 
 
-class CriticalError(Exception):
-    def __init__(self, message):
-        Exception.__init__(self, message)
-
-
 class NightDataContainer(object):
     """This class is designed to be the organized data container. It doesn't
-    store image data but list of pandas.DataFrame objects. Also it stores
+    store image data but a list of pandas.DataFrame objects. Also it stores
     critical variables such as sunrise and sunset times.
 
     """
@@ -2058,6 +2058,7 @@ class NightDataContainer(object):
         self.morning_twilight = None
 
     def __repr__(self):
+        """Produces a nice summary of the information contained"""
         if self.is_empty:
             return str("Empty Data Container")
         else:
@@ -2171,6 +2172,11 @@ class NightDataContainer(object):
     def add_comp_group(self, comp_group):
         """Adds a comp-only group
 
+        All comparison lamps groups are added here. The ones that may have been
+        taken in the afternoon (isolated) or along science target. This will
+        act as a pool of comparison lamp groups for eventual science targets
+        taken without comparison lamps.
+
         Args:
             comp_group (pandas.DataFrame): Contains a set of keyword values of
                 grouped image metadata
@@ -2202,6 +2208,9 @@ class NightDataContainer(object):
 
     def add_spec_group(self, spec_group):
         """Adds a data group containing object and comp
+
+        The comparison lamp groups are also added to a general pool of
+        comparison lamps.
 
         Args:
             spec_group (pandas.DataFrame): Contains a set of keyword values of
@@ -2246,18 +2255,21 @@ class NightDataContainer(object):
         self.morning_twilight = morning
 
     def set_readout(self, gain, rdnoise, roi):
+        """Set Gain, Read noise and ROI.
+
+        Args:
+            gain (float): Gain from header
+            rdnoise (float): Read noise from header.
+            roi (str): ROI from header.
+
+        """
         self.gain = gain
         self.rdnoise = rdnoise
         self.roi = roi
 
-    # def reset(self):
-    #     """Resets the class as it was first initialized"""
-    #     self.__init__(path=self.full_path,
-    #                   instrument=self.instrument,
-    #                   technique=self.technique)
-
 
 class NoMatchFound(Exception):
+    """Exception for when no match is found."""
     def __init__(self):
         Exception.__init__(self, 'Did not find a match')
 
@@ -2269,6 +2281,7 @@ class NoTargetException(Exception):
 
 
 class NotEnoughLinesDetected(Exception):
+    """Exception for when there are no lines detected."""
     def __init__(self):
         Exception.__init__(self, 'Not enough lines detected.')
 
@@ -2286,9 +2299,11 @@ class ReferenceData(object):
     def __init__(self, reference_dir):
         """Init method for the ReferenceData class
 
-        This methods uses ccdproc.ImageFileCollection on the reference_dir to
-        capture all possible reference lamps. Also defines dictionaries
-        containg line lists for several elements used in lamps.
+        This methods uses ccdproc.ImageFileCollection on the `reference_dir` to
+        capture all possible reference lamps. The reference lamps have a list
+        of lines detected on the data registered to the header as GSP_P??? where
+        ??? are numbers from 001 to 999. Also the pixel values are stored in
+        keywords of the form GSP_A???.
 
         Args:
             reference_dir (str): full path to the reference data directory
@@ -2338,15 +2353,19 @@ class ReferenceData(object):
             raise NotImplementedError
 
     def lamp_exists(self, object_name, grating, grt_targ, cam_targ):
-        """
+        """Checks whether a matching lamp exist or not
 
         Args:
-            object_name:
-            grating:
-            grt_targ:
-            cam_targ:
+            object_name (str): Name of the lamp from 'OBJECT' keyword.
+            grating (str): Grating from 'GRATING' keyword.
+            grt_targ (str): Grating target from keyword 'GRT_TARG'.
+            cam_targ (str): Camera target from keyword 'CAM_TARG'.
 
         Returns:
+            True of False depending if a single matching lamp exist.
+
+        Raises:
+            NotImplementedError if there are more than one lamp found.
 
         """
         filtered_collection = self.ref_lamp_collection[
@@ -2364,10 +2383,12 @@ class ReferenceData(object):
             raise NotImplementedError
 
     def check_comp_group(self, comp_group):
-        """
+        """Check if comparison lamp group has matching reference lamps
+
 
         Args:
-            comp_group:
+            comp_group (object): `pandas.DataFrame` instance that contains
+              meta-data for a group of comparison lamps.
 
         Returns:
 
@@ -2378,6 +2399,8 @@ class ReferenceData(object):
                                     'cam_targ']).size().reset_index(
         ).rename(columns={0: 'count'})
 
+        # for the way the input is created this should run only once but the
+        # for loop has been left in case this happens.
         for i in lamps.index:
             if self.lamp_exists(
                     object_name=lamps.iloc[i]['object'],
@@ -2392,8 +2415,6 @@ class ReferenceData(object):
                 # print(new_group.file)
                 return new_group
             else:
-                # print(lamps.iloc[i])
-                # print(comp_group.file)
                 self.log.warning("The target's comparison lamps do not have "
                                  "reference lamps.")
                 self.log.debug("In this case a compatible lamp will be "
@@ -2402,6 +2423,7 @@ class ReferenceData(object):
         return None
 
     def _recover_lines(self):
+        """Read lines from the reference lamp's header."""
         self.log.info("Recovering line information from reference Lamp.")
         self.lines_pixel = []
         self.lines_angstrom = []
@@ -2427,6 +2449,10 @@ class ReferenceData(object):
 
     def _validate_lines(self):
         """Calls all available validation methods
+
+        Notes:
+            Line existence validation is not being taken into consideration
+            since the method to prove existence is not fully developed yet.
 
         Returns:
             True if none of the validation fails.
@@ -2460,7 +2486,7 @@ class ReferenceData(object):
         return True
 
     def _load_nist_list(self, **kwargs):
-        """Load all csv files from strong lines in nist."""
+        """Load all csv files from strong lines in NIST."""
         nist_path = kwargs.get(
             'path',
             os.path.join(os.path.dirname(sys.modules['pipeline'].__file__),
@@ -2477,14 +2503,16 @@ class ReferenceData(object):
 
     def _validate_line_existence(self):
         """Check if a line actually exists in any table of NIST
+
         Notes:
             It does not actually check NIST, it loads six csv tables
-            from NIST's strong lines for the elements used in lamps.
+            from NIST's strong lines for the elements used in lamps:
             Ar,  Cu, Fe, He, Hg, Ne. It does not work perfect so far
             so the it is not checking existence actually but if it finds it
             it will get the value at "spectrum" column in NIST tables which
-            correspond to the source of the line for instance Ne I, Ar II.
-            """
+            correspond to the source of the line, for instance Ne I, Ar II, etc.
+
+        """
 
         lamp_elements = []
         lamp_name = self._ccd.header['OBJECT']
@@ -2545,7 +2573,6 @@ class SpectroscopicMode(object):
                      ['2400', 'Custom', 'None', 'None', 'None']
                      ]
         self.modes_data_frame = pandas.DataFrame(spec_mode, columns=columns)
-        # print(self.modes_data_frame)
 
     def __call__(self,
                  header=None,
@@ -2627,6 +2654,4 @@ class SpectroscopicMode(object):
                     cam_ang=camera_targ)
                 return 'Custom_{:d}nm'.format(int(round(central_wavelength)))
             else:
-                # print('%s %s' %(grating, _mode.wavmode))
-                # print(_mode['wavmode'].to_string)
                 return _mode['wavmode'].to_string(index=False)
