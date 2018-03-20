@@ -39,6 +39,13 @@ class NightOrganizer(object):
         self.technique = technique
         self.ignore_bias = ignore_bias
         self.ignore_flats = ignore_flats
+        self.file_collection = None
+        self.all_datatypes = None
+        self.day_time_data = None
+        self.night_time_data = None
+        self.data_container = NightDataContainer(path=self.path,
+                                                 instrument=self.instrument,
+                                                 technique=self.technique)
         self.keywords = ['date',
                          'slit',
                          'date-obs',
@@ -56,15 +63,6 @@ class NightOrganizer(object):
                          'rdnoise',
                          'roi',
                          'wavmode']
-        self.file_collection = None
-        self.all_datatypes = None
-
-        self.data_container = NightDataContainer(path=self.path,
-                                                 instrument=self.instrument,
-                                                 technique=self.technique)
-
-        self.day_time_data = None
-        self.night_time_data = None
 
     def __call__(self):
         """Call method
@@ -170,7 +168,7 @@ class NightOrganizer(object):
         """Organizes data for spectroscopy
 
         This method identifies all combinations of nine **key** keywords that
-        can set appart different objects with their respective calibration data
+        can set apart different objects with their respective calibration data
         or not. The keywords used are: GAIN, RDNOISE, GRATING, FILTER2,
         CAM_TARG,GRT_TARG, SLIT, OBSRA and OBSDEC.
 
@@ -290,7 +288,7 @@ class NightOrganizer(object):
 
         For imaging there is no discrimination regarding night data since the
         process is simpler. It is a three stage process classifying BIAS, FLAT
-        and OBJECT datatype. The data is packed in groups that are
+        and OBJECT data type. The data is packed in groups that are
         pandas.DataFrame objects.
 
         """
