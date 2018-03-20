@@ -5,11 +5,8 @@ import logging
 from ccdproc import ImageFileCollection
 
 
-# TODO (simon): Move methods as functions to goodman_ccd.core.py
-
-
 class DataClassifier(object):
-    """Class Definition
+    """Classifies the data being presented to the pipeline.
 
     Data classifier is intended to define the camera that is being used and the
     technique in use. This will be used later to make important decisions
@@ -33,6 +30,7 @@ class DataClassifier(object):
         self.technique = None
 
     def __repr__(self):
+        """String representation of the information contained."""
         return str("Raw Path: {:s}\n"
                    "Instrument: {:s} Camera\n"
                    "Observing Technique: {:s}".format(self.raw_path,
