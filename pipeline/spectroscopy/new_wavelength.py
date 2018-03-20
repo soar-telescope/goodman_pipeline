@@ -1,24 +1,20 @@
 from ccdproc import (CCDData, ImageFileCollection)
 from scipy import (signal)
 import os
-import sys
-import astropy.units as u
 import matplotlib.pyplot as plt
 import numpy as np
-from astropy.io.fits.header import Header
-from astropy.modeling import (models, fitting, Model)
-from astropy.convolution import (convolve, Gaussian1DKernel, Box1DKernel)
+from astropy.modeling import (models, fitting)
+from astropy.convolution import (convolve, Gaussian1DKernel)
 import re
 import glob
 import logging
 
-import sys
 
 # import goodman
 from pipeline.core import (read_fits,
                            write_fits,
-                           interpolate,
                            SpectroscopicMode)
+
 from pipeline.wcs import WCS
 
 plt.rcParams["figure.figsize"] = [16, 9]
@@ -57,7 +53,8 @@ class WavelengthCalibration(object):
         #     print("Can't locate file: {:s}".format(os.path.join(self.path,
         #                                                        file_name)))
 
-    def _add_angstrom_lines_slot(self, ccd, line_list):
+    @staticmethod
+    def _add_angstrom_lines_slot(ccd, line_list):
         """Adds keyords for registering Angstrom values"""
         assert isinstance(ccd, CCDData)
         assert isinstance(line_list, list)
@@ -79,15 +76,10 @@ class WavelengthCalibration(object):
                            comment="Line location in pixel value")
         return ccd
 
-    def calculate_wcs_model(self, ccd):
-        assert isinstance(ccd, CCDData)
-        pass
-
     def _get_wavelength_solution(self, comp_lamps, record_lines=False):
         # MAKE SURE THIS WILL RECORD THE LINES ONLY ON COMPARISON LAMPS
         assert isinstance(comp_lamps, list)
         assert all([isinstance(lamp, CCDData) for lamp in comp_lamps])
-        lamp_lines = []
         for lamp in comp_lamps:
             lamp_lines = self._identify_lines(ccd=lamp)
             if record_lines:
@@ -138,10 +130,10 @@ class WavelengthCalibration(object):
         if slit_size >= 5.:
 
             lines_center = self._recenter_broad_lines(lamp_data=nccd.data,
-                                                     lines=peaks,
-                                                     order=new_order)
+                                                      lines=peaks,
+                                                      order=new_order)
         else:
-            lines_center = self._recenter_lines(data=nccd.data, lines=peaks)
+            lines_center = self._recenter_lines(ccd=nccd, lines=peaks)
 
         # print(len(peaks), len(lines_center))
         if show_plots:
@@ -171,7 +163,7 @@ class WavelengthCalibration(object):
             # for rc_line in lines_center:
             #     plt.axvline(rc_line, color='r')
 
-            plt.plot(raw_pixel_axis, nccd.data, color='k') # , marker='o')
+            plt.plot(raw_pixel_axis, nccd.data, color='k')  # , marker='o')
             # plt.plot(filtered_data, color='b')
             plt.legend(loc='best')
             plt.show()
@@ -221,7 +213,7 @@ class WavelengthCalibration(object):
         return new_line_centers
 
     @staticmethod
-    def _recenter_lines(data, lines, plots=False):
+    def _recenter_lines(ccd, lines, plots=False):
         """Finds the centroid of an emission line
 
         For every line center (pixel value) it will scan left first until the
@@ -234,19 +226,18 @@ class WavelengthCalibration(object):
             is a special method for dealing with broad lines.
 
         Args:
-            data (array): numpy.ndarray instance. or the data attribute of a
-                ccdproc.CCDData instance.
+            ccd (object): a ccdproc.CCDData instance.
             lines (list): A line list in pixel values.
             plots (bool): If True will plot spectral line as well as the input
-                center and the recentered value.
+              center and the recentered value.
 
         Returns:
             A list containing the recentered line positions.
 
         """
         new_center = []
-        x_size = data.shape[0]
-        median = np.median(data)
+        x_size = ccd.data.shape[0]
+        median = np.median(ccd.data)
         for line in lines:
             # TODO (simon): Check if this definition is valid, so far is not
             # TODO (cont..): critical
@@ -257,13 +248,13 @@ class WavelengthCalibration(object):
 
             while condition and left_index - 2 > 0:
 
-                if (data[left_index - 1] > data[left_index]) and \
-                        (data[left_index - 2] > data[left_index - 1]):
+                if (ccd.data[left_index - 1] > ccd.data[left_index]) and \
+                        (ccd.data[left_index - 2] > ccd.data[left_index - 1]):
 
                     condition = False
                     left_limit = left_index
 
-                elif data[left_index] < median:
+                elif ccd.data[left_index] < median:
                     condition = False
                     left_limit = left_index
 
@@ -277,13 +268,13 @@ class WavelengthCalibration(object):
             right_index = int(line)
             while condition and right_index + 2 < x_size - 1:
 
-                if (data[right_index + 1] > data[right_index]) and \
-                        (data[right_index + 2] > data[right_index + 1]):
+                if (ccd.data[right_index + 1] > ccd.data[right_index]) and \
+                        (ccd.data[right_index + 2] > ccd.data[right_index + 1]):
 
                     condition = False
                     right_limit = right_index
 
-                elif data[right_index] < median:
+                elif ccd.data[right_index] < median:
                     condition = False
                     right_limit = right_index
 
@@ -295,12 +286,13 @@ class WavelengthCalibration(object):
             sub_x_axis = range(line - min(index_diff),
                                (line + min(index_diff)) + 1)
 
-            sub_data = data[line - min(index_diff):(line + min(index_diff)) + 1]
+            sub_data = ccd.data[line - min(index_diff):(line + min(index_diff))
+                                                       + 1]
             centroid = np.sum(sub_x_axis * sub_data) / np.sum(sub_data)
 
             # checks for asymmetries
-            differences = [abs(data[line] - data[left_limit]),
-                           abs(data[line] - data[right_limit])]
+            differences = [abs(ccd.data[line] - ccd.data[left_limit]),
+                           abs(ccd.data[line] - ccd.data[right_limit])]
 
             if max(differences) / min(differences) >= 2.:
                 if plots:
@@ -313,8 +305,8 @@ class WavelengthCalibration(object):
             fig.canvas.set_window_title('Lines Detected in Lamp')
             plt.axhline(median, color='b')
 
-            plt.plot(range(len(data)),
-                     data,
+            plt.plot(range(len(ccd.data)),
+                     ccd.data,
                      color='k',
                      marker='o',
                      label='Lamp Data')
@@ -336,10 +328,7 @@ class WavelengthCalibration(object):
             plt.show()
         return new_center
 
-    def _to_header(self,
-                   ccd,
-                   evaluation_comment=None,
-                   index=None):
+    def _to_header(self, ccd):
         """Add wavelength solution to the new FITS header
 
         Defines FITS header keyword values that will represent the wavelength
@@ -352,14 +341,10 @@ class WavelengthCalibration(object):
 
         Args:
             ccd (CCDData): CCDData instance with 1D data.
-            evaluation_comment (str): A comment with information regarding the
-              quality of the wavelength solution
-            index (int): If in one 2D image there are more than one target the
-              index represents the target number.
 
         Returns:
-            new_header (object): An Astropy header object. Although not
-            necessary since there is no further processing
+            ccd (object): An instance of `ccdproc.CCDData` with an updated
+              header.
 
         """
         rms_error, n_points, n_rejections = self.evaluate_solution()
@@ -372,8 +357,9 @@ class WavelengthCalibration(object):
         new_crval = ccd.data[0][new_crpix - 1]
         new_cdelt = ccd.data[0][new_crpix] - ccd.data[0][new_crpix - 1]
 
-        ccd.header.set('BANDID1', value='spectrum - background none, weights none, ' \
-                                'clean no', comment='')
+        ccd.header.set('BANDID1',
+                       value='spectrum - background none, weights none, '
+                             'clean no', comment='')
         # ccd.header.set(['APNUM1'] = '1 1 1452.06 1454.87'
         ccd.header.set('WCSDIM',
                        value=1,
