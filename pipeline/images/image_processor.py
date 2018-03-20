@@ -22,8 +22,7 @@ from ..core import (call_cosmic_rejection,
                     lacosmic_cosmicray_rejection,
                     normalize_master_flat,
                     read_fits,
-                    write_fits
-                    )
+                    write_fits)
 
 from ..core import SpectroscopicMode
 
@@ -170,22 +169,23 @@ class ImageProcessor(object):
                 if technique == 'Spectroscopy':
 
                     # left
-                    l = int(np.ceil(51. / serial_binning))
+                    low_lim_spectral = int(np.ceil(51. / serial_binning))
 
                     # right
-                    r = int(4110 / serial_binning)
+                    high_lim_spectral = int(4110 / serial_binning)
 
                     # bottom
-                    # b = 1
+                    low_lim_spatial = 1
 
                     #top
                     # t = int(1896 / parallel_binning)
                     # TODO (simon): Need testing
                     # trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
-                    trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l,
-                                                                  r,
-                                                                  1,
-                                                                  spatial_length)
+                    trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(
+                        low_lim_spectral,
+                        high_lim_spectral,
+                        low_lim_spatial,
+                        spatial_length)
 
                 elif technique == 'Imaging':
                     trim_section = ccd.header['TRIMSEC']
@@ -216,8 +216,6 @@ class ImageProcessor(object):
             point of the overscan region.
 
         """
-        # self.log.warning('Determining Overscan Region. Assuming you have only '
-        #                  'one kind of binning in the data.')
         for group in [self.bias,
                       self.day_flats,
                       self.dome_flats,
@@ -243,11 +241,14 @@ class ImageProcessor(object):
 
                 if self.technique == 'Spectroscopy':
                     self.log.info('Overscan regions has been tested for ROI '
-                             'Spectroscopic 1x1, 2x2 and 3x3')
+                                  'Spectroscopic 1x1, 2x2 and 3x3')
 
                     # define l r b and t to avoid local variable might be
                     # defined before assignment warning
-                    l, r, b, t = [None] * 4
+                    low_lim_spectral,\
+                        high_lim_spectral,\
+                        low_lim_spatial,\
+                        high_lim_spatial = [None] * 4
                     if self.instrument == 'Red':
                         # for red camera it is necessary to eliminate the first
                         # rows/columns (depends on the point of view) because
@@ -259,27 +260,31 @@ class ImageProcessor(object):
                         # inspection
 
                         # left
-                        l = int(np.ceil(6. / serial_binning))
+                        low_lim_spectral = int(np.ceil(6. / serial_binning))
                         # right
-                        r = int(49. / serial_binning)
+                        high_lim_spectral = int(49. / serial_binning)
                         # bottom
-                        b = 1
+                        low_lim_spatial = 1
                         # top
-                        t = spatial_length
+                        high_lim_spatial = spatial_length
                     elif self.instrument == 'Blue':
                         # 16 is the length of the overscan region with no
                         # binning.
 
                         # left
-                        l = 1
+                        low_lim_spectral = 1
                         # right
-                        r = int(16. / serial_binning)
+                        high_lim_spectral = int(16. / serial_binning)
                         # bottom
-                        b = 1
+                        low_lim_spatial = 1
                         # top
-                        t = spatial_length
+                        high_lim_spatial = spatial_length
 
-                    overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
+                    overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(
+                        low_lim_spectral,
+                        high_lim_spectral,
+                        low_lim_spatial,
+                        high_lim_spatial)
 
                 elif self.technique == 'Imaging':
                     self.log.warning("Imaging mode doesn't have overscan "
@@ -820,11 +825,10 @@ class ImageProcessor(object):
 
                 print(object_group, len(all_object_image))
 
-                object_combined = combine_data(
-                    all_object_image,
-                    dest_path=self.args.red_path,
-                    prefix=self.out_prefix,
-                    save=True)
+                combine_data(all_object_image,
+                             dest_path=self.args.red_path,
+                             prefix=self.out_prefix,
+                             save=True)
             elif len(all_object_image) == 1:
                 # write_fits(all_object_image[0])
                 pass
@@ -835,20 +839,19 @@ class ImageProcessor(object):
             if self.args.combine and len(all_comp_image) > 1:
                 self.log.info("Combining {:d} COMP images"
                               "".format(len(all_comp_image)))
-                comp_group = object_comp_group[
-                    object_comp_group.obstype == "COMP"]
-                comp_combined = combine_data(all_comp_image,
-                                             dest_path=self.args.red_path,
-                                             prefix=self.out_prefix,
-                                             save=True)
+                # comp_group = object_comp_group[
+                #     object_comp_group.obstype == "COMP"]
+                combine_data(all_comp_image,
+                             dest_path=self.args.red_path,
+                             prefix=self.out_prefix,
+                             save=True)
 
         elif 'FLAT' in obstype:
             self.queue.append(science_group)
             self.log.warning('Only flats found in this group')
             flat_sub_group = science_group[science_group.obstype == 'FLAT']
             # TODO (simon): Find out if these variables are useful or not
-            master_flat, master_flat_name = \
-                self.create_master_flats(flat_group=flat_sub_group)
+            self.create_master_flats(flat_group=flat_sub_group)
         else:
             self.log.error('There is no valid datatype in this group')
 
