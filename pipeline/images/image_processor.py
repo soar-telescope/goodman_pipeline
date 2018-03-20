@@ -9,7 +9,6 @@ import numpy as np
 import random
 import re
 import os
-import pandas
 
 from astropy import units as u
 from ccdproc import CCDData
@@ -36,7 +35,7 @@ class ImageProcessor(object):
     """
 
     def __init__(self, args, data_container):
-        """Init method for ImageProcessor class
+        """Initialization method for ImageProcessor class
 
         Args:
             args (object): argparse instance
@@ -62,18 +61,9 @@ class ImageProcessor(object):
         self.evening_twilight = data_container.evening_twilight
         self.pixel_scale = 0.15 * u.arcsec
         self.queue = None
-        # if self.roi is not None and self.roi in ['Spectroscopic 1x1',
-        #                                          'Spectroscopic 2x2',
-        #                                          'Spectroscopic 3x3']:
         self.trim_section = self.define_trim_section(
             technique=self.technique)
         self.overscan_region = self.get_overscan_region()
-        # else:
-        #     self.log.warning("ROI {:s} does not have a well "
-        #                      "defined trim section neither an "
-        #                      "overscan region.".format(self.roi))
-        #     self.trim_section = None
-        #     self.overscan_region = None
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
         self.master_bias_name = None
@@ -112,16 +102,6 @@ class ImageProcessor(object):
                         else:
                             self.log.info('Processing Imaging Science Data')
                             self.process_imaging_science(sub_group)
-        # print('data groups ', len(self.data_groups))
-        if self.queue is not None:
-            if len(self.queue) > 1:
-                self.queue = pandas.concat(self.queue, axis=0).reset_index()
-            else:
-                self.queue = self.queue[0]
-            print('QUEUE')
-            print(self.queue)
-            for sub_group in self.queue:
-                print(sub_group)
 
     def define_trim_section(self, technique=None):
         """Get the initial trim section
@@ -129,7 +109,7 @@ class ImageProcessor(object):
         The initial trim section is usually defined in the header with the
         keyword TRIMSEC but in the case of Goodman HTS this does not work well.
         In particular for spectroscopy where is more likely to have combined
-        binnings and so on.
+        binning and so on.
 
         Args:
             technique (str): The name of the technique, the options are:
@@ -206,7 +186,7 @@ class ImageProcessor(object):
         that it actually works as expected.
 
         Notes:
-            The regions are 1-based i.e. opposite to Python convention.
+            The regions are 1-based i.e. different to Python convention.
             For Imaging there is no overscan region.
 
 
@@ -254,7 +234,7 @@ class ImageProcessor(object):
                         # rows/columns (depends on the point of view) because
                         # they come with an abnormal high signal. Usually the
                         # first 5 pixels. In order to find the corresponding
-                        # value for the subsequent binnings divide by the
+                        # value for the subsequent binning divide by the
                         # binning size.
                         # The numbers 6 and 49 where obtained from visual
                         # inspection
@@ -397,19 +377,12 @@ class ImageProcessor(object):
                     target_name=target_name)
 
             if self.technique == 'Spectroscopy':
-                # plt.title('Before Overscan')
-                # plt.imshow(ccd.data, clim=(-100, 0))
-                # plt.show()
                 ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                # plt.title('After Overscan')
-                # plt.imshow(ccd.data, clim=(-100, 0))
-                # plt.show()
+
                 ccd = image_trim(ccd=ccd,
                                  trim_section=self.trim_section,
                                  trim_type='trimsec')
-                # plt.title('After Trimming')
-                # plt.imshow(ccd.data, clim=(-100, 0))
-                # plt.show()
+
                 ccd = ccdproc.subtract_bias(ccd,
                                             self.master_bias,
                                             add_keyword=False)
@@ -421,9 +394,11 @@ class ImageProcessor(object):
                 ccd = image_trim(ccd=ccd,
                                  trim_section=self.trim_section,
                                  trim_type='trimsec')
+
                 ccd = ccdproc.subtract_bias(ccd,
                                             self.master_bias,
                                             add_keyword=False)
+
                 ccd.header['GSP_BIAS'] = (
                     os.path.basename(self.master_bias_name),
                     'Master bias image')
@@ -568,7 +543,7 @@ class ImageProcessor(object):
         """Process Spectroscopy science images.
 
         This function handles the full image reduction process for science
-        files. if save_all is used, all intermediate steps are saved.
+        files. if save_all is set to True, all intermediate steps are saved.
 
         Args:
             science_group (object): pandas.DataFrame instance that contains a
@@ -860,8 +835,8 @@ class ImageProcessor(object):
 
         Args:
             imaging_group (object): pandas.DataFrame instance that contains a
-                list of science data that are compatible with a given
-                instrument configuration and can be reduced together.
+              list of science data that are compatible with a given
+              instrument configuration and can be reduced together.
 
 
         """
