@@ -16,7 +16,12 @@ from __future__ import (absolute_import, division, print_function,
 from .wavelength import WavelengthCalibration
 from ..core import (classify_spectroscopic_data,
                     search_comp_group,
-                    add_wcs_keys,identify_targets,trace_targets,extraction,save_extracted,)
+                    add_wcs_keys,
+                    identify_targets,
+                    trace_targets,
+                    extraction,
+                    save_extracted)
+
 from ..core import (NoMatchFound,
                     NoTargetException,
                     ReferenceData)
@@ -178,10 +183,6 @@ def get_args(arguments=None):
         log.info('Changing log level to DEBUG.')
         log.setLevel(level=logging.DEBUG)
 
-    # get full path for reference files directory
-
-    # print(sys.modules['goodman.pipeline'].__file__)
-
     try:
         ref_full_path = os.path.join(
             os.path.dirname(sys.modules['goodman.pipeline'].__file__),
@@ -279,20 +280,22 @@ class MainApp(object):
 
         sys.exit("END")
 
-    def _run(self, data_container,extraction_type):
+    def _run(self, data_container, extraction_type):
         assert data_container.is_empty is False
         assert any(extraction_type == option for option in ['fractional',
                                                             'optimal'])
-        log = logging.getLogger(__name__)
+        # log = logging.getLogger(__name__)
 
         full_path = data_container.full_path
 
-        for sub_container in [groups for groups in [data_container.spec_groups,
-                                                    data_container.object_groups]
+        for sub_container in [groups for groups in [
+            data_container.spec_groups,
+            data_container.object_groups]
                               if groups is not None]:
             for group in sub_container:
                 # instantiate WavelengthCalibration here for each group.
-                self.wavelength_calibration = WavelengthCalibration(args=self.args)
+                self.wavelength_calibration = WavelengthCalibration(
+                    args=self.args)
                 # this will contain only obstype == OBJECT
                 object_group = group[group.obstype == 'OBJECT']
                 obj_groupby = object_group.groupby(['object']).size(
@@ -302,7 +305,7 @@ class MainApp(object):
                 self.log.info("Processing Science Target: "
                               "{:s} with {:d} files."
                               "".format(obj_groupby.iloc[0]['object'],
-                              obj_groupby.iloc[0]['count']))
+                                        obj_groupby.iloc[0]['count']))
                 # this has to be initialized here
                 comp_group = None
                 comp_ccd_list = []
@@ -337,11 +340,12 @@ class MainApp(object):
                         self.log.warning('Data will be extracted but not '
                                          'calibrated')
 
-                COMBINE = True
-                if len(object_group.file.tolist()) > 1 and COMBINE:
+                _combine = True
+                if len(object_group.file.tolist()) > 1 and _combine:
                     self.log.debug("This can be combined")
                 for spec_file in object_group.file.tolist():
-                    self.log.info('Processing Science File: {:s}'.format(spec_file))
+                    self.log.info('Processing Science File: {:s}'.format(
+                        spec_file))
                     file_path = os.path.join(full_path, spec_file)
                     ccd = CCDData.read(file_path, unit=u.adu)
                     ccd.header.set('GSP_PNAM', value=spec_file)
@@ -359,9 +363,6 @@ class MainApp(object):
                         self.log.debug(
                             'Comp Group is None or comp list already exist')
 
-                    target_list = []
-                    trace_list = []
-
                     # identify
                     target_list = identify_targets(ccd=ccd,
                                                    nfind=3,
@@ -374,7 +375,8 @@ class MainApp(object):
                                                    sampling_step=5,
                                                    pol_deg=2)
                     else:
-                        self.log.error("The list of identified targets is empty.")
+                        self.log.error("The list of identified targets is "
+                                       "empty.")
                         continue
 
                     # if len(trace_list) > 0:
@@ -400,8 +402,9 @@ class MainApp(object):
                                         target_trace=single_trace,
                                         spatial_profile=single_profile,
                                         extraction_name=extraction_type)
-                                    save_extracted(ccd=extracted_lamp,
-                                                   destination=self.args.destination)
+                                    save_extracted(
+                                        ccd=extracted_lamp,
+                                        destination=self.args.destination)
                                     all_lamps.append(extracted_lamp)
                             extracted_target_and_lamps.append([extracted,
                                                                all_lamps])
@@ -440,10 +443,11 @@ class MainApp(object):
                             continue
                     object_number = None
                     for sci_target, comp_list in extracted_target_and_lamps:
-                        self.wavelength_solution_obj = self.wavelength_calibration(
-                            ccd=sci_target,
-                            comp_list=comp_list,
-                            object_number=object_number)
+                        self.wavelength_solution_obj = \
+                            self.wavelength_calibration(
+                                ccd=sci_target,
+                                comp_list=comp_list,
+                                object_number=object_number)
 
         return True
 
