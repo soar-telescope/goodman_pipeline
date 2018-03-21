@@ -16,6 +16,12 @@ from ccdproc import CCDData
 
 
 class WCS(object):
+    """World Coordinate System class for Spectroscopy
+
+    This class is intended to contain methods for all operations regarding
+    WCS for spectroscopy or wavelength solution operations. Starting on the
+    fitting to writing (and reading) from a FITS header.
+    """
 
     def __init__(self):
         # wavelength solution fitter variables
@@ -58,6 +64,20 @@ class WCS(object):
 
     # def read(self, ccd=None, header=None):
     def read(self, ccd=None):
+        """Read WCS from FITS header
+
+        Notes:
+            The mathematical model stays as an attribute of the class as `model`
+
+        Args:
+            ccd (object): Instance of `ccdproc.CCDData` with FITS's wavelength
+              solution.
+
+        Returns:
+            A list with an array representing the wavelength axis and another
+            representing the intensity (ccd.data).
+
+        """
         assert isinstance(ccd, CCDData)
         self.ccd = ccd
         self.header = ccd.header
@@ -79,6 +99,22 @@ class WCS(object):
         return self.wavelength_and_intensity
 
     def write_fits_wcs(self, ccd, model):
+        """Write FITS WCS to the header
+
+        Notes:
+            This method is not implemented, in the current version the
+            equivalent method resides within
+            `goodman.pipeline.spectroscopy.wavelength.py`
+
+        Args:
+            ccd (object): Instance of `ccdproc.CCDData`
+            model (object): Instance of `astropy.modeling.Model` that should be
+              the mathematical representation of the wavelength solution of
+              `ccd`
+
+        Raises:
+            NotImplementedError
+        """
         raise NotImplementedError
 
     @staticmethod
@@ -145,7 +181,7 @@ class WCS(object):
     def _model_constructor(self):
         """Generates callable mathematical model
 
-        It can do chebyshev and linear model only but is easy to implement
+        It can do Chebyshev and Linear model only but is easy to implement
         others. Chebyshev 3rd degree is by default since provided the best
         results for Goodman data.
         """
@@ -160,7 +196,7 @@ class WCS(object):
                                       "not implemented".format(self.model_name))
 
     def _fitter(self, physical, wavelength):
-        """Wavelength solution fit
+        """Wavelength solution fitter
 
         Takes a list of pixel values and its respective wavelength values to do
         a fit to the mathematical model defined with the class.
@@ -200,7 +236,8 @@ class WCS(object):
             dimension (int): Solutions can be multi-dimensionals, this method is
                 called for each one of them.
 
-        Returns:
+        Raises:
+            NotImplementedError: This method is not fully implemented.
 
         """
         # TODO (simon): Complete implementation.
@@ -308,12 +345,13 @@ class WCS(object):
                 plt.axvline(line, color='r')
             plt.show()
             # print(spec)
+            raise NotImplementedError
 
     def _read_linear(self):
         """Linear solution reader
 
-        This method read the apropriate keywords and defines a linear wavelength
-        solution
+        This method read the appropriate keywords and defines a linear
+        wavelength solution
 
         Returns:
             Callable wavelength solution model. Instance of
@@ -362,11 +400,21 @@ class WCS(object):
 
     @staticmethod
     def _none():
-        # TODO (simon): Document why this is this way
-        return 0
+        """Required to handle No-wavelength solution
+
+        No wavelength solution is considered in the FITS standard (dtype = -1)
+        This method is placed here for completness even though is not
+        implemented.
+
+        Raises:
+            NotImplementedError
+        """
+        raise NotImplementedError
 
     def _linear_solution(self):
-        """Returns a linear 1D model"""
+        """Constructs a linear 1D model based on the WCS information obtained
+        from the header.
+        """
         intercept = self.wcs_dict['crval'] -\
             (self.wcs_dict['crpix'] - 1) *\
             self.wcs_dict['cdelt']
