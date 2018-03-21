@@ -78,6 +78,9 @@ class WCS(object):
                                           "not recognized".format(ctypen))
         return self.wavelength_and_intensity
 
+    def write_fits_wcs(self, ccd, model):
+        raise NotImplementedError
+
     @staticmethod
     def write_gsp_wcs(ccd, model):
         """Writes a GSP-specific wavelength solution
