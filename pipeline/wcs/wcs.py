@@ -230,8 +230,8 @@ class WCS(object):
         for key in self.wat_wcs_dict.keys():
 
             self.log.debug("{:d} -{:s}- {:s}".format(dimension,
-                                                key,
-                                                self.wat_wcs_dict[key]))
+                                                     key,
+                                                     self.wat_wcs_dict[key]))
 
         if 'spec1' in self.wat_wcs_dict.keys():
             # print(self.wat_wcs_dict['spec1'])
@@ -368,8 +368,8 @@ class WCS(object):
     def _linear_solution(self):
         """Returns a linear 1D model"""
         intercept = self.wcs_dict['crval'] -\
-                    (self.wcs_dict['crpix'] - 1) *\
-                    self.wcs_dict['cdelt']
+            (self.wcs_dict['crpix'] - 1) *\
+            self.wcs_dict['cdelt']
 
         self.model = models.Linear1D(slope=self.wcs_dict['cdelt'],
                                      intercept=intercept)
@@ -385,7 +385,8 @@ class WCS(object):
                                         domain=[self.wcs_dict['pmin'],
                                                 self.wcs_dict['pmax']], )
         for param_index in range(self.wcs_dict['order']):
-            self.model.parameters[param_index] = self.wcs_dict['fpar'][param_index]
+            self.model.parameters[param_index] = self.wcs_dict['fpar'][
+                param_index]
 
     def _non_linear_legendre(self):
         """Not implemented
@@ -424,5 +425,3 @@ class WCS(object):
 
 if __name__ == '__main__':
     pass
-
-
