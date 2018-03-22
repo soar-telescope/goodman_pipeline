@@ -1156,9 +1156,10 @@ class WavelengthCalibration(object):
 
         if slit_size >= 5.:
 
-            lines_center = self._recenter_broad_lines(lamp_data=no_nan_lamp_data,
-                                                     lines=peaks,
-                                                     order=new_order)
+            lines_center = self._recenter_broad_lines(
+                lamp_data=no_nan_lamp_data,
+                lines=peaks,
+                order=new_order)
         else:
             # lines_center = peaks
             lines_center = self._recenter_lines(no_nan_lamp_data, peaks)

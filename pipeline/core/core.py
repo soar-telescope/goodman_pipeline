@@ -5,11 +5,9 @@ import re
 import sys
 import time
 import glob
-import random
 import logging
 import ccdproc
 import numpy as np
-import numpy.ma as ma
 import math
 import pandas
 import scipy
