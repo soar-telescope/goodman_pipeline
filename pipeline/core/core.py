@@ -2545,6 +2545,7 @@ class SpectroscopicMode(object):
         current standard wavelength modes for Goodman HTS.
 
         """
+        self.log = logging.getLogger(__name__)
         columns = ['grating_freq', 'wavmode', 'camtarg', 'grttarg', 'ob_filter']
         spec_mode = [['400', 'm1', '11.6', '5.8', 'None'],
                      ['400', 'm2', '16.1', '7.5', 'GG455'],
@@ -2653,3 +2654,31 @@ class SpectroscopicMode(object):
                 return 'Custom_{:d}nm'.format(int(round(central_wavelength)))
             else:
                 return _mode['wavmode'].to_string(index=False)
+
+    def get_cam_grt_targ_angle(self, grating, mode):
+        """Get the camera and grating target values grating and mode
+
+        Args:
+            grating (float): Grating frequency in lines/mm (unitless value)
+            mode (str): Name of the grating's mode for which the camera and
+              grating target values are required.
+
+        Returns:
+            Camera and grating target values. None and None if no such values
+            exists.
+
+        """
+        if any(grat == str(grating) for grat in ('1800', '2100', '2400')):
+            self.log.warning("Grating {:s} does not define "
+                             "modes.".format(str(grating)))
+            return None, None
+        else:
+            angle = self.modes_data_frame[
+                ((self.modes_data_frame['grating_freq'] == str(grating)) &
+                 (self.modes_data_frame['wavmode'] == mode))]
+            if angle.empty:
+                self.log.error("No data")
+                return None, None
+            else:
+                return (angle['camtarg'].to_string(index=False),
+                        angle['grttarg'].to_string(index=False))
