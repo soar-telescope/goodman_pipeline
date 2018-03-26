@@ -392,6 +392,9 @@ class WavelengthCalibration(object):
         half_width = int((len(self.lamp.data) /
                           float(len(lamp_lines_pixel))))
 
+        global_cross_corr = self._cross_correlation(reference_lamp_ccd.data,
+                                                    self.lamp.data)
+
         for i in range(len(lamp_lines_pixel)):
             line_value_pixel = lamp_lines_pixel[i]
             line_value_angst = lamp_lines_angst[i]
@@ -412,20 +415,29 @@ class WavelengthCalibration(object):
 
             correlation_value = self._cross_correlation(ref_sample, lamp_sample)
             self.log.debug('Cross correlation value '
-                           '{:s}'.format(str(correlation_value)))
+                           '{:s} vs {:s}'.format(str(global_cross_corr),
+                                                 str(correlation_value)))
 
-            """record value for reference wavelength"""
-            angstrom_value_model = self.wcs.model(
-                line_value_pixel + correlation_value)
+            print(global_cross_corr, correlation_value, global_cross_corr - correlation_value, (global_cross_corr - correlation_value) < global_cross_corr/2.)
+            if (global_cross_corr - correlation_value) < global_cross_corr / 2.:
+                """record value for reference wavelength"""
+                angstrom_value_model = self.wcs.model(
+                    line_value_pixel + correlation_value)
 
-            # print(correlation_value, angstrom_value_model)
-            correlation_values.append(correlation_value)
-            angstrom_differences.append(angstrom_value_model - line_value_angst)
-            angstrom_values.append(angstrom_value_model)
-            # print(angstrom_values)
-            pixel_values.append(line_value_pixel)
+                # print(correlation_value, angstrom_value_model)
+                correlation_values.append(correlation_value)
+                angstrom_differences.append(angstrom_value_model -
+                                            line_value_angst)
+                angstrom_values.append(angstrom_value_model)
+                # print(angstrom_values)
+                pixel_values.append(line_value_pixel)
+            else:
+                self.log.debug("Local cross correlation value {:.3f} is too far"
+                               "from global cross correlation value "
+                               "{:.3f}".format(correlation_value,
+                                             global_cross_corr))
 
-            if True:
+            if False:
                 plt.ion()
                 plt.title('Samples after cross correlation')
                 plt.xlabel('Pixel Axis')
@@ -449,8 +461,8 @@ class WavelengthCalibration(object):
         # This is good and necessary as a first approach for some very wrong
         # correlation results
         clipped_values = sigma_clip(correlation_values,
-                                    sigma=2,
-                                    iters=2,
+                                    sigma=3,
+                                    iters=1,
                                     cenfunc=np.ma.median)
         # print(clipped_values)
 
