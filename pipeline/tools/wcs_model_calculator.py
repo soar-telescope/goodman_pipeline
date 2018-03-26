@@ -43,6 +43,7 @@ class GSPWcsCalculator(object):
                 # new_name = os.path.join(self.path, image_name[24:])
                 new_name = os.path.join(self.path, image_name[24:])
                 # print(new_name, image_name)
+                self.ccd.header.set('GSP_FNAM', value=new_name)
                 self.ccd.write(new_name, overwrite=True)
 
                 self._pdf_generator(model=wcs_model)
@@ -208,7 +209,6 @@ class GSPWcsCalculator(object):
             # pdf.close()
             # plt.show()
             plt.close()
-
 
 
 if __name__ == '__main__':

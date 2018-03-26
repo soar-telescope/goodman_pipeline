@@ -1065,219 +1065,220 @@ def identify_targets(ccd, nfind=3, plots=False):
     """
     # TODO (simon): This method is a bit too crowded or not straightforward
     # TODO (simon): therefore some refactoring might be needed.
-    if isinstance(ccd, CCDData):
-        slit_size = re.sub('[a-zA-Z"]', '', ccd.header['SLIT'])
-        serial_binning = int(ccd.header['CCDSUM'].split()[0])
-        # order will be used for finding the peaks later but also as an initial
-        # estimate for stddev of gaussian
-        order = int(round(float(slit_size) / (0.15 * serial_binning)))
+    assert isinstance(ccd, CCDData)
+    assert ccd.header['OBSTYPE'] == 'OBJECT'
+    slit_size = re.sub('[a-zA-Z"]', '', ccd.header['SLIT'])
+    serial_binning = int(ccd.header['CCDSUM'].split()[0])
+    # order will be used for finding the peaks later but also as an initial
+    # estimate for stddev of gaussian
+    order = int(round(float(slit_size) / (0.15 * serial_binning)))
 
-        if plots:
-            plt.title(ccd.header['GSP_FNAM'])
-            plt.imshow(ccd.data, clim=(30, 250))
-            plt.xlabel('Dispersion Axis (x)')
-            plt.ylabel('Spatial Axis (y)')
+    if plots:
+        plt.title(ccd.header['GSP_FNAM'])
+        plt.imshow(ccd.data, clim=(30, 250))
+        plt.xlabel('Dispersion Axis (x)')
+        plt.ylabel('Spatial Axis (y)')
+        plt.show()
+
+    median_profile = np.median(ccd.data, axis=1)
+
+    # Fitting Background
+
+    # Before doing the fitting we will do a sigma clipping in order to
+    # remove any feature.
+    clipped_profile = sigma_clip(median_profile, sigma=2, iters=5)
+
+    linear_model = models.Linear1D(slope=0,
+                                   intercept=np.median(median_profile))
+
+    linear_fitter = fitting.LinearLSQFitter()
+
+    # the fitters do not support masked arrays so we need to have a new
+    # array without the masked (clipped) elements.
+    new_profile = clipped_profile[~clipped_profile.mask]
+
+    # also the indexes are different
+    new_x_axis = [i for i in range(len(clipped_profile))
+                  if not clipped_profile.mask[i]]
+
+    fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
+
+    if plots:
+        plt.title('Background Fitting Model Defined')
+        plt.plot(median_profile, color='k')
+        plt.plot(linear_model(range(ccd.data.shape[0])), color='r')
+        plt.show()
+
+        plt.title('Background Fitted Model')
+        plt.plot(median_profile, color='k')
+        plt.plot(fitted_background(range(ccd.data.shape[0])), color='r')
+        plt.show()
+
+    # Removing Background
+    # Remove the background and set negative values to zero
+
+    # build an array of the same dimensions of the profile
+    background_array = fitted_background(range(len(median_profile)))
+
+    background_subtracted = median_profile - background_array
+
+    # set negative values to zero
+    background_subtracted[background_subtracted < 0] = 0
+
+    final_profile = background_subtracted.copy()
+
+    # sigma clip and then get some features of the noise.
+    clipped_final_profile = sigma_clip(final_profile, sigma=3, iters=3)
+
+    # define the propper x-axis
+    new_x_axis = [i for i in range(len(clipped_final_profile)) if
+                  not clipped_final_profile.mask[i]]
+
+    clipped_final_profile = clipped_final_profile[
+        ~clipped_final_profile.mask]
+
+    background_level = np.abs(np.max(clipped_final_profile) -
+                              np.min(clipped_final_profile))
+
+    # print('MEAN: ', np.mean(clipped_final_profile))
+    # print('MEDIAN: ', np.median(clipped_final_profile))
+    # print('STDDEV: ', np.std(clipped_final_profile))
+    # print('RANGE: ', background_level)
+
+    # TODO (simon): Add information to plots
+    if plots:
+        plt.ioff()
+        plt.close()
+        # if plt.isinteractive():
+        #     plt.ioff()
+        plt.title('Median Along Dispersion Axis (spatial)')
+        plt.plot(background_subtracted, label='Background Subtracted Data')
+        plt.plot(new_x_axis,
+                 clipped_final_profile,
+                 color='r',
+                 label='Sigma Clip Data')
+
+        plt.axhline(background_level, color='m', label='Min-Max Difference')
+        # plt.plot(final_profile, color='r')
+        # plt.plot(median_profile)
+        # plt.plot(background_array)
+        plt.legend(loc='best')
+        if plt.isinteractive():
+            plt.draw()
+            plt.pause(5)
+        else:
             plt.show()
 
-        median_profile = np.median(ccd.data, axis=1)
+    # Identify targets
+    # Now that the profile is flat it should be easier to identify targets.
 
-        # Fitting Background
+    filtered_profile = np.where(np.abs(
+        final_profile > final_profile.min() + 0.03 * final_profile.max()),
+        final_profile,
+        None)
 
-        # Before doing the fitting we will do a sigma clipping in order to
-        # remove any feature.
-        clipped_profile = sigma_clip(median_profile, sigma=2, iters=5)
+    _upper_limit = final_profile.min() + 0.03 * final_profile.max()
+    # print(_upper_limit)
+    # print(np.median(final_profile))
 
-        linear_model = models.Linear1D(slope=0,
-                                       intercept=np.median(median_profile))
+    # replace the None elements to zero.
+    none_to_zero_prof = [0 if it is None else it for it in filtered_profile]
 
-        linear_fitter = fitting.LinearLSQFitter()
+    # convert the list to array
+    filtered_profile = np.array(none_to_zero_prof)
 
-        # the fitters do not support masked arrays so we need to have a new
-        # array without the masked (clipped) elements.
-        new_profile = clipped_profile[~clipped_profile.mask]
+    # find the peaks
+    peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
 
-        # also the indexes are different
-        new_x_axis = [i for i in range(len(clipped_profile))
-                      if not clipped_profile.mask[i]]
+    # find profile values for peaks found
+    values = [final_profile[i] for i in peaks]
 
-        fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
+    # sort values and reverse the order so that larger values are first
+    sorted_values = np.sort(values)[::-1]
 
-        if plots:
-            plt.title('Background Fitting Model Defined')
-            plt.plot(median_profile, color='k')
-            plt.plot(linear_model(range(ccd.data.shape[0])), color='r')
-            plt.show()
+    # pick nfind top values
+    n_top_values = sorted_values[:nfind]
+    # print(n_top_values)
 
-            plt.title('Background Fitted Model')
-            plt.plot(median_profile, color='k')
-            plt.plot(fitted_background(range(ccd.data.shape[0])), color='r')
-            plt.show()
+    # retrieve the original index (real location) of the peaks
+    selected_peaks = []
+    for val in n_top_values:
+        # TODO (simon): replace the 3 below by a parameter in a conf file.
+        # discard peaks smaller than twice the level of background
+        if val > 3 * background_level:
+            index = np.where(values == val)[0]
+            #     print(index[0])
+            selected_peaks.append(peaks[index[0]])
+        else:
+            log.debug('Discarding peak: {:.3f}'.format(val))
 
-        # Removing Background
-        # Remove the background and set negative values to zero
-
-        # build an array of the same dimensions of the profile
-        background_array = fitted_background(range(len(median_profile)))
-
-        background_subtracted = median_profile - background_array
-
-        # set negative values to zero
-        background_subtracted[background_subtracted < 0] = 0
-
-        final_profile = background_subtracted.copy()
-
-        # sigma clip and then get some features of the noise.
-        clipped_final_profile = sigma_clip(final_profile, sigma=3, iters=3)
-
-        # define the propper x-axis
-        new_x_axis = [i for i in range(len(clipped_final_profile)) if
-                      not clipped_final_profile.mask[i]]
-
-        clipped_final_profile = clipped_final_profile[
-            ~clipped_final_profile.mask]
-
-        background_level = np.abs(np.max(clipped_final_profile) -
-                                  np.min(clipped_final_profile))
-
-        # print('MEAN: ', np.mean(clipped_final_profile))
-        # print('MEDIAN: ', np.median(clipped_final_profile))
-        # print('STDDEV: ', np.std(clipped_final_profile))
-        # print('RANGE: ', background_level)
-
-        # TODO (simon): Add information to plots
-        if plots:
-            plt.ioff()
-            plt.close()
-            # if plt.isinteractive():
-            #     plt.ioff()
-            plt.title('Median Along Dispersion Axis (spatial)')
-            plt.plot(background_subtracted, label='Background Subtracted Data')
-            plt.plot(new_x_axis,
-                     clipped_final_profile,
-                     color='r',
-                     label='Sigma Clip Data')
-
-            plt.axhline(background_level, color='m', label='Min-Max Difference')
-            # plt.plot(final_profile, color='r')
-            # plt.plot(median_profile)
-            # plt.plot(background_array)
-            plt.legend(loc='best')
-            if plt.isinteractive():
-                plt.draw()
-                plt.pause(5)
-            else:
-                plt.show()
-
-        # Identify targets
-        # Now that the profile is flat it should be easier to identify targets.
-
-        filtered_profile = np.where(np.abs(
-            final_profile > final_profile.min() + 0.03 * final_profile.max()),
-            final_profile,
-            None)
-
-        _upper_limit = final_profile.min() + 0.03 * final_profile.max()
-        # print(_upper_limit)
-        # print(np.median(final_profile))
-
-        # replace the None elements to zero.
-        none_to_zero_prof = [0 if it is None else it for it in filtered_profile]
-
-        # convert the list to array
-        filtered_profile = np.array(none_to_zero_prof)
-
-        # find the peaks
-        peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
-
-        # find profile values for peaks found
-        values = [final_profile[i] for i in peaks]
-
-        # sort values and reverse the order so that larger values are first
-        sorted_values = np.sort(values)[::-1]
-
-        # pick nfind top values
-        n_top_values = sorted_values[:nfind]
-        # print(n_top_values)
-
-        # retrieve the original index (real location) of the peaks
-        selected_peaks = []
-        for val in n_top_values:
-            # TODO (simon): replace the 3 below by a parameter in a conf file.
-            # discard peaks smaller than twice the level of background
-            if val > 3 * background_level:
-                index = np.where(values == val)[0]
-                #     print(index[0])
-                selected_peaks.append(peaks[index[0]])
-            else:
-                log.debug('Discarding peak: {:.3f}'.format(val))
-
-        if plots:
-            plt.ioff()
-            plt.plot(final_profile)
-            plt.axhline(_upper_limit, color='g')
-            for peak in selected_peaks:
-                plt.axvline(peak, color='r')
-            plt.show()
-
-        # build the model to return
-        fitter = fitting.LevMarLSQFitter()
-        best_stddev = None
-
-        profile_model = []
+    if plots:
+        plt.ioff()
+        plt.plot(final_profile)
+        plt.axhline(_upper_limit, color='g')
         for peak in selected_peaks:
-            peak_value = median_profile[peak]
-            gaussian = models.Gaussian1D(amplitude=peak_value,
-                                         mean=peak,
-                                         stddev=order).rename(
-                'Gaussian_{:d}'.format(peak))
+            plt.axvline(peak, color='r')
+        plt.show()
 
-            # fixes mean and amplitude already found, just finding stddev
-            gaussian.mean.fixed = True
-            gaussian.amplitude.fixed = True
-            fitted_gaussian = fitter(gaussian,
-                                     range(len(median_profile)),
-                                     median_profile)
+    # build the model to return
+    fitter = fitting.LevMarLSQFitter()
+    best_stddev = None
 
-            # after being fitted, unfix the parameters and now fix stddev
-            fitted_gaussian.mean.fixed = False
-            fitted_gaussian.amplitude.fixed = False
-            fitted_gaussian.stddev.fixed = True
+    profile_model = []
+    for peak in selected_peaks:
+        peak_value = median_profile[peak]
+        gaussian = models.Gaussian1D(amplitude=peak_value,
+                                     mean=peak,
+                                     stddev=order).rename(
+            'Gaussian_{:d}'.format(peak))
 
-            # manually forcing the use of the best stddev if possitive
-            # this disables the pipeline for extended sources
-            if best_stddev is None:
-                best_stddev = fitted_gaussian.stddev.value
-            elif best_stddev < fitted_gaussian.stddev.value:
-                fitted_gaussian.stddev.value = best_stddev
-            else:
-                best_stddev = fitted_gaussian.stddev.value
-            if best_stddev < 0:
-                best_stddev = None
+        # fixes mean and amplitude already found, just finding stddev
+        gaussian.mean.fixed = True
+        gaussian.amplitude.fixed = True
+        fitted_gaussian = fitter(gaussian,
+                                 range(len(median_profile)),
+                                 median_profile)
 
-            # print(fitted_gaussian.stddev.value)
-            # plt.plot(median_profile, color='b')
-            # plt.plot(fitted_gaussian(range(len(median_profile))), color='r')
-            # plt.show()
+        # after being fitted, unfix the parameters and now fix stddev
+        fitted_gaussian.mean.fixed = False
+        fitted_gaussian.amplitude.fixed = False
+        fitted_gaussian.stddev.fixed = True
 
-            # this ensures the profile returned are valid
-            if fitted_gaussian.stddev.value > 0:
-                profile_model.append(fitted_gaussian)
-        if plots:
-            plt.plot(median_profile, color='b')
-            for profile in profile_model:
-                plt.plot(profile(range(len(median_profile))), color='r')
-            plt.show()
+        # manually forcing the use of the best stddev if possitive
+        # this disables the pipeline for extended sources
+        if best_stddev is None:
+            best_stddev = fitted_gaussian.stddev.value
+        elif best_stddev < fitted_gaussian.stddev.value:
+            fitted_gaussian.stddev.value = best_stddev
+        else:
+            best_stddev = fitted_gaussian.stddev.value
+        if best_stddev < 0:
+            best_stddev = None
 
-        # plt.imshow(ccd.data, clim=(50, 200), cmap='gray')
-        # for peak in selected_peaks:
-        #     plt.axhline(peak, color='r')
+        # print(fitted_gaussian.stddev.value)
+        # plt.plot(median_profile, color='b')
+        # plt.plot(fitted_gaussian(range(len(median_profile))), color='r')
         # plt.show()
 
-        if profile_model == []:
-            log.error("Impossible to identify targets.")
-            return profile_model
-        else:
-            return profile_model
+        # this ensures the profile returned are valid
+        if fitted_gaussian.stddev.value > 0:
+            profile_model.append(fitted_gaussian)
+    if plots:
+        plt.plot(median_profile, color='b')
+        for profile in profile_model:
+            plt.plot(profile(range(len(median_profile))), color='r')
+        plt.show()
+
+    # plt.imshow(ccd.data, clim=(50, 200), cmap='gray')
+    # for peak in selected_peaks:
+    #     plt.axhline(peak, color='r')
+    # plt.show()
+
+    if profile_model == []:
+        log.error("Impossible to identify targets.")
+        return profile_model
+    else:
+        return profile_model
 
 
 def image_overscan(ccd, overscan_region, add_keyword=False):
@@ -2437,7 +2438,7 @@ class ReferenceData(object):
                 else:
                     self.log.debug(
                         "File: {:s}".format(self._ccd.header['GSP_FNAM']))
-                    self.log.warning(
+                    self.log.debug(
                         "Ignoring keywords: {:s}={:f}, {:s}={:f}".format(
                             pixel_key,
                             self._ccd.header[pixel_key],

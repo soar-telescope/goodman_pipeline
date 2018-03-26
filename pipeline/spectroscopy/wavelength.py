@@ -390,7 +390,7 @@ class WavelengthCalibration(object):
             len(self.lamp.data) / float(len(lamp_lines_pixel))))
 
         half_width = int((len(self.lamp.data) /
-                          float(len(lamp_lines_pixel))) / 2.)
+                          float(len(lamp_lines_pixel))))
 
         for i in range(len(lamp_lines_pixel)):
             line_value_pixel = lamp_lines_pixel[i]
@@ -425,7 +425,7 @@ class WavelengthCalibration(object):
             # print(angstrom_values)
             pixel_values.append(line_value_pixel)
 
-            if False:
+            if True:
                 plt.ion()
                 plt.title('Samples after cross correlation')
                 plt.xlabel('Pixel Axis')

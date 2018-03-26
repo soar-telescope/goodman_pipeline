@@ -63,18 +63,21 @@ def aller_test(image_list):
     return all_data
 
 
-
-
-
 def extract_from_file(image_list, clim=None):
     all_traces = []
     dispersion = 0
     for image in image_list:
+        print(image)
         ccd = read_fits(image)
         spatial, dispersion = ccd.data.shape
         print(spatial, dispersion)
 
-        target = identify_targets(ccd=ccd)
+        try:
+            target = identify_targets(ccd=ccd)
+        except AssertionError:
+            print("Can't identify targets on data of OBSTYPE = "
+                  "{:s}".format(ccd.header['OBSTYPE']))
+            return
         print(target[0])
         trace_model = models.Polynomial1D(degree=2)
         trace_fitter = fitting.LevMarLSQFitter()
@@ -138,16 +141,18 @@ def plot_and_split(all_data):
 
     plt.show()
 
+def get_radial_velocity(reference, measured):
+    return u.c * (measured - reference) / reference
 
 if __name__ == '__main__':
     path = '/user/simon/jupyter'
     images = glob.glob(os.path.join(path, "data/c*fits"))
     extract_from_file(image_list=images)
 
-    files = glob.glob(os.path.join(path, 'data/g*HD*fits'))
+    files = glob.glob(os.path.join(path, 'data/w*HD*fits'))
     all_data = aller_test(image_list=files)
 
-    lamp_files = glob.glob(os.path.join(path, "data/g*Cu*fits"))
+    lamp_files = glob.glob(os.path.join(path, "data/w*Cu*fits"))
     all_lamps = aller_test(lamp_files)
 
     plot_and_split(all_data=all_lamps)
