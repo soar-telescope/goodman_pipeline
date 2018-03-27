@@ -48,7 +48,8 @@ def get_args(arguments=None):
 
     parser = argparse.ArgumentParser(
         description="Goodman CCD Reduction - CCD reductions for Goodman "
-                    "spectroscopic data.")
+                    "spectroscopic data."
+                    "\nPipeline Version: {:s}".format(__version__))
 
     parser.add_argument('--auto-clean',
                         action='store_true',
@@ -68,7 +69,7 @@ def get_args(arguments=None):
     parser.add_argument('--combine',
                         action='store_true',
                         dest='combine',
-                        help="Combine compatible data")
+                        help="Combine compatible data (experimental)")
 
     parser.add_argument('--dcr-par-dir',
                         action='store',
