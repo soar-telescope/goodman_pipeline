@@ -6,6 +6,7 @@ import sys
 import time
 import glob
 import logging
+import calendar
 import ccdproc
 import numpy as np
 import math
@@ -425,7 +426,7 @@ def convert_time(in_time):
         time in seconds since epoch
 
     """
-    return time.mktime(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
+    return calendar.timegm(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
 
 
 def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,

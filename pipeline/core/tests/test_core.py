@@ -105,7 +105,7 @@ class TimeConversion(TestCase):
 
     def test_convert_time(self):
         test_time_str = '2018-01-17T12:05:44.250'
-        test_time_sec = 1516201544.0
+        test_time_sec = 1516190744.0
         self.assertEqual(convert_time(test_time_str), test_time_sec)
 
 
