@@ -79,7 +79,7 @@ class WavelengthCalibration(object):
         # TODO - Documentation missing
         self.log = logging.getLogger(__name__)
         self.args = args
-        self.poly_order = 2
+        self.poly_order = 3
         self.wcs = WCS()
         self.wsolution = None
         self.n_points = None

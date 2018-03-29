@@ -70,9 +70,8 @@ def get_args(arguments=None):
     global LOG_FILENAME
     leave = False
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent(
-            '''Extracts goodman spectra and does wavelength calibration.'''))
+        description="Extracts goodman spectra and does automatic wavelength "
+                    "calibration.\nPipeline Version: {:s}".format(__version__))
 
     parser.add_argument('--data-path',
                         action='store',

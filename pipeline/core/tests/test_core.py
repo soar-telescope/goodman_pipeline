@@ -4,6 +4,7 @@ from unittest import TestCase, skip
 from ccdproc import CCDData
 from astropy.io import fits
 import numpy as np
+import os
 
 # import all classes in core.py
 from ..core import (NightDataContainer,
@@ -100,8 +101,12 @@ def test_classify_spectroscopic_data():
     pass
 
 
-def test_convert_time():
-    pass
+class TimeConversion(TestCase):
+
+    def test_convert_time(self):
+        test_time_str = '2018-01-17T12:05:44.250'
+        test_time_sec = 1516201544.0
+        self.assertEqual(convert_time(test_time_str), test_time_sec)
 
 
 def test_dcr_cosmicray_rejection():
@@ -127,7 +132,7 @@ class FractionalExtraction(TestCase):
 
         fake_image.header['OBSTYPE'] = 'COMP'
         fake_image.header['GSP_FNAM'] = 'fake-image.fits'
-        print(fake_image.header)
+        # print(fake_image.header)
 
         # Create model aligned with pixels - represents the trace
         model = models.Linear1D(slope=0, intercept=50.3)
@@ -206,14 +211,6 @@ def test_identify_targets():
     pass
 
 
-def test_image_overscan():
-    pass
-
-
-def test_image_trim():
-    pass
-
-
 def test_lacosmic_cosmicray_rejection():
     pass
 
@@ -222,23 +219,7 @@ def test_normalize_master_flat():
     pass
 
 
-# def test_print_default_args():
-#     pass
-#
-#
-# def test_print_progress():
-#     pass
-#
-#
-# def test_print_spacers():
-#     pass
-
-
 def test_ra_dec_to_deg():
-    pass
-
-
-def test_read_fits():
     pass
 
 
@@ -258,5 +239,45 @@ def test_trace_targets():
     pass
 
 
-def test_write_fits():
-    pass
+class FitsFileIOAndOps(TestCase):
+
+    def setUp(self):
+        self.fake_image = CCDData(data=np.ones((100, 100)),
+                                  meta=fits.Header(),
+                                  unit='adu')
+        self.fake_image.header.set('CCDSUM',
+                                   value='1 1',
+                                   comment='Fake values')
+
+        self.file_name = 'sample_file.fits'
+        self.current_directory = os.getcwd()
+        self.full_path = os.path.join(self.current_directory, self.file_name)
+        self.parent_file = 'parent_file.fits'
+        self.fake_image.write(self.full_path, overwrite=True)
+
+    def test_write_fits(self):
+        self.assertTrue(os.path.isfile(self.full_path))
+        os.remove(self.full_path)
+        write_fits(ccd=self.fake_image,
+                   full_path=self.full_path,
+                   parent_file=self.parent_file,
+                   overwrite=False)
+        self.assertTrue(os.path.isfile(self.full_path))
+
+    def test_read_fits(self):
+        self.recovered_fake_image = read_fits(self.full_path)
+        self.assertIsInstance(self.recovered_fake_image, CCDData)
+
+    @skip
+    def test_image_overscan(self):
+        pass
+
+    @skip
+    def test_image_trim(self):
+        pass
+
+    def tearDown(self):
+        self.assertTrue(os.path.isfile(self.full_path))
+        os.remove(self.full_path)
+
+
