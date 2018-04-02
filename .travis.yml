@@ -31,11 +31,7 @@ install:
 
 # Create astroconda virtual environment
 - conda env create -q python=$TRAVIS_PYTHON_VERSION -f environment.yml
-- source activate astroconda
-
-# Install packages
-- pip install coveralls astroplan
-- conda install -c astropy ccdproc
+- source activate goodman
 
 
 script:
