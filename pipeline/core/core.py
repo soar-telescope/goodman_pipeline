@@ -1318,7 +1318,7 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
     return ccd
 
 
-def image_trim(ccd, trim_section, trim_type, add_keyword=False):
+def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
     """Trim image to a given section
 
     Notes:
@@ -1329,7 +1329,7 @@ def image_trim(ccd, trim_section, trim_type, add_keyword=False):
         ccd (object): A ccdproc.CCDData instance.
         trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
           where x is the spectral axis and y is the spatial axis.
-        trim_type (str): default or slit trim.
+        trim_type (str): trimsec or slit trim.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
           Default False.
 
@@ -1823,8 +1823,9 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
 
     for point in sampling_axis:
 
-        lower_limit = int(sample_center - nsigmas * model_stddev)
-        upper_limit = int(sample_center + nsigmas * model_stddev)
+        lower_limit = np.max([0, int(sample_center - nsigmas * model_stddev)])
+        upper_limit = np.min([int(sample_center + nsigmas * model_stddev),
+                             spatial_length])
 
         # print(sample_center, nsigmas, model_stddev, lower_limit, upper_limit)
 
@@ -1881,7 +1882,8 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
     return fitted_trace
 
 
-def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, plots=False):
+def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
+                  plots=False):
     """Find the trace of the target's spectrum on the image
 
     This function defines a low order polynomial that trace the location of the
@@ -1902,6 +1904,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, plots=False):
         sampling_step (int): Frequency of sampling in pixels
         pol_deg (int): Polynomial degree for fitting the trace
         plots (bool): If True will show plots (debugging)
+        nsigmas (int): Number of sigmas to search for a target. default 10.
 
     Returns:
         all_traces (list): List that contains traces that are
@@ -1930,7 +1933,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, plots=False):
                              trace_model=trace_model,
                              model_fitter=model_fitter,
                              sampling_step=sampling_step,
-                             nsigmas=10)
+                             nsigmas=nsigmas)
 
         if 0 < single_trace.c0.value < ccd.shape[0]:
             log.debug('Adding trace to list')
