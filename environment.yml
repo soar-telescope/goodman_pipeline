@@ -4,9 +4,11 @@ channels:
 dependencies:
   - numpy
   - pandas
-  - ccdproc
-  - coveralls
-  - astroplan
   - matplotlib
   - scipy
   - astropy
+  - pip
+  - pip:
+    - ccdproc
+    - coveralls
+    - astroplan
