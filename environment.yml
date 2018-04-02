@@ -1,0 +1,12 @@
+name: goodman
+channels:
+  - astroconda
+dependencies:
+  - numpy
+  - pandas
+  - ccdproc
+  - coveralls
+  - astroplan
+  - matplotlib
+  - scipy
+  - astropy
