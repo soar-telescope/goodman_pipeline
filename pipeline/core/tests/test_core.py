@@ -134,41 +134,45 @@ class TimeConversionTest(TestCase):
 
 class ExtractionTest(TestCase):
 
-    def test_fractional_extraction(self):
-
-        # Create fake image
-        fake_image = CCDData(data=np.ones((100, 100)),
+    def setUp(self):
+        self.fake_image = CCDData(data=np.ones((100, 100)),
                              meta=fits.Header(),
                              unit='adu')
-
-        fake_image.header['OBSTYPE'] = 'COMP'
-        fake_image.header['GSP_FNAM'] = 'fake-image.fits'
-        # print(fake_image.header)
+        self.fake_image.header['OBSTYPE'] = 'COMP'
+        self.fake_image.header['GSP_FNAM'] = 'fake-image.fits'
 
         # Create model aligned with pixels - represents the trace
-        model = models.Linear1D(slope=0, intercept=50.3)
+        self.target_trace = models.Linear1D(slope=0, intercept=50.3)
 
         # Calculate the STDDEV
-        stddev = 8.4
+        self.stddev = 8.4
 
         # Calculate how many STDDEV will be extracted - N_STDDEV
-        n_stddev = 2
+        self.n_stddev = 2
 
         # Calculate how far the background is from the the center.
-        distance = 1
+        self.distance = 1
 
+        self.target_profile = models.Gaussian1D(amplitude=1,
+                                                mean=50.3,
+                                                stddev=self.stddev)
+
+        self.reference_result = np.ones(100) * self.stddev * self.n_stddev
+
+
+    def test_fractional_extraction(self):
         # Perform extraction
         extracted_array, background = extract_fractional_pixel(
-            ccd=fake_image,
-            target_trace=model,
-            target_stddev=stddev,
-            extraction_width=n_stddev,
-            background_spacing=distance)
+            ccd=self.fake_image,
+            target_trace=self.target_trace,
+            target_stddev=self.stddev,
+            extraction_width=self.n_stddev,
+            background_spacing=self.distance)
         # assert isinstance(fake_image, CCDData)
         self.assertIsInstance(extracted_array, CCDData)
 
-        reference = np.ones(100) * stddev * n_stddev
-        np.testing.assert_array_almost_equal(extracted_array, reference)
+        np.testing.assert_array_almost_equal(extracted_array,
+                                             self.reference_result)
 
     def test_fractional_sum(self):
 
@@ -182,9 +186,19 @@ class ExtractionTest(TestCase):
     def test_extract_optimal(self):
         self.assertRaises(NotImplementedError, extract_optimal)
 
-    @skip
-    def test_extract(self):
-        pass
+    def test_extraction(self):
+        extracted = extraction(ccd=self.fake_image,
+                               target_trace=self.target_trace,
+                               spatial_profile=self.target_profile,
+                               extraction_name='fractional')
+        self.assertIsInstance(extracted, CCDData)
+        np.testing.assert_array_almost_equal(extracted, self.reference_result)
+
+    def test_extraction_exception(self):
+        self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
+                          target_trace=self.target_trace,
+                          spatial_profile=self.target_profile,
+                          extraction_name='optimal')
 
 
 # class BackgroundValue(TestCase):
@@ -199,31 +213,51 @@ def test_get_central_wavelength():
 
 
 class SlitTrimTest(TestCase):
+    # TODO (simon): discuss with Bruno
+
+    def setUp(self):
+        # Create fake image
+        self.fake_image = CCDData(data=np.ones((100, 100)),
+                                  meta=fits.Header(),
+                                  unit='adu')
+
+        # define
+        self.slit_low_limit = 5
+        self.slit_high_limit = 95
+
+        self.reference_slit_trim = '[1:100,{:d}:{:d}]'.format(
+            self.slit_low_limit + 10 + 1,
+            self.slit_high_limit - 10)
+
+        # make a flat-like structure
+        self.fake_image.data[self.slit_low_limit:self.slit_high_limit, :] = 100
 
     def test_get_slit_trim_section(self):
 
-        # Create fake image
-        fake_image = CCDData(data=np.ones((100, 100)),
-                             meta=fits.Header(),
-                             unit='adu')
-
-        # define
-        slit_low_limit = 5
-        slit_high_limit = 95
-
-        reference_slit_trim = '[1:100,{:d}:{:d}]'.format(slit_low_limit + 10,
-                                                         slit_high_limit - 10)
-
-        # make a flat-like structure
-        fake_image.data[slit_low_limit:slit_high_limit, :] = 100
-        slit_trim = get_slit_trim_section(master_flat=fake_image)
+        slit_trim = get_slit_trim_section(master_flat=self.fake_image)
         # print(fake_image.data[:,5])
         # print(slit_trim)
-        self.assertEqual(slit_trim, reference_slit_trim)
+        self.assertEqual(slit_trim, self.reference_slit_trim)
+
+    def test_image_trim_slit(self):
+        # # define
+        # slit_low_limit = 5
+        # slit_high_limit = 95
+        #
+        # slit_trim = '[1:100,{:d}:{:d}]'.format(slit_low_limit + 10 + 1,
+        #                                        slit_high_limit - 10)
+        self.fake_image = image_trim(ccd=self.fake_image,
+                                     trim_section=self.reference_slit_trim,
+                                     trim_type='slit')
+        self.assertIsInstance(self.fake_image, CCDData)
+        reference_size = (self.slit_high_limit - 10) - (self.slit_low_limit + 10)
+        self.assertEqual(self.fake_image.data.shape, (reference_size, 100))
+
+        self.assertEqual(self.fake_image.header['GSP_SLIT'],
+                         self.reference_slit_trim)
 
 
-def test_identify_targets():
-    pass
+
 
 
 def test_lacosmic_cosmicray_rejection():
@@ -242,12 +276,13 @@ def test_search_comp_group():
     pass
 
 
-class TraceTargetsTest(TestCase):
+class TargetsTest(TestCase):
 
     def setUp(self):
         self.ccd = CCDData(data=np.ones((300, 600)),
                            meta=fits.Header(),
                            unit='adu')
+
         self.profile_1 = models.Gaussian1D(amplitude=70,
                                            mean=100,
                                            stddev=10).rename('Profile_1')
@@ -263,6 +298,21 @@ class TraceTargetsTest(TestCase):
         del self.ccd
         del self.profile_1
         del self.profile_2
+
+    @skip
+    def test_identify_targets(self):
+        self.ccd.header.set('OBSTYPE',
+                            value='OBJECT',
+                            comment='Fake values')
+        self.ccd.header.set('SLIT',
+                            value='1.03" long slit',
+                            comment='Fake slit')
+        self.ccd.header.set('CCDSUM',
+                            value='1 1',
+                            comment='Fake values')
+        targets = identify_targets(ccd=self.ccd, nfind=2, plots=False)
+        print(targets)
+        self.fail()
 
     def test_trace(self):
         trace_model = models.Polynomial1D(degree=2)
@@ -342,7 +392,9 @@ class FitsFileIOAndOps(TestCase):
         self.fake_image = image_trim(ccd=self.fake_image,
                                      trim_section=trim_section,
                                      trim_type='trimsec')
+
         self.assertEqual(self.fake_image.data.shape, (100, 50))
+        self.assertEqual(self.fake_image.header['GSP_TRIM'], trim_section)
 
     def tearDown(self):
         self.assertTrue(os.path.isfile(self.full_path))

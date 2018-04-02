@@ -934,7 +934,7 @@ def get_slit_trim_section(master_flat):
 
     h_lim = 1 + fitted_box.x_0.value + 0.5 * fitted_box.width.value - offset
 
-    low_lim = int(np.max([1 + offset, l_lim]))
+    low_lim = int(np.max([1 + offset, l_lim + 1]))
 
     high_lim = int(np.min([h_lim, len(ccd_section_median) - offset]))
 
