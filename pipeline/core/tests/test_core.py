@@ -4,8 +4,10 @@ from unittest import TestCase, skip
 from ccdproc import CCDData
 from astropy.io import fits
 from astropy.modeling import Model
+import astropy.units as u
 import numpy as np
 import os
+import re
 
 # import all classes in core.py
 from ..core import (NightDataContainer,
@@ -69,6 +71,119 @@ def test_spectroscopic_mode():
     pass
 
 
+def test_search_comp_group():
+    pass
+
+
+def test_lacosmic_cosmicray_rejection():
+    pass
+
+
+
+
+
+def test_classify_spectroscopic_data():
+    pass
+
+
+class MasterFlatTest(TestCase):
+
+    def setUp(self):
+        # create a master flat
+        self.master_flat = CCDData(data=np.ones((100, 100)),
+                                   meta=fits.Header(),
+                                   unit='adu')
+        self.master_flat.header.set('GRATING', value='RALC_1200-BLUE')
+        self.master_flat.header.set('SLIT', value='0.84" long slit')
+        self.master_flat.header.set('FILTER2', value='<NO FILTER>')
+        self.master_flat.header.set('WAVMODE', value='1200 m2')
+        self.master_flat_name = 'master_flat_1200m2.fits'
+        # expected master flat to be retrieved by get_best_flat
+        self.reference_flat_name = 'master_flat_1200m2_0.84_dome.fits'
+        # location of sample flats
+        self.flat_path = 'test/data'
+        self.flat_name_base = re.sub('.fits', '*.fits', self.master_flat_name)
+
+        # save a master flat with some random structure.
+
+        self.master_flat_name_norm = 'flat_to_normalize.fits'
+        # add a bias level
+        self.master_flat.data += 300.
+        # add noise
+        self.master_flat.data += np.random.random_sample(
+            self.master_flat.data.shape)
+
+        self.master_flat.write(os.path.join(self.flat_path,
+                                            self.master_flat_name_norm),
+                               overwrite=False)
+
+    def tearDown(self):
+        full_path = os.path.join(self.flat_path,
+                                 self.master_flat_name_norm)
+
+        self.assertTrue(os.path.isfile(full_path))
+        if os.path.isfile(full_path):
+            os.unlink(full_path)
+        self.assertFalse(os.path.isfile(full_path))
+
+        # remove normalized flat
+        norm_flat = re.sub('flat_to_', 'norm_flat_to_', full_path)
+        if os.path.isfile(norm_flat):
+            os.unlink(norm_flat)
+        self.assertFalse(os.path.isfile(norm_flat))
+
+    def test_get_best_flat(self):
+
+        master_flat, master_flat_name = get_best_flat(
+            flat_name=self.flat_name_base,
+            path=self.flat_path)
+        self.assertIsInstance(master_flat, CCDData)
+        self.assertEqual(os.path.basename(master_flat_name),
+                         self.reference_flat_name)
+
+    def test_get_best_flat_fail(self):
+        # Introduce an error that will never produce a result.
+        wrong_flat_name = re.sub('1200m2', '1300m2', self.flat_name_base)
+        master_flat, master_flat_name = get_best_flat(
+            flat_name=wrong_flat_name,
+            path=self.flat_path)
+        self.assertIsNone(master_flat)
+        self.assertIsNone(master_flat_name)
+
+    def test_normalize_master_flat(self):
+        methods = ['mean', 'simple', 'full']
+        for method in methods:
+            self.assertNotAlmostEqual(self.master_flat.data.mean(), 1.)
+            normalized_flat, normalized_flat_name = normalize_master_flat(
+                master=self.master_flat,
+                name=os.path.join(self.flat_path,
+                                  self.master_flat_name_norm),
+                method=method)
+
+            self.assertAlmostEqual(normalized_flat.data.mean(), 1.,
+                                   delta=0.001)
+            self.assertEqual(normalized_flat.header['GSP_NORM'], method)
+            self.assertIn('norm_', normalized_flat_name)
+
+
+class CentralWavelength(TestCase):
+
+    def setUp(self):
+        # 400m2
+        self.grating = '400'
+        self.grating_angle = 7.5
+        self.camera_angle = 16.1
+        self.reference_central_wavelength = 7001.54 * u.angstrom
+
+    def test_get_central_wavelength(self):
+        central_wavelength = get_central_wavelength(grating=self.grating,
+                                                    grt_ang=self.grating_angle,
+                                                    cam_ang=self.camera_angle)
+        self.assertAlmostEqual(central_wavelength.value,
+                               self.reference_central_wavelength.value,
+                               places=2)
+
+
 class AddWCSKeywordsTest(TestCase):
 
     def test_add_wcs_keys(self):
@@ -105,9 +220,6 @@ class CosmicRayRejectionTest(TestCase):
     def test_call_cosmic_rejection(self):
         pass
 
-
-def test_classify_spectroscopic_data():
-    pass
 
 
 class TimeConversionTest(TestCase):
@@ -202,17 +314,6 @@ class ExtractionTest(TestCase):
                           extraction_name='optimal')
 
 
-# class BackgroundValue(TestCase):
-
-
-def test_get_best_flat():
-    pass
-
-
-def test_get_central_wavelength():
-    pass
-
-
 class SlitTrimTest(TestCase):
     # TODO (simon): discuss with Bruno
 
@@ -258,23 +359,19 @@ class SlitTrimTest(TestCase):
                          self.reference_slit_trim)
 
 
+class RaDecConversion(TestCase):
 
+    def setUp(self):
+        self.ra = '19:09:55.026'
+        self.dec = '-68:18:01.901'
+        self.reference_ra = 287.479275
+        self.reference_dec = -68.3005281
 
-
-def test_lacosmic_cosmicray_rejection():
-    pass
-
-
-def test_normalize_master_flat():
-    pass
-
-
-def test_ra_dec_to_deg():
-    pass
-
-
-def test_search_comp_group():
-    pass
+    def test_ra_dec_to_deg(self):
+        radeg, decdeg = ra_dec_to_deg(right_ascension=self.ra,
+                                      declination=self.dec)
+        self.assertAlmostEqual(radeg, self.reference_ra)
+        self.assertAlmostEqual(decdeg, self.reference_dec)
 
 
 class TargetsTest(TestCase):
