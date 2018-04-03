@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from unittest import TestCase, skip
 from ccdproc import CCDData
 from astropy.io import fits
+from astropy.modeling import Model
 import numpy as np
 import os
 
@@ -279,15 +280,15 @@ def test_search_comp_group():
 class TargetsTest(TestCase):
 
     def setUp(self):
-        self.ccd = CCDData(data=np.ones((300, 600)),
+        self.ccd = CCDData(data=np.ones((800, 2000)),
                            meta=fits.Header(),
                            unit='adu')
 
-        self.profile_1 = models.Gaussian1D(amplitude=70,
+        self.profile_1 = models.Gaussian1D(amplitude=200,
                                            mean=100,
                                            stddev=10).rename('Profile_1')
-        self.profile_2 = models.Gaussian1D(amplitude=70,
-                                           mean=200,
+        self.profile_2 = models.Gaussian1D(amplitude=200,
+                                           mean=600,
                                            stddev=10).rename('Profile_2')
 
         profile_sum = self.profile_1 + self.profile_2
@@ -299,7 +300,6 @@ class TargetsTest(TestCase):
         del self.profile_1
         del self.profile_2
 
-    @skip
     def test_identify_targets(self):
         self.ccd.header.set('OBSTYPE',
                             value='OBJECT',
@@ -311,8 +311,9 @@ class TargetsTest(TestCase):
                             value='1 1',
                             comment='Fake values')
         targets = identify_targets(ccd=self.ccd, nfind=2, plots=False)
-        print(targets)
-        self.fail()
+        self.assertEqual(len(targets), 2)
+        for target in targets:
+            self.assertIsInstance(target, Model)
 
     def test_trace(self):
         trace_model = models.Polynomial1D(degree=2)
