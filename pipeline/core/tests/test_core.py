@@ -79,9 +79,6 @@ def test_lacosmic_cosmicray_rejection():
     pass
 
 
-
-
-
 def test_classify_spectroscopic_data():
     pass
 
@@ -102,7 +99,12 @@ class MasterFlatTest(TestCase):
         self.reference_flat_name = 'master_flat_1200m2_0.84_dome.fits'
         # location of sample flats
         self.flat_path = 'test/data'
-        self.flat_name_base = re.sub('.fits', '*.fits', self.master_flat_name)
+        slit = re.sub('[A-Za-z" ]',
+                      '',
+                      self.master_flat.header['SLIT'])
+        self.flat_name_base = re.sub('.fits',
+                                     '_' + slit + '*.fits',
+                                     self.master_flat_name)
 
         # save a master flat with some random structure.
 
@@ -133,6 +135,7 @@ class MasterFlatTest(TestCase):
         self.assertFalse(os.path.isfile(norm_flat))
 
     def test_get_best_flat(self):
+        print(self.flat_name_base)
 
         master_flat, master_flat_name = get_best_flat(
             flat_name=self.flat_name_base,
@@ -221,7 +224,6 @@ class CosmicRayRejectionTest(TestCase):
         pass
 
 
-
 class TimeConversionTest(TestCase):
 
     def setUp(self):
@@ -249,8 +251,8 @@ class ExtractionTest(TestCase):
 
     def setUp(self):
         self.fake_image = CCDData(data=np.ones((100, 100)),
-                             meta=fits.Header(),
-                             unit='adu')
+                                  meta=fits.Header(),
+                                  unit='adu')
         self.fake_image.header['OBSTYPE'] = 'COMP'
         self.fake_image.header['GSP_FNAM'] = 'fake-image.fits'
 
@@ -272,7 +274,6 @@ class ExtractionTest(TestCase):
 
         self.reference_result = np.ones(100) * self.stddev * self.n_stddev
 
-
     def test_fractional_extraction(self):
         # Perform extraction
         extracted_array, background = extract_fractional_pixel(
@@ -293,8 +294,8 @@ class ExtractionTest(TestCase):
         low_limit = 50 + np.random.random()
         high_limit = 60 + np.random.random()
 
-        sum = fractional_sum(fake_image, 50, low_limit, high_limit)
-        self.assertEqual(sum, high_limit - low_limit)
+        frac_sum = fractional_sum(fake_image, 50, low_limit, high_limit)
+        self.assertEqual(frac_sum, high_limit - low_limit)
 
     def test_extract_optimal(self):
         self.assertRaises(NotImplementedError, extract_optimal)
@@ -352,7 +353,8 @@ class SlitTrimTest(TestCase):
                                      trim_section=self.reference_slit_trim,
                                      trim_type='slit')
         self.assertIsInstance(self.fake_image, CCDData)
-        reference_size = (self.slit_high_limit - 10) - (self.slit_low_limit + 10)
+        reference_size = (self.slit_high_limit - 10) - \
+                         (self.slit_low_limit + 10)
         self.assertEqual(self.fake_image.data.shape, (reference_size, 100))
 
         self.assertEqual(self.fake_image.header['GSP_SLIT'],
@@ -497,5 +499,3 @@ class FitsFileIOAndOps(TestCase):
     def tearDown(self):
         self.assertTrue(os.path.isfile(self.full_path))
         os.remove(self.full_path)
-
-
