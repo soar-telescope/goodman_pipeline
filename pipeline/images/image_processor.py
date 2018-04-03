@@ -614,7 +614,8 @@ class ImageProcessor(object):
 
                     # load the best flat based on the name previously defined
                     master_flat, master_flat_name = \
-                        get_best_flat(flat_name=master_flat_name)
+                        get_best_flat(flat_name=master_flat_name,
+                                      path=self.args.red_path)
                     if (master_flat is None) and (master_flat_name is None):
                         self.log.critical('Failed to obtain master flat')
 
@@ -852,7 +853,8 @@ class ImageProcessor(object):
         self.log.debug('Got {:s} for master flat name'.format(master_flat_name))
 
         master_flat, master_flat_name = get_best_flat(
-            flat_name=master_flat_name)
+            flat_name=master_flat_name,
+            path=self.args.red_path)
 
         if master_flat is not None:
             for image_file in imaging_group.file.tolist():

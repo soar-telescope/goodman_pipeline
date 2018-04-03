@@ -804,7 +804,7 @@ def fractional_sum(data, index, low_limit, high_limit):
     return column_sum
 
 
-def get_best_flat(flat_name):
+def get_best_flat(flat_name, path):
     """Look for matching master flat
 
     Given a basename for master flats defined as a combination of key parameters
@@ -820,13 +820,14 @@ def get_best_flat(flat_name):
     Args:
         flat_name (str): Full path of master flat basename. Ends in '*.fits' for
           using glob.
+        path (str): Location to look for flats.
 
     Returns:
         master_flat (object): A ccdproc.CCDData instance.
         master_flat_name (str): Full path to the chosen master flat.
 
     """
-    flat_list = glob.glob(flat_name)
+    flat_list = glob.glob(os.path.join(path, flat_name))
     log.debug('Flat base name {:s}'.format(flat_name))
     log.debug('Matching master flats found: {:d}'.format(len(flat_list)))
     if len(flat_list) > 0:
@@ -867,14 +868,18 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 
     """
 
-    grating_frequency = float(grating)
-    alpha = float(grt_ang)
-    beta = float(cam_ang) - float(grt_ang)
+    grating_frequency = float(grating) / u.mm
+    grt_ang = float(grt_ang) * u.deg
+    cam_ang = float(cam_ang) * u.deg
 
-    central_wavelength = (1e6 / grating_frequency) * \
-                         (np.sin(alpha * np.pi / 180.) +
-                          np.sin(beta * np.pi / 180.))
+    alpha = grt_ang.to(u.rad)
+    beta = cam_ang.to(u.rad) - grt_ang.to(u.rad)
 
+    # central_wavelength = (1e6 / grating_frequency) * \
+    #                      (np.sin(alpha * np.pi / 180.) +
+    #                       np.sin(beta * np.pi / 180.))
+    central_wavelength = (np.sin(alpha) + np.sin(beta)) / grating_frequency
+    central_wavelength = central_wavelength.to(u.angstrom)
     log.debug('Found {:.3f} as central wavelength'.format(central_wavelength))
 
     return central_wavelength
@@ -967,76 +972,77 @@ def get_slit_trim_section(master_flat):
 
 
 def get_twilight_time(date_obs):
-            """Get end/start time of evening/morning twilight
 
-            Notes:
-                Taken from David Sanmartim's development
+    """Get end/start time of evening/morning twilight
 
-            Args:
-                date_obs (list): List of all the dates from data.
+    Notes:
+        Taken from David Sanmartim's development
 
-            Returns:
-                twilight_evening (str): Evening twilight time in the format
-                  'YYYY-MM-DDTHH:MM:SS.SS'
-                twilight_morning (str): Morning twilight time in the format
-                  'YYYY-MM-DDTHH:MM:SS.SS'
-                sun_set_time (str): Sun set time in the format
-                  'YYYY-MM-DDTHH:MM:SS.SS'
-                sun_rise_time (str): Sun rise time in the format
-                  'YYYY-MM-DDTHH:MM:SS.SS'
+    Args:
+        date_obs (list): List of all the dates from data.
 
-            """
-            # observatory(str): Observatory name.
-            observatory = 'SOAR Telescope'
-            geodetic_location = ['-70d44m01.11s', '-30d14m16.41s', 2748]
+    Returns:
+        twilight_evening (str): Evening twilight time in the format
+          'YYYY-MM-DDTHH:MM:SS.SS'
+        twilight_morning (str): Morning twilight time in the format
+          'YYYY-MM-DDTHH:MM:SS.SS'
+        sun_set_time (str): Sun set time in the format
+          'YYYY-MM-DDTHH:MM:SS.SS'
+        sun_rise_time (str): Sun rise time in the format
+          'YYYY-MM-DDTHH:MM:SS.SS'
 
-            # longitude (str): Geographic longitude in string format
-            longitude = geodetic_location[0]
+    """
+    # observatory(str): Observatory name.
+    observatory = 'SOAR Telescope'
+    geodetic_location = ['-70d44m01.11s', '-30d14m16.41s', 2748]
 
-            # latitude (str): Geographic latitude in string format.
-            latitude = geodetic_location[1]
+    # longitude (str): Geographic longitude in string format
+    longitude = geodetic_location[0]
 
-            # elevation (int): Geographic elevation in meters above sea level
-            elevation = geodetic_location[2]
+    # latitude (str): Geographic latitude in string format.
+    latitude = geodetic_location[1]
 
-            # timezone (str): Time zone.
-            timezone = 'UTC'
+    # elevation (int): Geographic elevation in meters above sea level
+    elevation = geodetic_location[2]
 
-            # description(str): Observatory description
-            description = 'Soar Telescope on Cerro Pachon, Chile'
+    # timezone (str): Time zone.
+    timezone = 'UTC'
 
-            soar_loc = EarthLocation.from_geodetic(longitude,
-                                                   latitude,
-                                                   elevation * u.m,
-                                                   ellipsoid='WGS84')
+    # description(str): Observatory description
+    description = 'Soar Telescope on Cerro Pachon, Chile'
 
-            soar = Observer(name=observatory,
-                            location=soar_loc,
-                            timezone=timezone,
-                            description=description)
+    soar_loc = EarthLocation.from_geodetic(longitude,
+                                           latitude,
+                                           elevation * u.m,
+                                           ellipsoid='WGS84')
 
-            time_first_frame, time_last_frame = Time(min(date_obs)), Time(
-                max(date_obs))
+    soar = Observer(name=observatory,
+                    location=soar_loc,
+                    timezone=timezone,
+                    description=description)
 
-            twilight_evening = soar.twilight_evening_astronomical(
-                Time(time_first_frame), which='nearest').isot
+    time_first_frame, time_last_frame = Time(min(date_obs)), Time(
+        max(date_obs))
 
-            twilight_morning = soar.twilight_morning_astronomical(
-                Time(time_last_frame), which='nearest').isot
+    twilight_evening = soar.twilight_evening_astronomical(
+        Time(time_first_frame), which='nearest').isot
 
-            sun_set_time = soar.sun_set_time(
-                Time(time_first_frame), which='nearest').isot
+    twilight_morning = soar.twilight_morning_astronomical(
+        Time(time_last_frame), which='nearest').isot
 
-            sun_rise_time = soar.sun_rise_time(
-                Time(time_last_frame), which='nearest').isot
+    sun_set_time = soar.sun_set_time(
+        Time(time_first_frame), which='nearest').isot
 
-            log.debug('Sun Set ' + sun_set_time)
-            log.debug('Sun Rise ' + sun_rise_time)
+    sun_rise_time = soar.sun_rise_time(
+        Time(time_last_frame), which='nearest').isot
 
-            return (twilight_evening,
-                    twilight_morning,
-                    sun_set_time,
-                    sun_rise_time)
+    log.debug('Sun Set ' + sun_set_time)
+    log.debug('Sun Rise ' + sun_rise_time)
+
+    return (twilight_evening,
+            twilight_morning,
+            sun_set_time,
+            sun_rise_time)
 
 
 def identify_targets(ccd, nfind=3, plots=False):
@@ -1470,6 +1476,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
 
     """
     assert isinstance(master, CCDData)
+    master = master.copy()
 
     # define new name, base path and full new name
     new_name = 'norm_' + os.path.basename(name)
@@ -2642,7 +2649,9 @@ class SpectroscopicMode(object):
             central_wavelength = get_central_wavelength(grating=grating,
                                                         grt_ang=grating_targ,
                                                         cam_ang=camera_targ)
-            return 'Custom_{:d}nm'.format(int(round(central_wavelength)))
+            central_wavelength.to(u.nm)
+            return 'Custom_{:d}nm'.format(int(round(central_wavelength.value)))
+
 
         else:
             _mode = self.modes_data_frame[
@@ -2655,7 +2664,9 @@ class SpectroscopicMode(object):
                     grating=grating,
                     grt_ang=grating_targ,
                     cam_ang=camera_targ)
-                return 'Custom_{:d}nm'.format(int(round(central_wavelength)))
+                central_wavelength.to(u.nm)
+                return 'Custom_{:d}nm'.format(int(round(
+                    central_wavelength.value)))
             else:
                 return _mode['wavmode'].to_string(index=False)
 
