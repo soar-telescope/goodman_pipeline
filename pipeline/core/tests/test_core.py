@@ -135,7 +135,7 @@ class MasterFlatTest(TestCase):
         self.assertFalse(os.path.isfile(norm_flat))
 
     def test_get_best_flat(self):
-        print(self.flat_name_base)
+        # print(self.flat_name_base)
 
         master_flat, master_flat_name = get_best_flat(
             flat_name=self.flat_name_base,

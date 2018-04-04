@@ -418,7 +418,9 @@ class WavelengthCalibration(object):
                            '{:s} vs {:s}'.format(str(global_cross_corr),
                                                  str(correlation_value)))
 
-            print(global_cross_corr, correlation_value, global_cross_corr - correlation_value, (global_cross_corr - correlation_value) < global_cross_corr/2.)
+            # print(global_cross_corr, correlation_value, global_cross_corr -
+            #  correlation_value, (global_cross_corr - correlation_value) <
+            # global_cross_corr/2.)
             if (global_cross_corr - correlation_value) < global_cross_corr / 2.:
                 """record value for reference wavelength"""
                 angstrom_value_model = self.wcs.model(
@@ -433,7 +435,7 @@ class WavelengthCalibration(object):
                 pixel_values.append(line_value_pixel)
             else:
                 self.log.debug("Local cross correlation value {:.3f} is too far"
-                               "from global cross correlation value "
+                               " from global cross correlation value "
                                "{:.3f}".format(correlation_value,
                                              global_cross_corr))
 

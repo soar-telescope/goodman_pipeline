@@ -667,6 +667,7 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
         # this defines the extraction limit for every column
         low_limit = trace_points[i] - 0.5 * extraction_width * target_stddev
         high_limit = trace_points[i] + 0.5 * extraction_width * target_stddev
+        # print(trace_points[i], extraction_width, target_stddev)
 
         # low_limits_list.append(low_limit)
         # high_limits_list.append(high_limit)
@@ -801,6 +802,7 @@ def fractional_sum(data, index, low_limit, high_limit):
         data[int(low_integer), index] * low_fraction + \
         data[int(high_integer), index] * high_fraction
 
+    # print(low_limit, high_limit, column_sum)
     return column_sum
 
 
@@ -1238,7 +1240,7 @@ def identify_targets(ccd, nfind=3, plots=False):
                                      mean=peak,
                                      stddev=order).rename(
             'Gaussian_{:d}'.format(peak))
-
+        # print('Gaussian ', gaussian)
         # fixes mean and amplitude already found, just finding stddev
         gaussian.mean.fixed = True
         gaussian.amplitude.fixed = True
@@ -1246,6 +1248,7 @@ def identify_targets(ccd, nfind=3, plots=False):
                                  range(len(median_profile)),
                                  median_profile)
 
+        # print("Fitted Gaussian ", fitted_gaussian)
         # after being fitted, unfix the parameters and now fix stddev
         fitted_gaussian.mean.fixed = False
         fitted_gaussian.amplitude.fixed = False
@@ -1268,8 +1271,12 @@ def identify_targets(ccd, nfind=3, plots=False):
         # plt.show()
 
         # this ensures the profile returned are valid
-        if fitted_gaussian.stddev.value > 0:
+        if (fitted_gaussian.stddev.value > 0) and \
+                (fitted_gaussian.stddev.value < 4 * order):
             profile_model.append(fitted_gaussian)
+        else:
+            log.error("Discarding target with stddev: {:.3f}".format(
+                fitted_gaussian.stddev.value))
     if plots:
         plt.plot(median_profile, color='b')
         for profile in profile_model:
