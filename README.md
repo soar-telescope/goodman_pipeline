@@ -8,10 +8,10 @@
 The Goodman High Throughput Spectrograph (Goodman HTS) Data-Reduction Pipeline
 is the SOAR Telescope's official data reduction pipeline for _Goodman HTS_.
 
-It has been fully developed in Python 2.7 and mostly astropy affiliated packages
-with the exception of [dcr](http://users.camk.edu.pl/pych/DCR/) an external tool
+It has been fully developed in Python 3.5 and uses mostly astropy affiliated packages
+with the exception of [dcr](http://users.camk.edu.pl/pych/DCR/) which is an external tool
 that does cosmic ray identification and correction. The reason for using it
-instead of LACosmic was that it works very well for spectroscopic data and the
+instead of LACosmic is that it works very well for spectroscopic data and the
 results are evidently superior. Some of the negative aspects of using this
 external (meaning outside of Python domains) software were: The integration into
 the pipeline's workflow and the use of an external `dcr.par` parameter file.
@@ -28,15 +28,13 @@ any comment please contact Simón Torres at storres [at] ctio noao edu.
 The Goodman High Throughput Spectrograph is an imaging spectrograph, if you wish
 to know more about the instrument please check the 
 [SOAR website](http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph)
- 
-To see full documentation please go to the GitHub hosted site for
-[Goodman](https://soar-telescope.github.io/goodman/)
 
 ## What is contained in the project?
 
-The Goodman HTS Pipeline has two packages, _goodman_ccd_ dedicated to the basic
-ccd reduction process and _goodman_spec_ for advanced processing for 
-spectroscopic data such as target identification and extraction for instance.
+The Goodman HTS Pipeline is distributed as a single package with two main scripts,
+_redccd_ dedicated to the basic
+ccd reduction process and _redspec_ for advanced processing of 
+spectroscopic data such as target identification, extraction and wavelength calibration.
 
 They are supposed to work in sequence and they are called from two indepentent 
 scripts, _redccd_ and _redspec_. 
@@ -64,13 +62,28 @@ If you want to try it out as a developer please request the developer's manual.
 # Common Failures
 
 - The pipeline fails to detect a target: Usually is the keyword OBSTYPE is wrong
-and is trying to detect targets where it shouldn't
+and is trying to detect targets where there is any.
 
 - The wavelength solution RMS Error is too high (larger than 3): The lamp was 
 mislabeled. For instance it says HgArNe when is HgAr.
 
 # Acknowledge
 
-[David Sanmartim](https://github.com/dsanmartim) developed the first version of
-the ccd reduction part before he moved to a new position. That first version was
-included in the pipeline as a package and has evolved along all the code.
+## Contributors:
+  [David Sanmartim](https://github.com/dsanmartim) developed the first version of
+  the ccd reduction part before he moved to a new position. That first version was
+  included in the pipeline as a package and has evolved along all the code.
+  
+  [Tina Armond]() Helped with the identification of comparison lamps for the _reference
+  lamps library_.
+  
+## Citations:
+  This pipeline makes extensive use of Astropy therefore you should cite as suggested
+  on [Astropy Citation Page](https://github.com/astropy/astropy/blob/master/CITATION) as follows:
+  
+    This research made use of Astropy, a community-developed core Python package
+    for Astronomy (Astropy Collaboration, 2013, 2018).
+    
+  It also uses [DCR](http://users.camk.edu.pl/pych/DCR/) and you should cite [this paper](http://adsabs.harvard.edu/abs/2004PASP..116..148P)
+  
+     Pych, W., 2004, PASP, 116, 148
