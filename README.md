@@ -74,7 +74,7 @@ mislabeled. For instance it says HgArNe when is HgAr.
   the ccd reduction part before he moved to a new position. That first version was
   included in the pipeline as a package and has evolved along all the code.
   
-  [Tina Armond]() Helped with the identification of comparison lamps for the _reference
+  [Tina Armond](https://github.com/tarmond) Helped with the identification of comparison lamps for the _reference
   lamps library_.
   
 ## Citations:
@@ -84,6 +84,7 @@ mislabeled. For instance it says HgArNe when is HgAr.
     This research made use of Astropy, a community-developed core Python package
     for Astronomy (Astropy Collaboration, 2013, 2018).
     
-  It also uses [DCR](http://users.camk.edu.pl/pych/DCR/) and you should cite [this paper](http://adsabs.harvard.edu/abs/2004PASP..116..148P)
+  It also uses [DCR](http://users.camk.edu.pl/pych/DCR/) for cosmic rays identification
+  and removal. You should cite [this paper](http://adsabs.harvard.edu/abs/2004PASP..116..148P)
   
      Pych, W., 2004, PASP, 116, 148
