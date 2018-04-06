@@ -85,6 +85,7 @@ class WavelengthCalibration(object):
         self.n_points = None
         self.n_rejections = None
         self.rms_error = None
+        self.cross_corr_tolerance = 5
         # print(self.args.reference_dir)
         self.reference_data = ReferenceData(self.args.reference_dir)
         # self.science_object = science_object
@@ -142,7 +143,12 @@ class WavelengthCalibration(object):
         # self.history_of_lamps_solutions = {}
         self.reference_solution = None
 
-    def __call__(self, ccd, comp_list, object_number=None, wsolution_obj=None):
+    def __call__(self,
+                 ccd,
+                 comp_list,
+                 object_number=None,
+                 wsolution_obj=None,
+                 corr_tolerance=15):
         """Call method for the WavelengthSolution Class
 
         It takes extracted data and produces wavelength calibrated 1D FITS file.
@@ -162,6 +168,10 @@ class WavelengthCalibration(object):
                 order to allow for multiple 1D files. Default value is None.
             wsolution_obj (object): Mathematical model of the wavelength
                 solution if exist. If it doesnt is a None
+            corr_tolerance (int): `cross_corr_tolerance` stands for cross
+                correlation tolerance, in other words, how far the cross
+                correlation can be from the global cross correlation. It usually
+                increases with the frequency of the grating.
 
         Returns:
             wavelength_solution (object): The mathematical model of the
@@ -171,6 +181,8 @@ class WavelengthCalibration(object):
         """
         assert isinstance(ccd, CCDData)
         assert isinstance(comp_list, list)
+
+        self.cross_corr_tolerance = corr_tolerance
 
         self.i_fig = None
 
@@ -199,7 +211,8 @@ class WavelengthCalibration(object):
                     self._interactive_wavelength_solution(
                         object_name=object_name)
                 else:
-                    self._automatic_wavelength_solution()
+                    self._automatic_wavelength_solution(
+                        corr_tolerance=self.cross_corr_tolerance)
 
                 if self.wsolution is not None:
 
