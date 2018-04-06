@@ -1,3 +1,4 @@
+recommonmark
 numpy
 pandas
 ccdproc
@@ -6,3 +7,5 @@ astroplan
 matplotlib
 scipy
 astropy
+sphinx
+sphinxcontrib.napoleon

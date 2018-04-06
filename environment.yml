@@ -12,3 +12,5 @@ dependencies:
     - ccdproc
     - coveralls
     - astroplan
+    - sphinx
+    - sphinxcontrib.napoleon
