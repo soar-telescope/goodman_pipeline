@@ -13,7 +13,7 @@ standard.
 # conflict with this request.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
+import inspect
 import glob
 import logging
 import os
@@ -312,7 +312,7 @@ class WavelengthCalibration(object):
 
         return ccd
 
-    def _automatic_wavelength_solution(self):
+    def _automatic_wavelength_solution(self, corr_tolerance=15):
         """Finds a Wavelength Solution Automatically
 
         This method uses a library of previously wavelength-calibrated
@@ -418,11 +418,11 @@ class WavelengthCalibration(object):
                            '{:s} vs {:s}'.format(str(global_cross_corr),
                                                  str(correlation_value)))
 
-            # print(global_cross_corr, correlation_value, global_cross_corr -
-            #  correlation_value, (global_cross_corr - correlation_value) <
-            # global_cross_corr/2.)
-            if (global_cross_corr - correlation_value) < global_cross_corr / 2.:
+            # print(global_cross_corr, correlation_value, global_cross_corr - correlation_value, - corr_tolerance < (global_cross_corr - correlation_value) < corr_tolerance)
+            if - corr_tolerance < (global_cross_corr - correlation_value) < \
+                    corr_tolerance:
                 """record value for reference wavelength"""
+                # print(global_cross_corr - correlation_value)
                 angstrom_value_model = self.wcs.model(
                     line_value_pixel + correlation_value)
 
@@ -440,6 +440,7 @@ class WavelengthCalibration(object):
                                              global_cross_corr))
 
             if False:
+                print(global_cross_corr, correlation_value)
                 plt.ion()
                 plt.title('Samples after cross correlation')
                 plt.xlabel('Pixel Axis')
@@ -525,15 +526,23 @@ class WavelengthCalibration(object):
 
         self._evaluate_solution(clipped_differences=clipped_differences)
 
-        if self.args.plot_results or self.args.debug_mode:
+        if self.args.plot_results or self.args.debug_mode or \
+                self.args.save_plots:
+            plt.close('all')
             plt.switch_backend('Qt5Agg')
+            # print(self.i_fig)
+            self.i_fig = None
             if self.i_fig is None:
                 self.i_fig = plt.figure(figsize=(15, 10))
                 self.i_fig.canvas.set_window_title(
                     'Automatic Wavelength Solution')
-            else:
-                self.i_fig.clf()
-
+                self.ax1 = self.i_fig.add_subplot(111)
+                self.ax1.set_rasterization_zorder(1)
+            # else:
+            #     print("clear figure")
+            #     self.i_fig.clf()
+            #     self.i_fig.canvas.set_window_title(
+            #         'Blank')
             if not self.args.debug_mode:
                 plt.ion()
                 # plt.show()
@@ -546,9 +555,6 @@ class WavelengthCalibration(object):
                 manager.window.maximize()
             elif plt.get_backend() == u'Qt5Agg':
                 manager.window.showMaximized()
-
-            self.ax1 = self.i_fig.add_subplot(111)
-            self.ax1.set_rasterization_zorder(1)
 
             self.ax1.plot([], color='m', label='Pixels')
             self.ax1.plot([], color='c', label='Angstrom')
@@ -587,34 +593,42 @@ class WavelengthCalibration(object):
             self.i_fig.tight_layout()
 
             if self.args.save_plots:
-                # saves pdf files of the wavelength solution plot
-                out_file_name = 'automatic-solution_' + self.lamp.header[
-                    'OBJECT']
-
-                file_count = len(glob.glob(os.path.join(self.args.destination,
-                                                        out_file_name + '*')))
-
-                out_file_name += '_{:04d}.pdf'.format(file_count)
-                pdf_pages = PdfPages(
-                    os.path.join(self.args.destination, out_file_name))
-                plt.savefig(pdf_pages, format='pdf')
-                pdf_pages.close()
-
-                # saves png images
 
                 plots_path = os.path.join(self.args.destination, 'plots')
                 if not os.path.isdir(plots_path):
                     os.path.os.makedirs(plots_path)
-                plot_name = os.path.join(plots_path, out_file_name + '.eps')
-                plt.savefig(plot_name, rasterized=True, format='eps', dpi=300)
+                # saves pdf files of the wavelength solution plot
+                out_file_name = 'automatic-solution_' + self.lamp.header[
+                    'GSP_FNAM']
+                out_file_name = re.sub('.fits', '', out_file_name)
+
+                file_count = len(glob.glob(os.path.join(self.args.destination,
+                                                        out_file_name + '*'))) +\
+                             1
+
+                out_file_name += '_RMS_{:.3f}_{:03d}.pdf'.format(self.rms_error,
+                                                                 file_count)
+                pdf_pages = PdfPages(
+                    os.path.join(plots_path, out_file_name))
+                plt.savefig(pdf_pages, format='pdf')
+                pdf_pages.close()
+
+                # # saves png images
+                #
+                # plot_name = os.path.join(plots_path, out_file_name + '.eps')
+                # plt.savefig(plot_name, rasterized=True, format='eps', dpi=300)
             if self.args.debug_mode:
+                # print('Here is {0.filename}@{0.lineno}:'.format(inspect.getframeinfo(inspect.currentframe())))
+                # print(dir(self.i_fig))
                 plt.show()
-            else:
+            elif self.args.plot_results:
                 plt.draw()
                 plt.pause(1)
                 plt.ioff()
                 plt.close()
                 # plt.close(self.i_fig)
+            # else:
+            #     plt.close('all')
 
     def _cross_correlation(self, reference, new_array, mode='full'):
         """Do cross correlation of two arrays
@@ -1180,8 +1194,9 @@ class WavelengthCalibration(object):
 
         if self.args.debug_mode:
             # print(new_order, slit_size, )
-            fig = plt.figure(9)
-            ax = fig.add_subplot(111)
+            plt.close('all')
+            fig, ax = plt.subplots()
+            # ax = fig.add_subplot(111)
             fig.canvas.set_window_title('Lines Detected')
             ax.set_title('Lines detected in Lamp\n'
                          '{:s}'.format(lamp_header['OBJECT']))
@@ -1927,28 +1942,28 @@ class WavelengthCalibration(object):
             else:
                 new_center.append(centroid)
         if plots:
-            fig = plt.figure(9)
+            fig, ax = plt.subplots(1, 1)
             fig.canvas.set_window_title('Lines Detected in Lamp')
-            plt.axhline(median, color='b')
+            ax.axhline(median, color='b')
 
-            plt.plot(self.raw_pixel_axis,
-                     data,
-                     color='k',
-                     label='Lamp Data')
+            ax.plot(self.raw_pixel_axis,
+                    data,
+                    color='k',
+                    label='Lamp Data')
 
             for line in lines:
 
-                plt.axvline(line + 1,
-                            color='k',
-                            linestyle=':',
-                            label='First Detected Center')
+                ax.axvline(line + 1,
+                           color='k',
+                           linestyle=':',
+                           label='First Detected Center')
 
             for center in new_center:
 
-                plt.axvline(center,
-                            color='k',
-                            linestyle='.-',
-                            label='New Center')
+                ax.axvline(center,
+                           color='k',
+                           linestyle='.-',
+                           label='New Center')
 
             plt.show()
         return new_center
@@ -2180,10 +2195,10 @@ class WavelengthCalibration(object):
                 self.args.save_plots:
 
             plt.close(1)
-            if not self.args.debug_mode:
+            if self.args.plot_results:
                 plt.ion()
                 # plt.show()
-            else:
+            elif self.args.debug_mode:
                 plt.ioff()
 
             wavelength_axis = self.wsolution(range(ccd.data.size))
@@ -2233,10 +2248,11 @@ class WavelengthCalibration(object):
 
             if self.args.debug_mode:
                 plt.show()
-            else:
+            elif self.args.plot_results:
                 plt.draw()
                 plt.pause(2)
                 plt.ioff()
+
 
                 # return wavelength_solution
 

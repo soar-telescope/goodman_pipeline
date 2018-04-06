@@ -410,8 +410,9 @@ class MainApp(object):
 
                             if self.args.debug_mode:
                                 # print(plt.get_backend())
-                                fig = plt.figure(num=0)
-                                fig.clf()
+                                plt.close('all')
+                                fig, ax = plt.subplots(1, 1)
+
                                 fig.canvas.set_window_title('Extracted Data')
 
                                 manager = plt.get_current_fig_manager()
@@ -422,14 +423,14 @@ class MainApp(object):
                                     manager.window.showMaximized()
 
                                 for edata, comps in extracted_target_and_lamps:
-                                    plt.plot(edata.data,
-                                             label=edata.header['OBJECT'])
+                                    ax.plot(edata.data,
+                                            label=edata.header['OBJECT'])
                                     if comps:
                                         for comp in comps:
-                                            plt.plot(comp.data,
-                                                     label=comp.header[
+                                            ax.plot(comp.data,
+                                                    label=comp.header[
                                                          'OBJECT'])
-                                plt.legend(loc='best')
+                                ax.legend(loc='best')
                                 if plt.isinteractive():
                                     plt.draw()
                                     plt.pause(1)
