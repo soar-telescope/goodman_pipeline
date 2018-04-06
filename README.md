@@ -6,7 +6,7 @@
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
 The Goodman High Throughput Spectrograph (Goodman HTS) Data-Reduction Pipeline
-is the SOAR Telescope's official data reduction pipeline for _Goodman HTS_.
+is the SOAR Telescope's official data reduction pipeline for *Goodman HTS*.
 
 It has been fully developed in Python 3.5 and uses mostly astropy affiliated packages
 with the exception of [dcr](http://users.camk.edu.pl/pych/DCR/) which is an external tool
@@ -62,10 +62,10 @@ If you want to try it out as a developer please request the developer's manual.
 # Common Failures
 
 - The pipeline fails to detect a target: Usually is the keyword OBSTYPE is wrong
-and is trying to detect targets where there is any.
+  and is trying to detect targets where there is any.
 
 - The wavelength solution RMS Error is too high (larger than 3): The lamp was 
-mislabeled. For instance it says HgArNe when is HgAr.
+  mislabeled. For instance it says HgArNe when is HgAr.
 
 # Acknowledge
 
@@ -74,8 +74,8 @@ mislabeled. For instance it says HgArNe when is HgAr.
   the ccd reduction part before he moved to a new position. That first version was
   included in the pipeline as a package and has evolved along all the code.
   
-  [Tina Armond](https://github.com/tarmond) Helped with the identification of comparison lamps for the _reference
-  lamps library_.
+  [Tina Armond](https://github.com/tarmond) Helped with the identification of comparison lamps for the *reference
+  lamps library*.
   
 ## Citations:
   This pipeline makes extensive use of Astropy therefore you should cite as suggested
