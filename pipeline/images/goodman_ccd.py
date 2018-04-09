@@ -17,7 +17,7 @@ matplotlib.use('Qt5Agg')
 
 
 if '--debug' in sys.argv:
-    FORMAT = '%(levelname)s: %(asctime)s:%(module)s.%(funcName)s: %(message)s'
+    FORMAT = '%(levelname)s: %(asctime)s:%(module)s:%(lineno)d %(message)s'
 else:
     FORMAT = '%(levelname)s: %(asctime)s: %(message)s'
 

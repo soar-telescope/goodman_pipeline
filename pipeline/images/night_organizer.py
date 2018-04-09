@@ -172,8 +172,14 @@ class NightOrganizer(object):
         return data_container_list
 
     def check_header_cards(self):
-        """Check if the header contains all the keywords (cards) expected. If any of them is not inside any of the
-        file's header, raises ValueError. This is critical for old goodman data."""
+        """Check if the header contains all the keywords (cards) expected.
+
+        This is critical for old goodman data.
+
+        Raises:
+            ValueError: If any of the cards does not exists in the image's
+              header
+        """
 
         missing_cards = []
         for card in self.keywords:
