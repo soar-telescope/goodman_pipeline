@@ -258,6 +258,26 @@ class MainApp(object):
                                'Instance of DataClassifier')
                 self.data_classifier(raw_path=self.args.raw_path)
             except AttributeError as error:
+
+                if 'instconf' in error.args[0]:
+                    self.log.error("Card '{:s}' ".format('instconf'.upper()) +
+                                   "not found inside headers. "
+                                   "This keyword contains which Goodman "
+                                   "Camera was used for this observation. "
+                                   "Please add it manually (BLUE/RED) and "
+                                   "run again. Leaving the program now.")
+                    sys.exit(1)
+
+                if 'wavmode' in error.args[0]:
+                    self.log.error("Card '{:s}' ".format('wavmode'.upper()) +
+                                   "not found inside headers. "
+                                   "This keyword contains what is the Goodman "
+                                   "Wavelength Configuration that was used for"
+                                   " this observation. Please add it manually" 
+                                   "(see ???) and "
+                                   "run again. Leaving the program now.")
+                    sys.exit(1)
+
                 self.log.error(error)
                 self.log.error('Empty or Invalid data directory:'
                                '{:s}'.format(data_folder))
