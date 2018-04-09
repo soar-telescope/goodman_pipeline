@@ -269,13 +269,13 @@ class MainApp(object):
                     sys.exit(1)
 
                 if 'wavmode' in error.args[0]:
-                    self.log.error("Card '{:s}' ".format('wavmode'.upper()) +
-                                   "not found inside headers. "
-                                   "This keyword contains what is the Goodman "
-                                   "Wavelength Configuration that was used for"
-                                   " this observation. Please add it manually" 
-                                   "(see ???) and "
-                                   "run again. Leaving the program now.")
+                    self.log.error(
+                        "Card '{:s}' ".format('wavmode'.upper()) +
+                        "not found inside headers. This keyword contains what "
+                        "is the Goodman Wavelength Configuration that was used"
+                        " for this observation. Please add it manually (see "
+                        "https://github.com/soar-telescope/goodman/blob/development/goodman_modes.md) "
+                        "and run again. Leaving the program now.")
                     sys.exit(1)
 
                 self.log.error(error)
