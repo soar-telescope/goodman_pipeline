@@ -46,7 +46,8 @@ class NightOrganizer(object):
         self.data_container = NightDataContainer(path=self.path,
                                                  instrument=self.instrument,
                                                  technique=self.technique)
-        self.keywords = ['date',
+        self.keywords = ['naxis',
+                         'date',
                          'slit',
                          'date-obs',
                          'obstype',
