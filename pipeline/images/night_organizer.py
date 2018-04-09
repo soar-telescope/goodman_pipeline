@@ -82,6 +82,12 @@ class NightOrganizer(object):
 
         ifc = ImageFileCollection(self.path, self.keywords)
         self.file_collection = ifc.summary.to_pandas()
+
+        self.check_header_cards()
+
+        if 3 in self.file_collection['naxis'].unique():
+            raise IOError('One of the files of the night ...')
+
         # if technique is Spectroscopy, ignore all data that has
         # WAVMODE = Imaging because assumes they are acquisition images
         if self.technique == 'Spectroscopy':
@@ -164,6 +170,26 @@ class NightOrganizer(object):
             self.log.warning("It is possible that there is no valid data.")
 
         return data_container_list
+
+    def check_header_cards(self):
+        """Check if the header contains all the keywords (cards) expected. If any of them is not inside any of the
+        file's header, raises ValueError. This is critical for old goodman data."""
+
+        missing_cards = []
+        for card in self.keywords:
+
+            if self.file_collection[card].isnull().values.any():
+                missing_cards.append(card.upper())
+
+        if len(missing_cards) != 0:
+            missing_cards = ', '.join(missing_cards)
+            raise ValueError(
+                "{:} ".format(missing_cards) +
+                "card(s) is(are) not found in one of the headers. Please, check your"
+                " data. A script is being developed to correct this "
+                "automatically but, for now, you will have to add this "
+                "keyword manually."
+                )
 
     def spectroscopy_night(self, file_collection, data_container):
         """Organizes data for spectroscopy
