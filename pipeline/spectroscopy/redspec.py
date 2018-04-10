@@ -42,12 +42,6 @@ import warnings
 SHOW_PLOTS = False
 
 warnings.filterwarnings('ignore')
-if '--debug' in sys.argv:
-    FORMAT = '%(levelname)s: %(asctime)s:%(module)s.%(funcName)s: %(message)s'
-else:
-    FORMAT = '%(levelname)s: %(asctime)s: %(message)s'
-DATE_FORMAT = '%I:%M:%S%p'
-LOG_FILENAME = 'goodman_spec.log'
 
 
 def get_args(arguments=None):
@@ -132,16 +126,16 @@ def get_args(arguments=None):
                         dest='debug_mode',
                         help="Debugging Mode")
 
-    parser.add_argument('--log-file',
-                        action='store',
-                        dest='log_file',
-                        metavar='<log_file>',
-                        default=LOG_FILENAME,
-                        help="Name for log file. "
-                             "Default name is <{:s}>. "
-                             "The file is written in <red_path> and will be "
-                             "deleted each time you run this "
-                             "program".format(LOG_FILENAME))
+    # parser.add_argument('--log-file',
+    #                     action='store',
+    #                     dest='log_file',
+    #                     metavar='<log_file>',
+    #                     default=LOG_FILENAME,
+    #                     help="Name for log file. "
+    #                          "Default name is <{:s}>. "
+    #                          "The file is written in <red_path> and will be "
+    #                          "deleted each time you run this "
+    #                          "program".format(LOG_FILENAME))
 
     parser.add_argument('--max-targets',
                         action='store',
@@ -169,18 +163,6 @@ def get_args(arguments=None):
 
     args = parser.parse_args(args=arguments)
 
-    if args.log_file != LOG_FILENAME:
-        LOG_FILENAME = args.log_file
-
-    log.info('Logging to file {:s}'.format(LOG_FILENAME))
-    file_handler = logging.FileHandler(LOG_FILENAME)
-    formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
-    file_handler.setFormatter(fmt=formatter)
-    log.addHandler(file_handler)
-
-    if args.debug_mode:
-        log.info('Changing log level to DEBUG.')
-        log.setLevel(level=logging.DEBUG)
 
     try:
         ref_full_path = os.path.join(
@@ -204,10 +186,10 @@ def get_args(arguments=None):
 
     if not os.path.isdir(args.source):
         leave = True
-        log.error("Source Directory doesn't exist.")
+        log.error("Source Directory {:s} doesn't exist.".format(args.source))
 
     if not os.path.isdir(args.destination):
-        leave = True
+        # leave = True
         log.error("Destination folder doesn't exist.")
         try:
             os.path.os.makedirs(args.destination)
