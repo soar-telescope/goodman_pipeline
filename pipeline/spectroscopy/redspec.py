@@ -69,7 +69,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--data-path',
                         action='store',
-                        default='./',
+                        default=os.getcwd(),
                         type=str,
                         metavar='<Source Path>',
                         dest='source',
@@ -77,7 +77,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--proc-path',
                         action='store',
-                        default='./',
+                        default=os.getcwd(),
                         type=str,
                         metavar='<Destination Path>',
                         dest='destination',
@@ -163,7 +163,6 @@ def get_args(arguments=None):
 
     args = parser.parse_args(args=arguments)
 
-
     try:
         ref_full_path = os.path.join(
             os.path.dirname(sys.modules['goodman.pipeline'].__file__),
@@ -184,23 +183,26 @@ def get_args(arguments=None):
     else:
         args.reference_dir = ref_full_path
 
+    if not os.path.isabs(args.source):
+        args.source = os.path.join(os.getcwd(), args.source)
+        print(args.source)
     if not os.path.isdir(args.source):
-        leave = True
         log.error("Source Directory {:s} doesn't exist.".format(args.source))
+        parser.print_help()
+        parser.exit("Leaving the Program.")
+
+    if not os.path.isabs(args.destination):
+        args.destination = os.path.join(os.getcwd(), args.destination)
 
     if not os.path.isdir(args.destination):
-        # leave = True
         log.error("Destination folder doesn't exist.")
         try:
             os.path.os.makedirs(args.destination)
             log.info('Destination folder created: %s', args.destination)
         except OSError as err:
             log.error(err)
-
-    if leave:
-        parser.print_help()
-        parser.exit("Leaving the Program.")
-    # print_default_args(args)
+            parser.print_help()
+            parser.exit("Leaving the Program.")
     return args
 
 
