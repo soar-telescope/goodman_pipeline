@@ -16,15 +16,6 @@ import matplotlib
 matplotlib.use('Qt5Agg')
 
 
-if '--debug' in sys.argv:
-    FORMAT = '%(levelname)s: %(asctime)s:%(module)s:%(lineno)d %(message)s'
-else:
-    FORMAT = '%(levelname)s: %(asctime)s: %(message)s'
-
-# DATE_FORMAT = '%m/%d/%Y %I:%M:%S%p'
-DATE_FORMAT = '%I:%M:%S%p'
-LOG_FILENAME = 'goodman_ccd.log'
-
 log = logging.getLogger(__name__)
 
 
@@ -44,7 +35,6 @@ def get_args(arguments=None):
 
     """
     arg_log = logging.getLogger()
-    global LOG_FILENAME
 
     parser = argparse.ArgumentParser(
         description="Goodman CCD Reduction - CCD reductions for Goodman "
@@ -121,16 +111,16 @@ def get_args(arguments=None):
                         help="After cleaning cosmic rays with dcr, do not "
                              "remove the input file and the cosmic rays file.")
 
-    parser.add_argument('--log-file',
-                        action='store',
-                        dest='log_file',
-                        metavar='<log_file>',
-                        default=LOG_FILENAME,
-                        help="Name for log file. "
-                             "Default name is <{:s}>. "
-                             "The file is written in <red_path> and will be "
-                             "deleted each time you run this "
-                             "program".format(LOG_FILENAME))
+    # parser.add_argument('--log-file',
+    #                     action='store',
+    #                     dest='log_file',
+    #                     metavar='<log_file>',
+    #                     default='goodman_log.txt',
+    #                     help="Name for log file. "
+    #                          "Default name is <goodman_log.txt>. "
+    #                          "The file is written in <red_path> and will be "
+    #                          "deleted each time you run this "
+    #                          "program")
 
     parser.add_argument('--raw-path',
                         action='store',
@@ -158,19 +148,7 @@ def get_args(arguments=None):
     # define log file
     # the log file will be stored in the same directory that the program
     # is called
-    if args.log_file != LOG_FILENAME:
-        LOG_FILENAME = args.log_file
 
-    arg_log.info('Logging to file {:s}'.format(LOG_FILENAME))
-    file_handler = logging.FileHandler(filename=LOG_FILENAME)
-    # file_handler.setLevel(level=logging.INFO)
-    formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
-    file_handler.setFormatter(fmt=formatter)
-    arg_log.addHandler(file_handler)
-
-    if args.debug_mode:
-        arg_log.info('Changing log level to DEBUG.')
-        arg_log.setLevel(level=logging.DEBUG)
     if os.path.isdir(args.raw_path):
         args.raw_path = os.path.abspath(args.raw_path)
         arg_log.debug(os.path.abspath(args.raw_path))
@@ -332,7 +310,7 @@ class MainApp(object):
             # print(self.data_classifier.nights_dict)
             for night in self.data_classifier.nights_dict:
                 nd = self.data_classifier.nights_dict[night]
-                self.log.debug('Initializing NightOrganizer Class')
+                self.log.debug('Initializing night organizer procedure')
                 night_organizer = NightOrganizer(
                     full_path=nd['full_path'],
                     instrument=nd['instrument'],
@@ -340,18 +318,26 @@ class MainApp(object):
                     ignore_bias=self.args.ignore_bias,
                     ignore_flats=self.args.ignore_flats)
 
-                self.log.debug('Calling night_organizer instance')
-                data_container_list = night_organizer()
+                self.log.debug('Calling night organizer procedure')
+                try:
+                    data_container_list = night_organizer()
+                except IOError as error:
+                    self.log.critical(error)
+                    sys.exit(1)
                 for self.data_container in data_container_list:
                     # print(self.data_container)
                     if self.data_container is None or \
                             self.data_container.is_empty:
+                        self.log.debug("Data container is empty")
                         self.log.error('Discarding night {:s} '
                                        '(or part of it)'.format(str(night)))
                     else:
+                        self.log.debug("Initializing image processing "
+                                       "procedure")
                         process_images = ImageProcessor(
                             args=self.args,
                             data_container=self.data_container)
+                        self.log.debug("Calling image processing procedure.")
                         process_images()
 
 

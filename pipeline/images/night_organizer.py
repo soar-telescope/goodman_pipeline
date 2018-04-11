@@ -86,7 +86,9 @@ class NightOrganizer(object):
         self.check_header_cards()
 
         if 3 in self.file_collection['naxis'].unique():
-            raise IOError('One of the files of the night ...')
+            raise IOError('One of the files of the night has a shape of a '
+                          'three dimensional array. When images should have '
+                          'two.')
 
         # if technique is Spectroscopy, ignore all data that has
         # WAVMODE = Imaging because assumes they are acquisition images
@@ -191,8 +193,8 @@ class NightOrganizer(object):
             missing_cards = ', '.join(missing_cards)
             raise ValueError(
                 "{:} ".format(missing_cards) +
-                "card(s) is(are) not found in one of the headers. Please, check your"
-                " data. A script is being developed to correct this "
+                "card(s) is(are) not found in one of the headers. Please, "
+                "check your data. A script is being developed to correct this "
                 "automatically but, for now, you will have to add this "
                 "keyword manually."
                 )
