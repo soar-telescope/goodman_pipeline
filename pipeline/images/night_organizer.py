@@ -84,7 +84,6 @@ class NightOrganizer(object):
         self.file_collection = ifc.summary.to_pandas()
 
         self.check_header_cards()
-
         if 3 in self.file_collection['naxis'].unique():
             raise IOError('One of the files of the night has a shape of a '
                           'three dimensional array. When images should have '

@@ -155,7 +155,7 @@ class ImageProcessor(object):
                     high_lim_spectral = int(4110 / serial_binning)
 
                     # bottom
-                    low_lim_spatial = 1
+                    low_lim_spatial = 2
 
                     #top
                     # t = int(1896 / parallel_binning)
