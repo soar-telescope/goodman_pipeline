@@ -8,6 +8,9 @@ import astropy.units as u
 import numpy as np
 import os
 import re
+import logging
+
+logging.disable(logging.CRITICAL)
 
 # import all classes in core.py
 from ..core import (NightDataContainer,

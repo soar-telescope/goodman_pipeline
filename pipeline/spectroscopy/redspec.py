@@ -61,8 +61,7 @@ def get_args(arguments=None):
     """
     # getLogger without __name__ so that we get the root logger.
     log = logging.getLogger()
-    global LOG_FILENAME
-    leave = False
+
     parser = argparse.ArgumentParser(
         description="Extracts goodman spectra and does automatic wavelength "
                     "calibration.\nPipeline Version: {:s}".format(__version__))
@@ -188,7 +187,8 @@ def get_args(arguments=None):
         print(args.source)
     if not os.path.isdir(args.source):
         log.error("Source Directory {:s} doesn't exist.".format(args.source))
-        parser.print_help()
+        if 'test' not in parser.prog:
+            parser.print_help()
         parser.exit("Leaving the Program.")
 
     if not os.path.isabs(args.destination):
