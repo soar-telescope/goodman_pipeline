@@ -3,4 +3,4 @@ include dcr/dcr/*
 include requirements.txt
 include user_manual.pdf
 include README.md
-include LICENCE
+include LICENSE
