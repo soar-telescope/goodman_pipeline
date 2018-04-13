@@ -98,7 +98,7 @@ class MasterFlatTest(TestCase):
         # expected master flat to be retrieved by get_best_flat
         self.reference_flat_name = 'master_flat_1200m2_0.84_dome.fits'
         # location of sample flats
-        self.flat_path = 'test/data'
+        self.flat_path = 'test_data/data'
         slit = re.sub('[A-Za-z" ]',
                       '',
                       self.master_flat.header['SLIT'])
