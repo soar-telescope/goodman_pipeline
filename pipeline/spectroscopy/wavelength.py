@@ -2275,10 +2275,9 @@ class WavelengthCalibration(object):
         else:
             f_end = '_{:d}.fits'.format(index)
 
-        new_filename = self.args.destination + \
-            self.args.output_prefix + \
-            original_filename.replace('.fits', '') + \
-            f_end
+        new_filename = os.path.join(self.args.destination,
+                                    self.args.output_prefix +
+                                    original_filename.replace('.fits', f_end))
 
         write_fits(ccd=ccd,
                    full_path=new_filename,

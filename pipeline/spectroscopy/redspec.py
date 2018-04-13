@@ -246,22 +246,26 @@ class MainApp(object):
         else:
             self.args = args
 
-        self.reference = ReferenceData(reference_dir=self.args.reference_dir)
         self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
+        self.log.debug("Initializing reference data locator.")
+        self.reference = ReferenceData(reference_dir=self.args.reference_dir)
         # data_container instance of NightDataContainer defined in core
+        self.log.debug("Calling data classification procedure.")
         data_container = classify_spectroscopic_data(
             path=self.args.source,
             search_pattern=self.args.pattern)
 
-        self.log.debug("Got data container")
-
         if data_container.is_empty:
-            sys.exit("Unable to find or classify data")
+            self.log.debug("Received empty data container.")
+            sys.exit("Unable to find or classify data.")
+        else:
+            self.log.debug("Received non-empty data container.")
 
+        self.log.debug("Calling _run method for MainApp")
         self._run(data_container=data_container,
                   extraction_type=self.args.extraction_type)
 
-        sys.exit("END")
+        self.log.info("END")
 
     def _run(self, data_container, extraction_type):
         assert data_container.is_empty is False
@@ -324,17 +328,24 @@ class MainApp(object):
                                          'calibrated')
 
                 _combine = True
+
                 if len(object_group.file.tolist()) > 1 and _combine:
                     self.log.debug("This can be combined")
+
                 for spec_file in object_group.file.tolist():
+
                     self.log.info('Processing Science File: {:s}'.format(
                         spec_file))
+
                     file_path = os.path.join(full_path, spec_file)
                     ccd = CCDData.read(file_path, unit=u.adu)
                     ccd.header.set('GSP_PNAM', value=spec_file)
                     ccd = add_wcs_keys(ccd=ccd)
+
                     # ccd.header['GSP_FNAM'] = spec_file
+
                     if comp_group is not None and comp_ccd_list == []:
+
                         for comp_file in comp_group.file.tolist():
                             comp_path = os.path.join(full_path, comp_file)
                             comp_ccd = CCDData.read(comp_path, unit=u.adu)
@@ -343,16 +354,20 @@ class MainApp(object):
                             comp_ccd_list.append(comp_ccd)
 
                     else:
+
                         self.log.debug(
                             'Comp Group is None or comp list already exist')
 
                     # identify
+                    self.log.debug("Calling procedure for target "
+                                   "identification.")
                     target_list = identify_targets(ccd=ccd,
                                                    nfind=3,
                                                    plots=SHOW_PLOTS)
 
                     # trace
                     if len(target_list) > 0:
+                        self.log.debug("Calling procedure for tracing target.")
                         trace_list = trace_targets(ccd=ccd,
                                                    target_list=target_list,
                                                    sampling_step=5,

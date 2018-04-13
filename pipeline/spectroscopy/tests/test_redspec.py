@@ -4,7 +4,7 @@ import argparse
 import os
 from unittest import TestCase
 
-from ...spectroscopy.redspec import get_args
+from ...spectroscopy.redspec import (get_args, MainApp)
 
 
 class TestArguments(TestCase):
@@ -60,6 +60,7 @@ class TestArguments(TestCase):
         # If source folder does not exists, print message and leave program
         # error_message = 'Input folder "{} does not exists."'
 
+
 def test_get_args():
     from ...spectroscopy.redspec import get_args
     import argparse
@@ -76,8 +77,20 @@ def test_get_args():
     return args
 
 
-def test_main_app():
-    pass
+class TestMainApp(TestCase):
+
+    def setUp(self):
+        self.main_app = MainApp()
+
+    def test_instantiation_without_args(self):
+        self.assertIsInstance(self.main_app, MainApp)
+        self.assertIsNone(self.main_app.args)
+        self.assertIsNone(self.main_app.wavelength_solution_obj)
+        self.assertIsNone(self.main_app.wavelength_calibration)
+        self.assertIsNone(self.main_app.reference)
+
+    def test_main_app(self):
+        pass
 
 
 if __name__ == '__main__':
