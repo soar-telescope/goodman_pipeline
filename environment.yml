@@ -14,4 +14,3 @@ dependencies:
     - astroplan
     - sphinx
     - sphinxcontrib.napoleon
-    - "--editable=git+git://github.com/simontorres/dcr"
