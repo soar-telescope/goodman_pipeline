@@ -12,25 +12,27 @@ import datetime
 
 def setup_logging():
 
-    LOG_FILENAME = 'goodman_log.txt'
-
+    log_filename = 'goodman_log.txt'
     logging_level = logging.INFO
+
     if '--debug' in sys.argv:
-        FORMAT = '[%(asctime)s][%(levelname)8s][%(module)s.%(funcName)s:%(lineno)d]: %(message)s'
+        log_format = '[%(asctime)s][%(levelname)8s][%(module)s.%(funcName)s:' \
+                     '%(lineno)d]: %(message)s'
         logging_level = logging.DEBUG
     else:
-        FORMAT = '[%(asctime)s][%(levelname)8s]: %(message)s'
+        log_format = '[%(asctime)s][%(levelname)8s]: %(message)s'
         logging_level = logging.INFO
-    DATE_FORMAT = '%I:%M:%S%p'
 
-    formatter = logging.Formatter(fmt=FORMAT, datefmt=DATE_FORMAT)
+    date_format = '%I:%M:%S%p'
+
+    formatter = logging.Formatter(fmt=log_format, datefmt=date_format)
     logging.basicConfig(level=logging_level,
-                        format=FORMAT,
-                        datefmt=DATE_FORMAT)
+                        format=log_format,
+                        datefmt=date_format)
 
     log = logging.getLogger(__name__)
 
-    file_handler = logging.FileHandler(filename=LOG_FILENAME)
+    file_handler = logging.FileHandler(filename=log_filename)
     file_handler.setFormatter(fmt=formatter)
     file_handler.setLevel(level=logging_level)
     log.addHandler(file_handler)
