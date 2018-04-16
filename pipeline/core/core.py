@@ -1789,6 +1789,12 @@ def search_comp_group(object_group, comp_groups, reference_data):
 
 
 def setup_logging():
+    """configures logging
+
+    Notes:
+        Logging file name is set to default 'goodman_log.txt'.
+        If --debug is activated then the format of the message is different.
+    """
 
     log_filename = 'goodman_log.txt'
     logging_level = logging.INFO
