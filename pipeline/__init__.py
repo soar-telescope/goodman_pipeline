@@ -42,4 +42,5 @@ def setup_logging():
         datetime.datetime.utcnow()))
 
 
-setup_logging()
+if '-h' not in sys.argv and '--help' not in sys.argv:
+    setup_logging()

@@ -20,8 +20,13 @@ for file in file_list:
         if ccd.header['GSP_FNAM'] == basename:
             print("GSP_FNAM is correct")
         else:
-            ccd.header['GSP_FNAM'] = basename
+            ccd.header.set('GSP_FNAM',
+                           value=basename,
+                           comment='Current file name')
     else:
         print('GSP_FNAM does not exists.')
-        ccd.header.set('GSP_FNAM', value=basename, comment='Current file name')
+        ccd.header.set('GSP_FNAM',
+                       value=basename,
+                       comment='Current file name')
+
     ccd.write(file, overwrite=True)
