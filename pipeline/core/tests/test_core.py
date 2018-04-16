@@ -44,6 +44,7 @@ from ..core import (add_wcs_keys,
                     ra_dec_to_deg,
                     read_fits,
                     search_comp_group,
+                    setup_logging,
                     trace,
                     trace_targets,
                     write_fits)

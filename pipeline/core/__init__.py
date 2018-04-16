@@ -34,6 +34,7 @@ from .core import (add_wcs_keys,
                    read_fits,
                    save_extracted,
                    search_comp_group,
+                   setup_logging,
                    trace,
                    trace_targets,
                    write_fits)
