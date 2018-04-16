@@ -5,7 +5,9 @@ from . import images
 from . import info
 from . import core
 
+from .core import setup_logging
+
 import sys
 
 if '-h' not in sys.argv and '--help' not in sys.argv:
-    core.setup_logging()
+    setup_logging()
