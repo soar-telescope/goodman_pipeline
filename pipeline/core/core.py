@@ -755,6 +755,10 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
 
     new_ccd = ccd.copy()
     new_ccd.data = np.asarray(extracted_spectrum)
+    if new_ccd.header['NAXIS'] != 1:
+        for i in range(int(new_ccd.header['NAXIS']), 1, -1):
+            new_ccd.header.remove(keyword="NAXIS{:d}".format(i))
+        new_ccd.header.set('NAXIS', value=1)
     return new_ccd, np.asarray(background_list)
 
 
