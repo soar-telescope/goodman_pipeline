@@ -22,7 +22,10 @@ class SettingsField(object):
 
     def __init__(self, field):
         for attr in field:
-            self.__setattr__(attr, field[attr])
+            if field[attr] == 'none':
+                self.__setattr__(attr, None)
+            else:
+                self.__setattr__(attr, field[attr])
 
 
 class Settings(object):
@@ -60,29 +63,21 @@ class ReferenceLibraryFactory(object):
                          'roi',
                          'wavmode']
 
+        for field in self.settings:
+            self.__setattr__(field, SettingsField(self.settings[field]))
+
     def __call__(self, search_pattern=None, keywords=None, **kwargs):
-        if self.settings is None:
-            if search_pattern is None:
-                search_pattern = "cfzsto*.fits"
 
-            comb_prefix = kwargs.get('combined_prefix', 'comb_')
-            extracted_prefix = kwargs.get('extracted_prefix', 'ext_')
-            # gaussian model definition.
-            gaussian_amplitude = kwargs.get('g_amplitude', 10000)
-            gaussian_mean = kwargs.get('g_mean', None)
-            gaussian_stddev = kwargs.get('g_stddev', None)
+        search_pattern = self.prefix.search_pattern
+        comb_prefix = self.prefix.combined_prefix
+        extracted_prefix = self.prefix.extracted_prefix
 
-            trace_poly_degree = kwargs.get('p_degree', 2)
-        else:
-            search_pattern = self.settings['prefixes']['search_pattern']
-            comb_prefix = self.settings['prefixes']['combined_prefix']
-            extracted_prefix = self.settings['prefixes']['extracted_prefix']
+        gaussian_amplitude = self.target.gaussian_amplitude
+        gaussian_mean = self.target.gaussian_mean
+        gaussian_stddev = self.target.gaussian_stddev
 
-            gaussian_amplitude = self.settings['target']['gaussian_amplitude']
-            gaussian_mean = self.settings['target']['gaussian_mean']
-            gaussian_stddev = self.settings['target']['gaussian_stddev']
-
-            trace_poly_degree = self.settings['target']['trace_poly_degree']
+        trace_poly_degree = self.target.trace_poly_degree
+        trace_poly_degree = int(trace_poly_degree)
 
         self.target_location = gaussian_mean
         self.target_fwhm = gaussian_stddev
@@ -160,10 +155,10 @@ class ReferenceLibraryFactory(object):
 
         # print(spatial, dispersion)
 
-        if self.target_location is None:
+        if self.target_location is None or self.target_location == 'none':
             self.target_location = 0.5 * spatial
 
-        if self.target_fwhm is None:
+        if self.target_fwhm is None or self.target_location == 'none':
             self.target_fwhm = 0.2 * spatial
 
         self.gaussian_profile.mean.value = self.target_location
@@ -284,17 +279,28 @@ class ReferenceLibraryFactory(object):
     def _load_settings(self):
         """Load json file with settings
 
-        If the file does not exists returns None.
+        First search for it in the data folder and then search for the default
+        one
+
+        Raises:
+            AttributeError
         """
         json_settings_full_path = os.path.join(self.args.path,
                                                self.args.json_settings)
 
+        default_settings_file = os.path.join(os.path.dirname(__file__),
+                                             self.args.json_settings)
+
         if os.path.isfile(json_settings_full_path):
-            with open(json_settings_full_path) as json_settings:
-                settings = json.load(json_settings)
-                return settings
+            file_full_path = json_settings_full_path
+        elif os.path.isfile(default_settings_file):
+            file_full_path = default_settings_file
         else:
-            return None
+            raise AttributeError('Can not find settings file.')
+
+        with open(file_full_path) as json_settings:
+            settings = json.load(json_settings)
+            return settings
 
 
 if __name__ == '__main__':

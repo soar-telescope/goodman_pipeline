@@ -1,13 +1,13 @@
 {
   "prefix":{
     "search_pattern":"cfzsto*.fits",
-    "combined":"comb_",
-    "extracted":"ext_"
+    "combined_prefix":"comb_",
+    "extracted_prefix":"ext_"
   },
   "target":{
     "gaussian_amplitude":"10000",
-    "gaussian_mean":"None",
-    "gaussian_stddev":"None",
+    "gaussian_mean":"none",
+    "gaussian_stddev":"none",
     "trace_poly_degree":"2",
     "location_factor":"0.5",
     "fwhm_factor":"0.2"
