@@ -1809,7 +1809,9 @@ def setup_logging():
 
     date_format = '%I:%M:%S%p'
 
-    formatter = logging.Formatter(fmt=log_format, datefmt=date_format)
+    formatter = logging.Formatter(fmt=log_format,
+                                  datefmt=date_format)
+
     logging.basicConfig(level=logging_level,
                         format=log_format,
                         datefmt=date_format)
