@@ -1,6 +1,14 @@
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 from astropy.modeling import (models, fitting)
 from ccdproc import CCDData
 from ccdproc import ImageFileCollection
+
+
+from pipeline.tools.reference_lamp_factory.line_matcher import LineMatcher
+from pipeline.tools.reference_lamp_factory.wcs_model_calculator import \
+    GSPWcsCalculator
 
 from pipeline.core import (read_fits,
                            write_fits,
@@ -9,6 +17,8 @@ from pipeline.core import (read_fits,
                            extraction,
                            SpectroscopicMode,
                            combine_data)
+
+from pipeline.spectroscopy.new_wavelength import WavelengthCalibration
 
 import argparse
 import json
@@ -40,6 +50,9 @@ class ReferenceLibraryFactory(object):
         self.log = logging.getLogger(__name__)
         self.args = self._get_args(arguments=arguments)
         self.settings = self._load_settings()
+        self.line_identify = WavelengthCalibration(data_path=self.args.path)
+        self.line_match = LineMatcher()
+        self.wcs_calc = GSPWcsCalculator(save_pdf_to=self.args.save_to)
         self.image_collection = None
         self.gaussian_profile = None
         self.target_trace = None
@@ -68,10 +81,6 @@ class ReferenceLibraryFactory(object):
 
     def __call__(self, search_pattern=None, keywords=None, **kwargs):
 
-        search_pattern = self.prefix.search_pattern
-        comb_prefix = self.prefix.combined_prefix
-        extracted_prefix = self.prefix.extracted_prefix
-
         gaussian_amplitude = self.target.gaussian_amplitude
         gaussian_mean = self.target.gaussian_mean
         gaussian_stddev = self.target.gaussian_stddev
@@ -92,6 +101,27 @@ class ReferenceLibraryFactory(object):
             assert all([isinstance(key, str) for key in keywords])
             self.keywords = keywords
 
+        for ccd in self._classify_and_combine():
+            print(ccd.data.shape)
+            # print(combined.header['NAXIS'])
+            ccd = self.line_identify(ccd=ccd, record_lines=True)
+            ccd = self.line_match(ccd=ccd)
+
+            ccd = self.wcs_calc(ccd=ccd)
+
+            file_name = ccd.header['GSP_FNAM']
+            full_path = os.path.join(self.args.save_to, file_name)
+            write_fits(ccd=ccd, full_path=full_path)
+            # plt.title(combined.header['GSP_FNAM'])
+            # plt.plot(combined.data)
+            # plt.show()
+
+    def _classify_and_combine(self):
+
+        search_pattern = self.prefix.search_pattern
+        comb_prefix = self.prefix.combined_prefix
+        extracted_prefix = self.prefix.extracted_prefix
+
         image_collection = ImageFileCollection(location=self.args.path,
                                                keywords=self.keywords,
                                                glob_include=search_pattern)
@@ -106,7 +136,6 @@ class ReferenceLibraryFactory(object):
 
                 if str(error) == "'NoneType' object has no attribute " \
                                  "'to_pandas'":
-
                     sys.exit("Folder {:s} does not contain "
                              "data.".format(self.args.path))
 
@@ -131,9 +160,9 @@ class ReferenceLibraryFactory(object):
                     combined_name=output_name)
 
                 if combined.header['OBSTYPE'] == 'COMP':
-
                     extracted = self._extract_lamp(ccd=combined,
                                                    output_name=extracted_name)
+                    yield extracted
 
     @staticmethod
     def _create_plot(ccd, x_label='', y_label=''):
@@ -301,6 +330,8 @@ class ReferenceLibraryFactory(object):
         with open(file_full_path) as json_settings:
             settings = json.load(json_settings)
             return settings
+
+
 
 
 if __name__ == '__main__':

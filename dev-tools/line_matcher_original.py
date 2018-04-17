@@ -7,7 +7,6 @@ import time
 from threading import Thread
 import numpy as np
 import sys
-import logging
 
 # from pipeline.spectroscopy.new_wavelength import WavelengthCalibration
 
@@ -77,20 +76,32 @@ def get_spectral_characteristics(ccd):
     beta = camera_angle.to(u.rad) - grating_angle.to(u.rad)
 
     center_wavelength = (np.sin(alpha) +
-                         np.sin(beta)) / grating_frequency
+                              np.sin(beta)) / grating_frequency
 
     limit_angle = np.arctan(
         pixel_count *
         (pixel_size / goodman_focal_length) / 2)
 
-    blue_limit = ((np.sin(alpha) + np.sin(beta - limit_angle.to(u.rad))) /
-                  grating_frequency).to(u.angstrom) + blue_correction_factor
+    blue_limit = ((
+                           np.sin(alpha) +
+                           np.sin(beta - limit_angle.to(u.rad))) /
+                       grating_frequency).to(u.angstrom) + \
+                      blue_correction_factor
 
-    red_limit = ((np.sin(alpha) + np.sin(beta + limit_angle.to(u.rad))) /
-                 grating_frequency).to(u.angstrom) + red_correction_factor
+    red_limit = ((
+                          np.sin(alpha) +
+                          np.sin(beta +
+                                 limit_angle.to(u.rad))) /
+                      grating_frequency).to(u.angstrom) + \
+                     red_correction_factor
 
     pixel_one = 0
     pixel_two = 0
+    # log.debug(
+    #     'Center Wavelength : {:.3f} Blue Limit : '
+    #     '{:.3f} Red Limit : {:.3f} '.format(center_wavelength,
+    #                                         blue_limit,
+    #                                         red_limit))
 
     spectral_characteristics = {'center': center_wavelength,
                                 'blue': blue_limit,
@@ -104,7 +115,7 @@ def get_spectral_characteristics(ccd):
 
 class LineMatcher(object):
 
-    def __init__(self):
+    def __init__(self, search_pattern='ll_*fits'):
         """Tool created to record Angstrom values to matching pixel values
 
         Detected emission lines are recorded in the header of comparison lamps
@@ -112,8 +123,11 @@ class LineMatcher(object):
 
         This tool shows a plot of the comparison lamp with the line values and
         ask you what are the angstrom values for each line recorded.
+
+        :param search_pattern: Pattern search for `glob.glob()` to filter data
+        :type search_pattern: str
         """
-        self.log = logging.getLogger(__name__)
+        self.file_list = glob.glob(search_pattern)
         self.fig = None
         self.ax = None
         self.arrow = None
@@ -122,27 +136,21 @@ class LineMatcher(object):
         self.lock_identify = False
         self.threads = []
 
-    def __call__(self, ccd, save=False):
+    def __call__(self):
         """Run the tool for all the images matching `search_pattern`"""
-        if isinstance(ccd, CCDData):
-            self.ccd = ccd
-        else:
-            self.ccd = CCDData.read(ccd, unit=u.adu)
-        if not self.threads:
-            # plot_thread = Thread(target=self._create_plot)
-            # plot_thread.start()
-            id_thread = Thread(target=self.identify_matching_line)
-            id_thread.start()
-            # self.identify_matching_line()
-            # self.threads.
-            self._create_plot()
-            id_thread.join()
-        if save:
-            file_name = self.ccd.header['GSP_FNAM']
-            self.log.info(file_name)
-            self.ccd.write(file_name, overwrite=True)
-
-        return self.ccd
+        for fits_file in self.file_list:
+            print(fits_file)
+            self.ccd = CCDData.read(fits_file, unit=u.adu)
+            if not self.threads:
+                # plot_thread = Thread(target=self._create_plot)
+                # plot_thread.start()
+                id_thread = Thread(target=self.identify_matching_line)
+                id_thread.start()
+                # self.identify_matching_line()
+                # self.threads.
+                self._create_plot()
+                id_thread.join()
+            self.ccd.write(fits_file, overwrite=True)
 
     def identify_matching_line(self):
         """Interactive recording lines
@@ -276,6 +284,11 @@ class LineMatcher(object):
 
 
 if __name__ == '__main__':
-    pass
+    try:
+        line_matcher = LineMatcher(search_pattern=sys.argv[1])
+    except IndexError:
+        line_matcher = LineMatcher()
+    line_matcher()
+
 
 

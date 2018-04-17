@@ -48,7 +48,8 @@ class WavelengthCalibration(object):
         # full_path = os.path.join(self.path, file_name)
         # if os.path.isfile(full_path):
         #     print("file exist")
-        self._wavelength_solution(ccd_data=ccd, lamps=lamps)
+        ccd = self._wavelength_solution(ccd_data=ccd, lamps=lamps)
+        return ccd
         # else:
         #     print("Can't locate file: {:s}".format(os.path.join(self.path,
         #                                                        file_name)))
@@ -80,6 +81,7 @@ class WavelengthCalibration(object):
         # MAKE SURE THIS WILL RECORD THE LINES ONLY ON COMPARISON LAMPS
         assert isinstance(comp_lamps, list)
         assert all([isinstance(lamp, CCDData) for lamp in comp_lamps])
+        all_lamps = []
         for lamp in comp_lamps:
             lamp_lines = self._identify_lines(ccd=lamp)
             if record_lines:
@@ -93,9 +95,8 @@ class WavelengthCalibration(object):
                 write_fits(ccd=lamp,
                            full_path=os.path.join(self.path, new_name),
                            parent_file=lamp.header['GSP_FNAM'])
-
-            # if lamp_lines:
-            #     self.get_
+            all_lamps.append(lamp)
+        return all_lamps
 
     def _identify_lines(self, ccd, show_plots=False):
         assert isinstance(ccd, CCDData)
@@ -453,9 +454,10 @@ class WavelengthCalibration(object):
 
         elif ccd.header['OBSTYPE'] == 'COMP':
             print('Input is a comparison Lamp COMP')
-            self._get_wavelength_solution(comp_lamps=[ccd],
-                                          record_lines=self.record_lines)
-
+            ccd_list = self._get_wavelength_solution(
+                comp_lamps=[ccd],
+                record_lines=self.record_lines)
+            return ccd_list[0]
         else:
             print(ccd.header['OBSTYPE'])
 

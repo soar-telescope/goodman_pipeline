@@ -8,11 +8,13 @@ import pandas
 from pipeline.wcs import WCS
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import logging
 
 
 class GSPWcsCalculator(object):
 
-    def __init__(self):
+    def __init__(self, save_pdf_to=None):
+        self.log = logging.getLogger(__name__)
         self.path = None
         self.files = None
         self.ccd = None
@@ -21,32 +23,39 @@ class GSPWcsCalculator(object):
         self.spectrum = None
         self.wcs = WCS()
         self.nist = None
+        if save_pdf_to is None:
+            self.save_pdf_to = os.getcwd()
+        else:
+            self.save_pdf_to = save_pdf_to
 
-    def __call__(self, path, *args, **kwargs):
-        print("Working on: {:s}".format(path))
-        pattern = kwargs.get('pattern', 'll*.fits')
-        self.path = path
-        self.files = glob(pathname=os.path.join(path, pattern))
-        for image_file in self.files:
-            print("Processing file: {:s}".format(image_file))
-            self.ccd = CCDData.read(image_file, unit='adu')
-            self._recover_lines()
-            if not self._validate_lines():
-                print("Please check lines for lamp {:s}".format(image_file))
-            else:
-                pixel = np.asarray(self.pixel, dtype=float)
-                angstrom = np.asarray(self.angstrom, dtype=float)
-                wcs_model = self.wcs.fit(physical=pixel,
-                                         wavelength=angstrom)
-                self.ccd = self.wcs.write_gsp_wcs(self.ccd, wcs_model)
-                image_name = os.path.basename(image_file)
-                # new_name = os.path.join(self.path, image_name[24:])
-                new_name = os.path.join(self.path, image_name[24:])
-                # print(new_name, image_name)
-                self.ccd.header.set('GSP_FNAM', value=new_name)
+    def __call__(self, ccd, save=False):
+        if isinstance(ccd, CCDData):
+            self.ccd = ccd
+        else:
+            print("Processing file: {:s}".format(ccd))
+            self.ccd = CCDData.read(ccd, unit='adu')
+
+        self._recover_lines()
+        if not self._validate_lines():
+            self.log.error("Please check lines for lamp "
+                           "{:s}".format(self.ccd.header['GSP_FNAM']))
+            return self.ccd
+        else:
+            pixel = np.asarray(self.pixel, dtype=float)
+            angstrom = np.asarray(self.angstrom, dtype=float)
+            wcs_model = self.wcs.fit(physical=pixel,
+                                     wavelength=angstrom)
+            self.ccd = self.wcs.write_gsp_wcs(self.ccd, wcs_model)
+            image_name = os.path.basename(self.ccd.header['GSP_FNAM'])
+            # new_name = os.path.join(self.path, image_name[24:])
+            new_name = image_name[24:]
+            # print(new_name, image_name)
+            self.ccd.header.set('GSP_FNAM', value=new_name)
+            if save:
                 self.ccd.write(new_name, overwrite=True)
 
-                self._pdf_generator(model=wcs_model)
+            self._pdf_generator(model=wcs_model)
+            return self.ccd
 
     def _recover_lines(self):
         self.pixel = []
@@ -155,10 +164,8 @@ class GSPWcsCalculator(object):
     def _pdf_generator(self, model):
         """Creates a pdf file Using Reference lines."""
         file_name = self.ccd.header['GSP_FNAM']
-        pdf_file_name = os.path.join(
-            os.path.join(os.path.dirname(sys.modules['pipeline'].__file__),
-                         '../docs/goodman_comp_pdf'),
-            re.sub('.fits', '.pdf', file_name[24:]))
+        pdf_file_name = os.path.join(self.save_pdf_to,
+                                     re.sub('.fits', '.pdf', file_name))
 
         with PdfPages(pdf_file_name) as pdf:
             plt.figure(1, (40, 10))
