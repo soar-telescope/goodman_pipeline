@@ -1,1 +1,1 @@
-from . import wcs_model_calculator
+from pipeline.tools.reference_lamp_factory import wcs_model_calculator

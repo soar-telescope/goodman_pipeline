@@ -34,6 +34,7 @@ class CombineAndExtract(object):
         self.gaussian_profile = models.Gaussian1D(amplitude=10000,
                                                   mean=1,
                                                   stddev=30)
+
         self.target_trace = models.Polynomial1D(degree=2)
 
         self.keywords = ['date',
@@ -61,9 +62,11 @@ class CombineAndExtract(object):
             self.output_path = data_path
         else:
             self.output_path = output_path
+
         image_collection = ImageFileCollection(location=self.data_path,
                                                keywords=self.keywords,
                                                glob_include=glob_include)
+
         if image_collection is not None:
 
             self.image_collection = image_collection.summary.to_pandas()
