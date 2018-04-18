@@ -220,6 +220,13 @@ class GSPWcsCalculator(object):
 
 if __name__ == '__main__':
     calculator = GSPWcsCalculator()
-    path = '/data/simon/data/soar/comp_lamp_lib/work/comparison_lamp_library/completed'
-    # path_david = '/user/simon/data/soar/work/2018-02-08_David/comp/completed'
-    calculator(path=path)
+    if len(sys.argv) == 2:
+        _file = sys.argv[1]
+        if not os.path.isabs(_file):
+            _file = os.path.join(os.getcwd(), _file)
+        ccd = CCDData.read(_file, unit='adu')
+
+        calculator(ccd=ccd)
+    else:
+        sys.exit("You must provide a file name\n"
+                 "{:s} file-name.fits".format(sys.argv[0]))
