@@ -84,9 +84,9 @@ class WCS(object):
         self.data = ccd.data
         self.wcs = ccd.wcs.wcs
 
-        wcsdim = self.wcs.naxis
+        wcsdim = self.header['WCSDIM']
         for dim in range(1, wcsdim + 1):
-            ctypen = self.wcs.ctype[0]
+            ctypen = self.wcs.ctype[dim - 1]
             if ctypen == 'LINEAR':
                 self.log.info('Reading Linear Solution')
                 # self.wcs_dict = {'dtype': 0}
@@ -241,11 +241,10 @@ class WCS(object):
 
         """
         # TODO (simon): Complete implementation.
-        header = self.header
-        ctypen = header['CTYPE{:d}'.format(dimension)]
+        ctypen = self.wcs.ctype[dimension - 1]
         if ctypen == 'MULTISPE':
             # TODO (simon): What is the * (asterisc) doing here?.
-            wat_head = header['WAT{:d}*'.format(dimension)]
+            wat_head = self.header['WAT{:d}*'.format(dimension)]
             if len(wat_head) == 1:
                 self.log.debug('Get units')
                 wat_array = wat_head[0].split(' ')
@@ -256,7 +255,7 @@ class WCS(object):
             elif len(wat_head) > 1:
                 wat_string = ''
                 for key in wat_head:
-                    wat_string += header[key]
+                    wat_string += self.header[key]
                 wat_array = shlex.split(wat_string.replace('=', ' '))
                 if len(wat_array) % 2 == 0:
                     for i in range(0, len(wat_array), 2):
@@ -316,34 +315,34 @@ class WCS(object):
 
             # print(solution)
             # print("%s %s" % (params, len(params)))
-            wav1 = [4545.0519,
-                    4579.3495,
-                    4589.8978,
-                    4609.5673,
-                    4726.8683,
-                    4735.9058,
-                    4764.8646,
-                    4806.0205,
-                    4847.8095,
-                    5495.8738,
-                    5506.1128,
-                    5558.702,
-                    5572.5413,
-                    5606.733,
-                    5650.7043]
-            x_axis = range(1, len(self.data) + 1)
+            # wav1 = [4545.0519,
+            #         4579.3495,
+            #         4589.8978,
+            #         4609.5673,
+            #         4726.8683,
+            #         4735.9058,
+            #         4764.8646,
+            #         4806.0205,
+            #         4847.8095,
+            #         5495.8738,
+            #         5506.1128,
+            #         5558.702,
+            #         5572.5413,
+            #         5606.733,
+            #         5650.7043]
+            # x_axis = range(1, len(self.data) + 1)
             # x0 = range(len(self.data))
             # print('x data', x_axis[0], x_axis[-1], len(self.data))
-            plt.title(self.header['OBJECT'])
-
-            plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'],
-                                    self.wat_wcs_dict['units']))
-
-            plt.plot(self.model(x_axis), self.data)
-            # plt.plot(solution(x0), self.data, color='g')
-            for line in wav1:
-                plt.axvline(line, color='r')
-            plt.show()
+            # plt.title(self.header['OBJECT'])
+            #
+            # plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'],
+            #                         self.wat_wcs_dict['units']))
+            #
+            # plt.plot(self.model(x_axis), self.data)
+            # # plt.plot(solution(x0), self.data, color='g')
+            # for line in wav1:
+            #     plt.axvline(line, color='r')
+            # plt.show()
             # print(spec)
             raise NotImplementedError
 

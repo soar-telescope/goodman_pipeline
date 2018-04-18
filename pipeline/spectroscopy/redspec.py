@@ -118,7 +118,7 @@ def get_args(arguments=None):
                         action='store_true',
                         dest='interactive_ws',
                         help="Interactive wavelength solution."
-                             "Disbled by default.")
+                             "Disabled by default.")
 
     parser.add_argument('--debug',
                         action='store_true',
@@ -184,7 +184,6 @@ def get_args(arguments=None):
 
     if not os.path.isabs(args.source):
         args.source = os.path.join(os.getcwd(), args.source)
-        print(args.source)
     if not os.path.isdir(args.source):
         log.error("Source Directory {:s} doesn't exist.".format(args.source))
         if 'test' not in parser.prog:
