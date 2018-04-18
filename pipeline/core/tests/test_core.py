@@ -257,7 +257,10 @@ class ExtractionTest(TestCase):
         self.fake_image = CCDData(data=np.ones((100, 100)),
                                   meta=fits.Header(),
                                   unit='adu')
-        self.fake_image.header['OBSTYPE'] = 'COMP'
+        self.fake_image.header.set('NAXIS', value=2)
+        self.fake_image.header.set('NAXIS1', value=100)
+        self.fake_image.header.set('NAXIS2', value=100)
+        self.fake_image.header.set('OBSTYPE', value='COMP')
         self.fake_image.header['GSP_FNAM'] = 'fake-image.fits'
 
         # Create model aligned with pixels - represents the trace

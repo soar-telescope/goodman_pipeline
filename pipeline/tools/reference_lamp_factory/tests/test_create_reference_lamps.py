@@ -13,6 +13,7 @@ class TestReferenceLibraryFactory(TestCase):
 
     def setUp(self):
         self.cwd = os.getcwd()
+        print(self.cwd)
         arguments = ['--from', self.cwd,
                      '--save-to', self.cwd]
         self.factory = ReferenceLibraryFactory(arguments=arguments)
