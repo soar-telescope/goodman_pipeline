@@ -2,3 +2,4 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from .line_matcher import LineMatcher
+from .create_reference_lamps import ReferenceLibraryFactory

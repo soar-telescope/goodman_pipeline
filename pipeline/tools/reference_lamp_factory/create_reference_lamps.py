@@ -136,8 +136,9 @@ class ReferenceLibraryFactory(object):
 
                 if str(error) == "'NoneType' object has no attribute " \
                                  "'to_pandas'":
-                    sys.exit("Folder {:s} does not contain "
-                             "data.".format(self.args.path))
+                    self.log.critical("Folder {:s} does not contain "
+                                      "data.".format(self.args.path))
+                    raise SystemExit
 
             grouped_data = self._classify_images(ic=self.image_collection)
 
@@ -273,9 +274,9 @@ class ReferenceLibraryFactory(object):
 
     @staticmethod
     def _get_args(arguments=None):
-        parser = argparse.ArgumentParser(description='Tool to create reference'
-                                                     'lamps for using with the'
-                                                     'Goodman Spectroscopic'
+        parser = argparse.ArgumentParser(description='Tool to create reference '
+                                                     'lamps for using with the '
+                                                     'Goodman Spectroscopic '
                                                      'Pipeline.')
 
         parser.add_argument('--from',

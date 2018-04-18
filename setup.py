@@ -95,7 +95,8 @@ setup(
               'pipeline.core',
               'pipeline.images',
               'pipeline.spectroscopy',
-              'pipeline.wcs'],
+              'pipeline.wcs',
+              'pipeline.tools'],
 
     package_dir={'pipeline': 'pipeline'},
 
@@ -105,7 +106,10 @@ setup(
                                'data/dcr-source/README.md',
                                'data/dcr-source/dcr/*']},
 
-    scripts=['bin/redccd', 'bin/redspec'],
+    scripts=['bin/redccd',
+             'bin/redspec',
+             'bin/gsptool-create-reference-lamp',
+             'bin/gsptool-update-gsp_fnam'],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:

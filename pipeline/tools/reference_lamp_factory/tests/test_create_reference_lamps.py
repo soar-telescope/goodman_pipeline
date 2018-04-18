@@ -32,8 +32,13 @@ class TestReferenceLibraryFactory(TestCase):
 
 class TestExceptions(TestCase):
 
-    def test_get_args(self):
-        self.assertRaises(SystemExit, ReferenceLibraryFactory, None)
+    # def test_get_args(self):
+    #     # rf = ReferenceLibraryFactory(arguments=None)
+    #     self.assertRaisesRegex(SystemExit,
+    #                            '2',
+    #                            ReferenceLibraryFactory,
+    #                            None)
+    #     self.assertRaises(SystemExit, ReferenceLibraryFactory, None)
 
     def test_get_args_path_no_exist(self):
         arguments = ['--from', os.path.join(os.getcwd(), 'fake-dir'),

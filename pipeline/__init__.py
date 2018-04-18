@@ -4,6 +4,7 @@ from . import spectroscopy
 from . import images
 from . import info
 from . import core
+from . import tools
 
 from .core import setup_logging
 
