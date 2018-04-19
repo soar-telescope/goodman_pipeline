@@ -308,46 +308,14 @@ class WCS(object):
                              'pmin': min_pix_val,
                              'pmax': max_pix_val,
                              'fpar': params}
-            print(self.wcs_dict)
 
             # This section of the code only shows a plot to see if the code
             # above actually worked which means this methods has not been fully
             # developed neither tested
 
             self._set_math_model()
-
-            # print(solution)
-            # print("%s %s" % (params, len(params)))
-            # wav1 = [4545.0519,
-            #         4579.3495,
-            #         4589.8978,
-            #         4609.5673,
-            #         4726.8683,
-            #         4735.9058,
-            #         4764.8646,
-            #         4806.0205,
-            #         4847.8095,
-            #         5495.8738,
-            #         5506.1128,
-            #         5558.702,
-            #         5572.5413,
-            #         5606.733,
-            #         5650.7043]
-            # x_axis = range(1, len(self.data) + 1)
-            # x0 = range(len(self.data))
-            # print('x data', x_axis[0], x_axis[-1], len(self.data))
-            # plt.title(self.header['OBJECT'])
-            #
-            # plt.xlabel("%s (%s)" % (self.wat_wcs_dict['label'],
-            #                         self.wat_wcs_dict['units']))
-            #
-            # plt.plot(self.model(x_axis), self.data)
-            # # plt.plot(solution(x0), self.data, color='g')
-            # for line in wav1:
-            #     plt.axvline(line, color='r')
-            # plt.show()
-            # print(spec)
-            raise NotImplementedError
+            self.wavelength_and_intensity = [self.model(range(self.wcs_dict['pnum'])),
+                                             self.ccd.data]
 
     def _read_linear(self):
         """Linear solution reader
@@ -424,16 +392,16 @@ class WCS(object):
         self.model = models.Linear1D(slope=self.wcs_dict['cdelt'],
                                      intercept=intercept)
 
-    @staticmethod
-    def _log_linear():
+    def _log_linear(self):
         """Not implemented, returns False"""
-        return False
+        raise NotImplementedError
 
     def _chebyshev(self):
         """Returns a chebyshev model"""
-        self.model = models.Chebyshev1D(degree=self.wcs_dict['order'],
+        self.model = models.Chebyshev1D(degree=self.wcs_dict['order'] - 1,
                                         domain=[self.wcs_dict['pmin'],
                                                 self.wcs_dict['pmax']], )
+        # self.model.parameters[0] = self.wcs_dict['pmin']
         for param_index in range(self.wcs_dict['order']):
             self.model.parameters[param_index] = self.wcs_dict['fpar'][
                 param_index]

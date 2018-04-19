@@ -8,6 +8,7 @@ import re
 import sys
 from astropy.io import fits
 from astropy.modeling import (models, fitting, Model)
+import matplotlib.pyplot as plt
 
 from ccdproc import CCDData
 
@@ -37,9 +38,9 @@ class TestWCSBase(TestCase):
 
 class TestWCS(TestWCSBase):
 
-    def test_wcs__call__(self):
-        self.assertRaisesRegex(SystemExit, '1', self.wcs)
-        self.assertRaises(SystemExit, self.wcs)
+    # def test_wcs__call__(self):
+    #     self.assertRaisesRegex(SystemExit, '1', self.wcs)
+    #     self.assertRaises(SystemExit, self.wcs)
 
     def test_fit_chebyshev(self):
         test_file = os.path.join(self.data_path,
@@ -113,14 +114,16 @@ class TestWCS(TestWCSBase):
         self.assertEqual(len(result), 2)
         self.assertIsInstance(self.wcs.get_model(), Model)
 
-    def test_read__non_linear(self):
+    def test_read__non_linear_chebyshev(self):
         test_file = os.path.join(self.data_path,
                                  'non-linear_fits_solution_cheb.fits')
         self.assertTrue(os.path.isfile(test_file))
 
         ccd = CCDData.read(test_file, unit='adu')
 
-        self.assertRaises(NotImplementedError,  self.wcs.read, ccd)
+        result = self.wcs.read(ccd=ccd)
+        self.assertIsInstance(self.wcs.model, Model)
+        self.assertEqual(self.wcs.model.__class__.__name__, 'Chebyshev1D')
 
     def test_write_fits_wcs(self):
         self.assertRaises(NotImplementedError, self.wcs.write_fits_wcs,
@@ -161,7 +164,6 @@ class TestWCS(TestWCSBase):
         for i in range(model.degree + 1):
             self.assertAlmostEqual(new_ccd.header['GSP_C{:03d}'.format(i)],
                              ccd.header['GSP_C{:03d}'.format(i)])
-
 
     def test_read_gsp_wcs(self):
         test_file = os.path.join(self.data_path,
