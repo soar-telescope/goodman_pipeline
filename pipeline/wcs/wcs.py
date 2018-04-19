@@ -8,6 +8,7 @@ from __future__ import (absolute_import, division, print_function,
 import logging
 import matplotlib.pyplot as plt
 import shlex
+import sys
 
 from astropy.modeling import models, fitting, Model
 from ccdproc import CCDData
@@ -43,6 +44,7 @@ class WCS(object):
 
     def __call__(self, *args, **kwargs):
         self.log.error("Please use the method read(), fit() or get_model().")
+        sys.exit(1)
 
     def fit(self, physical, wavelength, model_name='chebyshev', degree=3):
         """Fits a mathematical model
