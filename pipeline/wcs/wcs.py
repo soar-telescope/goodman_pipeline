@@ -308,6 +308,7 @@ class WCS(object):
                              'pmin': min_pix_val,
                              'pmax': max_pix_val,
                              'fpar': params}
+            print(self.wcs_dict)
 
             # This section of the code only shows a plot to see if the code
             # above actually worked which means this methods has not been fully

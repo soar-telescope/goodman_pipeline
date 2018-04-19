@@ -12,7 +12,7 @@ from astropy.modeling import (models, fitting, Model)
 from ccdproc import CCDData
 
 
-class TestWCS(TestCase):
+class TestWCSBase(TestCase):
 
     def setUp(self):
         self.data_path = os.path.join(
@@ -34,11 +34,14 @@ class TestWCS(TestCase):
                     lines_angstrom.append(float(ccd.header[angstrom_key]))
         return lines_pixel, lines_angstrom
 
+
+class TestWCS(TestWCSBase):
+
     def test_wcs__call__(self):
         self.assertRaisesRegex(SystemExit, '1', self.wcs)
         self.assertRaises(SystemExit, self.wcs)
 
-    def test_fit(self):
+    def test_fit_chebyshev(self):
         test_file = os.path.join(self.data_path,
                                  'goodman_comp_400M1_HgArNe.fits')
         ccd = CCDData.read(test_file, unit='adu')
@@ -51,6 +54,51 @@ class TestWCS(TestCase):
         for i in range(model.degree + 1):
             self.assertAlmostEqual(model.__getattr__('c{:d}'.format(i)).value,
                              ccd.header['GSP_C{:03d}'.format(i)])
+
+    def test_fit_linear(self):
+        test_file = os.path.join(self.data_path,
+                                 'goodman_comp_400M1_HgArNe.fits')
+        ccd = CCDData.read(test_file, unit='adu')
+        pixel, angstrom = self._recover_lines(ccd=ccd)
+        model = self.wcs.fit(physical=pixel,
+                             wavelength=angstrom,
+                             model_name='linear')
+        self.assertIsInstance(model, Model)
+
+    def test_fit_invalid(self):
+        test_file = os.path.join(self.data_path,
+                                 'goodman_comp_400M1_HgArNe.fits')
+        ccd = CCDData.read(test_file, unit='adu')
+        pixel, angstrom = self._recover_lines(ccd=ccd)
+
+        self.assertRaisesRegex(NotImplementedError,
+                               'The model invalid is not implemented',
+                               self.wcs.fit,
+                               pixel,
+                               angstrom,
+                               'invalid')
+
+        self.assertRaises(NotImplementedError,
+                          self.wcs.fit,
+                          pixel,
+                          angstrom,
+                          'invalid')
+
+    def test_fit__unable_to_fit(self):
+        pixel = [0, 1, 2, 3]
+        angstrom = [20, 30, 40]
+        self.assertRaisesRegex(ValueError,
+                               'operands could not be broadcast together with '
+                               'shapes',
+                               self.wcs.fit, pixel, angstrom)
+        self.assertRaises(ValueError, self.wcs.fit, pixel, angstrom)
+
+    @skip
+    def test_fit__model__and_model_fitter_are_none(self):
+        pixel = [0]
+        angstrom = [20]
+        self.wcs.fit(physical=pixel, wavelength=angstrom, model_name='linear')
+        # self.wcs_model_f
 
     def test_read__linear(self):
         test_file = os.path.join(self.data_path,
@@ -135,52 +183,51 @@ class TestWCS(TestCase):
         self.wcs.model = models.Chebyshev1D(degree=3)
         self.assertIsInstance(self.wcs.get_model(), Model)
 
-
-    # @skip
-    # def test_pm_model_constructor(self):
-    #     self.fail()
-    #
     # @skip
     # def test_pm_fitter(self):
     #     self.fail()
     #
-    # @skip
-    # def test_pm_read_non_linear(self):
-    #     self.fail()
-    #
-    # @skip
-    # def test_pm_read_linear(self):
-    #     self.fail()
     #
     # @skip
     # def test_pm_set_math_model(self):
     #     self.fail()
     #
-    # @skip
-    # def test_pm_none(self):
-    #     self.fail()
-    #
-    # @skip
-    # def test_pm_linear_solution(self):
-    #     self.fail()
-    #
-    # @skip
-    # def test_pm_log_linear(self):
-    #     self.fail()
-    #
-    # @skip
-    # def test_pm_chebyshev(self):
-    #     self.fail()
-    #
-    # @skip
-    # def test_pm_non_linear_legendre(self):
-    #     self.fail()
-    #
-    # @skip
-    # def test_pm_non_linear_lspline(self):
-    #     self.fail()
-    #
-    # @skip
-    # def test_pm_non_linear_cspline(self):
-    #     self.fail()
+
+    def test_pm_none(self):
+        # test_file = os.path.join(self.data_path,
+        #                          'non-linear_fits_solution_cheb.fits')
+        # self.assertTrue(os.path.isfile(test_file))
+        #
+        # ccd = CCDData.read(test_file, unit='adu')
+        #
+        # WAT2_001 = 'wtype = multispec spec1 = "1 1 2 1. 1.5114461210693 4096 0. 834.39 864'
+        # WAT2_002 = '.39 1. 0. 1 3 1616.37 3259.98 5115.64008185559 535.515983711607 -0.7'
+        # WAT2_003 = '79265625182385"'
+        #
+        # dtype = -1
+        self.assertRaises(NotImplementedError, self.wcs._none)
+
+    @skip
+    def test_pm_linear_solution(self):
+        self.fail()
+
+    @skip
+    def test_pm_log_linear(self):
+        self.fail()
+
+    @skip
+    def test_pm_chebyshev(self):
+        self.fail()
+
+    @skip
+    def test_pm_non_linear_legendre(self):
+        self.fail()
+
+    @skip
+    def test_pm_non_linear_lspline(self):
+        self.fail()
+
+    @skip
+    def test_pm_non_linear_cspline(self):
+        self.fail()
 
