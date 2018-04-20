@@ -316,6 +316,9 @@ class WCS(object):
             self._set_math_model()
             self.wavelength_and_intensity = [self.model(range(self.wcs_dict['pnum'])),
                                              self.ccd.data]
+            # plt.plot(self.wavelength_and_intensity[0],
+            #          self.wavelength_and_intensity[1])
+            # plt.show()
 
     def _read_linear(self):
         """Linear solution reader
@@ -393,7 +396,11 @@ class WCS(object):
                                      intercept=intercept)
 
     def _log_linear(self):
-        """Not implemented, returns False"""
+        """Not implemented
+
+        Raises:
+            NotImplementedError
+        """
         raise NotImplementedError
 
     def _chebyshev(self):
@@ -407,11 +414,7 @@ class WCS(object):
                 param_index]
 
     def _non_linear_legendre(self):
-        """Not implemented
-
-        Raises:
-            NotImplementedError
-
+        """Set model to Legendre1D
         """
         """Returns a legendre model"""
         self.model = models.Legendre1D(degree=self.wcs_dict['order'] - 1,
@@ -421,7 +424,7 @@ class WCS(object):
         for param_index in range(self.wcs_dict['order']):
             self.model.parameters[param_index] = self.wcs_dict['fpar'][
                 param_index]
-        raise NotImplementedError
+        # raise NotImplementedError
 
     def _non_linear_lspline(self):
         """Not implemented
@@ -430,7 +433,7 @@ class WCS(object):
             NotImplementedError
 
         """
-        raise NotImplementedError
+        raise NotImplementedError('Linear spline is not implemented')
 
     def _non_linear_cspline(self):
         """Not implemented
@@ -439,7 +442,7 @@ class WCS(object):
             NotImplementedError
 
         """
-        raise NotImplementedError
+        raise NotImplementedError('Cubic spline is not implemented')
 
     def get_model(self):
         """Returns the wavelength solution model if exists."""

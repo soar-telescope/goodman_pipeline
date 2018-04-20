@@ -125,6 +125,40 @@ class TestWCS(TestWCSBase):
         self.assertIsInstance(self.wcs.model, Model)
         self.assertEqual(self.wcs.model.__class__.__name__, 'Chebyshev1D')
 
+    def test_read__non_linear_legendre(self):
+        test_file = os.path.join(self.data_path,
+                                 'non-linear_fits_solution_legendre.fits')
+        self.assertTrue(os.path.isfile(test_file))
+
+        ccd = CCDData.read(test_file, unit='adu')
+
+        result = self.wcs.read(ccd=ccd)
+        self.assertIsInstance(self.wcs.model, Model)
+        self.assertEqual(self.wcs.model.__class__.__name__, 'Legendre1D')
+
+    def test_read__non_linear_lspline(self):
+        test_file = os.path.join(self.data_path,
+                                 'non-linear_fits_solution_linear-spline.fits')
+        self.assertTrue(os.path.isfile(test_file))
+
+        ccd = CCDData.read(test_file, unit='adu')
+        # self.wcs.read(ccd=ccd)
+        self.assertRaises(NotImplementedError, self.wcs.read, ccd)
+        self.assertRaisesRegex(NotImplementedError,
+                               'Linear spline is not implemented',
+                               self.wcs.read, ccd)
+
+    def test_read__non_linear_cspline(self):
+        test_file = os.path.join(self.data_path,
+                                 'non-linear_fits_solution_cubic-spline.fits')
+        self.assertTrue(os.path.isfile(test_file))
+
+        ccd = CCDData.read(test_file, unit='adu')
+        self.assertRaises(NotImplementedError, self.wcs.read, ccd)
+        self.assertRaisesRegex(NotImplementedError,
+                               'Cubic spline is not implemented',
+                               self.wcs.read, ccd)
+
     def test_write_fits_wcs(self):
         self.assertRaises(NotImplementedError, self.wcs.write_fits_wcs,
                           None,

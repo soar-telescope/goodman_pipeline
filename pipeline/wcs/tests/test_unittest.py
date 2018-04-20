@@ -45,12 +45,17 @@ class TestWCS(TestCase):
         self.wcs._chebyshev()
         self.assertIsInstance(self.wcs.model, Model)
         self.assertEqual(self.wcs.model.__class__.__name__, 'Chebyshev1D')
-        # print(self.wcs.model)
-        # print(self.wcs.model(1), self.wcs.model(4096))
-
 
     def test_pm_non_linear_legendre(self):
-        self.assertRaises(NotImplementedError, self.wcs._non_linear_legendre)
+        self.wcs.wcs_dict['order'] = 3
+        self.wcs.wcs_dict['pmin'] = 1616.37
+        self.wcs.wcs_dict['pmax'] = 3259.98
+        self.wcs.wcs_dict['fpar'] = [5115.64008185559,
+                                     535.515983711607,
+                                     -0.779265625182385]
+        self.wcs._non_linear_legendre()
+        self.assertIsInstance(self.wcs.model, Model)
+        self.assertEqual(self.wcs.model.__class__.__name__, 'Legendre1D')
 
     def test_pm_non_linear_lspline(self):
         self.assertRaises(NotImplementedError, self.wcs._non_linear_lspline)
