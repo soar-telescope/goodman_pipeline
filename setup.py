@@ -96,7 +96,8 @@ setup(
               'pipeline.images',
               'pipeline.spectroscopy',
               'pipeline.wcs',
-              'pipeline.tools'],
+              'pipeline.tools',
+              'pipeline.tools.reference_lamp_factory',],
 
     package_dir={'pipeline': 'pipeline'},
 
