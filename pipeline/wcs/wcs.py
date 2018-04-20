@@ -413,6 +413,14 @@ class WCS(object):
             NotImplementedError
 
         """
+        """Returns a legendre model"""
+        self.model = models.Legendre1D(degree=self.wcs_dict['order'] - 1,
+                                       domain=[self.wcs_dict['pmin'],
+                                               self.wcs_dict['pmax']], )
+        # self.model.parameters[0] = self.wcs_dict['pmin']
+        for param_index in range(self.wcs_dict['order']):
+            self.model.parameters[param_index] = self.wcs_dict['fpar'][
+                param_index]
         raise NotImplementedError
 
     def _non_linear_lspline(self):
