@@ -94,13 +94,6 @@ class TestWCS(TestWCSBase):
                                self.wcs.fit, pixel, angstrom)
         self.assertRaises(ValueError, self.wcs.fit, pixel, angstrom)
 
-    @skip
-    def test_fit__model__and_model_fitter_are_none(self):
-        pixel = [0]
-        angstrom = [20]
-        self.wcs.fit(physical=pixel, wavelength=angstrom, model_name='linear')
-        # self.wcs_model_f
-
     def test_read__linear(self):
         test_file = os.path.join(self.data_path,
                                  'linear_fits_solution.fits')

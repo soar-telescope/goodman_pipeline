@@ -20,6 +20,50 @@ class TestWCS(TestCase):
     def test_wcs__call__(self):
         self.assertRaisesRegex(SystemExit, '1', self.wcs)
         self.assertRaises(SystemExit, self.wcs)
+
+    def test_pm_fitter_undefined_model_and_fitter(self):
+        pixel = list(range(100))
+        angstrom = list(range(100))
+        self.assertRaises(RuntimeError, self.wcs._fitter, pixel, angstrom)
+        self.assertRaisesRegex(RuntimeError,
+                               "Undefined model and fitter",
+                               self.wcs._fitter,
+                               pixel, angstrom)
+        # self.wcs._fitter(physical=pixel, wavelength=angstrom)
+
+    def test_pm_set_math_model__none(self):
+        self.wcs.wcs_dict['dtype'] = -1
+        self.assertRaises(NotImplementedError, self.wcs._set_math_model)
+
+    def test_pm_set_math_model__log_linear(self):
+        self.wcs.wcs_dict['dtype'] = 1
+        self.assertRaises(NotImplementedError, self.wcs._set_math_model)
+
+    def test_pm_set_math_model__pixel_coordinates(self):
+        self.wcs.wcs_dict['dtype'] = 2
+        self.wcs.wcs_dict['ftype'] = 5
+        self.assertRaises(NotImplementedError, self.wcs._set_math_model)
+
+    def test_pm_set_math_model__sampled_coordinate_array(self):
+        self.wcs.wcs_dict['dtype'] = 2
+        self.wcs.wcs_dict['ftype'] = 6
+        self.assertRaises(NotImplementedError, self.wcs._set_math_model)
+
+    def test_pm_set_math_model__wrong_dtype(self):
+        self.wcs.wcs_dict['dtype'] = 3
+        # self.wcs.wcs_dict['ftype'] = 6
+        self.assertRaises(SyntaxError, self.wcs._set_math_model)
+        self.assertRaisesRegex(SyntaxError,
+                               'dtype {:d} is not defined in the '
+                               'standard'.format(self.wcs.wcs_dict['dtype']))
+
+    def test_pm_set_math_model__wrong_ftype(self):
+        self.wcs.wcs_dict['dtype'] = 2
+        self.wcs.wcs_dict['ftype'] = 7
+        self.assertRaises(SyntaxError, self.wcs._set_math_model)
+        self.assertRaisesRegex(SyntaxError,
+                               'ftype {:d} is not defined in the '
+                               'standard'.format(self.wcs.wcs_dict['ftype']))
         
     def test_pm_none(self):
         self.assertRaises(NotImplementedError, self.wcs._none)

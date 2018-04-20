@@ -212,19 +212,13 @@ class WCS(object):
 
         """
         if self.model and self.model_fitter is not None:
-            try:
-
-                fitted_model = self.model_fitter(self.model,
-                                                 physical,
-                                                 wavelength)
-                return fitted_model
-            except TypeError as error:
-                self.log.info('Unable to do fit, please add more data points.')
-                self.log.error('TypeError: %s', error)
-                return None
+            fitted_model = self.model_fitter(self.model,
+                                             physical,
+                                             wavelength)
+            return fitted_model
         else:
             self.log.error('Either model or model fitter were not constructed')
-            return None
+            raise RuntimeError("Undefined model and fitter")
 
     # wavelength solution reader private methods.
     def _read_non_linear(self, dimension):
@@ -285,7 +279,7 @@ class WCS(object):
             aper_high = int(float(spec[8]))
             weight = float(spec[9])
             zeropoint = float(spec[10])
-            function_type = spec[11]
+            function_type = int(spec[11])
             order = int(float(spec[12]))
             min_pix_val = int(float(spec[13]))
             max_pix_val = int(float(spec[14]))
@@ -352,24 +346,26 @@ class WCS(object):
         elif self.wcs_dict['dtype'] == 1:
             self._log_linear()
         elif self.wcs_dict['dtype'] == 2:
-            if self.wcs_dict['ftype'] == '1':
+            if self.wcs_dict['ftype'] == 1:
                 self._chebyshev()
-            elif self.wcs_dict['ftype'] == '2':
+            elif self.wcs_dict['ftype'] == 2:
                 self._non_linear_legendre()
-            elif self.wcs_dict['ftype'] == '3':
+            elif self.wcs_dict['ftype'] == 3:
                 self._non_linear_cspline()
-            elif self.wcs_dict['ftype'] == '4':
+            elif self.wcs_dict['ftype'] == 4:
                 self._non_linear_lspline()
-            elif self.wcs_dict['ftype'] == '5':
+            elif self.wcs_dict['ftype'] == 5:
                 # pixel coordinates
                 raise NotImplementedError
-            elif self.wcs_dict['ftype'] == '6':
+            elif self.wcs_dict['ftype'] == 6:
                 # sampled coordinate array
                 raise NotImplementedError
             else:
-                self.log.error('Not Implemented')
+                raise SyntaxError('ftype {:d} is not defined in the '
+                                  'standard'.format(self.wcs_dict['ftype']))
         else:
-            self.log.error('Not Implemented')
+            raise SyntaxError('dtype {:d} is not defined in the '
+                              'standard'.format(self.wcs_dict['dtype']))
 
     @staticmethod
     def _none():
