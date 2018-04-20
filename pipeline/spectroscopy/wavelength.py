@@ -207,11 +207,11 @@ class WavelengthCalibration(object):
                 self.lines_center = self._get_lines_in_lamp()
                 self.spectral = self._get_spectral_characteristics()
                 object_name = ccd.header['OBJECT']
-                if self.args.interactive_ws:
-                    self._interactive_wavelength_solution(
-                        object_name=object_name)
-                else:
-                    self._automatic_wavelength_solution(
+                # if self.args.interactive_ws:
+                #     self._interactive_wavelength_solution(
+                #         object_name=object_name)
+                # else:
+                self._automatic_wavelength_solution(
                         corr_tolerance=self.cross_corr_tolerance)
 
                 if self.wsolution is not None:
@@ -288,9 +288,10 @@ class WavelengthCalibration(object):
 
         """
         # TODO (simon): Move this to WCS class
-        if not all([self.n_points, self.n_rejections, self.rms_error]):
-            self.rms_error, self.n_points, self.n_rejections = \
-                self.evaluate_solution()
+        # print(self.n_points, self.n_rejections, self.rms_error)
+        # if not all([self.n_points, self.n_rejections, self.rms_error]):
+        #     self.rms_error, self.n_points, self.n_rejections = \
+        #         self.evaluate_solution()
 
         ccd.header.set('GSP_WRMS', value=self.rms_error)
         ccd.header.set('GSP_WPOI', value=self.n_points)
@@ -694,146 +695,146 @@ class WavelengthCalibration(object):
             plt.ioff()
         return correlation_value
 
-    def _display_help_text(self):
-        """Shows static text on the top right subplot
-
-        This will print static help text on the top right subplot of the
-        interactive window.
-
-        Notes:
-            This is really hard to format and having a proper GUI should help
-            to have probably richer formatted text on the screen.
-
-        """
-        self.ax2.set_title('Help')
-        self.ax2.set_xticks([])
-        self.ax2.set_yticks([])
-
-        self.ax2.text(1, 11, 'F1 or ?:',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 11, 'Prints Help.',
-                      fontsize=12)
-
-        self.ax2.text(1, 10.5, 'F2 or f:',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 10.5, 'Fit Wavelength Solution to points',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 10, 'collected',
-                      fontsize=12)
-
-        self.ax2.text(1, 9.5, 'F3 or a:',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 9.5, 'Find new lines, use when the solution',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 9, 'is already decent.',
-                      fontsize=12)
-
-        self.ax2.text(1, 8.5, 'F4:',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 8.5, 'Evaluate Solution',
-                      fontsize=12)
-
-        self.ax2.text(1, 8, 'F6 or l:',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 8, 'Linearize Data',
-                      fontsize=12)
-
-        self.ax2.text(1, 7.5, 'd :',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 7.5, 'Delete Closest Point',
-                      fontsize=12)
-
-        self.ax2.text(1, 7, 'Ctrl+d:',
-                      fontsize=12)
-
-        self.ax2.text(1.5, 7, 'Delete all recorded marks.',
-                      fontsize=12)
-
-        self.ax2.text(1, 6, 'Ctrl+z:',
-                      fontsize=12)
-
-        self.ax2.text(1.5, 6, 'Remove all automatic added points.',
-                      fontsize=12)
-
-        self.ax2.text(1.5, 5.5, 'Undo what F3 does.',
-                      fontsize=12)
-
-        self.ax2.text(1, 5, 'Middle Button Click:',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 4.5, 'Finds and records line position',
-                      fontsize=12)
-
-        self.ax2.text(1, 4, 'Enter :',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 4, 'Close Figure and apply wavelength',
-                      fontsize=12)
-
-        self.ax2.text(1.46, 3.5, 'solution',
-                      fontsize=12)
-
-        self.ax2.set_ylim((0, 12))
-        self.ax2.set_xlim((0.95, 3.5))
-
-    def _display_onscreen_message(self, message='', color='red'):
-        """Uses the fourth subplot to display a message
-
-        Displays a warning message on the bottom right subplot of the
-        interactive window. It is capable to break down the message in more
-        than one line if necessary.
-
-        Args:
-            message (str): The message to be displayed
-            color (str): Color name for the font's color
-
-        """
-        full_message = [message]
-        if len(message) > 30:
-            full_message = []
-            split_message = message.split(' ')
-            line_length = 0
-            # new_line = ''
-            e = 0
-            for i in range(len(split_message)):
-                # print(i, len(split_message))
-                line_length += len(split_message[i]) + 1
-                if line_length >= 30:
-                    new_line = ' '.join(split_message[e:i])
-                    # print(new_line, len(new_line))
-                    full_message.append(new_line)
-                    # new_line = ''
-                    line_length = 0
-                    e = i
-                if i == len(split_message) - 1:
-                    new_line = ' '.join(split_message[e:])
-                    # print(new_line, len(new_line))
-                    full_message.append(new_line)
-
-        self.ax4.cla()
-        self.ax4.relim()
-        self.ax4.set_xticks([])
-        self.ax4.set_yticks([])
-        self.ax4.set_title('Message')
-        for i in range(len(full_message)):
-            self.ax4.text(0.05, 0.95 - i * 0.05,
-                          full_message[i],
-                          verticalalignment='top',
-                          horizontalalignment='left',
-                          transform=self.ax4.transAxes,
-                          color=color,
-                          fontsize=15)
-        self.i_fig.canvas.draw()
-
-        return
+    # def _display_help_text(self):
+    #     """Shows static text on the top right subplot
+    #
+    #     This will print static help text on the top right subplot of the
+    #     interactive window.
+    #
+    #     Notes:
+    #         This is really hard to format and having a proper GUI should help
+    #         to have probably richer formatted text on the screen.
+    #
+    #     """
+    #     self.ax2.set_title('Help')
+    #     self.ax2.set_xticks([])
+    #     self.ax2.set_yticks([])
+    #
+    #     self.ax2.text(1, 11, 'F1 or ?:',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 11, 'Prints Help.',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 10.5, 'F2 or f:',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 10.5, 'Fit Wavelength Solution to points',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 10, 'collected',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 9.5, 'F3 or a:',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 9.5, 'Find new lines, use when the solution',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 9, 'is already decent.',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 8.5, 'F4:',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 8.5, 'Evaluate Solution',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 8, 'F6 or l:',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 8, 'Linearize Data',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 7.5, 'd :',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 7.5, 'Delete Closest Point',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 7, 'Ctrl+d:',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.5, 7, 'Delete all recorded marks.',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 6, 'Ctrl+z:',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.5, 6, 'Remove all automatic added points.',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.5, 5.5, 'Undo what F3 does.',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 5, 'Middle Button Click:',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 4.5, 'Finds and records line position',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1, 4, 'Enter :',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 4, 'Close Figure and apply wavelength',
+    #                   fontsize=12)
+    #
+    #     self.ax2.text(1.46, 3.5, 'solution',
+    #                   fontsize=12)
+    #
+    #     self.ax2.set_ylim((0, 12))
+    #     self.ax2.set_xlim((0.95, 3.5))
+    #
+    # def _display_onscreen_message(self, message='', color='red'):
+    #     """Uses the fourth subplot to display a message
+    #
+    #     Displays a warning message on the bottom right subplot of the
+    #     interactive window. It is capable to break down the message in more
+    #     than one line if necessary.
+    #
+    #     Args:
+    #         message (str): The message to be displayed
+    #         color (str): Color name for the font's color
+    #
+    #     """
+    #     full_message = [message]
+    #     if len(message) > 30:
+    #         full_message = []
+    #         split_message = message.split(' ')
+    #         line_length = 0
+    #         # new_line = ''
+    #         e = 0
+    #         for i in range(len(split_message)):
+    #             # print(i, len(split_message))
+    #             line_length += len(split_message[i]) + 1
+    #             if line_length >= 30:
+    #                 new_line = ' '.join(split_message[e:i])
+    #                 # print(new_line, len(new_line))
+    #                 full_message.append(new_line)
+    #                 # new_line = ''
+    #                 line_length = 0
+    #                 e = i
+    #             if i == len(split_message) - 1:
+    #                 new_line = ' '.join(split_message[e:])
+    #                 # print(new_line, len(new_line))
+    #                 full_message.append(new_line)
+    #
+    #     self.ax4.cla()
+    #     self.ax4.relim()
+    #     self.ax4.set_xticks([])
+    #     self.ax4.set_yticks([])
+    #     self.ax4.set_title('Message')
+    #     for i in range(len(full_message)):
+    #         self.ax4.text(0.05, 0.95 - i * 0.05,
+    #                       full_message[i],
+    #                       verticalalignment='top',
+    #                       horizontalalignment='left',
+    #                       transform=self.ax4.transAxes,
+    #                       color=color,
+    #                       fontsize=15)
+    #     self.i_fig.canvas.draw()
+    #
+    #     return
 
     def _evaluate_solution(self, clipped_differences):
         """Calculates Root Mean Square Error for the wavelength solution.
@@ -860,289 +861,289 @@ class WavelengthCalibration(object):
         self.log.info('RMS Error : {:.3f}'.format(self.rms_error))
         return self.rms_error, self.n_points, self.n_rejections
 
-    def evaluate_solution(self, plots=False):
-        """Calculate the Root Mean Square Error of the solution
+    # def evaluate_solution(self, plots=False):
+    #     """Calculate the Root Mean Square Error of the solution
+    #
+    #     Once the wavelength solution is obtained it has to be evaluated. The
+    #     line centers found for the raw comparison lamp will be converted to,
+    #     according to the new solution, angstrom. Then for each line the closest
+    #     reference line value is obtained. The difference is stored. Then this
+    #     differences are cleaned by means of a sigma clipping method that will
+    #     rule out any outlier or any line that is not well matched. Then, using
+    #     the sigma clipped differences the Root Mean Square error is calculated.
+    #
+    #     It also creates a plot in the bottom right subplot of the interactive
+    #     window, showing an scatter plot plus some information regarding the
+    #     quality of the fit.
+    #
+    #     Args:
+    #         plots (bool): Whether to create the plot or not
+    #
+    #     Returns:
+    #         results (list): Contains three elements: rms_error (float),
+    #         npoints (int), n_rejections (int)
+    #
+    #     """
+    #     if self.wsolution is not None:
+    #         differences = np.array([])
+    #         wavelength_line_centers = self.wsolution(self.lines_center)
+    #
+    #         for wline in wavelength_line_centers:
+    #             closer_index = np.argmin(
+    #                 abs(self.reference_data.lines_angstrom - wline))
+    #
+    #             rline = self.reference_data.lines_angstrom[closer_index]
+    #             rw_difference = wline - rline
+    #             self.log.debug('Difference w - r {:.4f} {:.4f} - {:.4f}'.format(
+    #                 rw_difference,
+    #                 wline,
+    #                 rline))
+    #
+    #             differences = np.append(differences, rw_difference)
+    #
+    #         clipping_sigma = 2.
+    #
+    #         clipped_differences = differences
+    #         once_clipped_differences = differences
+    #
+    #         npoints = len(clipped_differences)
+    #         n_rejections = np.ma.count_masked(clipped_differences)
+    #         square_differences = []
+    #         for i in range(len(clipped_differences)):
+    #             if clipped_differences[i] is not np.ma.masked:
+    #                 square_differences.append(clipped_differences[i] ** 2)
+    #         old_rms_error = None
+    #         if self.rms_error is not None:
+    #             old_rms_error = float(self.rms_error)
+    #         self.rms_error = np.sqrt(
+    #             np.sum(square_differences) / len(square_differences))
+    #
+    #         self.log.info('RMS Error : {:.3f}'.format(self.rms_error))
+    #
+    #         if plots:
+    #             if self.ax4_plots is not None or \
+    #                             self.ax4_com is not None or \
+    #                             self.ax4_rlv is not None:
+    #
+    #                 try:
+    #                     self.ax4.cla()
+    #                     self.ax4.relim()
+    #                 except NameError as err:
+    #                     self.log.error(err)
+    #
+    #             self.ax4.set_title('RMS Error {:.3f} \n'
+    #                                '{:d} points ({:d} '
+    #                                'rejected)'.format(self.rms_error,
+    #                                                   npoints,
+    #                                                   n_rejections))
+    #
+    #             self.ax4.set_ylim(once_clipped_differences.min(),
+    #                               once_clipped_differences.max())
+    #
+    #             self.ax4.set_xlim(np.min(self.lines_center),
+    #                               np.max(self.lines_center))
+    #
+    #             self.ax4_rlv = self.ax4.scatter(self.lines_center,
+    #                                             differences,
+    #                                             marker='x',
+    #                                             color='k',
+    #                                             label='Rejected Points')
+    #
+    #             self.ax4_com = self.ax4.axhspan(clipped_differences.min(),
+    #                                             clipped_differences.max(),
+    #                                             color='k',
+    #                                             alpha=0.4,
+    #                                             edgecolor=None,
+    #                                             label='{:.1f} Sigma'.format(
+    #                                                 clipping_sigma))
+    #
+    #             self.ax4_plots = self.ax4.scatter(self.lines_center,
+    #                                               clipped_differences,
+    #                                               label='Differences')
+    #
+    #             if self.rms_error is not None and old_rms_error is not None:
+    #                 # increment_color = 'white'
+    #                 rms_error_difference = self.rms_error - old_rms_error
+    #
+    #                 if rms_error_difference > 0.001:
+    #                     increment_color = 'red'
+    #                 elif rms_error_difference < -0.001:
+    #                     increment_color = 'green'
+    #                 else:
+    #                     increment_color = 'white'
+    #
+    #                 message = r'$\Delta$ RMSE {:+.3f}'.format(
+    #                     rms_error_difference)
+    #
+    #                 self.ax4.text(0.05, 0.95,
+    #                               message,
+    #                               verticalalignment='top',
+    #                               horizontalalignment='left',
+    #                               transform=self.ax4.transAxes,
+    #                               color=increment_color,
+    #                               fontsize=15)
+    #
+    #             self.ax4.set_xlabel('Pixel Axis (Pixels)')
+    #             self.ax4.set_ylabel('Difference (Angstroms)')
+    #
+    #             self.ax4.legend(loc=3, framealpha=0.5)
+    #             self.i_fig.canvas.draw()
+    #
+    #         results = [self.rms_error, npoints, n_rejections]
+    #         return results
+    #     else:
+    #         self.log.error('Solution is still non-existent!')
 
-        Once the wavelength solution is obtained it has to be evaluated. The
-        line centers found for the raw comparison lamp will be converted to,
-        according to the new solution, angstrom. Then for each line the closest
-        reference line value is obtained. The difference is stored. Then this
-        differences are cleaned by means of a sigma clipping method that will
-        rule out any outlier or any line that is not well matched. Then, using
-        the sigma clipped differences the Root Mean Square error is calculated.
+    # def _find_more_lines(self):
+    #     """Method to add more lines given that a wavelength solution already
+    #     exists
+    #
+    #     This method is part of the interactive wavelength solution mechanism.
+    #     If a wavelength solution exist it uses the line centers in pixels to
+    #     estimate their respective wavelength and then search for the closest
+    #     value in the list of reference lines for the elements in the comparison
+    #     lamp. Then it filters the worst of them by doing sigma clipping.
+    #     Finally it adds them to the class' attributes that contains the list of
+    #     reference points.
+    #
+    #     Better results are obtained if the solution is already decent. Visual
+    #     inspection also improves final result.
+    #     """
+    #     new_physical = []
+    #     new_wavelength = []
+    #     square_differences = []
+    #     if self.wsolution is not None:
+    #         wlines = self.wsolution(self.lines_center)
+    #         for i in range(len(wlines)):
+    #
+    #             closer_index = np.argmin(
+    #                 abs(self.reference_data.lines_angstrom - wlines[i]))
+    #
+    #             rline = self.reference_data.lines_angstrom[closer_index]
+    #
+    #             rw_difference = wlines[i] - rline
+    #             # print('Difference w - r ', rw_difference, rline)
+    #             square_differences.append(rw_difference ** 2)
+    #             new_physical.append(self.lines_center[i])
+    #             new_wavelength.append(rline)
+    #         clipped_differences = sigma_clip(square_differences,
+    #                                          sigma=2,
+    #                                          iters=3)
+    #
+    #         if len(new_wavelength) == len(new_physical) == \
+    #                 len(clipped_differences):
+    #
+    #             for i in range(len(new_wavelength)):
+    #                 if clipped_differences[i] is not \
+    #                         np.ma.masked and new_wavelength[i] not in \
+    #                         self.reference_marks_x:
+    #
+    #                     self.reference_marks_x.append(new_wavelength[i])
+    #                     self.reference_marks_y.append(self.ref_filling_value)
+    #                     self.raw_data_marks_x.append(new_physical[i])
+    #                     self.raw_data_marks_y.append(self.raw_filling_value)
+    #     return True
 
-        It also creates a plot in the bottom right subplot of the interactive
-        window, showing an scatter plot plus some information regarding the
-        quality of the fit.
+    # def fit_pixel_to_wavelength(self):
+    #     """Does the fit to find the wavelength solution
+    #
+    #     Once you have four data points on each side (raw and reference or pixel
+    #     and angstrom) it calculates the fit using a Chebyshev model of third
+    #     degree. This was chosen because it worked better compared to the rest.
+    #     There is a slight deviation from linearity in all Goodman data,
+    #     therefore a linear model could not be used, also is said that a Spline
+    #     of third degree is "too flexible" which I also experienced and since the
+    #     deviation from linearity is not extreme it seemed that it was not
+    #     necessary to implement.
+    #
+    #     This method checks that the data that will be used as input to calculate
+    #     the fit have the same dimensions and warns the user in case is not.
+    #
+    #     Returns:
+    #         None (None): An empty return is created to finish the execution of
+    #         the method when a fit will not be possible
+    #
+    #     """
+    #     if len(self.reference_marks_x) and len(self.raw_data_marks_x) > 0:
+    #
+    #         if len(self.reference_marks_x) < 4 or \
+    #                         len(self.raw_data_marks_x) < 4:
+    #             message = 'Not enough marks! Minimum 4 each side.'
+    #             self._display_onscreen_message(message)
+    #             return
+    #
+    #         if len(self.reference_marks_x) != len(self.raw_data_marks_x):
+    #             if len(self.reference_marks_x) < len(self.raw_data_marks_x):
+    #                 n = len(self.raw_data_marks_x) - len(self.reference_marks_x)
+    #                 if n == 1:
+    #                     message_text = '{:d} Reference Click is ' \
+    #                                    'missing!.'.format(n)
+    #                 else:
+    #                     message_text = '{:d} Reference Clicks are ' \
+    #                                    'missing!.'.format(n)
+    #             else:
+    #                 n = len(self.reference_marks_x) - len(self.raw_data_marks_x)
+    #                 if n == 1:
+    #                     message_text = '{:d} Raw Click is missing!.'.format(n)
+    #                 else:
+    #                     message_text = '{:d} Raw Clicks are missing!.'.format(n)
+    #             self._display_onscreen_message(message_text)
+    #         else:
+    #             pixel = []
+    #             angstrom = []
+    #             for i in range(len(self.reference_marks_x)):
+    #                 pixel.append(self.raw_data_marks_x[i])
+    #                 angstrom.append(self.reference_marks_x[i])
+    #
+    #             self.wsolution = self.wcs.fit(physical=pixel,
+    #                                           wavelength=angstrom,
+    #                                           model_name='chebyshev',
+    #                                           degree=self.poly_order)
+    #             # raw_angstrom = self.wsolution(self.raw_data_marks_x)
+    #
+    #             # differences_angstrom = self.reference_marks_x - raw_angstrom
+    #
+    #             self.evaluate_solution(plots=True)
+    #
+    #     else:
+    #         self.log.error('Clicks record is empty')
+    #         self._display_onscreen_message(message='Clicks record is empty')
+    #         if self.wsolution is not None:
+    #             self.wsolution = None
 
-        Args:
-            plots (bool): Whether to create the plot or not
+    # def _get_best_filling_value(self, data):
+    #     """Find the best y-value to locate marks
+    #
+    #     The automatically added points will be placed at a fixed location in the
+    #     y-axis. This value is calculated by doing a 2-sigma clipping with 5
+    #     iterations. Then the masked out values are removed and the median is
+    #     calculated.
+    #
+    #     Args:
+    #         data (array): Array of 1D data
+    #
+    #     Returns:
+    #         Median value of clipped data.
+    #
+    #     """
+    #     clipped_data = sigma_clip(data, sigma=2, iters=5)
+    #     clean_data = clipped_data[~clipped_data.mask]
+    #     self.log.debug("Found best filling value"
+    #                    " at {:f}".format(np.median(clean_data)))
+    #     return np.median(clean_data)
 
-        Returns:
-            results (list): Contains three elements: rms_error (float),
-            npoints (int), n_rejections (int)
-
-        """
-        if self.wsolution is not None:
-            differences = np.array([])
-            wavelength_line_centers = self.wsolution(self.lines_center)
-
-            for wline in wavelength_line_centers:
-                closer_index = np.argmin(
-                    abs(self.reference_data.lines_angstrom - wline))
-
-                rline = self.reference_data.lines_angstrom[closer_index]
-                rw_difference = wline - rline
-                self.log.debug('Difference w - r {:.4f} {:.4f} - {:.4f}'.format(
-                    rw_difference,
-                    wline,
-                    rline))
-
-                differences = np.append(differences, rw_difference)
-
-            clipping_sigma = 2.
-
-            clipped_differences = differences
-            once_clipped_differences = differences
-
-            npoints = len(clipped_differences)
-            n_rejections = np.ma.count_masked(clipped_differences)
-            square_differences = []
-            for i in range(len(clipped_differences)):
-                if clipped_differences[i] is not np.ma.masked:
-                    square_differences.append(clipped_differences[i] ** 2)
-            old_rms_error = None
-            if self.rms_error is not None:
-                old_rms_error = float(self.rms_error)
-            self.rms_error = np.sqrt(
-                np.sum(square_differences) / len(square_differences))
-
-            self.log.info('RMS Error : {:.3f}'.format(self.rms_error))
-
-            if plots:
-                if self.ax4_plots is not None or \
-                                self.ax4_com is not None or \
-                                self.ax4_rlv is not None:
-
-                    try:
-                        self.ax4.cla()
-                        self.ax4.relim()
-                    except NameError as err:
-                        self.log.error(err)
-
-                self.ax4.set_title('RMS Error {:.3f} \n'
-                                   '{:d} points ({:d} '
-                                   'rejected)'.format(self.rms_error,
-                                                      npoints,
-                                                      n_rejections))
-
-                self.ax4.set_ylim(once_clipped_differences.min(),
-                                  once_clipped_differences.max())
-
-                self.ax4.set_xlim(np.min(self.lines_center),
-                                  np.max(self.lines_center))
-
-                self.ax4_rlv = self.ax4.scatter(self.lines_center,
-                                                differences,
-                                                marker='x',
-                                                color='k',
-                                                label='Rejected Points')
-
-                self.ax4_com = self.ax4.axhspan(clipped_differences.min(),
-                                                clipped_differences.max(),
-                                                color='k',
-                                                alpha=0.4,
-                                                edgecolor=None,
-                                                label='{:.1f} Sigma'.format(
-                                                    clipping_sigma))
-
-                self.ax4_plots = self.ax4.scatter(self.lines_center,
-                                                  clipped_differences,
-                                                  label='Differences')
-
-                if self.rms_error is not None and old_rms_error is not None:
-                    # increment_color = 'white'
-                    rms_error_difference = self.rms_error - old_rms_error
-
-                    if rms_error_difference > 0.001:
-                        increment_color = 'red'
-                    elif rms_error_difference < -0.001:
-                        increment_color = 'green'
-                    else:
-                        increment_color = 'white'
-
-                    message = r'$\Delta$ RMSE {:+.3f}'.format(
-                        rms_error_difference)
-
-                    self.ax4.text(0.05, 0.95,
-                                  message,
-                                  verticalalignment='top',
-                                  horizontalalignment='left',
-                                  transform=self.ax4.transAxes,
-                                  color=increment_color,
-                                  fontsize=15)
-
-                self.ax4.set_xlabel('Pixel Axis (Pixels)')
-                self.ax4.set_ylabel('Difference (Angstroms)')
-
-                self.ax4.legend(loc=3, framealpha=0.5)
-                self.i_fig.canvas.draw()
-
-            results = [self.rms_error, npoints, n_rejections]
-            return results
-        else:
-            self.log.error('Solution is still non-existent!')
-
-    def _find_more_lines(self):
-        """Method to add more lines given that a wavelength solution already
-        exists
-
-        This method is part of the interactive wavelength solution mechanism.
-        If a wavelength solution exist it uses the line centers in pixels to
-        estimate their respective wavelength and then search for the closest
-        value in the list of reference lines for the elements in the comparison
-        lamp. Then it filters the worst of them by doing sigma clipping.
-        Finally it adds them to the class' attributes that contains the list of
-        reference points.
-
-        Better results are obtained if the solution is already decent. Visual
-        inspection also improves final result.
-        """
-        new_physical = []
-        new_wavelength = []
-        square_differences = []
-        if self.wsolution is not None:
-            wlines = self.wsolution(self.lines_center)
-            for i in range(len(wlines)):
-
-                closer_index = np.argmin(
-                    abs(self.reference_data.lines_angstrom - wlines[i]))
-
-                rline = self.reference_data.lines_angstrom[closer_index]
-
-                rw_difference = wlines[i] - rline
-                # print('Difference w - r ', rw_difference, rline)
-                square_differences.append(rw_difference ** 2)
-                new_physical.append(self.lines_center[i])
-                new_wavelength.append(rline)
-            clipped_differences = sigma_clip(square_differences,
-                                             sigma=2,
-                                             iters=3)
-
-            if len(new_wavelength) == len(new_physical) == \
-                    len(clipped_differences):
-
-                for i in range(len(new_wavelength)):
-                    if clipped_differences[i] is not \
-                            np.ma.masked and new_wavelength[i] not in \
-                            self.reference_marks_x:
-
-                        self.reference_marks_x.append(new_wavelength[i])
-                        self.reference_marks_y.append(self.ref_filling_value)
-                        self.raw_data_marks_x.append(new_physical[i])
-                        self.raw_data_marks_y.append(self.raw_filling_value)
-        return True
-
-    def fit_pixel_to_wavelength(self):
-        """Does the fit to find the wavelength solution
-
-        Once you have four data points on each side (raw and reference or pixel
-        and angstrom) it calculates the fit using a Chebyshev model of third
-        degree. This was chosen because it worked better compared to the rest.
-        There is a slight deviation from linearity in all Goodman data,
-        therefore a linear model could not be used, also is said that a Spline
-        of third degree is "too flexible" which I also experienced and since the
-        deviation from linearity is not extreme it seemed that it was not
-        necessary to implement.
-
-        This method checks that the data that will be used as input to calculate
-        the fit have the same dimensions and warns the user in case is not.
-
-        Returns:
-            None (None): An empty return is created to finish the execution of
-            the method when a fit will not be possible
-
-        """
-        if len(self.reference_marks_x) and len(self.raw_data_marks_x) > 0:
-
-            if len(self.reference_marks_x) < 4 or \
-                            len(self.raw_data_marks_x) < 4:
-                message = 'Not enough marks! Minimum 4 each side.'
-                self._display_onscreen_message(message)
-                return
-
-            if len(self.reference_marks_x) != len(self.raw_data_marks_x):
-                if len(self.reference_marks_x) < len(self.raw_data_marks_x):
-                    n = len(self.raw_data_marks_x) - len(self.reference_marks_x)
-                    if n == 1:
-                        message_text = '{:d} Reference Click is ' \
-                                       'missing!.'.format(n)
-                    else:
-                        message_text = '{:d} Reference Clicks are ' \
-                                       'missing!.'.format(n)
-                else:
-                    n = len(self.reference_marks_x) - len(self.raw_data_marks_x)
-                    if n == 1:
-                        message_text = '{:d} Raw Click is missing!.'.format(n)
-                    else:
-                        message_text = '{:d} Raw Clicks are missing!.'.format(n)
-                self._display_onscreen_message(message_text)
-            else:
-                pixel = []
-                angstrom = []
-                for i in range(len(self.reference_marks_x)):
-                    pixel.append(self.raw_data_marks_x[i])
-                    angstrom.append(self.reference_marks_x[i])
-
-                self.wsolution = self.wcs.fit(physical=pixel,
-                                              wavelength=angstrom,
-                                              model_name='chebyshev',
-                                              degree=self.poly_order)
-                # raw_angstrom = self.wsolution(self.raw_data_marks_x)
-
-                # differences_angstrom = self.reference_marks_x - raw_angstrom
-
-                self.evaluate_solution(plots=True)
-
-        else:
-            self.log.error('Clicks record is empty')
-            self._display_onscreen_message(message='Clicks record is empty')
-            if self.wsolution is not None:
-                self.wsolution = None
-
-    def _get_best_filling_value(self, data):
-        """Find the best y-value to locate marks
-
-        The automatically added points will be placed at a fixed location in the
-        y-axis. This value is calculated by doing a 2-sigma clipping with 5
-        iterations. Then the masked out values are removed and the median is
-        calculated.
-
-        Args:
-            data (array): Array of 1D data
-
-        Returns:
-            Median value of clipped data.
-
-        """
-        clipped_data = sigma_clip(data, sigma=2, iters=5)
-        clean_data = clipped_data[~clipped_data.mask]
-        self.log.debug("Found best filling value"
-                       " at {:f}".format(np.median(clean_data)))
-        return np.median(clean_data)
-
-    def get_calibration_lamp(self):
-        """Returns the name of the calibration lamp used to obtain the solution
-
-        Returns:
-            calibration_lamp (str): Filename of calibration lamp used to obtain
-                wavelength solution
-
-        """
-        if self.wsolution is not None and self.calibration_lamp is not None:
-            return self.calibration_lamp
-        else:
-            self.log.error('Wavelength solution has not been calculated yet.')
+    # def get_calibration_lamp(self):
+    #     """Returns the name of the calibration lamp used to obtain the solution
+    #
+    #     Returns:
+    #         calibration_lamp (str): Filename of calibration lamp used to obtain
+    #             wavelength solution
+    #
+    #     """
+    #     if self.wsolution is not None and self.calibration_lamp is not None:
+    #         return self.calibration_lamp
+    #     else:
+    #         self.log.error('Wavelength solution has not been calculated yet.')
 
     def _get_lines_in_lamp(self, ccddata_lamp=None):
         """Identify peaks in a lamp spectrum
@@ -1326,193 +1327,193 @@ class WavelengthCalibration(object):
             self.log.error("Wavelength Solution doesn't exist!")
             return None
 
-    def _interactive_wavelength_solution(self, object_name=''):
-        """Find the wavelength solution interactively
-
-        This method uses the graphical capabilities of matplotlib in particular
-        the user interface (UI) capabilities such as click and key-pressed
-        events. We could say that it implements a matplotlib Graphical User
-        Interface. There are some limitation though, for instance, the access to
-        a better formatted help text.
-
-        It will display four plots of the same height but their width have a
-        4:1 ratio being the leftmost the wider.
-
-        Top Left Plot: Displays the spectrum of the lamp we want to calibrate,
-        or as it is called in the plot, the Raw Data, therefore the axis are
-        intensity (ADU) versus dispersion (pixels). There will be red vertical
-        dashed lines that are lines detected by pipeline. If you see the a line
-        without a red dashed line it means it was not detected.
-
-        Bottom Left Plot: Displays the reference lamp data, therefore the axis
-        are intensity (ADU) versus wavelength (Angstrom). In this case there are
-        vertical dotted lines plotted with a relatively low alpha value. They
-        represent reference laboratory lines obtained from the NIST database at
-        https://physics.nist.gov/PhysRefData/ASD/lines_form.html.
-
-        Top Right Plot: This is a quick reference help text. The formatting of
-        the text is quite difficult here due to matplotlib's own limitations.
-        This text is also displayed on the terminal.
-
-        Bottom Right Plot: This is a dynamic plot since it shows different kind
-        of information. First it shows short messages, such as warnings, errors,
-        or general information. Once you select a line it will show a zoomed
-        version of the line plus the reference value chosen as well as were the
-        click was done. And finally, it shows the dispersion of the wavelength
-        solution. This could be one of the most useful plots in the entire
-        screen.
-
-        Usage: A quick reference of the instructions is shown in the Top Right
-        Plot, but in general you have to select the matching lines in both data
-        plots this will create a table of pixels versus angstrom which at its
-        roots a wavelength solution. Then this will have to be translated to a
-        mathematical model. Having this mathematical model the wavelength
-        solution can be applied, evaluated etc. Among the features implemented
-        you can:
-          - Delete a line or a matching pair.
-          - Find more lines automatically once you have a decent wavelength
-            solution.
-          - Remove all the automatically added lines at once, this is useful in
-            some cases when adding more lines actually makes the solution worst.
-          - Find the RMS Error of the solution
-          - Remove ALL the points at a given point to start over.
-          - Fit a wavelength solution
-
-
-
-        Notes:
-            This method uses the Qt5Agg backend, in theory it could also work
-            with GTK3Agg but it is being forced to use Qt5Agg.
-
-        """
-        plt.switch_backend('Qt5Agg')
-
-        # disable full screen to allow the use of f for fitting the solution
-
-        plt.rcParams['keymap.fullscreen'] = [u'ctrl+f']
-
-        try:
-            reference_lamp = self.reference_data.get_reference_lamp(
-                header=self.lamp.header)
-        except NotImplementedError:
-            reference_lamp = None
-
-            self.log.warning('Could not find a perfect match for reference '
-                             'data')
-
-        if isinstance(reference_lamp, CCDData):
-            self.log.info('Using reference file: '
-                          '{:s}'.format(reference_lamp.header['GSP_FNAM']))
-            reference_plots_enabled = True
-
-            self.reference_solution = self.wcs.read_gsp_wcs(reference_lamp)
-        else:
-            # reference_plots_enabled = False
-            self.log.error('Please Check the OBJECT Keyword of your reference '
-                           'data')
-            return False
-
-        # update filling value
-        self.raw_filling_value = self._get_best_filling_value(
-            data=self.lamp.data)
-
-        self.ref_filling_value = self._get_best_filling_value(
-            data=reference_lamp.data)
-
-        # ------- Plots -------
-        self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = \
-            plt.subplots(2,
-                         2,
-                         gridspec_kw={'width_ratios': [4, 1]})
-
-        self.i_fig.canvas.set_window_title('Science Target: {:s}'.format(
-            object_name))
-
-        manager = plt.get_current_fig_manager()
-        if plt.get_backend() == u'GTK3Agg':
-            manager.window.maximize()
-        elif plt.get_backend() == u'Qt5Agg':
-            manager.window.showMaximized()
-
-        self.ax1.set_title('Raw Data - {:s}\n{:s} - {:s}'.format(
-            self.lamp_name,
-            self.lamp.header['GRATING'],
-            self.lamp.header['SLIT']))
-
-        self.ax1.set_xlabel('Pixels')
-        self.ax1.set_ylabel('Intensity (counts)')
-        self.ax1.plot([], linestyle='--', color='r', label='Detected Lines')
-        for idline in self.lines_center:
-            self.ax1.axvline(idline, linestyle='--', color='r')
-
-        self.ax1.plot(self.raw_pixel_axis,
-                      self.lamp.data,
-                      color='k',
-                      label='Raw Data')
-
-        self.ax1.set_xlim((0, len(self.lamp.data)))
-        self.ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-        self.ax1.legend(loc=2)
-
-        # Update y limits to have an extra 5% to top and bottom
-        ax1_ylim = self.ax1.get_ylim()
-        ax1_y_range = ax1_ylim[1] - ax1_ylim[0]
-
-        self.ax1.set_ylim((ax1_ylim[0] - 0.05 * ax1_y_range,
-                           ax1_ylim[1] + 0.05 * ax1_y_range))
-
-        self.ax3.set_title('Reference Data - {:s}'.format(self.lamp_name))
-        self.ax3.set_xlabel('Wavelength (Angstrom)')
-        self.ax3.set_ylabel('Intensity (counts)')
-        self.ax3.set_xlim((self.blue_limit.value, self.red_limit.value))
-        self.ax3.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-
-        self.ax3.plot([],
-                      linestyle=':',
-                      color='r',
-                      label='Reference Line Values')
-
-        for rline in self.reference_data.lines_angstrom:
-            self.ax3.axvline(rline, linestyle=':', color='r')
-
-        if reference_plots_enabled:
-            self.ax3.plot(self.reference_solution[0],
-                          self.reference_solution[1],
-                          color='k',
-                          label='Reference Lamp Data')
-
-        self.ax3.legend(loc=2)
-
-        # Update y limits to have an extra 5% to top and bottom
-        ax3_ylim = self.ax3.get_ylim()
-        ax3_y_range = ax3_ylim[1] - ax3_ylim[0]
-
-        self.ax3.set_ylim((ax3_ylim[0] - 0.05 * ax3_y_range,
-                           ax3_ylim[1] + 0.05 * ax3_y_range))
-        # print(ax3_ylim)
-
-        self._display_help_text()
-
-        # zoomed plot
-        self._display_onscreen_message('Use middle button click to select a '
-                                       'line')
-
-        plt.subplots_adjust(left=0.05,
-                            right=0.99,
-                            top=0.96,
-                            bottom=0.04,
-                            hspace=0.17,
-                            wspace=0.11)
-
-        self.raw_data_bb = self.ax1.get_position()
-        self.reference_bb = self.ax3.get_position()
-        self.contextual_bb = self.ax4.get_position()
-
-        # if self.click_input_enabled:
-        self.i_fig.canvas.mpl_connect('button_press_event', self._on_click)
-        self.i_fig.canvas.mpl_connect('key_press_event', self._on_key_pressed)
-        # print self.wsolution
-        plt.show()
+    # def _interactive_wavelength_solution(self, object_name=''):
+    #     """Find the wavelength solution interactively
+    #
+    #     This method uses the graphical capabilities of matplotlib in particular
+    #     the user interface (UI) capabilities such as click and key-pressed
+    #     events. We could say that it implements a matplotlib Graphical User
+    #     Interface. There are some limitation though, for instance, the access to
+    #     a better formatted help text.
+    #
+    #     It will display four plots of the same height but their width have a
+    #     4:1 ratio being the leftmost the wider.
+    #
+    #     Top Left Plot: Displays the spectrum of the lamp we want to calibrate,
+    #     or as it is called in the plot, the Raw Data, therefore the axis are
+    #     intensity (ADU) versus dispersion (pixels). There will be red vertical
+    #     dashed lines that are lines detected by pipeline. If you see the a line
+    #     without a red dashed line it means it was not detected.
+    #
+    #     Bottom Left Plot: Displays the reference lamp data, therefore the axis
+    #     are intensity (ADU) versus wavelength (Angstrom). In this case there are
+    #     vertical dotted lines plotted with a relatively low alpha value. They
+    #     represent reference laboratory lines obtained from the NIST database at
+    #     https://physics.nist.gov/PhysRefData/ASD/lines_form.html.
+    #
+    #     Top Right Plot: This is a quick reference help text. The formatting of
+    #     the text is quite difficult here due to matplotlib's own limitations.
+    #     This text is also displayed on the terminal.
+    #
+    #     Bottom Right Plot: This is a dynamic plot since it shows different kind
+    #     of information. First it shows short messages, such as warnings, errors,
+    #     or general information. Once you select a line it will show a zoomed
+    #     version of the line plus the reference value chosen as well as were the
+    #     click was done. And finally, it shows the dispersion of the wavelength
+    #     solution. This could be one of the most useful plots in the entire
+    #     screen.
+    #
+    #     Usage: A quick reference of the instructions is shown in the Top Right
+    #     Plot, but in general you have to select the matching lines in both data
+    #     plots this will create a table of pixels versus angstrom which at its
+    #     roots a wavelength solution. Then this will have to be translated to a
+    #     mathematical model. Having this mathematical model the wavelength
+    #     solution can be applied, evaluated etc. Among the features implemented
+    #     you can:
+    #       - Delete a line or a matching pair.
+    #       - Find more lines automatically once you have a decent wavelength
+    #         solution.
+    #       - Remove all the automatically added lines at once, this is useful in
+    #         some cases when adding more lines actually makes the solution worst.
+    #       - Find the RMS Error of the solution
+    #       - Remove ALL the points at a given point to start over.
+    #       - Fit a wavelength solution
+    #
+    #
+    #
+    #     Notes:
+    #         This method uses the Qt5Agg backend, in theory it could also work
+    #         with GTK3Agg but it is being forced to use Qt5Agg.
+    #
+    #     """
+    #     plt.switch_backend('Qt5Agg')
+    #
+    #     # disable full screen to allow the use of f for fitting the solution
+    #
+    #     plt.rcParams['keymap.fullscreen'] = [u'ctrl+f']
+    #
+    #     try:
+    #         reference_lamp = self.reference_data.get_reference_lamp(
+    #             header=self.lamp.header)
+    #     except NotImplementedError:
+    #         reference_lamp = None
+    #
+    #         self.log.warning('Could not find a perfect match for reference '
+    #                          'data')
+    #
+    #     if isinstance(reference_lamp, CCDData):
+    #         self.log.info('Using reference file: '
+    #                       '{:s}'.format(reference_lamp.header['GSP_FNAM']))
+    #         reference_plots_enabled = True
+    #
+    #         self.reference_solution = self.wcs.read_gsp_wcs(reference_lamp)
+    #     else:
+    #         # reference_plots_enabled = False
+    #         self.log.error('Please Check the OBJECT Keyword of your reference '
+    #                        'data')
+    #         return False
+    #
+    #     # update filling value
+    #     self.raw_filling_value = self._get_best_filling_value(
+    #         data=self.lamp.data)
+    #
+    #     self.ref_filling_value = self._get_best_filling_value(
+    #         data=reference_lamp.data)
+    #
+    #     # ------- Plots -------
+    #     self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = \
+    #         plt.subplots(2,
+    #                      2,
+    #                      gridspec_kw={'width_ratios': [4, 1]})
+    #
+    #     self.i_fig.canvas.set_window_title('Science Target: {:s}'.format(
+    #         object_name))
+    #
+    #     manager = plt.get_current_fig_manager()
+    #     if plt.get_backend() == u'GTK3Agg':
+    #         manager.window.maximize()
+    #     elif plt.get_backend() == u'Qt5Agg':
+    #         manager.window.showMaximized()
+    #
+    #     self.ax1.set_title('Raw Data - {:s}\n{:s} - {:s}'.format(
+    #         self.lamp_name,
+    #         self.lamp.header['GRATING'],
+    #         self.lamp.header['SLIT']))
+    #
+    #     self.ax1.set_xlabel('Pixels')
+    #     self.ax1.set_ylabel('Intensity (counts)')
+    #     self.ax1.plot([], linestyle='--', color='r', label='Detected Lines')
+    #     for idline in self.lines_center:
+    #         self.ax1.axvline(idline, linestyle='--', color='r')
+    #
+    #     self.ax1.plot(self.raw_pixel_axis,
+    #                   self.lamp.data,
+    #                   color='k',
+    #                   label='Raw Data')
+    #
+    #     self.ax1.set_xlim((0, len(self.lamp.data)))
+    #     self.ax1.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+    #     self.ax1.legend(loc=2)
+    #
+    #     # Update y limits to have an extra 5% to top and bottom
+    #     ax1_ylim = self.ax1.get_ylim()
+    #     ax1_y_range = ax1_ylim[1] - ax1_ylim[0]
+    #
+    #     self.ax1.set_ylim((ax1_ylim[0] - 0.05 * ax1_y_range,
+    #                        ax1_ylim[1] + 0.05 * ax1_y_range))
+    #
+    #     self.ax3.set_title('Reference Data - {:s}'.format(self.lamp_name))
+    #     self.ax3.set_xlabel('Wavelength (Angstrom)')
+    #     self.ax3.set_ylabel('Intensity (counts)')
+    #     self.ax3.set_xlim((self.blue_limit.value, self.red_limit.value))
+    #     self.ax3.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+    #
+    #     self.ax3.plot([],
+    #                   linestyle=':',
+    #                   color='r',
+    #                   label='Reference Line Values')
+    #
+    #     for rline in self.reference_data.lines_angstrom:
+    #         self.ax3.axvline(rline, linestyle=':', color='r')
+    #
+    #     if reference_plots_enabled:
+    #         self.ax3.plot(self.reference_solution[0],
+    #                       self.reference_solution[1],
+    #                       color='k',
+    #                       label='Reference Lamp Data')
+    #
+    #     self.ax3.legend(loc=2)
+    #
+    #     # Update y limits to have an extra 5% to top and bottom
+    #     ax3_ylim = self.ax3.get_ylim()
+    #     ax3_y_range = ax3_ylim[1] - ax3_ylim[0]
+    #
+    #     self.ax3.set_ylim((ax3_ylim[0] - 0.05 * ax3_y_range,
+    #                        ax3_ylim[1] + 0.05 * ax3_y_range))
+    #     # print(ax3_ylim)
+    #
+    #     self._display_help_text()
+    #
+    #     # zoomed plot
+    #     self._display_onscreen_message('Use middle button click to select a '
+    #                                    'line')
+    #
+    #     plt.subplots_adjust(left=0.05,
+    #                         right=0.99,
+    #                         top=0.96,
+    #                         bottom=0.04,
+    #                         hspace=0.17,
+    #                         wspace=0.11)
+    #
+    #     self.raw_data_bb = self.ax1.get_position()
+    #     self.reference_bb = self.ax3.get_position()
+    #     self.contextual_bb = self.ax4.get_position()
+    #
+    #     # if self.click_input_enabled:
+    #     self.i_fig.canvas.mpl_connect('button_press_event', self._on_click)
+    #     self.i_fig.canvas.mpl_connect('key_press_event', self._on_key_pressed)
+    #     # print self.wsolution
+    #     plt.show()
         return True
 
     def _linearize_spectrum(self, data, plots=False):
@@ -1602,240 +1603,240 @@ class WavelengthCalibration(object):
             linear_data = [new_x_axis, smoothed_linearized_data]
             return linear_data
 
-    def _on_click(self, event):
-        """Handles Click events for Interactive Mode
-
-        Calls the method _register_mark when the middle button is pressed
-
-        Args:
-            event (object): Click event
-        """
-        if event.button == 2:
-            self._register_mark(event)
-
-    def _on_key_pressed(self, event):
-        """Key event handler
-
-        There are several key events that need to be taken care of.
-        See a brief description of each one of them below:
-
-        F1 or ?: Prints a help message
-        F2 or f: Fit wavelength solution model.
-        F3 or a: Find new lines.
-        F4: Evaluate solution
-        F6 or l: Linearize data although this is done automatically after the
-        wavelength function is fit
-        d: deletes closest point
-        ctrl+d: deletes all recorded marks
-        ctrl+z: Reverts the action of F3 or a.
-        Middle Button Click or m: records data location.
-        Enter: Close figure and apply solution if exists.
-        Shift+Enter: Close the program with sys.exit(0)
-
-        Notes:
-            This method must be simplified
-
-        Args:
-            event (object): Key pressed event
-
-        """
-        self.events = True
-        if event.key == 'f1' or event.key == '?':
-            self.log.info('Print help regarding interactive mode')
-            print("F1 or ?: Prints Help.")
-            print("F2 or f: Fit wavelength solution model.")
-            print("F3 or a: Find new lines.")
-            print("F4: Evaluate solution")
-            print("F6 or l: Linearize data (for testing not definitive)")
-            print("d: deletes closest point")
-            # print("l : resample spectrum to a linear dispersion axis")
-            print("ctrl+d: deletes all recorded marks")
-            print("ctrl+z: Go back to previous solution "
-                  "(deletes automatic added points")
-            print('Middle Button Click: records data location.')
-            print("Enter: Close figure and apply solution if exists.")
-        elif event.key == 'f2' or event.key == 'f':
-            self.log.debug('Calling function to fit wavelength Solution')
-            self.fit_pixel_to_wavelength()
-            self._plot_raw_over_reference()
-        elif event.key == 'f3' or event.key == 'a':
-            if self.wsolution is not None:
-                self._find_more_lines()
-                self._update_marks_plot('reference')
-                self._update_marks_plot('raw_data')
-            else:
-                self.log.debug('Wavelength solution is None')
-        elif event.key == 'f4':
-            if self.wsolution is not None and len(self.raw_data_marks_x) > 0:
-                self.evaluate_solution(plots=True)
-        elif event.key == 'f5' or event.key == 'd':
-            # TODO (simon): simplify this code.
-
-            figure_x, figure_y = \
-                self.i_fig.transFigure.inverted().transform((event.x, event.y))
-
-            if self.raw_data_bb.contains(figure_x, figure_y):
-                self.log.debug('Deleting raw point')
-                # print abs(self.raw_data_marks_x - event.xdata) a[:] =
-
-                closer_index = int(np.argmin(
-                    [abs(list_val - event.xdata) for list_val in
-                     self.raw_data_marks_x]))
-
-                # print 'Index ', closer_index
-                if len(self.raw_data_marks_x) == len(self.reference_marks_x):
-                    self.raw_data_marks_x.pop(closer_index)
-                    self.raw_data_marks_y.pop(closer_index)
-                    self.reference_marks_x.pop(closer_index)
-                    self.reference_marks_y.pop(closer_index)
-                    self._update_marks_plot('reference')
-                    self._update_marks_plot('raw_data')
-                else:
-                    if closer_index == len(self.raw_data_marks_x) - 1:
-                        self.raw_data_marks_x.pop(closer_index)
-                        self.raw_data_marks_y.pop(closer_index)
-                        self._update_marks_plot('raw_data')
-                    else:
-                        self.raw_data_marks_x.pop(closer_index)
-                        self.raw_data_marks_y.pop(closer_index)
-                        self.reference_marks_x.pop(closer_index)
-                        self.reference_marks_y.pop(closer_index)
-                        self._update_marks_plot('reference')
-                        self._update_marks_plot('raw_data')
-
-            elif self.reference_bb.contains(figure_x, figure_y):
-                self.log.debug('Deleting reference point')
-                # print 'reference ', self.reference_marks_x, self.re
-                # print self.reference_marks_x
-                # print abs(self.reference_marks_x - event.xdata)
-
-                closer_index = int(np.argmin(
-                    [abs(list_val - event.xdata) for list_val in
-                     self.reference_marks_x]))
-
-                if len(self.raw_data_marks_x) == len(self.reference_marks_x):
-                    self.raw_data_marks_x.pop(closer_index)
-                    self.raw_data_marks_y.pop(closer_index)
-                    self.reference_marks_x.pop(closer_index)
-                    self.reference_marks_y.pop(closer_index)
-                    self._update_marks_plot('reference')
-                    self._update_marks_plot('raw_data')
-                else:
-                    if closer_index == len(self.reference_marks_x) - 1:
-                        self.reference_marks_x.pop(closer_index)
-                        self.reference_marks_y.pop(closer_index)
-                        self._update_marks_plot('reference')
-                    else:
-                        self.raw_data_marks_x.pop(closer_index)
-                        self.raw_data_marks_y.pop(closer_index)
-                        self.reference_marks_x.pop(closer_index)
-                        self.reference_marks_y.pop(closer_index)
-                        self._update_marks_plot('reference')
-                        self._update_marks_plot('raw_data')
-
-            elif self.contextual_bb.contains(figure_x, figure_y):
-                self.log.warning("Can't delete points from here because points "
-                                 "represent each detected line in the raw "
-                                 "data.")
-
-        elif event.key == 'f6' or event.key == 'l':
-            self.log.info('Linearize and smoothing spectrum')
-            if self.wsolution is not None:
-                self._linearize_spectrum(self.lamp.data, plots=True)
-
-        elif event.key == 'ctrl+z':
-            self.log.info('Deleting automatic added points. If exist.')
-
-            if self.raw_data_marks_x is not [] and \
-                    self.reference_marks_x is not []:
-
-                to_remove = []
-                for i in range(len(self.raw_data_marks_x)):
-                    # print self.raw_data_marks[i], self.filling_value
-                    if self.raw_data_marks_y[i] == self.raw_filling_value:
-                        to_remove.append(i)
-                        # print to_remove
-                to_remove = np.array(sorted(to_remove, reverse=True))
-                if len(to_remove) > 0:
-                    for index in to_remove:
-                        self.raw_data_marks_x.pop(index)
-                        self.raw_data_marks_y.pop(index)
-                        self.reference_marks_x.pop(index)
-                        self.reference_marks_y.pop(index)
-                    self._update_marks_plot('reference')
-                    self._update_marks_plot('raw_data')
-                    # else:
-                    # print self.raw_click_plot, self.ref_click_plot, 'mmm'
-
-        elif event.key == 'ctrl+d':
-            try:
-                self.log.info('Deleting all recording Clicks')
-                self._display_onscreen_message(
-                    message='All points deleted')
-                self.reference_marks_x = []
-                self.reference_marks_y = []
-                self.raw_data_marks_x = []
-                self.raw_data_marks_y = []
-                self._update_marks_plot('delete')
-                self._plot_raw_over_reference(remove=True)
-                self.log.info('All points deleted!')
-            except ValueError:
-                self.log.error('No points deleted')
-
-        elif event.key == 'enter':
-            if self.wsolution is not None:
-                self.log.info('Closing figure')
-                plt.close('all')
-            else:
-                message = 'There is still no wavelength solution!'
-                self.log.info(message)
-                self._display_onscreen_message(message)
-
-        elif event.key == 'm':
-            self._register_mark(event)
-
-        elif event.key == 'ctrl+q':
-            self.log.info('Pressed Ctrl+q. Closing the program')
-            sys.exit(0)
-
-        else:
-            self.log.debug("No action for key pressed: {:s}".format(event.key))
-            pass
-
-    def _plot_raw_over_reference(self, remove=False):
-        """Overplot raw data over reference lamp using current wavelength
-        solution model
-
-        Once the wavelength solution is obtained this method is called to apply
-        the already mentioned solution to the raw data and then overplot it on
-        the reference lamp plot. This is very useful to have a visual idea of
-        how far or close the solution is.
-
-        Args:
-            remove (bool): True or False depending whether you want to remove
-            the overplotted lamp or not
-        """
-        if self.wsolution is not None:
-            if self.line_raw is not None:
-                try:
-                    self.line_raw.remove()
-                    self.ax3.relim()
-                except ValueError:
-                    pass
-            if not remove:
-                # TODO(simon): catch TypeError Exception and correct what is
-                # TODO (cont): causing it
-                self.line_raw, = self.ax3.plot(
-                    self.wsolution(self.raw_pixel_axis),
-                    self.lamp.data,
-                    linestyle='-',
-                    color='r',
-                    alpha=0.4,
-                    label='New Wavelength Solution')
-
-            self.ax3.legend(loc=2)
-            self.i_fig.canvas.draw()
-
+    # def _on_click(self, event):
+    #     """Handles Click events for Interactive Mode
+    #
+    #     Calls the method _register_mark when the middle button is pressed
+    #
+    #     Args:
+    #         event (object): Click event
+    #     """
+    #     if event.button == 2:
+    #         self._register_mark(event)
+    #
+    # def _on_key_pressed(self, event):
+    #     """Key event handler
+    #
+    #     There are several key events that need to be taken care of.
+    #     See a brief description of each one of them below:
+    #
+    #     F1 or ?: Prints a help message
+    #     F2 or f: Fit wavelength solution model.
+    #     F3 or a: Find new lines.
+    #     F4: Evaluate solution
+    #     F6 or l: Linearize data although this is done automatically after the
+    #     wavelength function is fit
+    #     d: deletes closest point
+    #     ctrl+d: deletes all recorded marks
+    #     ctrl+z: Reverts the action of F3 or a.
+    #     Middle Button Click or m: records data location.
+    #     Enter: Close figure and apply solution if exists.
+    #     Shift+Enter: Close the program with sys.exit(0)
+    #
+    #     Notes:
+    #         This method must be simplified
+    #
+    #     Args:
+    #         event (object): Key pressed event
+    #
+    #     """
+    #     self.events = True
+    #     if event.key == 'f1' or event.key == '?':
+    #         self.log.info('Print help regarding interactive mode')
+    #         print("F1 or ?: Prints Help.")
+    #         print("F2 or f: Fit wavelength solution model.")
+    #         print("F3 or a: Find new lines.")
+    #         print("F4: Evaluate solution")
+    #         print("F6 or l: Linearize data (for testing not definitive)")
+    #         print("d: deletes closest point")
+    #         # print("l : resample spectrum to a linear dispersion axis")
+    #         print("ctrl+d: deletes all recorded marks")
+    #         print("ctrl+z: Go back to previous solution "
+    #               "(deletes automatic added points")
+    #         print('Middle Button Click: records data location.')
+    #         print("Enter: Close figure and apply solution if exists.")
+    #     elif event.key == 'f2' or event.key == 'f':
+    #         self.log.debug('Calling function to fit wavelength Solution')
+    #         self.fit_pixel_to_wavelength()
+    #         self._plot_raw_over_reference()
+    #     elif event.key == 'f3' or event.key == 'a':
+    #         if self.wsolution is not None:
+    #             self._find_more_lines()
+    #             self._update_marks_plot('reference')
+    #             self._update_marks_plot('raw_data')
+    #         else:
+    #             self.log.debug('Wavelength solution is None')
+    #     elif event.key == 'f4':
+    #         if self.wsolution is not None and len(self.raw_data_marks_x) > 0:
+    #             self.evaluate_solution(plots=True)
+    #     elif event.key == 'f5' or event.key == 'd':
+    #         # TODO (simon): simplify this code.
+    #
+    #         figure_x, figure_y = \
+    #             self.i_fig.transFigure.inverted().transform((event.x, event.y))
+    #
+    #         if self.raw_data_bb.contains(figure_x, figure_y):
+    #             self.log.debug('Deleting raw point')
+    #             # print abs(self.raw_data_marks_x - event.xdata) a[:] =
+    #
+    #             closer_index = int(np.argmin(
+    #                 [abs(list_val - event.xdata) for list_val in
+    #                  self.raw_data_marks_x]))
+    #
+    #             # print 'Index ', closer_index
+    #             if len(self.raw_data_marks_x) == len(self.reference_marks_x):
+    #                 self.raw_data_marks_x.pop(closer_index)
+    #                 self.raw_data_marks_y.pop(closer_index)
+    #                 self.reference_marks_x.pop(closer_index)
+    #                 self.reference_marks_y.pop(closer_index)
+    #                 self._update_marks_plot('reference')
+    #                 self._update_marks_plot('raw_data')
+    #             else:
+    #                 if closer_index == len(self.raw_data_marks_x) - 1:
+    #                     self.raw_data_marks_x.pop(closer_index)
+    #                     self.raw_data_marks_y.pop(closer_index)
+    #                     self._update_marks_plot('raw_data')
+    #                 else:
+    #                     self.raw_data_marks_x.pop(closer_index)
+    #                     self.raw_data_marks_y.pop(closer_index)
+    #                     self.reference_marks_x.pop(closer_index)
+    #                     self.reference_marks_y.pop(closer_index)
+    #                     self._update_marks_plot('reference')
+    #                     self._update_marks_plot('raw_data')
+    #
+    #         elif self.reference_bb.contains(figure_x, figure_y):
+    #             self.log.debug('Deleting reference point')
+    #             # print 'reference ', self.reference_marks_x, self.re
+    #             # print self.reference_marks_x
+    #             # print abs(self.reference_marks_x - event.xdata)
+    #
+    #             closer_index = int(np.argmin(
+    #                 [abs(list_val - event.xdata) for list_val in
+    #                  self.reference_marks_x]))
+    #
+    #             if len(self.raw_data_marks_x) == len(self.reference_marks_x):
+    #                 self.raw_data_marks_x.pop(closer_index)
+    #                 self.raw_data_marks_y.pop(closer_index)
+    #                 self.reference_marks_x.pop(closer_index)
+    #                 self.reference_marks_y.pop(closer_index)
+    #                 self._update_marks_plot('reference')
+    #                 self._update_marks_plot('raw_data')
+    #             else:
+    #                 if closer_index == len(self.reference_marks_x) - 1:
+    #                     self.reference_marks_x.pop(closer_index)
+    #                     self.reference_marks_y.pop(closer_index)
+    #                     self._update_marks_plot('reference')
+    #                 else:
+    #                     self.raw_data_marks_x.pop(closer_index)
+    #                     self.raw_data_marks_y.pop(closer_index)
+    #                     self.reference_marks_x.pop(closer_index)
+    #                     self.reference_marks_y.pop(closer_index)
+    #                     self._update_marks_plot('reference')
+    #                     self._update_marks_plot('raw_data')
+    #
+    #         elif self.contextual_bb.contains(figure_x, figure_y):
+    #             self.log.warning("Can't delete points from here because points "
+    #                              "represent each detected line in the raw "
+    #                              "data.")
+    #
+    #     elif event.key == 'f6' or event.key == 'l':
+    #         self.log.info('Linearize and smoothing spectrum')
+    #         if self.wsolution is not None:
+    #             self._linearize_spectrum(self.lamp.data, plots=True)
+    #
+    #     elif event.key == 'ctrl+z':
+    #         self.log.info('Deleting automatic added points. If exist.')
+    #
+    #         if self.raw_data_marks_x is not [] and \
+    #                 self.reference_marks_x is not []:
+    #
+    #             to_remove = []
+    #             for i in range(len(self.raw_data_marks_x)):
+    #                 # print self.raw_data_marks[i], self.filling_value
+    #                 if self.raw_data_marks_y[i] == self.raw_filling_value:
+    #                     to_remove.append(i)
+    #                     # print to_remove
+    #             to_remove = np.array(sorted(to_remove, reverse=True))
+    #             if len(to_remove) > 0:
+    #                 for index in to_remove:
+    #                     self.raw_data_marks_x.pop(index)
+    #                     self.raw_data_marks_y.pop(index)
+    #                     self.reference_marks_x.pop(index)
+    #                     self.reference_marks_y.pop(index)
+    #                 self._update_marks_plot('reference')
+    #                 self._update_marks_plot('raw_data')
+    #                 # else:
+    #                 # print self.raw_click_plot, self.ref_click_plot, 'mmm'
+    #
+    #     elif event.key == 'ctrl+d':
+    #         try:
+    #             self.log.info('Deleting all recording Clicks')
+    #             self._display_onscreen_message(
+    #                 message='All points deleted')
+    #             self.reference_marks_x = []
+    #             self.reference_marks_y = []
+    #             self.raw_data_marks_x = []
+    #             self.raw_data_marks_y = []
+    #             self._update_marks_plot('delete')
+    #             self._plot_raw_over_reference(remove=True)
+    #             self.log.info('All points deleted!')
+    #         except ValueError:
+    #             self.log.error('No points deleted')
+    #
+    #     elif event.key == 'enter':
+    #         if self.wsolution is not None:
+    #             self.log.info('Closing figure')
+    #             plt.close('all')
+    #         else:
+    #             message = 'There is still no wavelength solution!'
+    #             self.log.info(message)
+    #             self._display_onscreen_message(message)
+    #
+    #     elif event.key == 'm':
+    #         self._register_mark(event)
+    #
+    #     elif event.key == 'ctrl+q':
+    #         self.log.info('Pressed Ctrl+q. Closing the program')
+    #         sys.exit(0)
+    #
+    #     else:
+    #         self.log.debug("No action for key pressed: {:s}".format(event.key))
+    #         pass
+    #
+    # def _plot_raw_over_reference(self, remove=False):
+    #     """Overplot raw data over reference lamp using current wavelength
+    #     solution model
+    #
+    #     Once the wavelength solution is obtained this method is called to apply
+    #     the already mentioned solution to the raw data and then overplot it on
+    #     the reference lamp plot. This is very useful to have a visual idea of
+    #     how far or close the solution is.
+    #
+    #     Args:
+    #         remove (bool): True or False depending whether you want to remove
+    #         the overplotted lamp or not
+    #     """
+    #     if self.wsolution is not None:
+    #         if self.line_raw is not None:
+    #             try:
+    #                 self.line_raw.remove()
+    #                 self.ax3.relim()
+    #             except ValueError:
+    #                 pass
+    #         if not remove:
+    #             # TODO(simon): catch TypeError Exception and correct what is
+    #             # TODO (cont): causing it
+    #             self.line_raw, = self.ax3.plot(
+    #                 self.wsolution(self.raw_pixel_axis),
+    #                 self.lamp.data,
+    #                 linestyle='-',
+    #                 color='r',
+    #                 alpha=0.4,
+    #                 label='New Wavelength Solution')
+    #
+    #         self.ax3.legend(loc=2)
+    #         self.i_fig.canvas.draw()
+    #
     # def predicted_wavelength(self, pixel):
     #     """Find the predicted wavelength value for a given pixel
     #
@@ -2023,160 +2024,160 @@ class WavelengthCalibration(object):
 
         return new_line_centers
 
-    def _recenter_line_by_data(self, data_name, x_data):
-        """Finds a better center for a click-selected line
+    # def _recenter_line_by_data(self, data_name, x_data):
+    #     """Finds a better center for a click-selected line
+    #
+    #     This method is called by another method that handles click events. An
+    #     argument is parsed that will tell which plot was clicked and what is
+    #     the x-value in data coordinates. Then the closest pixel center will be
+    #     found and from there will extract a 20 pixel wide sample of the data
+    #     (this could be a future improvement: the width of the extraction should
+    #     depend on the FWHM of the lines). The sample of the data is used to
+    #     calculate a centroid (center of mass) which is a good approximation but
+    #     could be influenced by data shape or if the click was too far
+    #     (unquantified yet). That is why for the reference data, a database of
+    #     laboratory line center will be
+    #     used and for raw data the line centers are calculated earlier in the
+    #     process, independently of any human input.
+    #
+    #     It wil also plot the sample, the centroid and the reference line center
+    #     at the fourth subplot, bottom right corner.
+    #
+    #     Args:
+    #         data_name (str): 'reference' or 'raw-data' is where the click was
+    #             done
+    #         x_data (float): click x-axis value in data coordinates
+    #
+    #     Returns:
+    #         reference_line_value (float): The value of the line center that will
+    #         be used later to do the wavelength fit
+    #
+    #     """
+    #     if data_name == 'reference':
+    #         pseudo_center = np.argmin(abs(self.reference_solution[0] - x_data))
+    #
+    #         reference_line_index = np.argmin(
+    #             abs(self.reference_data.lines_angstrom - x_data))
+    #
+    #         reference_line_value = self.reference_data.lines_angstrom[
+    #             reference_line_index]
+    #
+    #         sub_x = self.reference_solution[0][
+    #                 pseudo_center - 10: pseudo_center + 10]
+    #
+    #         sub_y = self.reference_solution[1][
+    #                 pseudo_center - 10: pseudo_center + 10]
+    #
+    #         center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
+    #
+    #         try:
+    #             self.ax4.cla()
+    #             self.ax4.relim()
+    #         except NameError as err:
+    #             self.log.error(err)
+    #
+    #         self.ax4.set_title('Reference Data Clicked Line')
+    #         self.ax4.set_xlabel('Wavelength (Angstrom)')
+    #         self.ax4.set_ylabel('Intensity (Counts)')
+    #
+    #         self.ax4_plots = self.ax4.plot(sub_x,
+    #                                        sub_y,
+    #                                        color='k',
+    #                                        label='Data')
+    #
+    #         self.ax4_rlv = self.ax4.axvline(reference_line_value,
+    #                                         linestyle='-',
+    #                                         color='r',
+    #                                         label='Reference Line Value')
+    #
+    #         self.ax4_com = self.ax4.axvline(center_of_mass,
+    #                                         linestyle='--',
+    #                                         color='b',
+    #                                         label='Centroid')
+    #
+    #         self.ax4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+    #         self.ax4.legend(loc=3, framealpha=0.5)
+    #         self.i_fig.canvas.draw()
+    #         # return center_of_mass
+    #         return reference_line_value
+    #     elif data_name == 'raw-data':
+    #         pseudo_center = np.argmin(abs(self.raw_pixel_axis - x_data))
+    #         raw_line_index = np.argmin(abs(self.lines_center - x_data))
+    #         raw_line_value = self.lines_center[raw_line_index]
+    #         # print(raw_line_value, x_data)
+    #         sub_x = self.raw_pixel_axis[pseudo_center - 10: pseudo_center + 10]
+    #         sub_y = self.lamp.data[pseudo_center - 10: pseudo_center + 10]
+    #         center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
+    #         self.log.debug("Centroid found but is not used: Centroid "
+    #                        "{:.4f}".format(center_of_mass))
+    #
+    #         try:
+    #             self.ax4.cla()
+    #             self.ax4.relim()
+    #         except NameError as err:
+    #             self.log.error(err)
+    #         self.ax4.set_title('Raw Data Clicked Line')
+    #         self.ax4.set_xlabel('Pixel Axis')
+    #         self.ax4.set_ylabel('Intensity (Counts)')
+    #
+    #         self.ax4_plots = self.ax4.plot(sub_x,
+    #                                        sub_y,
+    #                                        color='k',
+    #                                        label='Data')
+    #
+    #         self.ax4_rlv = self.ax4.axvline(raw_line_value,
+    #                                         linestyle='-',
+    #                                         color='r',
+    #                                         label='Line Center')
+    #
+    #         self.ax4_com = self.ax4.axvline(center_of_mass,
+    #                                         linestyle='--',
+    #                                         color='b',
+    #                                         label='Centroid')
+    #
+    #         self.ax4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
+    #         self.ax4.legend(loc=3, framealpha=0.5)
+    #         self.i_fig.canvas.draw()
+    #         # return center_of_mass
+    #         return raw_line_value
+    #     else:
+    #         self.log.error('Unrecognized data name')
 
-        This method is called by another method that handles click events. An
-        argument is parsed that will tell which plot was clicked and what is
-        the x-value in data coordinates. Then the closest pixel center will be
-        found and from there will extract a 20 pixel wide sample of the data
-        (this could be a future improvement: the width of the extraction should
-        depend on the FWHM of the lines). The sample of the data is used to
-        calculate a centroid (center of mass) which is a good approximation but
-        could be influenced by data shape or if the click was too far
-        (unquantified yet). That is why for the reference data, a database of
-        laboratory line center will be
-        used and for raw data the line centers are calculated earlier in the
-        process, independently of any human input.
-
-        It wil also plot the sample, the centroid and the reference line center
-        at the fourth subplot, bottom right corner.
-
-        Args:
-            data_name (str): 'reference' or 'raw-data' is where the click was
-                done
-            x_data (float): click x-axis value in data coordinates
-
-        Returns:
-            reference_line_value (float): The value of the line center that will
-            be used later to do the wavelength fit
-
-        """
-        if data_name == 'reference':
-            pseudo_center = np.argmin(abs(self.reference_solution[0] - x_data))
-
-            reference_line_index = np.argmin(
-                abs(self.reference_data.lines_angstrom - x_data))
-
-            reference_line_value = self.reference_data.lines_angstrom[
-                reference_line_index]
-
-            sub_x = self.reference_solution[0][
-                    pseudo_center - 10: pseudo_center + 10]
-
-            sub_y = self.reference_solution[1][
-                    pseudo_center - 10: pseudo_center + 10]
-
-            center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
-
-            try:
-                self.ax4.cla()
-                self.ax4.relim()
-            except NameError as err:
-                self.log.error(err)
-
-            self.ax4.set_title('Reference Data Clicked Line')
-            self.ax4.set_xlabel('Wavelength (Angstrom)')
-            self.ax4.set_ylabel('Intensity (Counts)')
-
-            self.ax4_plots = self.ax4.plot(sub_x,
-                                           sub_y,
-                                           color='k',
-                                           label='Data')
-
-            self.ax4_rlv = self.ax4.axvline(reference_line_value,
-                                            linestyle='-',
-                                            color='r',
-                                            label='Reference Line Value')
-
-            self.ax4_com = self.ax4.axvline(center_of_mass,
-                                            linestyle='--',
-                                            color='b',
-                                            label='Centroid')
-
-            self.ax4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-            self.ax4.legend(loc=3, framealpha=0.5)
-            self.i_fig.canvas.draw()
-            # return center_of_mass
-            return reference_line_value
-        elif data_name == 'raw-data':
-            pseudo_center = np.argmin(abs(self.raw_pixel_axis - x_data))
-            raw_line_index = np.argmin(abs(self.lines_center - x_data))
-            raw_line_value = self.lines_center[raw_line_index]
-            # print(raw_line_value, x_data)
-            sub_x = self.raw_pixel_axis[pseudo_center - 10: pseudo_center + 10]
-            sub_y = self.lamp.data[pseudo_center - 10: pseudo_center + 10]
-            center_of_mass = np.sum(sub_x * sub_y) / np.sum(sub_y)
-            self.log.debug("Centroid found but is not used: Centroid "
-                           "{:.4f}".format(center_of_mass))
-
-            try:
-                self.ax4.cla()
-                self.ax4.relim()
-            except NameError as err:
-                self.log.error(err)
-            self.ax4.set_title('Raw Data Clicked Line')
-            self.ax4.set_xlabel('Pixel Axis')
-            self.ax4.set_ylabel('Intensity (Counts)')
-
-            self.ax4_plots = self.ax4.plot(sub_x,
-                                           sub_y,
-                                           color='k',
-                                           label='Data')
-
-            self.ax4_rlv = self.ax4.axvline(raw_line_value,
-                                            linestyle='-',
-                                            color='r',
-                                            label='Line Center')
-
-            self.ax4_com = self.ax4.axvline(center_of_mass,
-                                            linestyle='--',
-                                            color='b',
-                                            label='Centroid')
-
-            self.ax4.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.1e'))
-            self.ax4.legend(loc=3, framealpha=0.5)
-            self.i_fig.canvas.draw()
-            # return center_of_mass
-            return raw_line_value
-        else:
-            self.log.error('Unrecognized data name')
-
-    def _register_mark(self, event):
-        """Marks a line
-
-        Detects where the click was done or m-key was pressed and calls the
-        corresponding method. It handles the middle button click and m-key being
-        pressed. There are two regions of interest as for where a click was
-        done. The raw and reference data respectively. For any of such regions
-        it will call the method that recenter the line and once the desired
-        value is returned it will be appended to the list that contains all the
-        correspondent line positions, raw (pixels) and reference (angstrom)
-
-        Args:
-            event (object): Click or m-key pressed event
-        """
-        if event.xdata is not None and event.ydata is not None:
-            figure_x, figure_y = \
-                self.i_fig.transFigure.inverted().transform((event.x, event.y))
-
-            if self.reference_bb.contains(figure_x, figure_y):
-                self.reference_marks_x.append(
-                    self._recenter_line_by_data('reference', event.xdata))
-
-                self.reference_marks_y.append(event.ydata)
-                self._update_marks_plot('reference')
-            elif self.raw_data_bb.contains(figure_x, figure_y):
-                self.raw_data_marks_x.append(
-                    self._recenter_line_by_data('raw-data', event.xdata))
-
-                self.raw_data_marks_y.append(event.ydata)
-                self._update_marks_plot('raw_data')
-            else:
-                self.log.debug('{:f} {:f} Are not contained'.format(figure_x,
-                                                                    figure_y))
-        else:
-            self.log.error('Clicked Region is out of boundaries')
+    # def _register_mark(self, event):
+    #     """Marks a line
+    #
+    #     Detects where the click was done or m-key was pressed and calls the
+    #     corresponding method. It handles the middle button click and m-key being
+    #     pressed. There are two regions of interest as for where a click was
+    #     done. The raw and reference data respectively. For any of such regions
+    #     it will call the method that recenter the line and once the desired
+    #     value is returned it will be appended to the list that contains all the
+    #     correspondent line positions, raw (pixels) and reference (angstrom)
+    #
+    #     Args:
+    #         event (object): Click or m-key pressed event
+    #     """
+    #     if event.xdata is not None and event.ydata is not None:
+    #         figure_x, figure_y = \
+    #             self.i_fig.transFigure.inverted().transform((event.x, event.y))
+    #
+    #         if self.reference_bb.contains(figure_x, figure_y):
+    #             self.reference_marks_x.append(
+    #                 self._recenter_line_by_data('reference', event.xdata))
+    #
+    #             self.reference_marks_y.append(event.ydata)
+    #             self._update_marks_plot('reference')
+    #         elif self.raw_data_bb.contains(figure_x, figure_y):
+    #             self.raw_data_marks_x.append(
+    #                 self._recenter_line_by_data('raw-data', event.xdata))
+    #
+    #             self.raw_data_marks_y.append(event.ydata)
+    #             self._update_marks_plot('raw_data')
+    #         else:
+    #             self.log.debug('{:f} {:f} Are not contained'.format(figure_x,
+    #                                                                 figure_y))
+    #     else:
+    #         self.log.error('Clicked Region is out of boundaries')
 
     def _save_science_data(self, ccd, index=None):
         """Save science data"""
@@ -2286,59 +2287,59 @@ class WavelengthCalibration(object):
         self.log.info('Wavelength-calibrated {:s} file saved to: '
                       '{:s}'.format(ccd.header['OBSTYPE'], new_filename))
 
-    def _update_marks_plot(self, action=None):
-        """Update the points that represent marks on lamp plots
-
-        When you mark a line a red dot marks the position of the line at the
-        exact y location of the click, for the x location it will use the value
-        obtained by means of the recentering method. There are three possible
-        actions: Update the reference plot's click, the raw data marks or
-        delete them all.
-
-        Args:
-            action (str): A string that could be 'reference', 'raw_data' or
-            'delete' depending on the action desired
-        """
-        if action == 'reference':
-            if self.points_ref is not None:
-                try:
-                    self.points_ref.remove()
-                    self.ax3.relim()
-                    self.log.debug('Removing reference marks')
-                except ValueError:
-                    self.log.debug('Reference points is None')
-                    pass
-            self.log.debug("Plot new marks")
-            self.points_ref, = self.ax3.plot(self.reference_marks_x,
-                                             self.reference_marks_y,
-                                             linestyle='None',
-                                             marker='o',
-                                             color='r')
-            self.i_fig.canvas.draw()
-        elif action == 'raw_data':
-            # print self.points_raw
-            # print dir(self.points_raw)
-            if self.points_raw is not None:
-                try:
-                    self.points_raw.remove()
-                    self.ax1.relim()
-                except ValueError as err:
-                    self.log.error(err)
-            self.points_raw, = self.ax1.plot(self.raw_data_marks_x,
-                                             self.raw_data_marks_y,
-                                             linestyle='None',
-                                             marker='o',
-                                             color='r')
-            self.i_fig.canvas.draw()
-        elif action == 'delete':
-            if self.points_raw is not None and self.points_ref is not None:
-                self.points_raw.remove()
-                self.ax1.relim()
-                self.points_ref.remove()
-                self.ax3.relim()
-                self.i_fig.canvas.draw()
-        else:
-            self.log.error('Unknown Action {:s}'.format(action))
+    # def _update_marks_plot(self, action=None):
+    #     """Update the points that represent marks on lamp plots
+    #
+    #     When you mark a line a red dot marks the position of the line at the
+    #     exact y location of the click, for the x location it will use the value
+    #     obtained by means of the recentering method. There are three possible
+    #     actions: Update the reference plot's click, the raw data marks or
+    #     delete them all.
+    #
+    #     Args:
+    #         action (str): A string that could be 'reference', 'raw_data' or
+    #         'delete' depending on the action desired
+    #     """
+    #     if action == 'reference':
+    #         if self.points_ref is not None:
+    #             try:
+    #                 self.points_ref.remove()
+    #                 self.ax3.relim()
+    #                 self.log.debug('Removing reference marks')
+    #             except ValueError:
+    #                 self.log.debug('Reference points is None')
+    #                 pass
+    #         self.log.debug("Plot new marks")
+    #         self.points_ref, = self.ax3.plot(self.reference_marks_x,
+    #                                          self.reference_marks_y,
+    #                                          linestyle='None',
+    #                                          marker='o',
+    #                                          color='r')
+    #         self.i_fig.canvas.draw()
+    #     elif action == 'raw_data':
+    #         # print self.points_raw
+    #         # print dir(self.points_raw)
+    #         if self.points_raw is not None:
+    #             try:
+    #                 self.points_raw.remove()
+    #                 self.ax1.relim()
+    #             except ValueError as err:
+    #                 self.log.error(err)
+    #         self.points_raw, = self.ax1.plot(self.raw_data_marks_x,
+    #                                          self.raw_data_marks_y,
+    #                                          linestyle='None',
+    #                                          marker='o',
+    #                                          color='r')
+    #         self.i_fig.canvas.draw()
+    #     elif action == 'delete':
+    #         if self.points_raw is not None and self.points_ref is not None:
+    #             self.points_raw.remove()
+    #             self.ax1.relim()
+    #             self.points_ref.remove()
+    #             self.ax3.relim()
+    #             self.i_fig.canvas.draw()
+    #     else:
+    #         self.log.error('Unknown Action {:s}'.format(action))
 
 
 class WavelengthSolution(object):

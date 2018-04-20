@@ -114,11 +114,11 @@ def get_args(arguments=None):
                         dest='reference_dir',
                         help="Directory of Reference files location")
 
-    parser.add_argument('--interactive',
-                        action='store_true',
-                        dest='interactive_ws',
-                        help="Interactive wavelength solution."
-                             "Disabled by default.")
+    # parser.add_argument('--interactive',
+    #                     action='store_true',
+    #                     dest='interactive_ws',
+    #                     help="Interactive wavelength solution."
+    #                          "Disabled by default.")
 
     parser.add_argument('--debug',
                         action='store_true',
