@@ -114,27 +114,10 @@ def get_args(arguments=None):
                         dest='reference_dir',
                         help="Directory of Reference files location")
 
-    # parser.add_argument('--interactive',
-    #                     action='store_true',
-    #                     dest='interactive_ws',
-    #                     help="Interactive wavelength solution."
-    #                          "Disabled by default.")
-
     parser.add_argument('--debug',
                         action='store_true',
                         dest='debug_mode',
                         help="Debugging Mode")
-
-    # parser.add_argument('--log-file',
-    #                     action='store',
-    #                     dest='log_file',
-    #                     metavar='<log_file>',
-    #                     default=LOG_FILENAME,
-    #                     help="Name for log file. "
-    #                          "Default name is <{:s}>. "
-    #                          "The file is written in <red_path> and will be "
-    #                          "deleted each time you run this "
-    #                          "program".format(LOG_FILENAME))
 
     parser.add_argument('--max-targets',
                         action='store',
