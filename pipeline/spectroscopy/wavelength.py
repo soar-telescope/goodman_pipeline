@@ -563,13 +563,6 @@ class WavelengthCalibration(object):
             else:
                 plt.ioff()
 
-            manager = plt.get_current_fig_manager()
-
-            if plt.get_backend() == u'GTK3Agg':
-                manager.window.maximize()
-            elif plt.get_backend() == u'Qt5Agg':
-                manager.window.showMaximized()
-
             self.ax1.plot([], color='m', label='Pixels')
             self.ax1.plot([], color='c', label='Angstrom')
             for val in pixel_values:
@@ -629,18 +622,29 @@ class WavelengthCalibration(object):
 
                 # # saves png images
                 #
-                # plot_name = os.path.join(plots_path, out_file_name + '.eps')
-                # plt.savefig(plot_name, rasterized=True, format='eps', dpi=300)
-            if self.args.debug_mode:
+                plot_name = os.path.join(plots_path, re.sub('pdf', 'png', out_file_name))
+                plt.savefig(plot_name, rasterized=True, format='png', dpi=300)
+
+                plt.ioff()
+                plt.clf()
+            if self.args.debug_mode or self.args.plot_results:
                 # print('Here is {0.filename}@{0.lineno}:'.format(inspect.getframeinfo(inspect.currentframe())))
                 # print(dir(self.i_fig))
-                plt.show()
-            elif self.args.plot_results:
-                plt.draw()
-                plt.pause(1)
-                plt.ioff()
-                plt.close()
-                # plt.close(self.i_fig)
+                manager = plt.get_current_fig_manager()
+
+                if plt.get_backend() == u'GTK3Agg':
+                    manager.window.maximize()
+                elif plt.get_backend() == u'Qt5Agg':
+                    manager.window.showMaximized()
+
+                if self.args.debug_mode:
+                    plt.show()
+                elif self.args.plot_results:
+                    plt.draw()
+                    plt.pause(1)
+                    plt.ioff()
+                    plt.close()
+                    # plt.close(self.i_fig)
             # else:
             #     plt.close('all')
 
@@ -1192,11 +1196,6 @@ class WavelengthCalibration(object):
             fig, ax1 = plt.subplots(1)
             fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
             # ax1 = fig.add_subplot(111)
-            manager = plt.get_current_fig_manager()
-            if plt.get_backend() == u'GTK3Agg':
-                manager.window.maximize()
-            elif plt.get_backend() == u'Qt5Agg':
-                manager.window.showMaximized()
 
             ax1.set_title(fig_title)
             ax1.set_xlabel('Wavelength (Angstrom)')
@@ -1226,12 +1225,19 @@ class WavelengthCalibration(object):
                 self.log.info('Saved plot as {:s} file '
                               'DPI=300'.format(plot_name))
 
-            if self.args.debug_mode:
-                plt.show()
-            elif self.args.plot_results:
-                plt.draw()
-                plt.pause(2)
-                plt.ioff()
+            if self.args.debug_mode or self.args.plot_results:
+                manager = plt.get_current_fig_manager()
+                if plt.get_backend() == u'GTK3Agg':
+                    manager.window.maximize()
+                elif plt.get_backend() == u'Qt5Agg':
+                    manager.window.showMaximized()
+
+                if self.args.debug_mode:
+                    plt.show()
+                elif self.args.plot_results:
+                    plt.draw()
+                    plt.pause(2)
+                    plt.ioff()
 
 
                 # return wavelength_solution

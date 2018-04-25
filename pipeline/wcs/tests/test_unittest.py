@@ -37,6 +37,9 @@ class TestWCS(TestCase):
 
     def test_pm_set_math_model__log_linear(self):
         self.wcs.wcs_dict['dtype'] = 1
+        # self.wcs.wcs_dict['crval'] = 1
+        # self.wcs.wcs_dict['cdelt'] = 1
+        # self.wcs.wcs_dict['crpix'] = 1
         self.assertRaises(NotImplementedError, self.wcs._set_math_model)
 
     def test_pm_set_math_model__pixel_coordinates(self):

@@ -7,6 +7,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import logging
 import matplotlib.pyplot as plt
+import numpy as np
 import shlex
 import sys
 
@@ -212,10 +213,17 @@ class WCS(object):
 
         """
         if self.model and self.model_fitter is not None:
-            fitted_model = self.model_fitter(self.model,
-                                             physical,
-                                             wavelength)
-            return fitted_model
+            try:
+
+                fitted_model = self.model_fitter(self.model,
+                                                 physical,
+                                                 wavelength)
+                return fitted_model
+            except TypeError as error:
+                # print(physical, wavelength, self.model)
+                self.log.info('Unable to do fit, please add more data points.')
+                self.log.error('TypeError: %s', error)
+                return None
         else:
             self.log.error('Either model or model fitter were not constructed')
             raise RuntimeError("Undefined model and fitter")
@@ -327,7 +335,8 @@ class WCS(object):
         self.wcs_dict = {'crval': self.wcs.crval[0],
                          'crpix': self.wcs.crpix[0],
                          'cdelt': self.wcs.cd[0],
-                         'dtype': 0}
+                         'dtype': self.ccd.header['DC-FLAG'],
+                         'pnum': self.ccd.header['NAXIS1']}
 
         self._set_math_model()
 
@@ -397,6 +406,15 @@ class WCS(object):
         Raises:
             NotImplementedError
         """
+        # intercept = np.power(10, self.wcs_dict['crval'] +
+        #                          self.wcs_dict['cdelt'] *
+        #                         (self.wcs_dict['crpix'] - 1))
+        #
+        # slope = np.power(10, self.wcs_dict['cdelt'])
+        #
+        # self.model = models.Linear1D(slope=slope,
+        #                              intercept=intercept)
+        # print(self.model)
         raise NotImplementedError
 
     def _chebyshev(self):

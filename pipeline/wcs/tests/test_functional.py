@@ -107,6 +107,20 @@ class TestWCS(TestWCSBase):
         self.assertEqual(len(result), 2)
         self.assertIsInstance(self.wcs.get_model(), Model)
 
+    @skip
+    def test_read__log_linear(self):
+        test_file = os.path.join(self.data_path,
+                                 'log-linear_fits_solution.fits')
+        self.assertTrue(os.path.isfile(test_file))
+
+        ccd = CCDData.read(test_file, unit='adu')
+
+        result = self.wcs.read(ccd=ccd)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)
+        self.assertIsInstance(self.wcs.get_model(), Model)
+
     def test_read__non_linear_chebyshev(self):
         test_file = os.path.join(self.data_path,
                                  'non-linear_fits_solution_cheb.fits')
