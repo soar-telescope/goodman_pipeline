@@ -105,7 +105,9 @@ setup(
                                'data/params/*.json',
                                'data/ref_comp/*fits',
                                'data/dcr-source/README.md',
-                               'data/dcr-source/dcr/*']},
+                               'data/dcr-source/dcr/*',
+                               'data/test_data/master_flat/*',
+                               'data/test_data/wcs_data/*']},
 
     scripts=['bin/redccd',
              'bin/redspec',
