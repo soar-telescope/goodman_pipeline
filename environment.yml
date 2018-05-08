@@ -14,3 +14,4 @@ dependencies:
     - astroplan
     - sphinx
     - sphinxcontrib.napoleon
+    - astropy_sphinx_theme
