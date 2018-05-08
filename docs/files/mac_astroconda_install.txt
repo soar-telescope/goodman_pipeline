@@ -1,0 +1,25 @@
+Installing Astroconda
+=====================
+
+1. Go to https://www.continuum.io/downloads
+
+2. Download the Command Line Installer for python 2.7
+
+3. Open a terminal and go to the location of Command line Installer.
+
+4. According to th instructions of astroconda.readthedocs.io/en/latest/getting_started.html you should use bash to run the installer. Review the Licence and type yes at the end. Answer all the question of the installer (defaults values are usually fine).
+
+5. Close the terminal and open a new one to have conda activated
+
+6. Type ``which conda`` and it should return something. If it doesn't follow the instructions on under "Verifying your Conda Environment" until you get it working.
+
+7. The following steps are under "https://astroconda.readthedocs.io/en/latest/installation.html#configure-astroconda-channel"
+
+7.1 conda config --add channels http://ssb.stsci.edu/astroconda
+
+7.2 conda create -n astroconda stsci
+
+7.3 source activate astroconda
+
+
+

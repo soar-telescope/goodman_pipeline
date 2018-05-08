@@ -1,0 +1,163 @@
+    1  python
+    2  xcode-select --install
+    3  cd /usr/local/
+    4  mkdir homebrew && curl -L https://github.com/HomeBrew/brew/tarball/master | tar xz --strip 1 -C homebrew
+    5  sudo mkdir homebrew && curl -L https://github.com/HomeBrew/brew/tarball/master | tar xz --strip 1 -C homebrew
+    6  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/HomeBrew/install/master/install)"
+    7  sudo /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/HomeBrew/install/master/install)"
+    8  cd
+    9  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/HomeBrew/install/master/install)"
+   10  cd /usr/local/
+   11  ls -h
+   12  ls -ha
+   13  ls -hla
+   14  sudo chown -R simon homebrew/
+   15  ls -hla
+   16  cd
+   17  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/HomeBrew/install/master/install)"
+   18  python
+   19  brew install python python3
+   20  python --version
+   21  python3 --version
+   22  cd Downloads/
+   23  ls
+   24  tar -xvf goodman-1.0b1.tar.gz 
+   25  ls
+   26  cd goodman-1.0b1
+   27  ls
+   28  cd dcr/
+   29  ls
+   30  ./dcr.MacOSSierra 
+   31  ./dcr.Solaris11 
+   32  ls
+   33  cd ..
+   34  ls
+   35  ls
+   36  cd ..
+   37  ls
+   38  rm -vfr goodman-1.0b1
+   39  tar -xvf goodman-1.0b1.tar.gz 
+   40  cd goodman-1.0b1
+   41  ls
+   42  ls PKG-INFO 
+   43  cat PKG-INFO 
+   44  ls
+   45  cd ..
+   46  ls
+   47  rm -vfr *
+   48  ls
+   49  tar -xvf goodman-1.0b1.tar.gz 
+   50  cd goodman-1.0b1
+   51  ls
+   52  cd ..
+   53  ls
+   54  ls
+   55  rm goodman-1.0b1 -vfr
+   56  ls
+   57  ls
+   58  rm goodman-1.0b1 -vfr
+   59  rm -vfr goodman-1.0b1
+   60  ls
+   61  rm goodman-1.0b1.tar.gz 
+   62  tar -xvf goodman-1.0b1.tar-2.gz 
+   63  ls
+   64  cd goodman-1.0b1
+   65  ls
+   66  brew tap cartr/qt4
+   67  brew tap-pin cartr/qt4
+   68  brew install qt
+   69  brew install pyside
+   70  brew install pyqt
+   71  ls
+   72  ls
+   73  pip install -r requirements.txt 
+   74  pip2.7 install -r requirements.txt 
+   75  cat requirements.txt 
+   76  vim requirements.txt 
+   77  pip2.7 install -r requirements.txt 
+   78  brew install ipython
+   79  ipython
+   80  python2.7 ipython
+   81  ipython -h
+   82  ipython --help-all
+   83  brew install ipython2
+   84  pip2.7 install ipython
+   85  sudo pip2.7 install ipython
+   86  ipython 
+   87  ipython -h
+   88  python2.7
+   89  ls
+   90  ipython 
+   91  mkdir -p /Users/simon/.local/lib/python2.7/site-packages
+   92  echo 'import site; site.addsitedor("/usr/local/lib/python2.7/site-packages")' >> /Users/simon/.local/lib/python2.7/site-packages/homebrew.pth
+   93  cat /Users/simon/.local/lib/python2.7/site-packages/homebrew.pth
+   94  brew rmtree python3
+   95  brew --help
+   96  brew uninstall python3
+   97  brew tap cartr/qt4
+   98  brew tap-pin cartr/qt4
+   99  brew install qt
+  100  brew install qt4
+  101  brew install qt4/qt@4
+  102  brew install cartr/qt4/qt@4
+  103* brew install 
+  104  brew tap-pin cartr/qt4
+  105  brew install cartr/qt4/qt
+  106  brew -h
+  107  brew list cartr
+  108  brew list pyqt
+  109  brew list pyqt4
+  110  brew list qt4
+  111  brew install qt
+  112  brew install qt4
+  113  brew install cartr/qt4/pyside@1.2
+  114  brew install cartr/qt4/pyqt@4
+  115  history
+  116  ls
+  117  pip install .
+  118  pip2.7 install .
+  119  redccd -h
+  120  redspec -h
+  121  du -h
+  122  df -h
+  123  ls
+  124  cd
+  125  mkdir data
+  126  ls
+  127  cd data/
+  128  ls
+  129  rsync -avP simon@ctioy9:~/data/soar/work/mws_goodman .
+  130  ls
+  131  cd mws_goodman/
+  132  ls
+  133  redccd 
+  134  echo $PATH
+  135  cd 
+  136  cd Downloads/goodman-1.0b1/dcr/
+  137  mv dcr.MacOSSierra dcr
+  138  mv dcr /usr/local/bin/
+  139  cd -
+  140  cd data/mws_goodman/
+  141  redccd --auto-clean
+  142  ls
+  143  ls RED/
+  144  cd RED/
+  145  ls
+  146  redspec --plot-results
+  147  ls -lh
+  148  mv cfzsto_0180_Feige110_400M2_GG455.fits ..
+  149  redspec --plot-results
+  150  ls
+  151  mv ../cfzsto_0180_Feige110_400M2_GG455.fits .
+  152  mv cfzsto_0136_Feige110_400M2_GG455.fits
+  153  mv cfzsto_0180_Feige110_400M2_GG455.fits cfzsto_0136_Feige110_400M2_GG455.fits
+  154  redspec --plot-results
+  155  cd ..
+  156  redccd --auto-clean
+  157  cd RED/
+  158  ls
+  159  redspec --plot-results
+  160  ls
+  161  ls cfzsto_01* | wc
+  162  ls gcfzsto_01* | wc
+  163  history > history.txt

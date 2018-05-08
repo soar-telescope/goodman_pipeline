@@ -1,0 +1,35 @@
+Mac Installation
+================
+
+source: https://cloud.google.com/python/setup
+
+xcode-select --install
+
+
+Install Homebrew
+****************
+.. warning:: 
+  Don't run this as root / sudo
+
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+mkdir -p /Users/username/.local/lib/python2.7/site-packages
+echo 'import site; site.addsitedir("/usr/local/lib/python2.7/site-packages")' >> /Users/username/.local/lib/python2.7/site-packages/homebrew.pth
+
+brew install python python3
+
+
+https://stackoverflow.com/questions/39821177/python-pyqt-on-macos-sierra
+1 brew tap cartr/qt4
+2 brew tap-pin cartr/qt4
+3 brew install cartr/qt4/qt@4
+4 brew install cartr/qt4/pyside@1.2
+5 brew install cartr/qt4/pyqt@4
+
+pip2.7 install -r requirements.txt
+
+cd /path/to/goodman-1.0b1	
+
+pip2.7 install .
+
+
