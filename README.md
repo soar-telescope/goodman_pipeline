@@ -1,6 +1,8 @@
 # Goodman High Throughput Spectrograph Data Reduction Pipeline
 
-[![Build Status](https://travis-ci.org/soar-telescope/goodman.svg?branch=master)](https://travis-ci.org/soar-telescope/goodman)
+.. image:: https://travis-ci.org/soar-telescope/goodman.svg?branch=master
+    :target: https://travis-ci.org/soar-telescope/goodman
+   [![Build Status](https://travis-ci.org/soar-telescope/goodman.svg?branch=master)](https://travis-ci.org/soar-telescope/goodman)
 [![Coverage Status](https://coveralls.io/repos/github/soar-telescope/goodman/badge.svg?branch=master)](https://coveralls.io/github/soar-telescope/goodman?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/goodman/badge/?version=latest)](http://goodman.readthedocs.io/en/latest/?badge=latest)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
