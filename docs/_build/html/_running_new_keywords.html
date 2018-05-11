@@ -1,0 +1,303 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Description of custom keywords &#8212; Goodman HTS Pipeline User Manual 1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/bootstrap-astropy.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/sidebar.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,600' rel='stylesheet' type='text/css'/>
+<script type="text/javascript" src="_static/copybutton.js"></script>
+
+
+  </head>
+  <body>
+<div class="topbar">
+  <a class="brand" title="Documentation Home" href="index.html"><span id="logotext1">Goodman</span><span id="logotext2">Pipeline</span><span id="logotext3">:User Manual</span></a>
+  <ul>
+    <li><a class="homelink" title="Astropy Homepage" href="http://www.astropy.org"></a></li>
+    <li><a title="General Index" href="genindex.html">Index</a></li>
+    <li><a title="Module Index" href="py-modindex.html">Modules</a></li>
+    <li>
+      
+      
+<form action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      
+    </li>
+  </ul>
+</div>
+
+<div class="related">
+    <h3>Navigation</h3>
+    <ul>
+      <li>
+	<a href="index.html">Goodman HTS Pipeline User Manual 1.0.0 documentation</a>
+	 &#187;
+      </li>
+      
+       
+    </ul>
+</div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="description-of-custom-keywords">
+<span id="new-keywords"></span><h1>Description of custom keywords<a class="headerlink" href="#description-of-custom-keywords" title="Permalink to this headline">¶</a></h1>
+<p>The pipeline adds several keywords to keep track of the process and in general
+for keeping important information available. The following table gives a description
+of all the keywords added by <a href="#id7"><span class="problematic" id="id8">|pipeline name|</span></a>, though not all of them are
+added to all the images.</p>
+<div class="section" id="general-purpose-keywords">
+<h2>General Purpose Keywords<a class="headerlink" href="#general-purpose-keywords" title="Permalink to this headline">¶</a></h2>
+<p>These keywords are used for record purpose, except for <code class="docutils literal"><span class="pre">GSP_FNAM</span></code> which is
+used to keep track of the file name.</p>
+<span id="table-general-keywords"></span><table border="1" class="docutils" id="id3">
+<caption><span class="caption-text">General purpose keywords, added to all images at the moment of the first read.</span><a class="headerlink" href="#id3" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="14%" />
+<col width="86%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Keyword</th>
+<th class="head">Purpose</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>GSP_VERS</td>
+<td>Pipeline version.</td>
+</tr>
+<tr class="row-odd"><td>GSP_ONAM</td>
+<td>Original file name, first read.</td>
+</tr>
+<tr class="row-even"><td>GSP_PNAM</td>
+<td>Parent file name.</td>
+</tr>
+<tr class="row-odd"><td>GSP_FNAM</td>
+<td>Current file name.</td>
+</tr>
+<tr class="row-even"><td>GSP_PATH</td>
+<td>Path from where the file was read.</td>
+</tr>
+<tr class="row-odd"><td>GSP_TECH</td>
+<td>Observing technique. Imaging or Spectroscopy.</td>
+</tr>
+<tr class="row-even"><td>GSP_DATE</td>
+<td>Date of processing.</td>
+</tr>
+<tr class="row-odd"><td>GSP_OVER</td>
+<td>Overscan region.</td>
+</tr>
+<tr class="row-even"><td>GSP_TRIM</td>
+<td>Trim section.</td>
+</tr>
+<tr class="row-odd"><td>GSP_SLIT</td>
+<td>Slit trim section. From slit-illuminated area.</td>
+</tr>
+<tr class="row-even"><td>GSP_BIAS</td>
+<td>Master bias file used.</td>
+</tr>
+<tr class="row-odd"><td>GSP_FLAT</td>
+<td>Master flat file used.</td>
+</tr>
+<tr class="row-even"><td>GSP_NORM</td>
+<td>Master flat normalization method.</td>
+</tr>
+<tr class="row-odd"><td>GSP_COSM</td>
+<td>Cosmic ray rejection method.</td>
+</tr>
+<tr class="row-even"><td>GSP_WRMS</td>
+<td>Wavelength solution RMS Error.</td>
+</tr>
+<tr class="row-odd"><td>GSP_WPOI</td>
+<td>Number of points used to calculate RMS Error.</td>
+</tr>
+<tr class="row-even"><td>GSP_WREJ</td>
+<td>Number of points rejected from RMS Error Calculation.</td>
+</tr>
+<tr class="row-odd"><td>GSP_DCRR</td>
+<td>Reference paper for DCR software (cosmic ray rejection).</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="non-linear-wavelength-solution">
+<h2>Non-linear wavelength solution<a class="headerlink" href="#non-linear-wavelength-solution" title="Permalink to this headline">¶</a></h2>
+<p>Since writing non-linear wavelength solutions to the headers using the FITS
+standard (reference) is extremely complex and not necessarily well documented,
+we came up with the solution of simply describing the mathematical model
+from <code class="docutils literal"><span class="pre">astropy.modeling.models</span></code>. This allows for maintaining the data
+<em>untouched</em> while keeping a reliable description of the wavelength solution.</p>
+<p>The current implementation will work for writting any polinomial model. Reading is implemented only for <code class="docutils literal"><span class="pre">Chebyshev1D</span></code> which is the
+model by default.</p>
+<span id="table-non-linear-keywords"></span><table border="1" class="docutils" id="id4">
+<caption><span class="caption-text">Keywords used to describe a non-linear wavelength solution.</span><a class="headerlink" href="#id4" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="14%" />
+<col width="86%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Keyword</th>
+<th class="head">Purpose</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>GSP_FUNC</td>
+<td>Name of mathematical model. <code class="docutils literal"><span class="pre">astropy.modeling.models</span></code></td>
+</tr>
+<tr class="row-odd"><td>GSP_ORDR</td>
+<td>Order of the model used.</td>
+</tr>
+<tr class="row-even"><td>GSP_NPIX</td>
+<td>Number of pixels.</td>
+</tr>
+<tr class="row-odd"><td>GSP_C000</td>
+<td>Value of parameter <code class="docutils literal"><span class="pre">c0</span></code>.</td>
+</tr>
+<tr class="row-even"><td>GSP_C001</td>
+<td>Value of parameter <code class="docutils literal"><span class="pre">c1</span></code>.</td>
+</tr>
+<tr class="row-odd"><td>GSP_C002</td>
+<td>Value of parameter <code class="docutils literal"><span class="pre">c2</span></code>. This goes on depending the order.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="id1">
+<h2>Combined Images<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<p>Every image used in a combination of images is recorded in the header of the
+resulting one. The order does not have importance but most likely the header
+of the first one will be used</p>
+<span id="table-combined-images-key"></span><table border="1" class="docutils" id="id5">
+<caption><span class="caption-text">Keywords that list all the images used to produce a combined image.</span><a class="headerlink" href="#id5" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="14%" />
+<col width="86%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Keyword</th>
+<th class="head">Purpose</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>GSP_IC01</td>
+<td>First image used to create combined.</td>
+</tr>
+<tr class="row-odd"><td>GSP_IC02</td>
+<td>Second image used to create combined.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="id2">
+<h2>Detected lines<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<p>The <em>reference lamp library</em> maintains the lamps non-linearized and also they
+get a record of the pixel value and the equivalent in angstrom. In the following
+table a three-line lamp is shown.</p>
+<span id="table-line-list"></span><table border="1" class="docutils" id="id6">
+<caption><span class="caption-text">Description of all the keywords used to list lines in lamps in Pixel and Angstrom.</span><a class="headerlink" href="#id6" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="14%" />
+<col width="86%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Keyword</th>
+<th class="head">Purpose</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>GSP_P001</td>
+<td>Pixel value for the first line detected.</td>
+</tr>
+<tr class="row-odd"><td>GSP_P002</td>
+<td>Pixel value for the second line detected.</td>
+</tr>
+<tr class="row-even"><td>GSP_P003</td>
+<td>Pixel value for the third line detected.</td>
+</tr>
+<tr class="row-odd"><td>GSP_A001</td>
+<td>Angstrom value for the first line detected.</td>
+</tr>
+<tr class="row-even"><td>GSP_A002</td>
+<td>Angstrom value for the second line detected.</td>
+</tr>
+<tr class="row-odd"><td>GSP_A003</td>
+<td>Angstrom value for the third line detected.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><h3>Page Contents</h3>
+<ul>
+<li><a class="reference internal" href="#">Description of custom keywords</a><ul>
+<li><a class="reference internal" href="#general-purpose-keywords">General Purpose Keywords</a></li>
+<li><a class="reference internal" href="#non-linear-wavelength-solution">Non-linear wavelength solution</a></li>
+<li><a class="reference internal" href="#id1">Combined Images</a></li>
+<li><a class="reference internal" href="#id2">Detected lines</a></li>
+</ul>
+</li>
+</ul>
+
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/_running_new_keywords.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+      
+<form action="search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+</form>
+      
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+<footer class="footer">
+  <p class="pull-right">
+    <a href="_sources/_running_new_keywords.rst.txt"
+       rel="nofollow">Page Source</a> &nbsp;
+    <a href="#">Back to Top</a></p>
+  <p>
+    &copy; Copyright 2017 NOAO/AURA, Inc. All rights reserved..<br/>
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3. &nbsp;
+  </p>
+</footer>
+  </body>
+</html>
