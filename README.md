@@ -67,15 +67,20 @@ If you want to try it out as a developer please request the developer's manual.
 - The wavelength solution RMS Error is too high (larger than 3): The lamp was 
   mislabeled. For instance it says HgArNe when is HgAr.
 
-# Acknowledge
+# Acknowledgements
 
-## Contributors:
-  [David Sanmartim](https://github.com/dsanmartim) developed the first version of
-  the ccd reduction part before he moved to a new position. That first version was
-  included in the pipeline as a package and has evolved along all the code.
-  
-  [Tina Armond](https://github.com/tarmond) Helped with the identification of comparison lamps for the *reference
-  lamps library*.
+We acknowledge the important contribution of  [David Sanmartim](https://github.com/dsanmartim), who developed
+the initial incarnation of the redccd module. We thank [Tina Armond](https://github.com/tarmond) for her
+invaluable help in adding calibrated comparison lamps to the library of
+reference comparison lamps for wavelngth solution.
+
+Our work would not be possible without the friendly work atmosphere at CTIO
+headquarters in La Serena, were we can interact with our SOAR and CTIO
+colleagues in lively and useful discussions that have been important in making
+the Goodman pipeline possible.  We also acknowledge fruitful discussions and
+suggestions from our colleagues Bart Dunlop, Chris Clemens, and Erik Dennihy,
+at University of North Carolina at Chapel Hill.
+
   
 ## Citations:
   This pipeline makes extensive use of Astropy therefore you should cite as suggested
