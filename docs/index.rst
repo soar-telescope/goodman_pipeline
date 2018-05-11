@@ -17,3 +17,9 @@ Welcome to Goodman HTS Pipeline User Manual
    :maxdepth: 2
    :caption: Contents:
 
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

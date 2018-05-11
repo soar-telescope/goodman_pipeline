@@ -14,19 +14,19 @@ Recent data obtained with the Red Camera already meets all the requirements in
 terms of format and header cards. Data obtained with the Blue Camera before
 |headers change| is expected to have several format issues:
 
-    1. There were non fits-compliant characters in some comments. To solve that, you can edit the header using the most recent version of AstroPy, IRAF or WCSTOOLS to remove the following keywords: ``PARAM0``, ``PARAM61``, ``PARAM62`` and ``PARAM63``.
+1. There were non fits-compliant characters in some comments. To solve that, you can edit the header using the most recent version of AstroPy, IRAF or WCSTOOLS to remove the following keywords: ``PARAM0``, ``PARAM61``, ``PARAM62`` and ``PARAM63``.
 
-    2. The data was defined as 3D, just like a single frame of a data cube. To solve this, you will have to read the data and rewrite it with only two dimensions using AstroPy or IRAF.
+2. The data was defined as 3D, just like a single frame of a data cube. To solve this, you will have to read the data and rewrite it with only two dimensions using AstroPy or IRAF.
 
-    3. Some keywords were added with time.
+3. Some keywords were added with time.
 
-        * INSTCONF: contains the name of the Goodman Camera used, e.g., "Blue" or "Red".
-
-        * WAVMODE: contains the ruling number of the used grating and the mode name, e.g., "400 m1" or "400 m2".
-
-        * ROI: the name of the region of interest, e.g., "Spectroscopic 1x1", "user-defined", etc.
-
-    4. Duplicated keywords. Make sure that your data does not contain duplicated keywords.
+  * INSTCONF: contains the name of the Goodman Camera used, e.g., "Blue" or "Red".
+  
+  * WAVMODE: contains the ruling number of the used grating and the mode name, e.g., "400 m1" or "400 m2".
+  
+  * ROI: the name of the region of interest, e.g., "Spectroscopic 1x1", "user-defined", etc.
+  
+4. Duplicated keywords. Make sure that your data does not contain duplicated keywords.
 
 Reference Lamp Files
 ^^^^^^^^^^^^^^^^^^^^
@@ -90,18 +90,14 @@ Record of `detected lines`_ in Pixel and Angstrom:
   (001, 002, etc). For instance.
 
     ``GSP_P001= 499.5377036976768  / Line location in pixel value``
-
     ``GSP_P002= 810.5548319623747  / Line location in pixel value``
-
     ``GSP_P003= 831.6984711087946  / Line location in pixel value``
 
   Later, the equivalent values in angstrom are then recorded with the root string
   ``GSP_A`` and the same numerical pattern as before.
 
     ``GSP_A001= 5460.75            / Line location in angstrom value``
-
     ``GSP_A002= 5769.61            / Line location in angstrom value``
-
     ``GSP_A003= 5790.67            / Line location in angstrom value``
 
 
@@ -133,17 +129,11 @@ Record of `detected lines`_ in Pixel and Angstrom:
   See the example below.
 
     ``GSP_FUNC= Chebyshev1D          / Mathematical model of non-linearized data``
-
     ``GSP_ORDR= 3                    / Mathematical model order``
-
     ``GSP_NPIX= 4060                 / Number of Pixels``
-
     ``GSP_C000= 4963.910057577853    / Value of parameter c0``
-
     ``GSP_C001= 0.9943952599223119   / Value of parameter c1``
-
     ``GSP_C002= 5.59241584012648e-08 / Value of parameter c2``
-
     ``GSP_C003= -1.2283411678846e-10 / Value of parameter c3``
 
 .. warning::
