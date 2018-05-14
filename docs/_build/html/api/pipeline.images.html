@@ -1,0 +1,496 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pipeline.images package &mdash; Goodman HTS Pipeline Documentation 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> Goodman HTS Pipeline Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">pipeline.images package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pipeline.images.data_classifier">pipeline.images.data_classifier module</a></li>
+<li><a class="reference internal" href="#module-pipeline.images.goodman_ccd">pipeline.images.goodman_ccd module</a></li>
+<li><a class="reference internal" href="#module-pipeline.images.image_processor">pipeline.images.image_processor module</a></li>
+<li><a class="reference internal" href="#module-pipeline.images.night_organizer">pipeline.images.night_organizer module</a></li>
+<li><a class="reference internal" href="#module-pipeline.images">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Goodman HTS Pipeline Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+      <li>pipeline.images package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/pipeline.images.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pipeline-images-package">
+<h1>pipeline.images package<a class="headerlink" href="#pipeline-images-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pipeline.images.tests.html">pipeline.images.tests package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.images.tests.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.images.tests.html#module-pipeline.images.tests.test_data_classifier">pipeline.images.tests.test_data_classifier module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.images.tests.html#module-pipeline.images.tests.test_goodman_ccd">pipeline.images.tests.test_goodman_ccd module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.images.tests.html#module-pipeline.images.tests.test_image_processor">pipeline.images.tests.test_image_processor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.images.tests.html#module-pipeline.images.tests.test_night_organizer">pipeline.images.tests.test_night_organizer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline.images.tests.html#module-pipeline.images.tests">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pipeline.images.data_classifier">
+<span id="pipeline-images-data-classifier-module"></span><h2>pipeline.images.data_classifier module<a class="headerlink" href="#module-pipeline.images.data_classifier" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pipeline.images.data_classifier.DataClassifier">
+<em class="property">class </em><code class="descclassname">pipeline.images.data_classifier.</code><code class="descname">DataClassifier</code><a class="headerlink" href="#pipeline.images.data_classifier.DataClassifier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Classifies the data being presented to the pipeline.</p>
+<p>Data classifier is intended to define the camera that is being used and the
+technique in use. This will be used later to make important decisions
+regarding the process to be used.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pipeline.images.goodman_ccd">
+<span id="pipeline-images-goodman-ccd-module"></span><h2>pipeline.images.goodman_ccd module<a class="headerlink" href="#module-pipeline.images.goodman_ccd" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pipeline.images.goodman_ccd.MainApp">
+<em class="property">class </em><code class="descclassname">pipeline.images.goodman_ccd.</code><code class="descname">MainApp</code><a class="headerlink" href="#pipeline.images.goodman_ccd.MainApp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pipeline.images.goodman_ccd.get_args">
+<code class="descclassname">pipeline.images.goodman_ccd.</code><code class="descname">get_args</code><span class="sig-paren">(</span><em>arguments=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.goodman_ccd.get_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get command line arguments.</p>
+<p>The list of arguments can be obtained by using the argument <code class="docutils literal"><span class="pre">--help</span></code>.
+All the arguments start with two dashes and single-character arguments where
+avoided in order to eliminate confusion.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd>arguments (list): A list containing the arguments as elements.</dd>
+<dt>Returns:</dt>
+<dd><dl class="first last docutils">
+<dt>args (object): argparse instance. Contains all the arguments as</dt>
+<dd>attributes</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pipeline.images.image_processor">
+<span id="pipeline-images-image-processor-module"></span><h2>pipeline.images.image_processor module<a class="headerlink" href="#module-pipeline.images.image_processor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pipeline.images.image_processor.ImageProcessor">
+<em class="property">class </em><code class="descclassname">pipeline.images.image_processor.</code><code class="descname">ImageProcessor</code><span class="sig-paren">(</span><em>args</em>, <em>data_container</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.image_processor.ImageProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Image processing class</p>
+<p>This class contains methods for performing CCD image reduction for
+spectroscopy and imaging.</p>
+<dl class="method">
+<dt id="pipeline.images.image_processor.ImageProcessor.create_master_bias">
+<code class="descname">create_master_bias</code><span class="sig-paren">(</span><em>bias_group</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.image_processor.ImageProcessor.create_master_bias" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create Master Bias</p>
+<p>Given a pandas.DataFrame object that contains a list of compatible bias.
+This function creates the master flat using ccdproc.combine using median
+and 3-sigma clipping.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>bias_group (object): pandas.DataFrame instance that contains a list</dt>
+<dd>of bias images compatible with each other.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipeline.images.image_processor.ImageProcessor.create_master_flats">
+<code class="descname">create_master_flats</code><span class="sig-paren">(</span><em>flat_group</em>, <em>target_name=''</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.image_processor.ImageProcessor.create_master_flats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates master flats</p>
+<p>Using a list of compatible flat images it combines them using median and
+1-sigma clipping. Also it apply all previous standard calibrations to
+each image.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>flat_group (object): pandas.DataFrame instance. Contains a list of</dt>
+<dd>compatible flat images</dd>
+<dt>target_name (str): Science target name. This is used in some science</dt>
+<dd>case uses only.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>The master flat ccdproc.CCDData instance and the name of under which
+the master flat was stored.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipeline.images.image_processor.ImageProcessor.define_trim_section">
+<code class="descname">define_trim_section</code><span class="sig-paren">(</span><em>technique=None</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.image_processor.ImageProcessor.define_trim_section" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the initial trim section</p>
+<p>The initial trim section is usually defined in the header with the
+keyword TRIMSEC but in the case of Goodman HTS this does not work well.
+In particular for spectroscopy where is more likely to have combined
+binning and so on.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>technique (str): The name of the technique, the options are:</dt>
+<dd>Imaging or Spectroscopy.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>The trim section in the format <code class="docutils literal"><span class="pre">[x1:x2,</span> <span class="pre">y1:y2]</span></code></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipeline.images.image_processor.ImageProcessor.get_overscan_region">
+<code class="descname">get_overscan_region</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.image_processor.ImageProcessor.get_overscan_region" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the right overscan region for spectroscopy</p>
+<dl class="docutils">
+<dt>It works for the following ROI:</dt>
+<dd>Spectroscopic 1x1
+Spectroscopic 2x2
+Spectroscopic 3x3</dd>
+</dl>
+<p>The limits where measured on a Spectroscopic 1x1 image and then divided
+by the binning size. This was checked
+that it actually works as expected.</p>
+<dl class="docutils">
+<dt>Notes:</dt>
+<dd>The regions are 1-based i.e. different to Python convention.
+For Imaging there is no overscan region.</dd>
+<dt>Returns:</dt>
+<dd>overscan_region (str): Region for overscan in the format
+‘[min:max,:]’ where min is the starting point and max is the end
+point of the overscan region.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipeline.images.image_processor.ImageProcessor.name_master_flats">
+<code class="descname">name_master_flats</code><span class="sig-paren">(</span><em>header</em>, <em>group</em>, <em>target_name=''</em>, <em>get=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.image_processor.ImageProcessor.name_master_flats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines the name of a master flat or what master flat is compatible
+with a given data</p>
+<p>Given the header of a flat image this method will look for certain
+keywords that are unique to a given instrument configuration therefore
+they are used to discriminate compatibility.</p>
+<p>It can be used to define a master flat when creating it or find a base
+name to match existing master flat files thus finding a compatible one
+for a given non-flat image.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>header (object): Fits header. Instance of</dt>
+<dd>astropy.io.fits.header.Header</dd>
+<dt>group (object): pandas.DataFrame instance. Contains filenames as</dt>
+<dd>well as other important keywords that are defined in
+ccd.night_organizer.NightOrganizer.keywords</dd>
+<dt>target_name (str): Optional science target name to be added to the</dt>
+<dd>master flat name.</dd>
+<dt>get (bool): This option is used when trying to find a suitable </dt>
+<dd>master flat for a given data.</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>A master flat name, or basename to find a match among existing
+files.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipeline.images.image_processor.ImageProcessor.process_imaging_science">
+<code class="descname">process_imaging_science</code><span class="sig-paren">(</span><em>imaging_group</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.image_processor.ImageProcessor.process_imaging_science" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does image reduction for science imaging data.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>imaging_group (object): pandas.DataFrame instance that contains a</dt>
+<dd>list of science data that are compatible with a given
+instrument configuration and can be reduced together.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipeline.images.image_processor.ImageProcessor.process_spectroscopy_science">
+<code class="descname">process_spectroscopy_science</code><span class="sig-paren">(</span><em>science_group</em>, <em>save_all=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.image_processor.ImageProcessor.process_spectroscopy_science" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process Spectroscopy science images.</p>
+<p>This function handles the full image reduction process for science
+files. if save_all is set to True, all intermediate steps are saved.</p>
+<dl class="docutils">
+<dt>Args:</dt>
+<dd><dl class="first last docutils">
+<dt>science_group (object): pandas.DataFrame instance that contains a</dt>
+<dd>list of science images that where observed at the same pointing
+and time. It also contains a set of selected keywords from the
+image’s header.</dd>
+<dt>save_all (bool): If True the pipeline will save all the intermadiate</dt>
+<dd>files such as after overscan correction or bias corrected and
+etc.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pipeline.images.night_organizer">
+<span id="pipeline-images-night-organizer-module"></span><h2>pipeline.images.night_organizer module<a class="headerlink" href="#module-pipeline.images.night_organizer" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pipeline.images.night_organizer.NightOrganizer">
+<em class="property">class </em><code class="descclassname">pipeline.images.night_organizer.</code><code class="descname">NightOrganizer</code><span class="sig-paren">(</span><em>full_path</em>, <em>instrument</em>, <em>technique</em>, <em>ignore_bias=False</em>, <em>ignore_flats=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.night_organizer.NightOrganizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="pipeline.images.night_organizer.NightOrganizer.check_header_cards">
+<code class="descname">check_header_cards</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.night_organizer.NightOrganizer.check_header_cards" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the header contains all the keywords (cards) expected.</p>
+<p>This is critical for old goodman data.</p>
+<dl class="docutils">
+<dt>Raises:</dt>
+<dd><dl class="first last docutils">
+<dt>ValueError: If any of the cards does not exists in the image’s</dt>
+<dd>header</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipeline.images.night_organizer.NightOrganizer.imaging_night">
+<code class="descname">imaging_night</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.night_organizer.NightOrganizer.imaging_night" title="Permalink to this definition">¶</a></dt>
+<dd><p>Organizes data for imaging</p>
+<p>For imaging there is no discrimination regarding night data since the
+process is simpler. It is a three stage process classifying BIAS, FLAT
+and OBJECT data type. The data is packed in groups that are
+pandas.DataFrame objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pipeline.images.night_organizer.NightOrganizer.spectroscopy_night">
+<code class="descname">spectroscopy_night</code><span class="sig-paren">(</span><em>file_collection</em>, <em>data_container</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.images.night_organizer.NightOrganizer.spectroscopy_night" title="Permalink to this definition">¶</a></dt>
+<dd><p>Organizes data for spectroscopy</p>
+<p>This method identifies all combinations of nine <strong>key</strong> keywords that
+can set apart different objects with their respective calibration data
+or not. The keywords used are: GAIN, RDNOISE, GRATING, FILTER2,
+CAM_TARG,GRT_TARG, SLIT, OBSRA and OBSDEC.</p>
+<p>This method populates the <cite>data_container</cite> class attribute which is an
+instance of the class NightDataContainer.
+A data group is an instance of a Pandas DataFrame.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pipeline.images">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pipeline.images" title="Permalink to this headline">¶</a></h2>
+<p>Goodman CCD Reduction Tool</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017 NOAO/AURA, Inc. All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'1.0.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
