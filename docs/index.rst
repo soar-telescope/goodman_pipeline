@@ -26,13 +26,7 @@ Welcome to Goodman HTS Pipeline's Documentation
 User Manual
 ===========
 
-:ref:`Goodman User Manual <user-manual>`
-
-
-Developer Manual
-================
-
-:ref:`Goodman Pipeline's Developer manual <developer-manual>`
+.. include:: user_manual.rst
 
 
 

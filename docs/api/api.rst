@@ -1,2 +1,0 @@
-.. automodule:: pipeline
-   :members:
