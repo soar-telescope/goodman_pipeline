@@ -28,6 +28,13 @@ User Manual
 
 :ref:`Goodman User Manual <user-manual>`
 
+
+Developer Manual
+================
+
+:ref:`Goodman Pipeline's Developer manual <developer-manual>`
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
