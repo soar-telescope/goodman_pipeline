@@ -1,3 +1,4 @@
+.. _user-manual:
 .. include:: introduction.rst
 
 .. raw:: pdf

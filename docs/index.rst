@@ -8,8 +8,10 @@
    - Add License
    - Make sure titles are not left in the bottom of a page and the content in the next.
 
-Welcome to Goodman HTS Pipeline User Manual
-===========================================
+===============================================
+Welcome to Goodman HTS Pipeline's Documentation
+===============================================
+
 .. image:: https://travis-ci.org/soar-telescope/goodman.svg?branch=master
     :target: https://travis-ci.org/soar-telescope/goodman
 .. image:: https://coveralls.io/repos/github/soar-telescope/goodman/badge.svg?branch=master
@@ -21,7 +23,15 @@ Welcome to Goodman HTS Pipeline User Manual
     :target: http://www.astropy.org/
 
 
-.. include:: user_manual.rst
+User Manual
+===========
+
+:ref:`Goodman User Manual <user-manual>`
+
+
+Developer Manual
+================
+
 
 .. toctree::
    :maxdepth: 2
