@@ -2,7 +2,6 @@
 __author__ = 'Bruno Quint'
 
 import unittest
-import requests
 
 from ...tools import version
 
@@ -20,10 +19,10 @@ class TestVersionChecker(unittest.TestCase):
             feature = 0
             bug = 0
 
-        api, feature, bug = version.check(self.url)
+        api, feature, bug = version.check_last(self.url)
 
         self.assertEqual(api, Version.api)
-        self.assertEqual(api, Version.feature)
+        self.assertEqual(feature, Version.feature)
         self.assertEqual(bug, version.bug)
 
 

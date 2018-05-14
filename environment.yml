@@ -6,7 +6,8 @@ dependencies:
   - pandas
   - matplotlib
   - scipy
-  - astropy
+  - astropy>3
+  - beautifulsoup4
   - pip
   - pip:
     - ccdproc
