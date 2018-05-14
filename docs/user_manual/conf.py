@@ -32,8 +32,7 @@
 # ones.
 extensions = ['sphinx.ext.todo',
               'sphinx.ext.coverage',
-              'sphinx.ext.githubpages',
-              'sphinx.ext.autodoc']
+              'sphinx.ext.githubpages']
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -49,7 +48,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Goodman HTS Pipeline Documentation'
+project = u'Goodman HTS Pipeline User Manual'
 copyright = u'2017 NOAO/AURA, Inc. All rights reserved.'
 author = u'Simón Torres R., Bruno C. Quint, César Briceño'
 

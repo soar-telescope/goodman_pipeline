@@ -35,9 +35,6 @@ Developer Manual
 :ref:`Goodman Pipeline's Developer manual <developer-manual>`
 
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
 
 Indices and tables
 ==================
