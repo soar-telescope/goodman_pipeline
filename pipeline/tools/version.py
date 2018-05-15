@@ -7,6 +7,8 @@ import logging
 import requests
 import re
 
+from distutils.version import LooseVersion
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,37 +26,23 @@ def get_last(url=LATEST_URL):
 
     Returns
     -------
-        api (int) : api version.
-        feature (int) : feature version.
-        bug (int) : bug version.
+        version (LooseVersion) : the last version of the pipeline.
     """
 
     response = requests.get(url)
 
-    if response.status_code == 200:
-
-        tag_name = response.json()['tag_name']
-
-        _version = re.findall(r'\d+', tag_name)
-
-        _api = int(_version[0])
-        _feature = int(_version[1])
-        _bug = int(_version[2])
-
-        return _api, _feature, _bug
-
-    else:
+    if response.status_code != 200:
         raise ConnectionRefusedError('Number of tests reached maximum for now.')
 
+    tag_name = response.json()['tag_name'].replace('v', '')
+    _version = LooseVersion(tag_name)
 
-def check_last(version):
+    return _version.vstring
 
-    version = re.findall(r'\d+', version)
 
-    api = int(version[0])
-    feature = int(version[1])
-    bug = int(version[2])
+def am_i_updated(version):
 
-    last_api, last_feature, last_bug = get_last()
+    version = LooseVersion(version.replace('v', ''))
+    last_version = get_last()
 
-    return last_api > api or last_feature > feature or last_bug > bug
+    return last_version <= version

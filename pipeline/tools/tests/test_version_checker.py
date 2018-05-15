@@ -9,21 +9,14 @@ from ...tools import version
 
 class TestVersionChecker(unittest.TestCase):
 
-    # def test_get_last(self):
-    #
-    #      api, feature, bug = version.get_last()
-    #
-    #      self.assertEqual(api, info.api)
-    #      self.assertEqual(feature, info.feature)
-    #      self.assertEqual(bug, info.bug)
+    def test_get_last(self):
+         v = version.get_last()
+         self.assertEqual(v, info.__version__)
 
-    def test_check_last_positive(self):
-        with self.assertLogs(logger='pipeline') as cm:
-            version.check_last(info.__version__)
+    def test_am_i_updated(self):
+        self.assertTrue(version.am_i_updated(info.__version__))
+        self.assertFalse(version.am_i_updated('v0.0.0'))
 
-    # def test_check_last_negative(self):
-    #      with self.assertLogs(logger=logger):
-    #          version.check_last('v0.0.0')
 
 if __name__ == '__main__':
     unittest.main()
