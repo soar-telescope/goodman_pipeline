@@ -8,14 +8,27 @@
    - Add License
    - Make sure titles are not left in the bottom of a page and the content in the next.
 
-Welcome to Goodman HTS Pipeline User Manual
-===========================================
+===============================================
+Welcome to Goodman HTS Pipeline's Documentation
+===============================================
+
+.. image:: https://travis-ci.org/soar-telescope/goodman.svg?branch=master
+    :target: https://travis-ci.org/soar-telescope/goodman
+.. image:: https://coveralls.io/repos/github/soar-telescope/goodman/badge.svg?branch=master
+    :target: https://coveralls.io/github/soar-telescope/goodman?branch=master
+.. image:: https://readthedocs.org/projects/goodman/badge/?version=latest
+    :target: http://goodman.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
+    :target: http://www.astropy.org/
+
+
+User Manual
+===========
 
 .. include:: user_manual.rst
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+
 
 Indices and tables
 ==================

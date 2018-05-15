@@ -1,3 +1,4 @@
+.. _user-manual:
 .. include:: introduction.rst
 
 .. raw:: pdf
@@ -16,7 +17,6 @@
 
     PageBreak
 
-
 .. include:: _conclusion_acknowledgement.rst
 
 .. |pipeline name| replace:: *The Goodman Pipeline*
@@ -30,3 +30,4 @@
 .. |headers change| replace:: March, 2018
 
 
+..    the sequence for section level is `=#*^~&`

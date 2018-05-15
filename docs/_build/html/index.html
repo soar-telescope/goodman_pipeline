@@ -1,83 +1,230 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>Welcome to Goodman HTS Pipeline User Manual &#8212; Goodman HTS Pipeline User Manual 1.0.0 documentation</title>
-    <link rel="stylesheet" href="_static/bootstrap-astropy.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '1.0.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="_static/sidebar.js"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-<link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,600' rel='stylesheet' type='text/css'/>
-<script type="text/javascript" src="_static/copybutton.js"></script>
-
-
-  </head>
-  <body>
-<div class="topbar">
-  <a class="brand" title="Documentation Home" href="#"><span id="logotext1">Goodman</span><span id="logotext2">Pipeline</span><span id="logotext3">:User Manual</span></a>
-  <ul>
-    <li><a class="homelink" title="Astropy Homepage" href="http://www.astropy.org"></a></li>
-    <li><a title="General Index" href="genindex.html">Index</a></li>
-    <li><a title="Module Index" href="py-modindex.html">Modules</a></li>
-    <li>
-      
-      
-<form action="search.html" method="get">
-  <input type="text" name="q" placeholder="Search" />
-  <input type="hidden" name="check_keywords" value="yes" />
-  <input type="hidden" name="area" value="default" />
-</form>
-      
-    </li>
-  </ul>
-</div>
-
-<div class="related">
-    <h3>Navigation</h3>
-    <ul>
-      <li>
-	<a href="#">Goodman HTS Pipeline User Manual 1.0.0 documentation</a>
-	 &#187;
-      </li>
-      
-       
-    </ul>
-</div>
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Welcome to Goodman HTS Pipeline’s Documentation &mdash; Goodman HTS Pipeline Documentation 1.0.0 documentation</title>
   
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> Goodman HTS Pipeline Documentation
+          
+
+          
+          </a>
+
+          
             
-  <div class="section" id="welcome-to-goodman-hts-pipeline-user-manual">
-<h1>Welcome to Goodman HTS Pipeline User Manual<a class="headerlink" href="#welcome-to-goodman-hts-pipeline-user-manual" title="Permalink to this headline">¶</a></h1>
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Welcome to Goodman HTS Pipeline’s Documentation</a><ul>
+<li><a class="reference internal" href="#user-manual">User Manual</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a><ul>
+<li><a class="reference internal" href="#license">License</a></li>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#features-available">Features Available</a></li>
+<li><a class="reference internal" href="#supported-data">Supported Data</a></li>
+<li><a class="reference internal" href="#future-implementation">Future Implementation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#requirements">Requirements</a><ul>
+<li><a class="reference internal" href="#id2">Data Requirements</a><ul>
+<li><a class="reference internal" href="#reference-lamp-files">Reference Lamp Files</a><ul>
+<li><a class="reference internal" href="#headers-requirements">Headers Requirements</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#file-organization">File organization</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#software-requirements">Software Requirements</a><ul>
+<li><a class="reference internal" href="#setup-for-remote-use">Setup for Remote Use</a><ul>
+<li><a class="reference internal" href="#establish-a-vnc-connection">Establish a VNC connection</a></li>
+<li><a class="reference internal" href="#vnc-from-the-terminal">VNC from the Terminal</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#setup-for-local-installation">Setup for local installation</a><ul>
+<li><a class="reference internal" href="#dcr-optional">DCR (optional)</a><ul>
+<li><a class="reference internal" href="#compiling-dcr">Compiling DCR</a></li>
+<li><a class="reference internal" href="#installing-the-dcr-binary">Installing the DCR binary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#running-the-pipeline">Running the Pipeline</a><ul>
+<li><a class="reference internal" href="#working-with-virtual-environments">Working with Virtual Environments</a></li>
+<li><a class="reference internal" href="#prepare-data-for-reduction">Prepare Data for Reduction</a></li>
+<li><a class="reference internal" href="#run-redccd">Run redccd</a></li>
+<li><a class="reference internal" href="#run-redspec">Run redspec</a></li>
+<li><a class="reference internal" href="#description-of-custom-keywords">Description of custom keywords</a><ul>
+<li><a class="reference internal" href="#general-purpose-keywords">General Purpose Keywords</a></li>
+<li><a class="reference internal" href="#non-linear-wavelength-solution">Non-linear wavelength solution</a></li>
+<li><a class="reference internal" href="#id3">Combined Images</a></li>
+<li><a class="reference internal" href="#id4">Detected lines</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#acknowledgements">Acknowledgements</a><ul>
+<li><a class="reference internal" href="#authors-and-credits">Authors and Credits</a></li>
+<li><a class="reference internal" href="#contributors">Contributors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">Goodman HTS Pipeline Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>Welcome to Goodman HTS Pipeline’s Documentation</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="welcome-to-goodman-hts-pipeline-s-documentation">
+<h1>Welcome to Goodman HTS Pipeline’s Documentation<a class="headerlink" href="#welcome-to-goodman-hts-pipeline-s-documentation" title="Permalink to this headline">¶</a></h1>
+<a class="reference external image-reference" href="https://travis-ci.org/soar-telescope/goodman"><img alt="https://travis-ci.org/soar-telescope/goodman.svg?branch=master" src="https://travis-ci.org/soar-telescope/goodman.svg?branch=master" /></a>
+<a class="reference external image-reference" href="https://coveralls.io/github/soar-telescope/goodman?branch=master"><img alt="https://coveralls.io/repos/github/soar-telescope/goodman/badge.svg?branch=master" src="https://coveralls.io/repos/github/soar-telescope/goodman/badge.svg?branch=master" /></a>
+<a class="reference external image-reference" href="http://goodman.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/goodman/badge/?version=latest" /></a>
+<a class="reference external image-reference" href="http://www.astropy.org/"><img alt="http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat" src="http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat" /></a>
+<div class="section" id="user-manual">
+<h2>User Manual<a class="headerlink" href="#user-manual" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="introduction">
-<h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<span id="id1"></span><h3>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h3>
 <p>This is the User Manual for the <em>Goodman Spectroscopic Data Reduction
 Pipeline</em>. It provides an overview of the pipeline’s main features,
 instructions on its use and how to run it on our dedicated <em>Data Reduction
 Server</em>, and installation instructions for those who wish to run it on their own
 computers.</p>
 <div class="section" id="license">
-<h3>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h3>
+<h4>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h4>
 <p>BSD 3-Clause License</p>
 <p>Copyright (c) 2018, SOAR Telescope</p>
 <p>All rights reserved.</p>
@@ -105,7 +252,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
 </div>
 <div class="section" id="overview">
-<h3>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h3>
+<h4>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h4>
 <p>The Goodman Spectroscopic Data Reduction Pipeline - <em>The Goodman Pipeline</em> - is a Python-based
 package for producing science-ready, wavelength-calibrated, 1-D spectra. The
 goal of <em>The Goodman Pipeline</em> is to provide SOAR users with an easy to use, very well
@@ -135,7 +282,7 @@ carries out the following steps:</p>
 </ul>
 </div>
 <div class="section" id="features-available">
-<h3>Features Available<a class="headerlink" href="#features-available" title="Permalink to this headline">¶</a></h3>
+<h4>Features Available<a class="headerlink" href="#features-available" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
 <li>Self-contained, full data reduction package for the most commonly used
 predefined setups with Goodman HTS.  Given the almost limitless number of
@@ -150,12 +297,12 @@ PEP257 – Docstrings Convention (in-code documentation) – Google Style</li>
 </ul>
 </div>
 <div class="section" id="supported-data">
-<h3>Supported Data<a class="headerlink" href="#supported-data" title="Permalink to this headline">¶</a></h3>
+<h4>Supported Data<a class="headerlink" href="#supported-data" title="Permalink to this headline">¶</a></h4>
 <p>We are currently supporting data obtained since March, 2018, however you should
 be able to process older data making sure you data meets the <a class="reference internal" href="#data-requirements">data requirements</a>.</p>
 </div>
 <div class="section" id="future-implementation">
-<h3>Future Implementation<a class="headerlink" href="#future-implementation" title="Permalink to this headline">¶</a></h3>
+<h4>Future Implementation<a class="headerlink" href="#future-implementation" title="Permalink to this headline">¶</a></h4>
 <p>Here is a list of the features we are planning to implement.</p>
 <dl class="docutils">
 <dt>Additions:</dt>
@@ -177,13 +324,13 @@ be able to process older data making sure you data meets the <a class="reference
 </div>
 </div>
 <div class="section" id="requirements">
-<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<h3>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
 <p>We present here the data and software requirements that assure that the pipeline
 can perform smoothly. We recommend to check your data and your system before
 running it. Otherwise, the pipeline
 can perform in an unexpected way or even crash.</p>
-<div class="section" id="id1">
-<h3>Data Requirements<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id2">
+<h4>Data Requirements<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
 <p>The Goodman High Throughput Spectrograph’s data has seen some evolution in the past years, in shape and
 most importantly in its headers. The <em>Goodman Spectroscopic Pipeline</em> relies heavily on the data’s
 header so this is in fact very important.</p>
@@ -209,15 +356,15 @@ March, 2018 is expected to have several format issues:</p>
 <li>Duplicated keywords. Make sure that your data does not contain duplicated keywords.</li>
 </ol>
 <div class="section" id="reference-lamp-files">
-<h4>Reference Lamp Files<a class="headerlink" href="#reference-lamp-files" title="Permalink to this headline">¶</a></h4>
+<h5>Reference Lamp Files<a class="headerlink" href="#reference-lamp-files" title="Permalink to this headline">¶</a></h5>
 <p>Having an <em>automatic wavelength calibration method</em> relies on having previously calibrated
 reference lamps obtained in the same configuration or mode. It is also important
 that the lamp names are correct, for instance <code class="docutils literal"><span class="pre">HgAr</span></code> is quite different than
 <code class="docutils literal"><span class="pre">HgArNe</span></code>. Spaces between lamps are not allowed. And the name is case
 insensitive: you may write “HgAr”, “HGAR” or “hgar”.
 The list of current lamps is the following.</p>
-<span id="table-supported-modes"></span><table border="1" class="docutils" id="id4">
-<caption><span class="caption-text">List of Goodman Spectrograph supported modes</span><a class="headerlink" href="#id4" title="Permalink to this table">¶</a></caption>
+<span id="table-supported-modes"></span><table border="1" class="docutils" id="id5">
+<caption><span class="caption-text">List of Goodman Spectrograph supported modes</span><a class="headerlink" href="#id5" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="15%" />
 <col width="10%" />
@@ -249,7 +396,7 @@ The list of current lamps is the following.</p>
 <p class="last">More lamps will be made public shortly.</p>
 </div>
 <div class="section" id="headers-requirements">
-<span id="header-requirements"></span><h5>Headers Requirements<a class="headerlink" href="#headers-requirements" title="Permalink to this headline">¶</a></h5>
+<span id="header-requirements"></span><h6>Headers Requirements<a class="headerlink" href="#headers-requirements" title="Permalink to this headline">¶</a></h6>
 <p>Goodman HTS spectra have small non-linearities on their wavelength solutions.
 They are small but must be taken into account.</p>
 <p>It was necessary to  implement a custom way of storing non-linear wavelength
@@ -331,7 +478,7 @@ request, suggestions or needs.</p>
 </div>
 </div>
 <div class="section" id="file-organization">
-<h4>File organization<a class="headerlink" href="#file-organization" title="Permalink to this headline">¶</a></h4>
+<h5>File organization<a class="headerlink" href="#file-organization" title="Permalink to this headline">¶</a></h5>
 <p>redccd and redspec will look for all FITS files inside the current working
 directory or inside the path provided with the <code class="docutils literal"><span class="pre">--raw-path</span></code> (redccd)/<code class="docutils literal"><span class="pre">--data-path</span></code> (redspec)
 flag non-recursively. Make sure to have only data that contains relevant signal.
@@ -345,13 +492,13 @@ Data obtained during the focusing process, saturated flats, etc, must be removed
 </div>
 </div>
 <div class="section" id="software-requirements">
-<h3>Software Requirements<a class="headerlink" href="#software-requirements" title="Permalink to this headline">¶</a></h3>
+<h4>Software Requirements<a class="headerlink" href="#software-requirements" title="Permalink to this headline">¶</a></h4>
 <p>Using the pipeline remotely is the recommended method, in which case you don’t need
 to worry about software requirements.</p>
 <p>However, for users who wish to go ahead with a local installation, we provide
 simple instructions in the <a class="reference internal" href="#setup-for-local-installation">Setup for local installation</a> section.</p>
 <div class="section" id="setup-for-remote-use">
-<h4>Setup for Remote Use<a class="headerlink" href="#setup-for-remote-use" title="Permalink to this headline">¶</a></h4>
+<h5>Setup for Remote Use<a class="headerlink" href="#setup-for-remote-use" title="Permalink to this headline">¶</a></h5>
 <p>The Goodman Spectroscopic Data Reduction Pipeline has been installed on a
 dedicated computer at SOAR. The procedure requires to open a VNC session, for which
 you need to be connected to the SOAR VPN. The credentials for the VPN are the
@@ -365,11 +512,11 @@ open an <em>xgterm</em> and <em>ds9</em> windows. <code class="docutils literal"
 not <em>ds9</em></p>
 </div>
 <div class="section" id="establish-a-vnc-connection">
-<h5>Establish a VNC connection<a class="headerlink" href="#establish-a-vnc-connection" title="Permalink to this headline">¶</a></h5>
+<h6>Establish a VNC connection<a class="headerlink" href="#establish-a-vnc-connection" title="Permalink to this headline">¶</a></h6>
 <p>Separately, you should receive a server hostname, IP, display number and
 VNC-password.</p>
-<span id="vnc-displays-table"></span><table border="1" class="docutils" id="id5">
-<caption><span class="caption-text">VNC display number and working folder assigned to each partner.</span><a class="headerlink" href="#id5" title="Permalink to this table">¶</a></caption>
+<span id="vnc-displays-table"></span><table border="1" class="docutils" id="id6">
+<caption><span class="caption-text">VNC display number and working folder assigned to each partner.</span><a class="headerlink" href="#id6" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="32%" />
@@ -411,7 +558,7 @@ RealVNC, etc. The first two run on Linux and can be used directly with the
 <code class="docutils literal"><span class="pre">vncviewer</span></code> command line.</p>
 </div>
 <div class="section" id="vnc-from-the-terminal">
-<h5>VNC from the Terminal<a class="headerlink" href="#vnc-from-the-terminal" title="Permalink to this headline">¶</a></h5>
+<h6>VNC from the Terminal<a class="headerlink" href="#vnc-from-the-terminal" title="Permalink to this headline">¶</a></h6>
 <p>Find the <code class="docutils literal"><span class="pre">&lt;display-number&gt;</span></code> that corresponds to you from the <a class="reference internal" href="#vnc-displays-table">VNC Displays table</a>.
 Open a terminal, and assuming you have installed <code class="docutils literal"><span class="pre">vncviewer</span></code>.</p>
 <blockquote>
@@ -426,7 +573,7 @@ should be provided by your support scientist.</p>
 </div>
 </div>
 <div class="section" id="setup-for-local-installation">
-<h4>Setup for local installation<a class="headerlink" href="#setup-for-local-installation" title="Permalink to this headline">¶</a></h4>
+<h5>Setup for local installation<a class="headerlink" href="#setup-for-local-installation" title="Permalink to this headline">¶</a></h5>
 <p>The <em>The Goodman Pipeline</em> is completely written in Python 3.x and relies on several
 libraries like:</p>
 <ul class="simple">
@@ -498,7 +645,7 @@ you can add the <code class="docutils literal"><span class="pre">--user</span></
 needing root access.</p>
 </div>
 <div class="section" id="dcr-optional">
-<h5>DCR (optional)<a class="headerlink" href="#dcr-optional" title="Permalink to this headline">¶</a></h5>
+<h6>DCR (optional)<a class="headerlink" href="#dcr-optional" title="Permalink to this headline">¶</a></h6>
 <div class="admonition-acknowledgement-note admonition">
 <p class="first admonition-title">Acknowledgement Note</p>
 <p class="last">Please cite: Pych, W., 2004, PASP, 116, 148</p>
@@ -523,7 +670,7 @@ created. <code class="docutils literal"><span class="pre">GSP_DCRR</span></code>
 <a class="reference external" href="http://users.camk.edu.pl/pych/DCR/">Link</a>. We remind again that users of the
 Goodman Pipeline should cite the DCR paper with the reference indicated above.</p>
 <div class="section" id="compiling-dcr">
-<h6>Compiling DCR<a class="headerlink" href="#compiling-dcr" title="Permalink to this headline">¶</a></h6>
+<h7>Compiling DCR<a class="headerlink" href="#compiling-dcr" title="Permalink to this headline">¶</a></h7>
 <p>Compiling <code class="docutils literal"><span class="pre">dcr</span></code> is actually very simple.</p>
 <blockquote>
 <div><code class="docutils literal"><span class="pre">cd</span> <span class="pre">&lt;path_to_download_location&gt;/goodman/pipeline/data/dcr-source/dcr/</span></code></div></blockquote>
@@ -541,7 +688,7 @@ binary here is <code class="docutils literal"><span class="pre">dcr</span></code
 </ul>
 </div>
 <div class="section" id="installing-the-dcr-binary">
-<h6>Installing the DCR binary<a class="headerlink" href="#installing-the-dcr-binary" title="Permalink to this headline">¶</a></h6>
+<h7>Installing the DCR binary<a class="headerlink" href="#installing-the-dcr-binary" title="Permalink to this headline">¶</a></h7>
 <p>This is a suggested method. If you are not so sure what you are doing, we
 recommend you follow the steps shown below. If you are a more advanced user and
 you want to do it your own way, all you have to achieve is to have the <code class="docutils literal"><span class="pre">dcr</span></code>
@@ -577,7 +724,7 @@ this step.</p>
 </div>
 </div>
 <div class="section" id="running-the-pipeline">
-<h2>Running the Pipeline<a class="headerlink" href="#running-the-pipeline" title="Permalink to this headline">¶</a></h2>
+<h3>Running the Pipeline<a class="headerlink" href="#running-the-pipeline" title="Permalink to this headline">¶</a></h3>
 <p>The <em>Goodman Spectroscopic Pipeline</em> is designed to be simple to use, however help is always
 necessary.</p>
 <dl class="docutils">
@@ -590,7 +737,7 @@ necessary.</p>
 </dd>
 </dl>
 <div class="section" id="working-with-virtual-environments">
-<h3>Working with Virtual Environments<a class="headerlink" href="#working-with-virtual-environments" title="Permalink to this headline">¶</a></h3>
+<h4>Working with Virtual Environments<a class="headerlink" href="#working-with-virtual-environments" title="Permalink to this headline">¶</a></h4>
 <p>Virtual environments are a very useful tool, the main contribution of them being:</p>
 <ul class="simple">
 <li>Portability</li>
@@ -622,7 +769,7 @@ prompt will change to:</p>
 </dl>
 </div>
 <div class="section" id="prepare-data-for-reduction">
-<h3>Prepare Data for Reduction<a class="headerlink" href="#prepare-data-for-reduction" title="Permalink to this headline">¶</a></h3>
+<h4>Prepare Data for Reduction<a class="headerlink" href="#prepare-data-for-reduction" title="Permalink to this headline">¶</a></h4>
 <p>If you did a good job preparing and doing the observation this should be an easy
 step, either way, keep in mind the following steps.</p>
 <ul class="simple">
@@ -636,7 +783,7 @@ step, either way, keep in mind the following steps.</p>
 fits compliance, is never a bad idea to keep copies of your original data though.</p>
 </div>
 <div class="section" id="run-redccd">
-<h3>Run redccd<a class="headerlink" href="#run-redccd" title="Permalink to this headline">¶</a></h3>
+<h4>Run redccd<a class="headerlink" href="#run-redccd" title="Permalink to this headline">¶</a></h4>
 <p>It is the first step in the reduction process, the main tasks are listed below.</p>
 <ul class="simple">
 <li>Create master bias</li>
@@ -653,7 +800,7 @@ fits compliance, is never a bad idea to keep copies of your original data though
 </ul>
 </div>
 <div class="section" id="run-redspec">
-<h3>Run redspec<a class="headerlink" href="#run-redspec" title="Permalink to this headline">¶</a></h3>
+<h4>Run redspec<a class="headerlink" href="#run-redspec" title="Permalink to this headline">¶</a></h4>
 <p>Is the spectroscopy reduction script. The tasks are the following:</p>
 <ul class="simple">
 <li>Classifies data and creates the match of <code class="docutils literal"><span class="pre">OBJECT</span></code> and <code class="docutils literal"><span class="pre">COMP</span></code> if it exists.</li>
@@ -668,17 +815,17 @@ fits compliance, is never a bad idea to keep copies of your original data though
 in the header even though the data has been linearized for record purpose.</p>
 </div>
 <div class="section" id="description-of-custom-keywords">
-<span id="new-keywords"></span><h3>Description of custom keywords<a class="headerlink" href="#description-of-custom-keywords" title="Permalink to this headline">¶</a></h3>
+<span id="new-keywords"></span><h4>Description of custom keywords<a class="headerlink" href="#description-of-custom-keywords" title="Permalink to this headline">¶</a></h4>
 <p>The pipeline adds several keywords to keep track of the process and in general
 for keeping important information available. The following table gives a description
 of all the keywords added by <em>The Goodman Pipeline</em>, though not all of them are
 added to all the images.</p>
 <div class="section" id="general-purpose-keywords">
-<h4>General Purpose Keywords<a class="headerlink" href="#general-purpose-keywords" title="Permalink to this headline">¶</a></h4>
+<h5>General Purpose Keywords<a class="headerlink" href="#general-purpose-keywords" title="Permalink to this headline">¶</a></h5>
 <p>These keywords are used for record purpose, except for <code class="docutils literal"><span class="pre">GSP_FNAM</span></code> which is
 used to keep track of the file name.</p>
-<span id="table-general-keywords"></span><table border="1" class="docutils" id="id6">
-<caption><span class="caption-text">General purpose keywords, added to all images at the moment of the first read.</span><a class="headerlink" href="#id6" title="Permalink to this table">¶</a></caption>
+<span id="table-general-keywords"></span><table border="1" class="docutils" id="id7">
+<caption><span class="caption-text">General purpose keywords, added to all images at the moment of the first read.</span><a class="headerlink" href="#id7" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="86%" />
@@ -747,7 +894,7 @@ used to keep track of the file name.</p>
 </table>
 </div>
 <div class="section" id="non-linear-wavelength-solution">
-<h4>Non-linear wavelength solution<a class="headerlink" href="#non-linear-wavelength-solution" title="Permalink to this headline">¶</a></h4>
+<h5>Non-linear wavelength solution<a class="headerlink" href="#non-linear-wavelength-solution" title="Permalink to this headline">¶</a></h5>
 <p>Since writing non-linear wavelength solutions to the headers using the FITS
 standard (reference) is extremely complex and not necessarily well documented,
 we came up with the solution of simply describing the mathematical model
@@ -755,8 +902,8 @@ from <code class="docutils literal"><span class="pre">astropy.modeling.models</s
 <em>untouched</em> while keeping a reliable description of the wavelength solution.</p>
 <p>The current implementation will work for writting any polinomial model. Reading is implemented only for <code class="docutils literal"><span class="pre">Chebyshev1D</span></code> which is the
 model by default.</p>
-<span id="table-non-linear-keywords"></span><table border="1" class="docutils" id="id7">
-<caption><span class="caption-text">Keywords used to describe a non-linear wavelength solution.</span><a class="headerlink" href="#id7" title="Permalink to this table">¶</a></caption>
+<span id="table-non-linear-keywords"></span><table border="1" class="docutils" id="id8">
+<caption><span class="caption-text">Keywords used to describe a non-linear wavelength solution.</span><a class="headerlink" href="#id8" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="86%" />
@@ -788,13 +935,13 @@ model by default.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id2">
-<h4>Combined Images<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id3">
+<h5>Combined Images<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h5>
 <p>Every image used in a combination of images is recorded in the header of the
 resulting one. The order does not have importance but most likely the header
 of the first one will be used</p>
-<span id="table-combined-images-key"></span><table border="1" class="docutils" id="id8">
-<caption><span class="caption-text">Keywords that list all the images used to produce a combined image.</span><a class="headerlink" href="#id8" title="Permalink to this table">¶</a></caption>
+<span id="table-combined-images-key"></span><table border="1" class="docutils" id="id9">
+<caption><span class="caption-text">Keywords that list all the images used to produce a combined image.</span><a class="headerlink" href="#id9" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="86%" />
@@ -814,13 +961,13 @@ of the first one will be used</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id3">
-<h4>Detected lines<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="id4">
+<h5>Detected lines<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h5>
 <p>The <em>reference lamp library</em> maintains the lamps non-linearized and also they
 get a record of the pixel value and the equivalent in angstrom. In the following
 table a three-line lamp is shown.</p>
-<span id="table-line-list"></span><table border="1" class="docutils" id="id9">
-<caption><span class="caption-text">Description of all the keywords used to list lines in lamps in Pixel and Angstrom.</span><a class="headerlink" href="#id9" title="Permalink to this table">¶</a></caption>
+<span id="table-line-list"></span><table border="1" class="docutils" id="id10">
+<caption><span class="caption-text">Description of all the keywords used to list lines in lamps in Pixel and Angstrom.</span><a class="headerlink" href="#id10" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="86%" />
@@ -855,121 +1002,104 @@ table a three-line lamp is shown.</p>
 </div>
 </div>
 <div class="section" id="acknowledgements">
-<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h2>
-<p>We acknowledge the important contribution of  David Sammartin, who developed
-the initial incarnation of the redccd module. We thank Tina Armond for her
-invaluable help in adding calibrated comparison lamps to the library of
-reference comparison lamps for wavelngth solution.</p>
+<h3>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h3>
 <p>Our work would not be possible without the friendly work atmosphere at CTIO
 headquarters in La Serena, were we can interact with our SOAR and CTIO
 colleagues in lively and useful discussions that have been important in making
 the Goodman pipeline possible.  We also acknowledge fruitful discussions and
 suggestions from our colleagues Bart Dunlop, Chris Clemens, and Erik Dennihy,
 at University of North Carolina at Chapel Hill.</p>
-<div class="toctree-wrapper compound">
+<div class="section" id="authors-and-credits">
+<h4>Authors and Credits<a class="headerlink" href="#authors-and-credits" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/simontorres">Simón Torres</a> (SOAR Telescope Data Analyst - main code developer)</li>
+<li><a class="reference external" href="https://github.com/cbaorion">César Briceño</a> (SOAR Telescope Scientist - team lead)</li>
+<li><a class="reference external" href="https://github.com/b1quint">Bruno Quint</a> (Brazil Support Astronomer - code development adviser)</li>
+</ul>
+<p>Bruno Quint dedicated part of his time as post-doc to this project. Given that,
+Bruno Quint would like to acknowledge CNPq for the fellowship which allowed him
+to contribute to the development of the pipeline.</p>
+</div>
+<div class="section" id="contributors">
+<h4>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h4>
+<ul class="simple">
+<li><a class="reference external" href="https://github.com/dsanmartim">David Sanmartim</a> (Gemini Astronomer)</li>
+<li><a class="reference external" href="https://github.com/tarmond">Tina Armond</a> (Brazil Support Astronomer)</li>
+</ul>
+<p>We acknowledge the important contribution of  David Sanmartim, who developed
+the initial incarnation of the redccd module. We thank Tina Armond for her
+invaluable help in adding calibrated comparison lamps to the library of
+reference comparison lamps for wavelength solution.</p>
 </div>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
 <li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
 <li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
 </ul>
 </div>
+</div>
 
 
+           </div>
+           
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><h3>Page Contents</h3>
-<ul>
-<li><a class="reference internal" href="#">Welcome to Goodman HTS Pipeline User Manual</a><ul>
-<li><a class="reference internal" href="#introduction">Introduction</a><ul>
-<li><a class="reference internal" href="#license">License</a></li>
-<li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#features-available">Features Available</a></li>
-<li><a class="reference internal" href="#supported-data">Supported Data</a></li>
-<li><a class="reference internal" href="#future-implementation">Future Implementation</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#requirements">Requirements</a><ul>
-<li><a class="reference internal" href="#id1">Data Requirements</a><ul>
-<li><a class="reference internal" href="#reference-lamp-files">Reference Lamp Files</a><ul>
-<li><a class="reference internal" href="#headers-requirements">Headers Requirements</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#file-organization">File organization</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#software-requirements">Software Requirements</a><ul>
-<li><a class="reference internal" href="#setup-for-remote-use">Setup for Remote Use</a><ul>
-<li><a class="reference internal" href="#establish-a-vnc-connection">Establish a VNC connection</a></li>
-<li><a class="reference internal" href="#vnc-from-the-terminal">VNC from the Terminal</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#setup-for-local-installation">Setup for local installation</a><ul>
-<li><a class="reference internal" href="#dcr-optional">DCR (optional)</a><ul>
-<li><a class="reference internal" href="#compiling-dcr">Compiling DCR</a></li>
-<li><a class="reference internal" href="#installing-the-dcr-binary">Installing the DCR binary</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#running-the-pipeline">Running the Pipeline</a><ul>
-<li><a class="reference internal" href="#working-with-virtual-environments">Working with Virtual Environments</a></li>
-<li><a class="reference internal" href="#prepare-data-for-reduction">Prepare Data for Reduction</a></li>
-<li><a class="reference internal" href="#run-redccd">Run redccd</a></li>
-<li><a class="reference internal" href="#run-redspec">Run redspec</a></li>
-<li><a class="reference internal" href="#description-of-custom-keywords">Description of custom keywords</a><ul>
-<li><a class="reference internal" href="#general-purpose-keywords">General Purpose Keywords</a></li>
-<li><a class="reference internal" href="#non-linear-wavelength-solution">Non-linear wavelength solution</a></li>
-<li><a class="reference internal" href="#id2">Combined Images</a></li>
-<li><a class="reference internal" href="#id3">Detected lines</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#acknowledgements">Acknowledgements</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-</ul>
+          <footer>
+  
 
+  <hr/>
 
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/index.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-      
-<form action="search.html" method="get">
-  <input type="text" name="q" placeholder="Search" />
-  <input type="hidden" name="check_keywords" value="yes" />
-  <input type="hidden" name="area" value="default" />
-</form>
-      
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-<footer class="footer">
-  <p class="pull-right">
-    <a href="_sources/index.rst.txt"
-       rel="nofollow">Page Source</a> &nbsp;
-    <a href="#">Back to Top</a></p>
-  <p>
-    &copy; Copyright 2017 NOAO/AURA, Inc. All rights reserved..<br/>
-    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.6.3. &nbsp;
-  </p>
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017 NOAO/AURA, Inc. All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
 </footer>
-  </body>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>

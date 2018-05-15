@@ -32,7 +32,8 @@
 # ones.
 extensions = ['sphinx.ext.todo',
               'sphinx.ext.coverage',
-              'sphinx.ext.githubpages']
+              'sphinx.ext.githubpages',
+              'sphinx.ext.autodoc']
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -48,7 +49,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Goodman HTS Pipeline User Manual'
+project = u'Goodman HTS Pipeline Documentation'
 copyright = u'2017 NOAO/AURA, Inc. All rights reserved.'
 author = u'Simón Torres R., Bruno C. Quint, César Briceño'
 
@@ -92,21 +93,23 @@ pdf_documents = [('user_manual',
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'bootstrap-astropy'
+# html_theme = 'bootstrap-astropy'
+
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {
-    'logotext1': 'Goodman',
-    'logotext2': 'Pipeline',
-    'logotext3': ':User Manual'}
+# html_theme_options = {
+#     'logotext1': 'Goodman',
+#     'logotext2': 'Pipeline',
+#     'logotext3': ':User Manual'}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 # html_style = 'goodman.css'
 
 # -- Options for HTMLHelp output ------------------------------------------
