@@ -1,7 +1,13 @@
-from __future__ import absolute_import
 
-__version__ = '1.0.0'
+api = 1
+feature = 0
+bug = 0
+
+year = 2018
+month = 4
+
+__version__ = '{:d}.{:d}.{:d}'.format(api, feature, bug)
 __author__ = 'Simon Torres, Bruno Quint, Cesar Briceño'
-__date__ = '2018-04-30'
+__date__ = '{:02d}-{:d}'.format(month, year)
 __email__ = "goodman-pipeline@ctio.noao.edu"
 __status__ = "rtw"

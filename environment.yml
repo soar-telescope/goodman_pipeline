@@ -6,7 +6,7 @@ dependencies:
   - pandas
   - matplotlib
   - scipy
-  - astropy
+  - astropy>3
   - pip
   - pip:
     - ccdproc

@@ -1811,6 +1811,7 @@ def setup_logging():
         log_format = '[%(asctime)s][%(levelname)8s]: %(message)s'
         logging_level = logging.INFO
 
+
     date_format = '%I:%M:%S%p'
 
     formatter = logging.Formatter(fmt=log_format,
