@@ -133,24 +133,24 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         ccd (object): a ccdproc.CCDData instance.
         image_name (str): Science image name.
         out_prefix (str): Partial prefix to be added to the image name. Related
-            to previous processes and not cosmic ray rejection.
+        to previous processes and not cosmic ray rejection.
         red_path (str): Path to reduced data directory.
         dcr_par (str): Path to dcr.par file.
         keep_files (bool): If True, the original file and the cosmic ray mask
-            will not be deleted. Default is False.
+        will not be deleted. Default is False.
         prefix (str): Cosmic ray rejection related prefix to be added to image
-            name.
+        name.
         method (str): Method to use for cosmic ray rejection. There are three
-            options: `dcr`, `lacosmic` and `none`.
+        options: `dcr`, `lacosmic` and `none`.
         save (bool): Disables by default saving the images
 
     Returns:
         ccdproc.CCDData instance and `out_prefix` which is the prefix added to
-          the image name.
+        the image name.
 
     Raises:
         NotImplementedError if the `method` argument is not `dcr`, `lacosmic`
-          nor `none`.
+        nor `none`.
 
     """
     if ccd.header['OBSTYPE'] == 'COMP':
@@ -342,11 +342,11 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
         dest_path (str): Path to where the new image should saved
         prefix (str): Prefix to add to the image file name
         output_name (str): Alternatively a file name can be parsed, this will
-          ignore `prefix`.
+        ignore `prefix`.
         method (str): Method for doing the combination, this goes straight to
-          the call of `ccdproc.combine` function.
+        the call of `ccdproc.combine` function.
         save (bool): If True will save the combined images. If False it will
-          ignore `prefix` or `output_name`.
+        ignore `prefix` or `output_name`.
 
     Returns:
         A combined image as a CCDData object.
@@ -594,17 +594,17 @@ def extraction(ccd,
     Args:
         ccd (object): Instance of ccdproc.CCDData containing a 2D spectrum
         target_trace (object): Instance of astropy.modeling.Model, a low order
-            polynomial that defines the trace of the spectrum in the ccd object.
+        polynomial that defines the trace of the spectrum in the ccd object.
         spatial_profile (object): Instance of astropy.modeling.Model, a Gaussian
-            model previously fitted to the spatial profile of the 2D spectrum
-            contained in the ccd object.
+        model previously fitted to the spatial profile of the 2D spectrum
+        contained in the ccd object.
         extraction_name (str): Extraction type, can be `fractional` or
-            `optimal` though the optimal extraction is not implemented yet.
+        `optimal` though the optimal extraction is not implemented yet.
 
     Returns:
         ccd (object): Instance of ccdproc.CCDData containing a 1D spectrum. The
-            attribute 'data' is replaced by the 1D array resulted from the
-            extraction process.
+        attribute 'data' is replaced by the 1D array resulted from the
+        extraction process.
 
     Raises:
         NotImplementedError: When `extraction_name` is `optimal`.
@@ -632,16 +632,16 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     Args:
         ccd (object): Instance of ccdproc.CCDData that contains a 2D spectrum.
         target_trace (object):  Instance of astropy.modeling.models.Model that
-          defines the trace of the target on the image (ccd).
+        defines the trace of the target on the image (ccd).
         target_stddev (float): Standard deviation value for the spatial profile
-          fitted to the target.
+        fitted to the target.
         extraction_width (int): Width of the extraction area as a function of
-          `target_stddev`. For instance if `extraction_with` is set to 1 the
-          function extract 0.5 to each side from the center of the traced
-          target.
+        `target_stddev`. For instance if `extraction_with` is set to 1 the
+        function extract 0.5 to each side from the center of the traced
+        target.
         background_spacing (float): Number of `target_stddev` to separate the
-          target extraction to the background. This is from the edge of the
-          extraction zone to the edge of the background region.
+        target extraction to the background. This is from the edge of the
+        extraction zone to the edge of the background region.
     """
     assert isinstance(ccd, CCDData)
     assert isinstance(target_trace, Model)
@@ -825,8 +825,8 @@ def get_best_flat(flat_name, path):
     None instead of master_flat_name.
 
     Args:
-        flat_name (str): Full path of master flat basename. Ends in '*.fits' for
-          using glob.
+        flat_name (str): Full path of master flat basename. Ends in '\*.fits' for
+        using glob.
         path (str): Location to look for flats.
 
     Returns:
@@ -1311,10 +1311,10 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
 
     Args:
         ccd (object): A ccdproc.CCDData instance to be overscan corrected.
-        overscan_region (str): The overscan region in the format '[x1:x2,y1:y2]'
-          where x is the spectral axis and y is the spatial axis.
+        overscan_region (str): The overscan region in the format `[x1:x2,y1:y2]`
+        where x is the spectral axis and y is the spatial axis.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-          Default False.
+        Default False.
 
     Returns:
         ccd (object): Overscan corrected ccdproc.CCDData instance
@@ -1345,11 +1345,11 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
 
     Args:
         ccd (object): A ccdproc.CCDData instance.
-        trim_section (str): The trimming section in the format '[x1:x2,y1:y2]'
-          where x is the spectral axis and y is the spatial axis.
+        trim_section (str): The trimming section in the format `[x1:x2,y1:y2]`
+        where x is the spectral axis and y is the spatial axis.
         trim_type (str): trimsec or slit trim.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-          Default False.
+        Default False.
 
     Returns:
         ccd (object): Trimmed ccdproc.CCDData instance
@@ -1587,25 +1587,25 @@ def read_fits(full_path, technique='Unknown'):
     reason for this wrapper of `ccdproc.CCDData.read()` to exist. It will add
     the following keywords. In most cases, if the keyword already exist it will
     skip it except for `GSP_FNAM`, `GSP_PATH` and `BUNIT`.
-      GSP_VERS: Goodman Spectroscopic Pipeline version number
-      GSP_ONAM: Original File name
-      GSP_PNAM: Parent file name or name of the file from which this one
-        originated after some process or just a copy.
-      GSP_FNAM: Current file name.
-      GSP_PATH: Path to file at the moment of reading.
-      GSP_TECH: Observing technique. `Spectroscopy` or `Imaging`.
-      GSP_DATE: Date of first reading.
-      GSP_OVER: Overscan region.
-      GSP_TRIM: Trim section (region).
-      GSP_SLIT: Slit trim section, obtained from the slit illuminated area.
-      GSP_BIAS: Master bias image used. Default `none`.
-      GSP_FLAT: Master flat image used. Default `none`.
-      GSP_NORM: Flat normalization method.
-      GSP_COSM: Cosmic ray rejection method.
-      GSP_WRMS: Wavelength solution RMS Error.
-      GSP_WPOI: Number of points used to calculate the wavelength solution
-        Error.
-      GSP_WREJ: Number of points rejected.
+    GSP_VERS: Goodman Spectroscopic Pipeline version number
+    GSP_ONAM: Original File name
+    GSP_PNAM: Parent file name or name of the file from which this one
+    originated after some process or just a copy.
+    GSP_FNAM: Current file name.
+    GSP_PATH: Path to file at the moment of reading.
+    GSP_TECH: Observing technique. `Spectroscopy` or `Imaging`.
+    GSP_DATE: Date of first reading.
+    GSP_OVER: Overscan region.
+    GSP_TRIM: Trim section (region).
+    GSP_SLIT: Slit trim section, obtained from the slit illuminated area.
+    GSP_BIAS: Master bias image used. Default `none`.
+    GSP_FLAT: Master flat image used. Default `none`.
+    GSP_NORM: Flat normalization method.
+    GSP_COSM: Cosmic ray rejection method.
+    GSP_WRMS: Wavelength solution RMS Error.
+    GSP_WPOI: Number of points used to calculate the wavelength solution
+    Error.
+    GSP_WREJ: Number of points rejected.
 
 
     Args:
@@ -1852,18 +1852,18 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
     Args:
         ccd (object): A ccdproc.CCDData instance, 2D image.
         model (object): An astropy.modeling.Model instance that contains
-          information regarding the target to be traced.
+        information regarding the target to be traced.
         trace_model (object): An astropy.modeling.Model instance, usually a low
-          order polynomial.
+        order polynomial.
         model_fitter (object): An astropy.modeling.fitting.Fitter instance. Will
-          fit the sampled points to construct the trace model
+        fit the sampled points to construct the trace model
         sampling_step (int): Step for sampling the spectrum.
         nsigmas (int): Number of stddev to each side of the mean to be used for
-          searching the trace.
+        searching the trace.
 
     Returns:
         An `astropy.modeling.Model` instance, that defines the trace of the
-          spectrum.
+        spectrum.
 
     """
     assert isinstance(ccd, CCDData)
@@ -2028,7 +2028,7 @@ def write_fits(ccd,
         full_path (str): Full path of file.
         combined (bool): True if `ccd` is the result of combining images.
         parent_file (str): Name of the file from which ccd originated. If
-          combined is True this will be set to `combined`.
+        combined is True this will be set to `combined`.
         overwrite (bool): Overwrite files, default True.
 
     Returns:
@@ -2730,7 +2730,7 @@ class SpectroscopicMode(object):
         Args:
             grating (float): Grating frequency in lines/mm (unitless value)
             mode (str): Name of the grating's mode for which the camera and
-              grating target values are required.
+            grating target values are required.
 
         Returns:
             Camera and grating target values. None and None if no such values

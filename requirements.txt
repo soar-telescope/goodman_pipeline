@@ -9,3 +9,4 @@ scipy
 astropy
 sphinx
 sphinxcontrib.napoleon
+sphinx_rtd_theme

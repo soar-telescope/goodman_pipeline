@@ -1,0 +1,457 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Software Requirements &mdash; Goodman HTS Pipeline Documentation 1.0.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> Goodman HTS Pipeline Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Software Requirements</a><ul>
+<li><a class="reference internal" href="#setup-for-remote-use">Setup for Remote Use</a><ul>
+<li><a class="reference internal" href="#establish-a-vnc-connection">Establish a VNC connection</a></li>
+<li><a class="reference internal" href="#vnc-from-the-terminal">VNC from the Terminal</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#setup-for-local-installation">Setup for local installation</a><ul>
+<li><a class="reference internal" href="#dcr-optional">DCR (optional)</a><ul>
+<li><a class="reference internal" href="#compiling-dcr">Compiling DCR</a></li>
+<li><a class="reference internal" href="#installing-the-dcr-binary">Installing the DCR binary</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Goodman HTS Pipeline Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Software Requirements</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/_requirements_software.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="software-requirements">
+<h1>Software Requirements<a class="headerlink" href="#software-requirements" title="Permalink to this headline">¶</a></h1>
+<p>Using the pipeline remotely is the recommended method, in which case you don’t need
+to worry about software requirements.</p>
+<p>However, for users who wish to go ahead with a local installation, we provide
+simple instructions in the <a class="reference internal" href="#setup-for-local-installation">Setup for local installation</a> section.</p>
+<div class="section" id="setup-for-remote-use">
+<h2>Setup for Remote Use<a class="headerlink" href="#setup-for-remote-use" title="Permalink to this headline">¶</a></h2>
+<p>The Goodman Spectroscopic Data Reduction Pipeline has been installed on a
+dedicated computer at SOAR. The procedure requires to open a VNC session, for which
+you need to be connected to the SOAR VPN. The credentials for the VPN are the
+same you used for your observing run, provided by your <em>Support Scientist</em>, who
+will also give you the information for the data reduction computer VNC
+connection.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">IRAF is available in the data server at SOAR. Running <code class="docutils literal"><span class="pre">iraf</span></code> will
+open an <em>xgterm</em> and <em>ds9</em> windows. <code class="docutils literal"><span class="pre">iraf-only</span></code> will open <em>xgterm</em> but
+not <em>ds9</em></p>
+</div>
+<div class="section" id="establish-a-vnc-connection">
+<h3>Establish a VNC connection<a class="headerlink" href="#establish-a-vnc-connection" title="Permalink to this headline">¶</a></h3>
+<p>Separately, you should receive a server hostname, IP, display number and
+VNC-password.</p>
+<span id="vnc-displays-table"></span><table border="1" class="docutils" id="id1">
+<caption><span class="caption-text">VNC display number and working folder assigned to each partner.</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col width="14%" />
+<col width="32%" />
+<col width="55%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Display</th>
+<th class="head">Partner/Institution</th>
+<th class="head">Folder</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>:1</td>
+<td>NOAO</td>
+<td><code class="docutils literal"><span class="pre">/home/goodman/data/NOAO</span></code></td>
+</tr>
+<tr class="row-odd"><td>:2</td>
+<td>Brazil</td>
+<td><code class="docutils literal"><span class="pre">/home/goodman/data/BRAZIL</span></code></td>
+</tr>
+<tr class="row-even"><td>:3</td>
+<td>UNC</td>
+<td><code class="docutils literal"><span class="pre">/home/goodman/data/UNC</span></code></td>
+</tr>
+<tr class="row-odd"><td>:4</td>
+<td>MSU</td>
+<td><code class="docutils literal"><span class="pre">/home/goodman/data/MSU</span></code></td>
+</tr>
+<tr class="row-even"><td>:5</td>
+<td>Chile</td>
+<td><code class="docutils literal"><span class="pre">/home/goodman/data/CHILE</span></code></td>
+</tr>
+</tbody>
+</table>
+<p>For this tutorial we will call the vnc server host name as <code class="docutils literal"><span class="pre">&lt;vnc-server&gt;</span></code>
+the display number  is <code class="docutils literal"><span class="pre">&lt;display-number&gt;</span></code> and your password is <code class="docutils literal"><span class="pre">&lt;password&gt;</span></code>.</p>
+<p>The VNC connection should work with any VNC Client like TightVNC, TigerVNC,
+RealVNC, etc. The first two run on Linux and can be used directly with the
+<code class="docutils literal"><span class="pre">vncviewer</span></code> command line.</p>
+</div>
+<div class="section" id="vnc-from-the-terminal">
+<h3>VNC from the Terminal<a class="headerlink" href="#vnc-from-the-terminal" title="Permalink to this headline">¶</a></h3>
+<p>Find the <code class="docutils literal"><span class="pre">&lt;display-number&gt;</span></code> that corresponds to you from the <a class="reference internal" href="#vnc-displays-table">VNC Displays table</a>.
+Open a terminal, and assuming you have installed <code class="docutils literal"><span class="pre">vncviewer</span></code>.</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">vncviewer</span> <span class="pre">&lt;vnc-server&gt;:&lt;display-number&gt;</span></code></div></blockquote>
+<p>You will be asked to type in the <code class="docutils literal"><span class="pre">&lt;password&gt;</span></code> provided.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">The real values for <code class="docutils literal"><span class="pre">&lt;vnc-server&gt;</span></code> and <code class="docutils literal"><span class="pre">&lt;password&gt;</span></code>
+should be provided by your support scientist.</p>
+</div>
+<p>If the connection succeeds you will see a <em>Centos 7</em> Desktop using <em>Gnome</em>.</p>
+</div>
+</div>
+<div class="section" id="setup-for-local-installation">
+<h2>Setup for local installation<a class="headerlink" href="#setup-for-local-installation" title="Permalink to this headline">¶</a></h2>
+<p>The <a href="#id2"><span class="problematic" id="id3">|pipeline name|</span></a> is completely written in Python 3.x and relies on several
+libraries like:</p>
+<ul class="simple">
+<li>NumPy</li>
+<li>SciPy</li>
+<li>MatPlotLib</li>
+<li>Pandas</li>
+<li>AstroPy</li>
+<li>AstroPy/ccdproc</li>
+<li>AstroPy/astroplan</li>
+<li>DCR</li>
+</ul>
+<p>We <strong>do not</strong> recommend the installation of these libraries or the
+<a href="#id4"><span class="problematic" id="id5">|pipeline name|</span></a> in your system since updates and upgrades may ruin it. We rather
+recomment the use of Virtual Environments. If you are not familiar with this
+term, please check the official documentation by visiting the link below:</p>
+<blockquote>
+<div><p><a class="reference external" href="https://docs.python.org/3/tutorial/venv.html">https://docs.python.org/3/tutorial/venv.html</a></p>
+<p>or</p>
+<p><a class="reference external" href="http://docs.python-guide.org/en/latest/dev/virtualenvs/">http://docs.python-guide.org/en/latest/dev/virtualenvs/</a></p>
+</div></blockquote>
+<p>Another option is to install <strong>Conda</strong>, a Virtual Environment Manager, or
+<strong>AstroConda</strong>, the same but for astronomers. Everything you need to know
+about installing both can be found in the link below:</p>
+<blockquote>
+<div><a class="reference external" href="https://astroconda.readthedocs.io/">https://astroconda.readthedocs.io/</a></div></blockquote>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p>You may find that <cite>ccdproc</cite> and <cite>astroplan</cite> do not come with Astroconda.
+They are not available on any Conda channel either. That means that you will
+have to install them separately. You can do so by downloading the source files
+and installing them by hand, or simply
+<a class="reference external" href="https://conda.io/docs/user-guide/tasks/manage-environments.html#activating-an-environment">activate your Virtual Environment</a> and
+then install these two packages using pip with</p>
+<p class="last"><code class="docutils literal"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">ccdproc</span> <span class="pre">astroplan</span></code></p>
+</div>
+<p>System installation is not recommended because it can mess things up specially in
+Linux and Mac OS. Before you proceed, make sure that your system has all
+the required libraries, as described in <a class="reference internal" href="#setup-for-local-installation">Setup for local installation</a>.</p>
+<p>Once you have Python running and all the libraries installed either using
+Conda/AstroConda or not, you may download the last version available in the
+following address:</p>
+<blockquote>
+<div><a class="reference external" href="https://github.com/soar-telescope/goodman/releases/latest">https://github.com/soar-telescope/goodman/releases/latest</a></div></blockquote>
+<p>Before continuing, make sure that your Virtual Environment is active if this is
+the case. There are several ways of doing this but normally the command below
+should work:</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">$</span> <span class="pre">source</span> <span class="pre">activate</span> <span class="pre">&lt;my_environment_name&gt;</span></code></div></blockquote>
+<p>Where <code class="docutils literal"><span class="pre">&lt;my_environment_name&gt;</span></code> is the name of your Virtual Environment (e.g.
+astroconda).</p>
+<p>Now you can finally install the <a href="#id6"><span class="problematic" id="id7">|pipeline name|</span></a>. Download the file, decompress
+it, and enter the directory created during the file decompression. Test the
+installation by typing:</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">$</span> <span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">test</span></code></div></blockquote>
+<p>If you have any errors, check the traceback. If you find difficulties carring
+on at this poing, you may contact us by <a class="reference external" href="https://github.com/soar-telescope/goodman/issues">opening a new issue</a>     or using the e-mail
+<cite>goodman-pipeline&#64;ctio.noao.edu</cite>.</p>
+<p>If no error messages start popping up in your screen, you are good to carry
+on with the installation.</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">$</span> <span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></code></div></blockquote>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This will install the pipeline in the currently active Python version.
+If you have Virtual Environments, make sure that they are active. If not,
+you can add the <code class="docutils literal"><span class="pre">--user</span></code> option to install only for your user and avoid
+needing root access.</p>
+</div>
+<div class="section" id="dcr-optional">
+<h3>DCR (optional)<a class="headerlink" href="#dcr-optional" title="Permalink to this headline">¶</a></h3>
+<div class="admonition-acknowledgement-note admonition">
+<p class="first admonition-title">Acknowledgement Note</p>
+<p class="last">Please cite: Pych, W., 2004, PASP, 116, 148</p>
+</div>
+<p>In terms of cosmic ray rejection we shifted to a non-python package because the
+results were much better compared to LACosmic’s implementation in Astropy.
+LACosmic was not designed to work with spectroscopy.</p>
+<p>The latest version of the Goodman Spectroscopic Pipeline uses a modified version
+of <code class="docutils literal"><span class="pre">dcr</span></code> to help with the pipeline’s workflow. It is included under</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">&lt;path_to_download_location&gt;/goodman/pipeline/data/dcr-source/dcr/</span></code></div></blockquote>
+<p><code class="docutils literal"><span class="pre">goodman</span></code> is the folder that will be created once you untar or unzip the latest
+release of the <a href="#id8"><span class="problematic" id="id9">|pipeline name|</span></a>.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">The changes we made to DCR include deletion of all <code class="docutils literal"><span class="pre">HISTORY</span></code> and <code class="docutils literal"><span class="pre">COMMENT</span></code> keywords,
+which we don’t use in the pipeline. And addition of a couple of custom
+keywords, such as: <code class="docutils literal"><span class="pre">GSP_FNAM</span></code>, which stores the name of the file being
+created. <code class="docutils literal"><span class="pre">GSP_DCRR</span></code> which stores the reference to the paper to cite.</p>
+</div>
+<p>You are still encouraged to visit the official
+<a class="reference external" href="http://users.camk.edu.pl/pych/DCR/">Link</a>. We remind again that users of the
+Goodman Pipeline should cite the DCR paper with the reference indicated above.</p>
+<div class="section" id="compiling-dcr">
+<h4>Compiling DCR<a class="headerlink" href="#compiling-dcr" title="Permalink to this headline">¶</a></h4>
+<p>Compiling <code class="docutils literal"><span class="pre">dcr</span></code> is actually very simple.</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">cd</span> <span class="pre">&lt;path_to_download_location&gt;/goodman/pipeline/data/dcr-source/dcr/</span></code></div></blockquote>
+<p>Then simply type:</p>
+<blockquote>
+<div><code class="docutils literal"><span class="pre">make</span></code></div></blockquote>
+<p>This will compile <cite>dcr</cite> and also it will create other files. The executable
+binary here is <code class="docutils literal"><span class="pre">dcr</span></code>.</p>
+<p>We have successfully compiled <em>dcr</em> right out the box in several platforms, such as:</p>
+<ul class="simple">
+<li>Ubuntu 16.04</li>
+<li>Centos 7.1, 7.4</li>
+<li>MacOS Sierra</li>
+<li>Solaris 11</li>
+</ul>
+</div>
+<div class="section" id="installing-the-dcr-binary">
+<h4>Installing the DCR binary<a class="headerlink" href="#installing-the-dcr-binary" title="Permalink to this headline">¶</a></h4>
+<p>This is a suggested method. If you are not so sure what you are doing, we
+recommend you follow the steps shown below. If you are a more advanced user and
+you want to do it your own way, all you have to achieve is to have the <code class="docutils literal"><span class="pre">dcr</span></code>
+executable binary in your <code class="docutils literal"><span class="pre">$PATH</span></code> variable.</p>
+<ol class="arabic">
+<li><p class="first">Open a terminal</p>
+</li>
+<li><p class="first">In your home directory create a hidden directory <code class="docutils literal"><span class="pre">.bin</span></code> (Home directory
+should be the default when you open a new terminal window)</p>
+<p><code class="docutils literal"><span class="pre">mkdir</span> <span class="pre">~/.bin</span></code></p>
+</li>
+<li><p class="first">Move the binary of your choice and rename it <code class="docutils literal"><span class="pre">dcr</span></code>. If you compiled it,
+most likely it’s already called <code class="docutils literal"><span class="pre">dcr</span></code> so you can ignore the renaming part of
+this step.</p>
+<p><code class="docutils literal"><span class="pre">mv</span> <span class="pre">dcr.Ubuntu16.04</span> <span class="pre">~/.bin/dcr</span></code></p>
+<p>Or</p>
+<p><code class="docutils literal"><span class="pre">mv</span> <span class="pre">dcr</span> <span class="pre">~/.bin/dcr</span></code></p>
+</li>
+<li><p class="first">Add your <code class="docutils literal"><span class="pre">$HOME/.bin</span></code> directory to your <code class="docutils literal"><span class="pre">$PATH</span></code> variable. Open the file
+<code class="docutils literal"><span class="pre">.bashrc</span></code> and add the following line.</p>
+<p><code class="docutils literal"><span class="pre">export</span> <span class="pre">PATH=$PATH:/home/myusername/.bin</span></code></p>
+<p>Where <code class="docutils literal"><span class="pre">/home/myusername</span></code> is of course your home directory.</p>
+</li>
+<li><p class="first">Close and reopen the terminal or load the <code class="docutils literal"><span class="pre">.bashrc</span></code> file.</p>
+<blockquote>
+<div><p><code class="docutils literal"><span class="pre">source</span> <span class="pre">~/.bashrc</span></code></p>
+</div></blockquote>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017 NOAO/AURA, Inc. All rights reserved..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.0.0',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

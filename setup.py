@@ -13,6 +13,7 @@ https://github.com/pypa/sampleproject
 from setuptools import setup, find_packages
 from pipeline.info import __version__
 
+from sphinx.setup_command import BuildDoc
 # To use a consistent encoding
 from codecs import open
 from os import path
@@ -26,6 +27,10 @@ here = path.abspath(path.dirname(__file__))
 # Get the long description from the README file
 #with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
 #    long_description = f.read()
+
+cmdclassd = {'build_sphinx': BuildDoc,
+             'build_docs': BuildDoc}
+
 setup(
     name='goodman',
 
@@ -48,6 +53,7 @@ setup(
            u'Cesar Briceño, '
            u'David Sanmartin, '
            ,
+    cmdclass=cmdclassd,
 
     author_email='storres@ctio.noao.edu, bquint@ctio.noao.edu, '
                  'cbriceno@ctio.noao.edu',
@@ -128,10 +134,10 @@ setup(
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    #extras_require={
-    #    'dev': ['check-manifest'],
+    # extras_require={
+    #    'docs': ['astropy_sphinx_theme'],
     #    'test': ['coverage'],
-    #},
+    # },
 
     # If there are data files included in your packages that need to be
     # installed, specify them here.  If using Python 2.6 or less, then these
