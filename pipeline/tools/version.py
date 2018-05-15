@@ -1,20 +1,20 @@
+"""
+v1.0.0
+    - First public release.
+"""
+
 import logging
 import requests
 import re
 
-latest_url='https://api.github.com/repos/soar-telescope/goodman/releases/latest'
-
-api = 1
-feature = 0
-bug = 0
-
-month = 0
-year = 0
-
-__str__ = "v{:d}.{:d}.{:d} - {:d}-{:d}".format(api, feature, bug, month, year)
+from .. import info
 
 
-def get_last(url=latest_url):
+LATEST_URL = \
+    'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
+
+
+def get_last(url=LATEST_URL):
 
     response = requests.get(url)
     tag_name = response.json()['tag_name']
@@ -28,16 +28,25 @@ def get_last(url=latest_url):
     return _api, _feature, _bug
 
 
-def check_last():
+def check_last(version):
+
+    version = re.findall(r'\d+', version)
+
+    api = int(version[0])
+    feature = int(version[1])
+    bug = int(version[2])
 
     last_api, last_feature, last_bug = get_last()
 
     if last_api > api or last_feature > feature or last_bug > bug:
 
-        logging.warning('A new version of the Goodman DRP is available: ')
+        logging.info('A new version of the Goodman DRP is available: ')
 
-        logging.warning('\tcurrent version: v{}.{}.{}'.format(
+        logging.info('\tcurrent version: v{}.{}.{}'.format(
             api, feature, bug))
 
-        logging.warning('\tlatest version: v{}.{}.{}'.format(
+        logging.info('\tlatest version: v{}.{}.{}'.format(
             last_api, last_feature, last_bug))
+
+    else:
+        logging.info('Goodman DRP {:s}'.format(info.__version__))

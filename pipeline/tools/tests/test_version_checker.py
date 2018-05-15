@@ -3,6 +3,7 @@ __author__ = 'Bruno Quint'
 
 import unittest
 
+from ... import info
 from ...tools import version
 
 
@@ -12,22 +13,17 @@ class TestVersionChecker(unittest.TestCase):
 
         api, feature, bug = version.get_last()
 
-        self.assertEqual(api, version.api)
-        self.assertEqual(feature, version.feature)
-        self.assertEqual(bug, version.bug)
+        self.assertEqual(api, info.api)
+        self.assertEqual(feature, info.feature)
+        self.assertEqual(bug, info.bug)
 
-    def test_check_last(self):
-
-        temp_api = version.api
-        version.api = 0
-
+    def test_check_last_positive(self):
         with self.assertLogs() as cm:
-            version.check_last()
+            version.check_last(info.__version__)
 
-        self.assertEqual(3, len(cm.records))
-
-        version.api = temp_api
-
+    def test_check_last_negative(self):
+        with self.assertLogs() as cm:
+            version.check_last('v0.0.0')
 
 if __name__ == '__main__':
     unittest.main()
