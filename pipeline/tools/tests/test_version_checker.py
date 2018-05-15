@@ -8,22 +8,25 @@ from ...tools import version
 
 class TestVersionChecker(unittest.TestCase):
 
-    def setUp(self):
-        self.url = \
-            "https://github.com/soar-telescope/goodman/releases/tag/1.0.0"
+    def test_get_last(self):
 
-    def test_version_checker(self):
+        api, feature, bug = version.get_last()
 
-        class Version:
-            api = 1
-            feature = 0
-            bug = 0
-
-        api, feature, bug = version.check_last(self.url)
-
-        self.assertEqual(api, Version.api)
-        self.assertEqual(feature, Version.feature)
+        self.assertEqual(api, version.api)
+        self.assertEqual(feature, version.feature)
         self.assertEqual(bug, version.bug)
+
+    def test_check_last(self):
+
+        temp_api = version.api
+        version.api = 0
+
+        with self.assertLogs() as cm:
+            version.check_last()
+
+        self.assertEqual(3, len(cm.records))
+
+        version.api = temp_api
 
 
 if __name__ == '__main__':
