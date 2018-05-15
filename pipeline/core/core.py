@@ -1808,9 +1808,7 @@ def setup_logging():
                      '%(lineno)d]: %(message)s'
         logging_level = logging.DEBUG
     else:
-        # log_format = '[%(asctime)s][%(levelname)8s]: %(message)s'
-        log_format = '[%(asctime)s][%(levelname)8s][%(module)s.%(funcName)s:' \
-                     '%(lineno)d]--%(name)s--: %(message)s'
+        log_format = '[%(asctime)s][%(levelname)8s]: %(message)s'
         logging_level = logging.INFO
 
 
