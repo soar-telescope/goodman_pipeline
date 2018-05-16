@@ -78,8 +78,7 @@ setup(
         'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
 
-        'License :: OSI Approved :: GNU General Public License v3 or later '
-        '(GPLv3+)',
+        'License :: OSI Approved :: BSD-3-Clause',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
