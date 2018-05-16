@@ -2,8 +2,10 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import glob
-import os
 import logging
+import os
+import sys
+
 from pipeline.core import SpectroscopicMode
 
 
@@ -167,5 +169,17 @@ class FixHeaders(object):
 
 
 if __name__ == '__main__':
+
+    # there is some intentionally vague coding here
+    try:
+        path = sys.argv[1]
+    except:
+        path = os.getcwd()
+
+    try:
+        pattern = sys.argv[2]
+    except:
+        pattern = '*fits'
+
     fix_headers = FixHeaders()
-    fix_headers(path='/user/simon/data/soar/work/william_data/2016-03-07')
+    fix_headers(path=path, pattern=pattern)
