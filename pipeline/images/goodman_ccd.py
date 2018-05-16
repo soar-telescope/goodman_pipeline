@@ -4,7 +4,6 @@ from __future__ import (absolute_import, division, print_function,
 from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
-from ..info import __version__
 
 import os
 import sys
@@ -15,9 +14,9 @@ import logging
 import matplotlib
 matplotlib.use('Qt5Agg')
 
-
 log = logging.getLogger(__name__)
 
+__version__ = __import__('pipeline').__version__
 
 def get_args(arguments=None):
     """Get command line arguments.
