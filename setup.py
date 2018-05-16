@@ -9,40 +9,47 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 
+import os
+import sys
+
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
-from pipeline.info import __version__
 
 from sphinx.setup_command import BuildDoc
 # To use a consistent encoding
 from codecs import open
-from os import path
-
-here = path.abspath(path.dirname(__file__))
 
 
-# VERSION = __import__('pipeline').__version__
-# VERSION = __version__
+here = os.path.abspath(os.path.dirname(__file__))
 
-# Get the long description from the README file
-#with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
-#    long_description = f.read()
+# Get configuration information from setup.cfg
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
+conf = ConfigParser()
+
+# conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
+conf.read([os.path.join(os.path.dirname(__file__), 'setup.cfg')])
+metadata = dict(conf.items('metadata'))
+
+__import__(metadata['package_name'])
+package = sys.modules[metadata['package_name']]
 
 cmdclassd = {'build_sphinx': BuildDoc,
              'build_docs': BuildDoc}
 
 setup(
-    name='goodman',
+    name=metadata['package_name'],
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=__version__,
+    version=package.__version__,
 
-    description='Data reduction pipeline for '
-                'Goodman High Throughput Spectrograph',
+    description=package.__description__,
 
-    #long_description=long_description,
+    long_description=package.__long_description__,
 
     # The project's main homepage.
     url='https://github.com/soar-telescope/goodman',
@@ -59,7 +66,7 @@ setup(
                  'cbriceno@ctio.noao.edu',
 
     # Choose your license
-    license='GNU General Public License v3 or later (GPLv3+)',
+    license=package.__license__,
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
