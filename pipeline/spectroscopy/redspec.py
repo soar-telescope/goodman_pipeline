@@ -31,6 +31,7 @@ import os
 import textwrap
 import argparse
 import astropy.units as u
+import glob
 import logging
 from ccdproc import CCDData
 from ..info import __version__
@@ -145,46 +146,6 @@ def get_args(arguments=None):
 
     args = parser.parse_args(args=arguments)
 
-    try:
-        ref_full_path = os.path.join(
-            os.path.dirname(sys.modules['goodman.pipeline'].__file__),
-            args.reference_dir)
-    except KeyError as error:
-        log.debug("KeyError {:s}".format(str(error)))
-        ref_full_path = os.path.join(
-            os.path.dirname(sys.modules['pipeline'].__file__),
-            args.reference_dir)
-    if not os.path.isdir(ref_full_path):
-        log.info("Reference files directory doesn't exist.")
-        try:
-            os.path.os.makedirs(ref_full_path)
-            log.info('Reference Files Directory is: %s', ref_full_path)
-            args.reference_dir = ref_full_path
-        except OSError as err:
-            log.error(err)
-    else:
-        args.reference_dir = ref_full_path
-
-    if not os.path.isabs(args.source):
-        args.source = os.path.join(os.getcwd(), args.source)
-    if not os.path.isdir(args.source):
-        log.error("Source Directory {:s} doesn't exist.".format(args.source))
-        if 'test' not in parser.prog:
-            parser.print_help()
-        parser.exit("Leaving the Program.")
-
-    if not os.path.isabs(args.destination):
-        args.destination = os.path.join(os.getcwd(), args.destination)
-
-    if not os.path.isdir(args.destination):
-        log.error("Destination folder doesn't exist.")
-        try:
-            os.path.os.makedirs(args.destination)
-            log.info('Destination folder created: %s', args.destination)
-        except OSError as err:
-            log.error(err)
-            parser.print_help()
-            parser.exit("Leaving the Program.")
     return args
 
 
@@ -227,6 +188,9 @@ class MainApp(object):
             self.args = get_args()
         else:
             self.args = args
+
+        if not self._check_args():
+            sys.exit()
 
         self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
         self.log.debug("Initializing reference data locator.")
@@ -430,6 +394,61 @@ class MainApp(object):
                                 comp_list=comp_list,
                                 object_number=object_number)
 
+        return True
+
+    def _check_args(self):
+
+        self.log.debug("Starting arguments check")
+
+        try:
+            ref_full_path = os.path.join(
+                os.path.dirname(sys.modules['goodman.pipeline'].__file__),
+                self.args.reference_dir)
+        except KeyError as error:
+            self.log.debug("KeyError {:s}".format(str(error)))
+            ref_full_path = os.path.join(
+                os.path.dirname(sys.modules['pipeline'].__file__),
+                self.args.reference_dir)
+        if not os.path.isdir(ref_full_path):
+            self.log.info("Reference files directory doesn't exist.")
+            try:
+                os.path.os.makedirs(ref_full_path)
+                self.log.info('Reference Files Directory is: %s', ref_full_path)
+                self.args.reference_dir = ref_full_path
+            except OSError as err:
+                self.log.error(err)
+        else:
+            self.args.reference_dir = ref_full_path
+
+        if not os.path.isabs(self.args.source):
+            self.args.source = os.path.join(os.getcwd(), self.args.source)
+
+        if os.path.isdir(self.args.source):
+            if len(glob.glob(os.path.join(self.args.source,
+                                          self.args.pattern + '*'))) == 0:
+                self.log.critical("Source directory is empty or does not "
+                                  "contain any files "
+                                  "matching \"{:s}\" "
+                                  "".format(self.args.pattern + "*"))
+                return False
+        else:
+            self.log.critical(
+                "Source Directory \"{:s}\" doesn't exist."
+                "".format(self.args.source))
+            return False
+
+        if not os.path.isabs(self.args.destination):
+            self.args.destination = os.path.join(os.getcwd(),
+                                                 self.args.destination)
+
+        if not os.path.isdir(self.args.destination):
+            self.log.error("Destination folder doesn't exist.")
+            try:
+                os.path.os.makedirs(self.args.destination)
+                self.log.info('Destination folder created: %s', self.args.destination)
+            except OSError as err:
+                self.log.error(err)
+                return False
         return True
 
 
