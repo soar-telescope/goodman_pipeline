@@ -317,6 +317,7 @@ class MainApp(object):
         else:
             log.critical("Raw data folder \"{:s}\" doesn't "
                          "exist".format(self.args.raw_path))
+            return False
 
         raw_folder_content = glob.glob(os.path.join(self.args.raw_path, '*'))
         if len(raw_folder_content) <= 1 and not \
