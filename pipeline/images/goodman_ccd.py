@@ -5,6 +5,7 @@ from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
 from ..info import __version__
+# __version__ = __import__('pipeline').__version__
 
 import os
 import sys
@@ -111,17 +112,6 @@ def get_args(arguments=None):
                         help="After cleaning cosmic rays with dcr, do not "
                              "remove the input file and the cosmic rays file.")
 
-    # parser.add_argument('--log-file',
-    #                     action='store',
-    #                     dest='log_file',
-    #                     metavar='<log_file>',
-    #                     default='goodman_log.txt',
-    #                     help="Name for log file. "
-    #                          "Default name is <goodman_log.txt>. "
-    #                          "The file is written in <red_path> and will be "
-    #                          "deleted each time you run this "
-    #                          "program")
-
     parser.add_argument('--raw-path',
                         action='store',
                         metavar='<raw_path>',
@@ -145,37 +135,6 @@ def get_args(arguments=None):
 
     args = parser.parse_args(args=arguments)
 
-    # define log file
-    # the log file will be stored in the same directory that the program
-    # is called
-
-    if os.path.isdir(args.raw_path):
-        args.raw_path = os.path.abspath(args.raw_path)
-        arg_log.debug(os.path.abspath(args.raw_path))
-    else:
-        parser.print_help()
-        parser.exit("Raw data folder doesn't exist")
-
-    # updated full path for default dcr.par file. If it doesn't exist it will
-    # create an empty one.
-    # print(sys.modules['pipeline'].__file__)
-    dcr_par_full_path = os.path.join(
-        os.path.dirname(sys.modules['pipeline'].__file__),
-        args.dcr_par_dir)
-    # TODO (simon): Review the logic of the next if statement.
-    if not os.path.isdir(dcr_par_full_path) or \
-            args.dcr_par_dir != 'data/params':
-        arg_log.info("dcr.par default location doesn't exist.")
-        try:
-            os.path.os.makedirs(dcr_par_full_path)
-            arg_log.info('Created dcr.par empty directory: '
-                         '{:s}'.format(dcr_par_full_path))
-            args.dcr_par_dir = dcr_par_full_path
-        except OSError as err:
-            arg_log.error(err)
-    else:
-        args.dcr_par_dir = dcr_par_full_path
-    # print_default_args(args)
     return args
 
 
@@ -219,7 +178,9 @@ class MainApp(object):
             self.args = get_args()
         else:
             self.args = args
-        self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
+
+        if not self._check_args():
+            sys.exit()
         # Division point for the future implementation of *live reduction mode*
 
         folders = glob.glob(os.path.join(self.args.raw_path, '*'))
@@ -339,6 +300,68 @@ class MainApp(object):
                             data_container=self.data_container)
                         self.log.debug("Calling image processing procedure.")
                         process_images()
+
+    def _check_args(self):
+        """Perform checks to arguments
+
+        Returns:
+            False in case anything fails, True if everything succeeds.
+
+        """
+        self.log.debug("Starting argument checks.")
+        # check if raw folder exist
+        if os.path.isdir(self.args.raw_path):
+            self.args.raw_path = os.path.abspath(self.args.raw_path)
+            self.log.debug("Raw data folder \"{:s}\" exists."
+                           "".format(os.path.abspath(self.args.raw_path)))
+        else:
+            log.critical("Raw data folder \"{:s}\" doesn't "
+                         "exist".format(self.args.raw_path))
+
+        raw_folder_content = glob.glob(os.path.join(self.args.raw_path, '*'))
+        if len(raw_folder_content) <= 1 and not \
+                any([os.path.isdir(_item) for _item in raw_folder_content]):
+            log.critical(
+                "Raw data folder \"{:s}\" is empty.".format(self.args.raw_path))
+            return False
+        elif any(['.fits' in _item for _item in raw_folder_content]):
+            log.debug("Raw data folder \"{:s}\" contains {:d} FITS files."
+                      "".format(self.args.raw_path, len(raw_folder_content)))
+
+        elif all([os.path.isdir(_item) for _item in raw_folder_content]) and \
+                any([len(glob.glob(os.path.join(_folder, "*.fits"))) > 0
+                     for _folder in raw_folder_content]):
+
+            log.debug(
+                "Raw data folder \"{:s}\" contains {:d} folders with data."
+                "".format(self.args.raw_path, len(raw_folder_content)))
+        else:
+            log.critical("Raw data folder \"{:s}\" does not contain any "
+                         "\"*.fits\" files nor any folder with \"*.fits\" "
+                         "files in it.".format(self.args.raw_path))
+            return False
+
+        # updated full path for default dcr.par file. If it doesn't exist it will
+        # create an empty one.
+        # print(sys.modules['pipeline'].__file__)
+        dcr_par_full_path = os.path.join(
+            os.path.dirname(sys.modules['pipeline'].__file__),
+            self.args.dcr_par_dir)
+        # TODO (simon): Review the logic of the next if statement.
+        if not os.path.isdir(dcr_par_full_path) or \
+                        self.args.dcr_par_dir != 'data/params':
+            self.log.info("dcr.par default location doesn't exist.")
+            try:
+                os.path.os.makedirs(dcr_par_full_path)
+                self.log.info('Created dcr.par empty directory: '
+                             '{:s}'.format(dcr_par_full_path))
+                self.args.dcr_par_dir = dcr_par_full_path
+            except OSError as err:
+                self.log.error(err)
+        else:
+            self.args.dcr_par_dir = dcr_par_full_path
+            # print_default_args(args)
+        return True
 
 
 if __name__ == '__main__':

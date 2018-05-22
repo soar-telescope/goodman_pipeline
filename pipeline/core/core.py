@@ -28,7 +28,7 @@ from astropy import units as u
 from astropy.modeling import (models, fitting, Model)
 from scipy import signal
 from ..info import __version__
-
+# __version__ = __import__('pipeline').__version__
 log = logging.getLogger(__name__)
 
 
@@ -1811,7 +1811,6 @@ def setup_logging():
         log_format = '[%(asctime)s][%(levelname)8s]: %(message)s'
         logging_level = logging.INFO
 
-
     date_format = '%I:%M:%S%p'
 
     formatter = logging.Formatter(fmt=log_format,
@@ -1833,6 +1832,7 @@ def setup_logging():
         datetime.datetime.now()))
     log.info("Universal Time: {:}".format(
         datetime.datetime.utcnow()))
+    log.info("Pipeline Version: {:s}".format(__version__))
 
 
 def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
