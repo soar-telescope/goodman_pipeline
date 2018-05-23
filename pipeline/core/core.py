@@ -27,7 +27,8 @@ from astroplan import Observer
 from astropy import units as u
 from astropy.modeling import (models, fitting, Model)
 from scipy import signal
-from ..info import __version__
+
+__version__ = __import__('pipeline').__version__
 
 log = logging.getLogger(__name__)
 
