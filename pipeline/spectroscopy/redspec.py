@@ -60,8 +60,6 @@ def get_args(arguments=None):
         system
 
     """
-    # getLogger without __name__ so that we get the root logger.
-    log = logging.getLogger()
 
     parser = argparse.ArgumentParser(
         description="Extracts goodman spectra and does automatic wavelength "
@@ -134,11 +132,6 @@ def get_args(arguments=None):
                         dest='save_plots',
                         help="Save all plots in a directory")
 
-    # parser.add_argument('--combine',
-    #                     action='store_true',
-    #                     dest='combine',
-    #                     help="Combine compatible data")
-
     parser.add_argument('--plot-results',
                         action='store_true',
                         dest='plot_results',
@@ -195,7 +188,6 @@ class MainApp(object):
         self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
         self.log.debug("Initializing reference data locator.")
         self.reference = ReferenceData(reference_dir=self.args.reference_dir)
-        # data_container instance of NightDataContainer defined in core
         self.log.debug("Calling data classification procedure.")
         data_container = classify_spectroscopic_data(
             path=self.args.source,
@@ -217,8 +209,6 @@ class MainApp(object):
         assert data_container.is_empty is False
         assert any(extraction_type == option for option in ['fractional',
                                                             'optimal'])
-        # log = logging.getLogger(__name__)
-
         full_path = data_container.full_path
 
         for sub_container in [groups for groups in [
@@ -226,10 +216,9 @@ class MainApp(object):
             data_container.object_groups]
                               if groups is not None]:
             for group in sub_container:
-                # instantiate WavelengthCalibration here for each group.
                 self.wavelength_calibration = WavelengthCalibration(
                     args=self.args)
-                # this will contain only obstype == OBJECT
+
                 object_group = group[group.obstype == 'OBJECT']
                 obj_groupby = object_group.groupby(['object']).size(
 
@@ -288,8 +277,6 @@ class MainApp(object):
                     ccd.header.set('GSP_PNAM', value=spec_file)
                     ccd = add_wcs_keys(ccd=ccd)
 
-                    # ccd.header['GSP_FNAM'] = spec_file
-
                     if comp_group is not None and comp_ccd_list == []:
 
                         for comp_file in comp_group.file.tolist():
@@ -335,7 +322,6 @@ class MainApp(object):
                                 extraction_name=extraction_type)
                             save_extracted(ccd=extracted,
                                            destination=self.args.destination)
-                            # print(spec_file)
 
                             # lamp extraction
                             all_lamps = []
@@ -354,7 +340,6 @@ class MainApp(object):
                                                                all_lamps])
 
                             if self.args.debug_mode:
-                                # print(plt.get_backend())
                                 plt.close('all')
                                 fig, ax = plt.subplots(1, 1)
 
@@ -397,6 +382,12 @@ class MainApp(object):
         return True
 
     def _check_args(self):
+        """Check arguments for redspec
+
+        Returns:
+            True if all the test succeed or False in case of any of them fails.
+
+        """
 
         self.log.debug("Starting arguments check")
 
@@ -410,13 +401,9 @@ class MainApp(object):
                 os.path.dirname(sys.modules['pipeline'].__file__),
                 self.args.reference_dir)
         if not os.path.isdir(ref_full_path):
-            self.log.info("Reference files directory doesn't exist.")
-            try:
-                os.path.os.makedirs(ref_full_path)
-                self.log.info('Reference Files Directory is: %s', ref_full_path)
-                self.args.reference_dir = ref_full_path
-            except OSError as err:
-                self.log.error(err)
+            self.log.critical("Reference files directory \"{:s}\" "
+                              "doesn't exist.".format(ref_full_path))
+            return False
         else:
             self.args.reference_dir = ref_full_path
 
@@ -442,13 +429,20 @@ class MainApp(object):
                                                  self.args.destination)
 
         if not os.path.isdir(self.args.destination):
-            self.log.error("Destination folder doesn't exist.")
+            self.log.warning("Destination folder \"{:s}\" doesn't exist."
+                             "".format(self.args.destination))
             try:
                 os.path.os.makedirs(self.args.destination)
-                self.log.info('Destination folder created: %s', self.args.destination)
+                self.log.info('Destination folder \"{:s}\" created.'
+                              ''.format(self.args.destination))
             except OSError as err:
-                self.log.error(err)
+                self.log.critical('OSError: {:s}'.format(repr(err)))
                 return False
+        elif not os.access(self.args.destination, os.W_OK):
+            self.log.critical('Destination folder \"{:s}\" does not have '
+                              'writing permission.'
+                              ''.format(self.args.destination))
+            return False
         return True
 
 
