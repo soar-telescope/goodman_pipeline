@@ -33,7 +33,7 @@ import argparse
 import astropy.units as u
 import logging
 from ccdproc import CCDData
-from ..info import __version__
+
 # import matplotlib
 # matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
@@ -43,6 +43,7 @@ SHOW_PLOTS = False
 
 warnings.filterwarnings('ignore')
 
+__version__ = __import__('pipeline').__version__
 
 def get_args(arguments=None):
     """Handles the argparse library and returns the arguments
