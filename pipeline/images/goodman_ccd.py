@@ -5,7 +5,6 @@ from .data_classifier import DataClassifier
 from .night_organizer import NightOrganizer
 from .image_processor import ImageProcessor
 from ..info import __version__
-# __version__ = __import__('pipeline').__version__
 
 import os
 import sys
