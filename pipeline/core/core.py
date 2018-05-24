@@ -2484,6 +2484,9 @@ class ReferenceData(object):
                 self.log.debug("In this case a compatible lamp will be "
                                "obtained from all the lamps obtained in the "
                                "data or present in the files.")
+                self.log.debug("Using the full set of comparison lamps "
+                               "for extraction.")
+                return comp_group
         return None
 
     def _recover_lines(self):
