@@ -229,7 +229,6 @@ class MainApp(object):
         else:
             self.args = args
 
-        self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
         self.log.debug("Initializing reference data locator.")
         self.reference = ReferenceData(reference_dir=self.args.reference_dir)
         # data_container instance of NightDataContainer defined in core
@@ -271,7 +270,7 @@ class MainApp(object):
                 obj_groupby = object_group.groupby(['object']).size(
 
                 ).reset_index().rename(columns={0: 'count'})
-                self.log.info('\n')
+
                 self.log.info("Processing Science Target: "
                               "{:s} with {:d} files."
                               "".format(obj_groupby.iloc[0]['object'],
