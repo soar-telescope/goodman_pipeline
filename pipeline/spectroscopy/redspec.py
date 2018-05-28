@@ -34,7 +34,7 @@ import astropy.units as u
 import glob
 import logging
 from ccdproc import CCDData
-from ..info import __version__
+
 # import matplotlib
 # matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
@@ -44,6 +44,7 @@ SHOW_PLOTS = False
 
 warnings.filterwarnings('ignore')
 
+__version__ = __import__('pipeline').__version__
 
 def get_args(arguments=None):
     """Handles the argparse library and returns the arguments
@@ -184,8 +185,7 @@ class MainApp(object):
 
         if not self._check_args():
             sys.exit()
-
-        self.log.info("Pipeline Version: {:s}".format(self._pipeline_version))
+      
         self.log.debug("Initializing reference data locator.")
         self.reference = ReferenceData(reference_dir=self.args.reference_dir)
         self.log.debug("Calling data classification procedure.")
@@ -223,7 +223,7 @@ class MainApp(object):
                 obj_groupby = object_group.groupby(['object']).size(
 
                 ).reset_index().rename(columns={0: 'count'})
-                self.log.info('\n')
+
                 self.log.info("Processing Science Target: "
                               "{:s} with {:d} files."
                               "".format(obj_groupby.iloc[0]['object'],
