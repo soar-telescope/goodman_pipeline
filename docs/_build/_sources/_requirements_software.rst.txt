@@ -44,6 +44,10 @@ The VNC connection should work with any VNC Client like TightVNC, TigerVNC,
 RealVNC, etc. The first two run on Linux and can be used directly with the
 ``vncviewer`` command line.
 
+Please, help us to create an organized enviroment by creating a new folder using
+the format ``YYYY-MM-DD`` within your institution's directory and using it to
+process your data
+
 VNC from the Terminal
 ~~~~~~~~~~~~~~~~~~~~~
 Find the ``<display-number>`` that corresponds to you from the `VNC Displays table`_.

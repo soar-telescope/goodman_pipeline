@@ -132,13 +132,11 @@
 <li><a class="reference internal" href="#id4">Detected lines</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#authors-and-credits">Authors and Credits</a></li>
-<li><a class="reference internal" href="#contributors">Contributors</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#acknowledgements">Acknowledgements</a><ul>
-<li><a class="reference internal" href="#id5">Authors and Credits</a></li>
-<li><a class="reference internal" href="#id9">Contributors</a></li>
+<li><a class="reference internal" href="#authors-and-credits">Authors and Credits</a></li>
+<li><a class="reference internal" href="#contributors">Contributors</a></li>
 </ul>
 </li>
 </ul>
@@ -365,8 +363,8 @@ that the lamp names are correct, for instance <code class="docutils literal"><sp
 <code class="docutils literal"><span class="pre">HgArNe</span></code>. Spaces between lamps are not allowed. And the name is case
 insensitive: you may write “HgAr”, “HGAR” or “hgar”.
 The list of current lamps is the following.</p>
-<span id="table-supported-modes"></span><table border="1" class="docutils" id="id12">
-<caption><span class="caption-text">List of Goodman Spectrograph supported modes</span><a class="headerlink" href="#id12" title="Permalink to this table">¶</a></caption>
+<span id="table-supported-modes"></span><table border="1" class="docutils" id="id5">
+<caption><span class="caption-text">List of Goodman Spectrograph supported modes</span><a class="headerlink" href="#id5" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="15%" />
 <col width="10%" />
@@ -517,8 +515,8 @@ not <em>ds9</em></p>
 <h6>Establish a VNC connection<a class="headerlink" href="#establish-a-vnc-connection" title="Permalink to this headline">¶</a></h6>
 <p>Separately, you should receive a server hostname, IP, display number and
 VNC-password.</p>
-<span id="vnc-displays-table"></span><table border="1" class="docutils" id="id13">
-<caption><span class="caption-text">VNC display number and working folder assigned to each partner.</span><a class="headerlink" href="#id13" title="Permalink to this table">¶</a></caption>
+<span id="vnc-displays-table"></span><table border="1" class="docutils" id="id6">
+<caption><span class="caption-text">VNC display number and working folder assigned to each partner.</span><a class="headerlink" href="#id6" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="32%" />
@@ -558,6 +556,9 @@ the display number  is <code class="docutils literal"><span class="pre">&lt;disp
 <p>The VNC connection should work with any VNC Client like TightVNC, TigerVNC,
 RealVNC, etc. The first two run on Linux and can be used directly with the
 <code class="docutils literal"><span class="pre">vncviewer</span></code> command line.</p>
+<p>Please, help us to create an organized enviroment by creating a new folder using
+the format <code class="docutils literal"><span class="pre">YYYY-MM-DD</span></code> within your institution’s directory and using it to
+process your data</p>
 </div>
 <div class="section" id="vnc-from-the-terminal">
 <h6>VNC from the Terminal<a class="headerlink" href="#vnc-from-the-terminal" title="Permalink to this headline">¶</a></h6>
@@ -826,8 +827,8 @@ added to all the images.</p>
 <h5>General Purpose Keywords<a class="headerlink" href="#general-purpose-keywords" title="Permalink to this headline">¶</a></h5>
 <p>These keywords are used for record purpose, except for <code class="docutils literal"><span class="pre">GSP_FNAM</span></code> which is
 used to keep track of the file name.</p>
-<span id="table-general-keywords"></span><table border="1" class="docutils" id="id14">
-<caption><span class="caption-text">General purpose keywords, added to all images at the moment of the first read.</span><a class="headerlink" href="#id14" title="Permalink to this table">¶</a></caption>
+<span id="table-general-keywords"></span><table border="1" class="docutils" id="id7">
+<caption><span class="caption-text">General purpose keywords, added to all images at the moment of the first read.</span><a class="headerlink" href="#id7" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="86%" />
@@ -904,8 +905,8 @@ from <code class="docutils literal"><span class="pre">astropy.modeling.models</s
 <em>untouched</em> while keeping a reliable description of the wavelength solution.</p>
 <p>The current implementation will work for writting any polinomial model. Reading is implemented only for <code class="docutils literal"><span class="pre">Chebyshev1D</span></code> which is the
 model by default.</p>
-<span id="table-non-linear-keywords"></span><table border="1" class="docutils" id="id15">
-<caption><span class="caption-text">Keywords used to describe a non-linear wavelength solution.</span><a class="headerlink" href="#id15" title="Permalink to this table">¶</a></caption>
+<span id="table-non-linear-keywords"></span><table border="1" class="docutils" id="id8">
+<caption><span class="caption-text">Keywords used to describe a non-linear wavelength solution.</span><a class="headerlink" href="#id8" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="86%" />
@@ -942,8 +943,8 @@ model by default.</p>
 <p>Every image used in a combination of images is recorded in the header of the
 resulting one. The order does not have importance but most likely the header
 of the first one will be used</p>
-<span id="table-combined-images-key"></span><table border="1" class="docutils" id="id16">
-<caption><span class="caption-text">Keywords that list all the images used to produce a combined image.</span><a class="headerlink" href="#id16" title="Permalink to this table">¶</a></caption>
+<span id="table-combined-images-key"></span><table border="1" class="docutils" id="id9">
+<caption><span class="caption-text">Keywords that list all the images used to produce a combined image.</span><a class="headerlink" href="#id9" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="86%" />
@@ -968,8 +969,8 @@ of the first one will be used</p>
 <p>The <em>reference lamp library</em> maintains the lamps non-linearized and also they
 get a record of the pixel value and the equivalent in angstrom. In the following
 table a three-line lamp is shown.</p>
-<span id="table-line-list"></span><table border="1" class="docutils" id="id17">
-<caption><span class="caption-text">Description of all the keywords used to list lines in lamps in Pixel and Angstrom.</span><a class="headerlink" href="#id17" title="Permalink to this table">¶</a></caption>
+<span id="table-line-list"></span><table border="1" class="docutils" id="id10">
+<caption><span class="caption-text">Description of all the keywords used to list lines in lamps in Pixel and Angstrom.</span><a class="headerlink" href="#id10" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col width="14%" />
 <col width="86%" />
@@ -1002,6 +1003,15 @@ table a three-line lamp is shown.</p>
 </table>
 </div>
 </div>
+</div>
+<div class="section" id="acknowledgements">
+<h3>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h3>
+<p>Our work would not be possible without the friendly work atmosphere at CTIO
+headquarters in La Serena, were we can interact with our SOAR and CTIO
+colleagues in lively and useful discussions that have been important in making
+the Goodman pipeline possible.  We also acknowledge fruitful discussions and
+suggestions from our colleagues Bart Dunlop, Chris Clemens, and Erik Dennihy,
+at University of North Carolina at Chapel Hill.</p>
 <div class="section" id="authors-and-credits">
 <h4>Authors and Credits<a class="headerlink" href="#authors-and-credits" title="Permalink to this headline">¶</a></h4>
 <ul class="simple">
@@ -1023,39 +1033,6 @@ to contribute to the development of the pipeline.</p>
 the initial incarnation of the redccd module. We thank Tina Armond for her
 invaluable help in adding calibrated comparison lamps to the library of
 reference comparison lamps for wavelength solution.</p>
-</div>
-</div>
-<div class="section" id="acknowledgements">
-<h3>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this headline">¶</a></h3>
-<p>Our work would not be possible without the friendly work atmosphere at CTIO
-headquarters in La Serena, were we can interact with our SOAR and CTIO
-colleagues in lively and useful discussions that have been important in making
-the Goodman pipeline possible.  We also acknowledge fruitful discussions and
-suggestions from our colleagues Bart Dunlop, Chris Clemens, and Erik Dennihy,
-at University of North Carolina at Chapel Hill.</p>
-<div class="section" id="id5">
-<h4>Authors and Credits<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h4>
-<ul class="simple">
-<li><a class="reference external" href="https://github.com/simontorres">Simón Torres</a> (SOAR Telescope Data Analyst - main code developer)</li>
-<li><a class="reference external" href="https://github.com/cbaorion">César Briceño</a> (SOAR Telescope Scientist - team lead)</li>
-<li><a class="reference external" href="https://github.com/b1quint">Bruno Quint</a> (Brazil Support Astronomer - code development adviser)</li>
-</ul>
-<p>Bruno Quint dedicated part of his time as post-doc to this project. Given that,
-Bruno Quint would like to acknowledge CNPq for the fellowship which allowed him
-to contribute to the development of the pipeline.</p>
-</div>
-<div class="section" id="id9">
-<h4>Contributors<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h4>
-<ul class="simple">
-<li><a class="reference external" href="https://github.com/dsanmartim">David Sanmartim</a> (Gemini Astronomer)</li>
-<li><a class="reference external" href="https://github.com/tarmond">Tina Armond</a> (Brazil Support Astronomer)</li>
-</ul>
-<p>We acknowledge the important contribution of  David Sanmartim, who developed
-the initial incarnation of the redccd module. We thank Tina Armond for her
-invaluable help in adding calibrated comparison lamps to the library of
-reference comparison lamps for wavelength solution.</p>
-<blockquote>
-<div>the sequence is <cite>=#*^~&amp;</cite></div></blockquote>
 </div>
 </div>
 </div>
