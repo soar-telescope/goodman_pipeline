@@ -846,6 +846,8 @@ class WavelengthCalibration(object):
         self.grating_angle = float(self.lamp.header['GRT_ANG']) * u.deg
         self.camera_angle = float(self.lamp.header['CAM_ANG']) * u.deg
 
+        # serial binning - dispersion binning
+        # parallel binning - spatial binning
         self.serial_binning, self.parallel_binning = [
             int(x) for x in self.lamp.header['CCDSUM'].split()]
 
@@ -861,7 +863,7 @@ class WavelengthCalibration(object):
 
         limit_angle = np.arctan(
             self.pixel_count *
-            (self.pixel_size / self.goodman_focal_length) / 2)
+            ((self.pixel_size * self.serial_binning)/ self.goodman_focal_length) / 2)
 
         self.blue_limit = (
             (np.sin(self.alpha) + np.sin(self.beta - limit_angle.to(u.rad))) /
@@ -875,9 +877,10 @@ class WavelengthCalibration(object):
         pixel_two = 0
         self.log.debug(
             'Center Wavelength : {:.3f} Blue Limit : '
-            '{:.3f} Red Limit : {:.3f} '.format(self.center_wavelength,
-                                                self.blue_limit,
-                                                self.red_limit))
+            '{:.3f} Red Limit : {:.3f} '.format(
+                self.center_wavelength.to(u.angstrom),
+                self.blue_limit,
+                self.red_limit))
 
         spectral_characteristics = {'center': self.center_wavelength,
                                     'blue': self.blue_limit,

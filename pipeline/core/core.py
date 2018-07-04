@@ -2406,8 +2406,8 @@ class ReferenceData(object):
                                       "that match")
         elif len(filtered_collection) == 1:
             self.log.info(
-                "Lamp: {:s}".format(filtered_collection.file.to_string(
-                    index=False)))
+                "Reference Lamp Found: {:s}"
+                "".format(filtered_collection.file.to_string(index=False)))
             full_path = os.path.join(self.reference_dir,
                                      filtered_collection.file.to_string(
                                          index=False))
