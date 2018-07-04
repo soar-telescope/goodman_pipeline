@@ -393,8 +393,12 @@ class MainApp(object):
                                 # print(plt.get_backend())
                                 plt.close('all')
                                 fig, ax = plt.subplots(1, 1)
+                                ax.set_ylabel("Intensity (ADU)")
+                                ax.set_xlabel("Dispersion Axis (Pixels)")
 
-                                fig.canvas.set_window_title('Extracted Data')
+                                fig.canvas.set_window_title(
+                                    'Extracted Data: Target Center ~ '
+                                    '{:.2f}'.format(single_profile.mean.value))
 
                                 manager = plt.get_current_fig_manager()
 
@@ -403,14 +407,23 @@ class MainApp(object):
                                 elif plt.get_backend() == u'Qt5Agg':
                                     manager.window.showMaximized()
 
-                                for edata, comps in extracted_target_and_lamps:
-                                    ax.plot(edata.data,
-                                            label=edata.header['OBJECT'])
-                                    if comps:
-                                        for comp in comps:
-                                            ax.plot(comp.data,
-                                                    label=comp.header[
-                                                         'OBJECT'])
+
+                                ax.set_title(
+                                    "{:s} Extraction centered near "
+                                    "{:.2f} \n File: {:s}".format(
+                                        extracted.header['OBJECT'],
+                                        single_profile.mean.value,
+                                        extracted.header['GSP_FNAM'])
+                                )
+                                if all_lamps:
+                                    _alpha = 1.0 / len(all_lamps)
+                                    for comp in all_lamps:
+                                        ax.plot(comp.data,
+                                                label=comp.header['OBJECT'],
+                                                alpha=_alpha,
+                                                color='k')
+                                ax.plot(extracted.data,
+                                        label=extracted.header['OBJECT'])
                                 ax.legend(loc='best')
                                 if plt.isinteractive():
                                     plt.draw()
