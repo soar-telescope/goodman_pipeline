@@ -13,6 +13,7 @@ standard.
 # conflict with this request.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import ccdproc
 import inspect
 import glob
 import logging
@@ -381,6 +382,13 @@ class WavelengthCalibration(object):
         reference_lamp_wav_axis, reference_lamp_ccd.data = \
             self.wcs.read_gsp_wcs(ccd=reference_lamp_ccd)
 
+        if self.serial_binning != 1:
+            reference_lamp_wav_axis, reference_lamp_ccd.data = \
+                self._bin_reference_data(wavelength=reference_lamp_wav_axis,
+                                         intensity=reference_lamp_ccd.data)
+
+            self.wcs.binning = self.serial_binning
+
         reference_lamp_copy = reference_lamp_ccd.copy()
 
         gaussian_kernel = Gaussian1DKernel(stddev=3.)
@@ -454,7 +462,7 @@ class WavelengthCalibration(object):
                                              global_cross_corr))
 
             if False:
-                print(global_cross_corr, correlation_value)
+                # print(global_cross_corr, correlation_value)
                 plt.ion()
                 plt.title('Samples after cross correlation')
                 plt.xlabel('Pixel Axis')
@@ -647,6 +655,31 @@ class WavelengthCalibration(object):
                     # plt.close(self.i_fig)
             # else:
             #     plt.close('all')
+
+    def _bin_reference_data(self, wavelength, intensity):
+        """Bins a 1D array
+
+        This method reduces the size of an unbinned array by binning.
+        The function to combine data is `numpy.mean`.
+
+        Args:
+            wavelength (array): Wavelength axis
+            intensity (array): Intensity
+
+        Returns:
+            Binned wavelength and intensity arrays.
+
+        """
+        if self.serial_binning != 1:
+            b_wavelength = ccdproc.block_reduce(wavelength,
+                                                self.serial_binning,
+                                                np.mean)
+            b_intensity = ccdproc.block_reduce(intensity,
+                                               self.serial_binning,
+                                               np.mean)
+            return b_wavelength, b_intensity
+        else:
+            return wavelength, intensity
 
     def _cross_correlation(self, reference, new_array, mode='full'):
         """Do cross correlation of two arrays

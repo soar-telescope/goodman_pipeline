@@ -33,6 +33,8 @@ class WCS(object):
         self.model = None
         self.model_fitter = None
         self.fitted_model = None
+        # dispersion direction binning
+        self._binning = 1
 
         # wavelength solution reader from header variables
         self.ccd = None
@@ -46,6 +48,18 @@ class WCS(object):
     def __call__(self, *args, **kwargs):
         self.log.error("Please use the method read(), fit() or get_model().")
         sys.exit(1)
+
+    @property
+    def binning(self):
+        return self._binning
+
+    @binning.setter
+    def binning(self, value):
+        if value > self._binning:
+            self._binning = value
+            self._set_binning_in_model()
+        else:
+            raise NotImplementedError("Impossible to perform")
 
     def fit(self, physical, wavelength, model_name='chebyshev', degree=3):
         """Fits a mathematical model
@@ -170,6 +184,7 @@ class WCS(object):
         assert isinstance(ccd, CCDData)
         self.model_name = ccd.header['GSP_FUNC']
         self.degree = ccd.header['GSP_ORDR']
+        self._binning = int(ccd.header['CCDSUM'].split()[0])
 
         if self.model_name == 'Chebyshev1D':
             self.model = models.Chebyshev1D(degree=self.degree)
@@ -345,6 +360,23 @@ class WCS(object):
         self.wavelength_and_intensity = [self.model(x_axis), self.data]
 
         return self.model
+
+    def _set_binning_in_model(self):
+        """Modified the model so it matches binned data"""
+
+        self.log.debug('"Binning" model')
+        if self.model.__class__.__name__ == 'Linear1D':
+            self.model.slope.value *= self._binning
+        elif self.model.__class__.__name__ in ['Chebyshev1D',
+                                               'Legendre1D']:
+            for par_index in range(len(self.model.parameters)):
+                parameter_name = self.model.param_names[par_index]
+                self.model.__getattr__(parameter_name).value *= \
+                    self.binning ** par_index
+        else:
+            raise NotImplementedError("Model {:s} not implemented"
+                                      "".format(self.model.__class__.__name__))
+
 
     def _set_math_model(self):
 

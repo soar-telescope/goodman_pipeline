@@ -50,6 +50,7 @@ class DataClassifier(object):
         self.raw_path = raw_path
 
         # define the ImageFileCollection instance right away.
+        # todo add try/except astropy.io.fits.verify.VerifyError: clean exit
         ifc = ImageFileCollection(self.raw_path)
         self.image_collection = ifc.summary.to_pandas()
 
