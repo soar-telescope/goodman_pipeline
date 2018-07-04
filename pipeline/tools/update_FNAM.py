@@ -4,6 +4,7 @@ import sys
 from ccdproc import CCDData
 import logging
 
+logging.basicConfig(level=logging.INFO)
 
 class KeywordUpdate(object):
 
@@ -26,13 +27,19 @@ class KeywordUpdate(object):
         self.file_list = glob.glob(self.search_pattern)
 
         for self._file_name in self.file_list:
+            value = os.path.basename(self._file_name)
+            self.log.info("Processing file: {:s}".format(self._file_name))
+            self.log.info("File's basename: {:s}".format(value))
+            # print("Processing file: {:s}".format(self._file_name))
             ccd = CCDData.read(self._file_name, unit='adu')
-            if value == '_file':
-                value = os.path.basename(self._file_name)
-            self._update_keyword(ccd=ccd,
-                                 keyword=keyword,
-                                 value=value,
-                                 comment=comment)
+            self.log.info("Current {:s} value is {:s}".format(keyword,
+                                                              ccd.header[keyword]))
+
+            ccd = self._update_keyword(ccd=ccd,
+                                       keyword=keyword,
+                                       value=value,
+                                       comment=comment)
+            ccd.write(self._file_name, overwrite=True)
 
     def _update_keyword(self, ccd, keyword, value, comment):
         if keyword in ccd.header:
@@ -48,7 +55,9 @@ class KeywordUpdate(object):
                            value=value,
                            comment=comment)
 
-        ccd.write(self._file_name, overwrite=True)
+        return ccd
+
+
 
 
 if __name__ == '__main__':
