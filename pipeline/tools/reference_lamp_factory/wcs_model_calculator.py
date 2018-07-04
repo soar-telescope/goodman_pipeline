@@ -226,7 +226,7 @@ if __name__ == '__main__':
             _file = os.path.join(os.getcwd(), _file)
         ccd = CCDData.read(_file, unit='adu')
 
-        calculator(ccd=ccd)
+        calculator(ccd=ccd, save=True)
     else:
         sys.exit("You must provide a file name\n"
                  "{:s} file-name.fits".format(sys.argv[0]))
