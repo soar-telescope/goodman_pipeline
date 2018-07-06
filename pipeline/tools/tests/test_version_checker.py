@@ -13,7 +13,8 @@ class TestVersionChecker(unittest.TestCase):
     def test_get_last(self):
         try:
             v = version.get_last()
-            self.assertEqual(v, __version__)
+            self.assertRegex(v, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
+            # self.assertEqual(v, __version__)
         except ConnectionRefusedError:
             pass
 
