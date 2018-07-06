@@ -2066,6 +2066,95 @@ def write_fits(ccd,
 # classes definition
 
 
+class GenerateDcrParFile(object):
+    """Creates dcr.par file based on lookup table
+
+    `dcr` parameters depend heavily on binning, this class generates a file
+    using the default format. The lookup table considers camera and binning.
+
+    """
+    _format = [
+        "THRESH  = {:.1f} // Threshold (in STDDEV)",
+        "XRAD    = {:d}   // x-radius of the box (size = 2 * radius)",
+        "YRAD    = {:d}   // y-radius of the box (size = 2 * radius)",
+        "NPASS   = {:d}   // Maximum number of cleaning passes",
+        "DIAXIS  = {:d}   // Dispersion axis: 0 - no dispersion, 1 - X, 2 - Y",
+        "LRAD    = {:d}   // Lower radius of region for replacement statistics",
+        "URAD    = {:d}   // Upper radius of region for replacement statistics",
+        "GRAD    = {:d}   // Growing radius",
+        "VERBOSE = {:d}   // Verbose level [0,1,2]",
+        "END"]
+
+    _columns = ['parameter',
+                'red-1',
+                'red-2',
+                'red-3',
+                'blue-1',
+                'blue-2',
+                'blue-3']
+
+    _lookup = [
+        ['thresh', 3.0, 2.0, 3.0, 3.0, 3.0, 3.0],
+        ['xrad', 9, 9, 9, 8, 9, 9],
+        ['yrad', 9, 9, 9, 8, 9, 9],
+        ['npass', 5, 5, 5, 5, 5, 5],
+        ['diaxis', 0, 0, 0, 0, 0, 0],
+        ['lrad', 1, 1, 1, 1, 1, 1],
+        ['urad', 3, 3, 3, 3, 3, 3],
+        ['grad', 1, 0, 1, 1, 1, 1],
+        ['verbose', 1, 1, 1, 1, 1, 1]
+    ]
+
+    def __init__(self, par_file_name='dcr.par'):
+        """
+
+        Args:
+            par_file_name:
+        """
+        self._file_name = par_file_name
+        self._df = pandas.DataFrame(self._lookup, columns=self._columns)
+        self._binning = "{:s}-{:s}"
+        self._data_format = "\n".join(self._format)
+
+    def __call__(self, instrument='Red', binning='1', path='default'):
+        """
+
+        Args:
+            instrument (str): Instrument from INSTCONF keyword
+            binning (str): Serial (dispersion) Binning from the header.
+            path (str): Directory where to save the file.
+
+        """
+        assert any([instrument == option for option in ['Red', 'Blue']])
+        b = self._binning.format(instrument.lower(), binning)
+        self._data_format = self._data_format.format(
+            self._df[b][self._df.parameter == 'thresh'].values[0],
+            int(self._df[b][self._df.parameter == 'xrad'].values[0]),
+            int(self._df[b][self._df.parameter == 'yrad'].values[0]),
+            int(self._df[b][self._df.parameter == 'npass'].values[0]),
+            int(self._df[b][self._df.parameter == 'diaxis'].values[0]),
+            int(self._df[b][self._df.parameter == 'lrad'].values[0]),
+            int(self._df[b][self._df.parameter == 'urad'].values[0]),
+            int(self._df[b][self._df.parameter == 'grad'].values[0]),
+            int(self._df[b][self._df.parameter == 'verbose'].values[0]))
+        self._create_file(path=path)
+
+    def _create_file(self, path):
+        """Creates `dcr.par` file
+
+        Args:
+            path (str): Path to where to save the `dcr.par` file.
+
+        """
+        if os.path.isdir(path):
+            full_path = os.path.join(path, self._file_name)
+        else:
+            full_path = os.path.join(os.getcwd(), self._file_name)
+
+        with open(full_path, 'w') as dcr_par:
+            dcr_par.write(self._data_format)
+
+
 class NightDataContainer(object):
     """This class is designed to be the organized data container. It doesn't
     store image data but a list of pandas.DataFrame objects. Also it stores
