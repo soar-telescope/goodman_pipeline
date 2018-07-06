@@ -165,6 +165,13 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         log.warning('DCR does apply the correction to images if you want '
                     'the mask use --keep-cosmic-files')
 
+        if not os.path.isfile(os.path.join(red_path, 'dcr.par')):
+            _create = GenerateDcrParFile()
+            _instrument = ccd.header['INSTCONF']
+            _binning, _ = ccd.header['CCDSUM'].split()
+
+            _create(instrument=_instrument, binning=_binning, path=red_path)
+
         full_path = os.path.join(red_path, out_prefix + image_name)
 
         ccd.header.set('GSP_COSM',
@@ -496,7 +503,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     # check if file dcr.par exists
     while not os.path.isfile('dcr.par'):
 
-        log.debug('File dcr.par does not exist. Copying default one.')
+        log.warning('File dcr.par does not exist. Copying default one.')
         dcr_par_path = os.path.join(dcr_par_dir, 'dcr.par')
         log.debug('dcr.par full path: {:s}'.format(dcr_par_path))
         if os.path.isfile(dcr_par_path):
