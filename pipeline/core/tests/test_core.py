@@ -4,23 +4,25 @@ from unittest import TestCase, skip
 from ccdproc import CCDData
 from astropy.io import fits
 from astropy.modeling import Model
+from astropy.modeling import (models,
+                              fitting)
 import astropy.units as u
 import numpy as np
 import os
+import pandas
 import re
 import logging
 
 logging.disable(logging.CRITICAL)
 
 # import all classes in core.py
-from ..core import (NightDataContainer,
+from ..core import (GenerateDcrParFile,
+                    NightDataContainer,
                     NoMatchFound,
                     NotEnoughLinesDetected,
                     NoTargetException,
                     SpectroscopicMode)
 
-from astropy.modeling import (models,
-                              fitting)
 
 # import of functions in core.py
 from ..core import (add_wcs_keys,
@@ -85,6 +87,37 @@ def test_lacosmic_cosmicray_rejection():
 
 def test_classify_spectroscopic_data():
     pass
+
+
+class GenerateDcrFile(TestCase):
+
+    def setUp(self):
+        self.create = GenerateDcrParFile()
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd.header.set('INSTCONF', value='Red')
+        self.ccd.header.set('CCDSUM', value='1 1')
+
+    def test_generate_dcr_par_file(self):
+        serial, parallel = self.ccd.header['CCDSUM'].split()
+        instrument = self.ccd.header['INSTCONF']
+
+        self.assertEqual(serial, '1')
+        self.assertEqual(instrument, 'Red')
+        self.assertEqual(self.create._file_name, 'dcr.par')
+        self.assertIsInstance(self.create._df, pandas.DataFrame)
+
+        self.assertFalse(os.path.isfile(self.create._file_name))
+        self.create()
+        self.assertTrue(os.path.isfile(self.create._file_name))
+
+        self.assertRaises(AssertionError, self.create, 'Green')
+
+    def tearDown(self):
+        if os.path.isfile(self.create._file_name):
+            os.remove(self.create._file_name)
+
 
 
 class MasterFlatTest(TestCase):

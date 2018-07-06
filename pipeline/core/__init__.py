@@ -2,7 +2,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 # import all classes in core.py
-from .core import (NightDataContainer,
+from .core import (GenerateDcrParFile,
+                   NightDataContainer,
                    NoMatchFound,
                    NotEnoughLinesDetected,
                    NoTargetException,
