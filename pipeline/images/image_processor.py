@@ -791,36 +791,42 @@ class ImageProcessor(object):
                 else:
                     self.log.warning("Cosmic ray rejection returned a None.")
 
-            if self.args.combine and len(all_object_image) > 1:
-                print(len(all_object_image))
-                self.log.info("Combining {:d} OBJECT images"
-                              "".format(len(all_object_image)))
+            if self.args.combine:
+                self.log.warning("Combination of data is experimental.")
+                if len(all_object_image) > 1:
+                    print(len(all_object_image))
+                    self.log.info("Combining {:d} OBJECT images"
+                                  "".format(len(all_object_image)))
 
-                object_group = object_comp_group[
-                    object_comp_group.obstype == "OBJECT"]
+                    object_group = object_comp_group[
+                        object_comp_group.obstype == "OBJECT"]
 
-                print(object_group, len(all_object_image))
+                    print(object_group, len(all_object_image))
 
-                combine_data(all_object_image,
-                             dest_path=self.args.red_path,
-                             prefix=self.out_prefix,
-                             save=True)
-            elif len(all_object_image) == 1:
-                # write_fits(all_object_image[0])
-                pass
+                    combine_data(all_object_image,
+                                 dest_path=self.args.red_path,
+                                 prefix=self.out_prefix,
+                                 save=True)
+                elif len(all_object_image) == 1:
+                    # write_fits(all_object_image[0])
+                    pass
 
+                else:
+                    self.log.error("No OBJECT images to combine")
+
+                if len(all_comp_image) > 1:
+                    self.log.info("Combining {:d} COMP images"
+                                  "".format(len(all_comp_image)))
+                    # comp_group = object_comp_group[
+                    #     object_comp_group.obstype == "COMP"]
+                    combine_data(all_comp_image,
+                                 dest_path=self.args.red_path,
+                                 prefix=self.out_prefix,
+                                 save=True)
+                else:
+                    self.log.error("No COMP images to combine")
             else:
-                self.log.error("No OBJECT image to write")
-
-            if self.args.combine and len(all_comp_image) > 1:
-                self.log.info("Combining {:d} COMP images"
-                              "".format(len(all_comp_image)))
-                # comp_group = object_comp_group[
-                #     object_comp_group.obstype == "COMP"]
-                combine_data(all_comp_image,
-                             dest_path=self.args.red_path,
-                             prefix=self.out_prefix,
-                             save=True)
+                self.log.debug("Combine is disabled (default)")
 
         elif 'FLAT' in obstype:
             self.queue.append(science_group)
