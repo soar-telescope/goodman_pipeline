@@ -154,11 +154,15 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         nor `none`.
 
     """
-    if ccd.header['OBSTYPE'] == 'COMP':
-        log.info("Setting cosmic ray rejection method to 'none' for "
-                 "comparison lamp. 'c' prefix will be added anyways.")
+    log.debug("Cosmic ray rejection method from input is '{:s}'".format(method))
+    if ccd.header['OBSTYPE'] == 'COMP' and method != 'none':
+        log.info("Changing cosmic ray rejection method from '{:s}' to 'none'"
+                 " for comparison lamp. Prefix 'c' will be added "
+                 "anyway.".format(method))
 
         method = 'none'
+        log.debug("Cosmic ray rejection changed to 'none' for this file: "
+                  "{:s}".format(ccd.header['GSP_FNAM']))
         out_prefix = prefix + out_prefix
 
     if method == 'dcr':
@@ -212,7 +216,6 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
 
     elif method == 'none':
         full_path = os.path.join(red_path, out_prefix + image_name)
-        log.warning("--cosmic set to 'none'")
         if save:
             log.info('Saving image: {:s}'.format(full_path))
             write_fits(ccd=ccd, full_path=full_path)
