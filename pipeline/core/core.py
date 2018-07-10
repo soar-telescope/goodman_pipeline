@@ -2104,7 +2104,7 @@ class GenerateDcrParFile(object):
                 'blue-3']
 
     _lookup = [
-        ['thresh', 3.0, 3.0, 3.0, 3.0, 3.0, 3.0],
+        ['thresh', 3.0, 4.0, 3.0, 3.0, 3.0, 3.0],
         ['xrad', 9, 7, 9, 8, 9, 9],
         ['yrad', 9, 9, 9, 8, 9, 9],
         ['npass', 5, 5, 5, 5, 5, 5],
