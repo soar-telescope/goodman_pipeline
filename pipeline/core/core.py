@@ -2126,7 +2126,7 @@ class GenerateDcrParFile(object):
         self._binning = "{:s}-{:s}"
         self._data_format = "\n".join(self._format)
 
-    def __call__(self, instrument='Red', binning='1', path='default'):
+    def __call__(self, instrument='Red', binning='1', path='default', kpars=None):
         """
 
         Args:
@@ -2136,17 +2136,29 @@ class GenerateDcrParFile(object):
 
         """
         assert any([instrument == option for option in ['Red', 'Blue']])
-        b = self._binning.format(instrument.lower(), binning)
-        self._data_format = self._data_format.format(
-            self._df[b][self._df.parameter == 'thresh'].values[0],
-            int(self._df[b][self._df.parameter == 'xrad'].values[0]),
-            int(self._df[b][self._df.parameter == 'yrad'].values[0]),
-            int(self._df[b][self._df.parameter == 'npass'].values[0]),
-            int(self._df[b][self._df.parameter == 'diaxis'].values[0]),
-            int(self._df[b][self._df.parameter == 'lrad'].values[0]),
-            int(self._df[b][self._df.parameter == 'urad'].values[0]),
-            int(self._df[b][self._df.parameter == 'grad'].values[0]),
-            int(self._df[b][self._df.parameter == 'verbose'].values[0]))
+        if kpars is not None:
+            self._data_format = self._data_format.format(kpars['thresh'],
+                                                         int(kpars['xrad']),
+                                                         int(kpars['yrad']),
+                                                         int(kpars['npass']),
+                                                         int(kpars['diaxis']),
+                                                         int(kpars['lrad']),
+                                                         int(kpars['urad']),
+                                                         int(kpars['grad']),
+                                                         int(kpars['verbose']))
+        else:
+            b = self._binning.format(instrument.lower(), binning)
+
+            self._data_format = self._data_format.format(
+                self._df[b][self._df.parameter == 'thresh'].values[0],
+                int(self._df[b][self._df.parameter == 'xrad'].values[0]),
+                int(self._df[b][self._df.parameter == 'yrad'].values[0]),
+                int(self._df[b][self._df.parameter == 'npass'].values[0]),
+                int(self._df[b][self._df.parameter == 'diaxis'].values[0]),
+                int(self._df[b][self._df.parameter == 'lrad'].values[0]),
+                int(self._df[b][self._df.parameter == 'urad'].values[0]),
+                int(self._df[b][self._df.parameter == 'grad'].values[0]),
+                int(self._df[b][self._df.parameter == 'verbose'].values[0]))
         self._create_file(path=path)
 
     def _create_file(self, path):
