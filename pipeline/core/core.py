@@ -1730,13 +1730,14 @@ def read_fits(full_path, technique='Unknown'):
     return ccd
 
 
-def save_extracted(ccd, destination, prefix='e'):
+def save_extracted(ccd, destination, prefix='e', target_number=1):
     """Save extracted spectrum while adding a prefix.
 
     Args:
         ccd (object): CCDData instance
         destination (str): Path where the file will be saved.
         prefix (str): Prefix to be added to images. Default `e`.
+        target_number (int):
 
     Returns:
         `ccdproc.CCDData` instance of the image just recorded. although is not
@@ -1747,6 +1748,10 @@ def save_extracted(ccd, destination, prefix='e'):
     assert os.path.isdir(destination)
 
     file_name = ccd.header['GSP_FNAM']
+    if target_number > 0:
+        new_suffix = '_target_{:d}.fits'.format(target_number)
+        file_name = re.sub('.fits', new_suffix, file_name)
+
     new_file_name = prefix + file_name
     log.info("Saving uncalibrated(w) extracted spectrum to file: "
              "{:s}".format(new_file_name))
