@@ -362,6 +362,12 @@ class MainApp(object):
                     # if len(trace_list) > 0:
                     extracted_target_and_lamps = []
                     for single_trace, single_profile in trace_list:
+                        if len(trace_list) > 1:
+                            target_number = trace_list.index(
+                                [single_trace,
+                                 single_profile]) + 1
+                        else:
+                            target_number = 0
                         try:
                             # target extraction
                             extracted = extraction(
@@ -370,7 +376,8 @@ class MainApp(object):
                                 spatial_profile=single_profile,
                                 extraction_name=extraction_type)
                             save_extracted(ccd=extracted,
-                                           destination=self.args.destination)
+                                           destination=self.args.destination,
+                                           target_number=target_number)
                             # print(spec_file)
 
                             # lamp extraction
@@ -384,7 +391,8 @@ class MainApp(object):
                                         extraction_name=extraction_type)
                                     save_extracted(
                                         ccd=extracted_lamp,
-                                        destination=self.args.destination)
+                                        destination=self.args.destination,
+                                        target_number=target_number)
                                     all_lamps.append(extracted_lamp)
                             extracted_target_and_lamps.append([extracted,
                                                                all_lamps])
