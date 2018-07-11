@@ -1,3 +1,33 @@
+# 11-07-2018 V1.0.3
+
+- Bugs fixed
+  - programatically access to the version number did not work because it was
+    based purely on `setup.cfg` now `setup.py` has  a function that creates the
+    file `pipeline/version.py` which is accessed by `pipeline/__init__.py`
+  - File naming was making some file dissapear by being overwritten for files
+    that contained more than one target the next file name would match the
+    previous one. A differentiator was added.
+
+# 10-07-2018 V1.0.2
+
+- Removed module `goodman/pipeline/info.py` and placed all metadata in `goodman/setup.cfg`.
+- Several updates to documentation
+  - Added comment on how to organize data on `soardata3`.
+  - Added link to licence on footer.
+  - User manual now is in ReadTheDocs and no longer available as a pdf.
+  - Improved information on debug plots
+
+- Bugs Fixed.
+  - fixed `GSP_FNAM`  value for reference lamps
+  - Spectral limit calculation by including binning into the equation
+  - Included binning in the calculation of the wavelength solution
+  - Corrected messages and conditions under which the prefix for cosmic ray rejection is used
+  - Image combination call and messages
+
+- Other additions
+  - Added lookup table `dcr.par` file generator and found optimal parameters for Red camera and binning 2x2
+
+
 
 # xx-xx-2018 V1.0.1
 
