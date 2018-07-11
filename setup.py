@@ -22,6 +22,17 @@ from codecs import open
 
 here = os.path.abspath(os.path.dirname(__file__))
 
+
+def create_version_py(packagename, version, source_dir='.'):
+    package_dir = os.path.join(source_dir, packagename)
+    version_py = os.path.join(package_dir, 'version.py')
+
+    version_str = "# This is an automatic generated file please do not edit\n" \
+                  "__version__ = '{:s}'".format(version)
+
+    with open(version_py, 'w') as f:
+        f.write(version_str)
+
 # Get configuration information from setup.cfg
 try:
     from ConfigParser import ConfigParser
@@ -33,8 +44,23 @@ conf = ConfigParser()
 conf.read([os.path.join(os.path.dirname(__file__), 'setup.cfg')])
 metadata = dict(conf.items('metadata'))
 
-__import__(metadata['package_name'])
-package = sys.modules[metadata['package_name']]
+PACKAGENAME = metadata['package_name']
+
+VERSION = metadata['version']
+
+LICENSE = metadata['license']
+
+DESCRIPTION = metadata['description']
+
+LONG_DESCRIPTION = metadata['long_description']
+
+AUTHOR = metadata['author']
+
+AUTHOR_EMAIL = metadata['author_email']
+
+# freezes version information in version.py
+create_version_py(PACKAGENAME, VERSION)
+
 
 cmdclassd = {'build_sphinx': BuildDoc,
              'build_docs': BuildDoc}
@@ -45,11 +71,11 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version=package.__version__,
+    version=VERSION,
 
-    description=package.__description__,
+    description=DESCRIPTION,
 
-    long_description=package.__long_description__,
+    long_description=LONG_DESCRIPTION,
 
     # The project's main homepage.
     url='https://github.com/soar-telescope/goodman',
@@ -66,7 +92,7 @@ setup(
                  'cbriceno@ctio.noao.edu',
 
     # Choose your license
-    license=package.__license__,
+    license=LICENSE,
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
@@ -78,7 +104,7 @@ setup(
         'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
 
-        'License :: OSI Approved :: {:s}'.format(package.__license__),
+        'License :: OSI Approved :: {:s}'.format(LICENSE),
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.

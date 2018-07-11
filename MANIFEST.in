@@ -1,6 +1,0 @@
-include dcr-source/README.md
-include dcr-source/dcr/*
-include requirements.txt
-include user_manual*.pdf
-include README.md
-include LICENSE
