@@ -14,7 +14,6 @@ from astropy import units as u
 from ccdproc import CCDData
 from ..core import (astroscrappy_lacosmic,
                     call_cosmic_rejection,
-                    ccdproc_lacosmic_cosmicray_rejection,
                     combine_data,
                     get_best_flat,
                     get_slit_trim_section,
@@ -901,7 +900,11 @@ class ImageProcessor(object):
                     'Master Flat image')
 
                 if self.args.clean_cosmic:
-                    ccd = astroscrappy_lacosmic(ccd=ccd)
+                    ccd = astroscrappy_lacosmic(
+                        ccd=ccd,
+                        red_path=self.args.red_path,
+                        save_mask=self.args.keep_cosmic_files)
+
                     self.out_prefix = 'c' + self.out_prefix
                 else:
                     print('Clean Cosmic ' + str(self.args.clean_cosmic))
