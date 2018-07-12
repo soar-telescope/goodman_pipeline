@@ -1,3 +1,14 @@
+# 12-07-2018 V1.1.0
+
+- Implemented astroscrappy's lacosmic method
+- removed ccdproc's lacosmic
+- created  'default' method for cosmic ray rejection.
+  - For binning 1x1 default is dcr
+  - For binning 2x2 default is lacosmic
+  - For binning 3x3 default is lacosmic
+
+methods 'dcr', 'lacosmic' or 'none' can still be forced by using --cosmic <method>
+
 # 11-07-2018 V1.0.3
 
 - Bugs fixed
