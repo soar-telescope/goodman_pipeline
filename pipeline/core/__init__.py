@@ -11,7 +11,8 @@ from .core import (GenerateDcrParFile,
                    SpectroscopicMode)
 
 # import of functions in core.py
-from .core import (add_wcs_keys,
+from .core import (astroscrappy_lacosmic,
+                   add_wcs_keys,
                    call_cosmic_rejection,
                    classify_spectroscopic_data,
                    combine_data,
@@ -29,7 +30,6 @@ from .core import (add_wcs_keys,
                    image_overscan,
                    image_trim,
                    interpolate,
-                   lacosmic_cosmicray_rejection,
                    normalize_master_flat,
                    ra_dec_to_deg,
                    read_fits,

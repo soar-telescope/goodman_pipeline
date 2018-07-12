@@ -20,6 +20,7 @@ from threading import Timer
 # matplotlib.use('Qt5Agg')
 from matplotlib import pyplot as plt
 from ccdproc import CCDData, ImageFileCollection
+from astroscrappy import detect_cosmics
 from astropy.coordinates import EarthLocation
 from astropy.time import Time
 from astropy.stats import sigma_clip
@@ -31,6 +32,26 @@ from scipy import signal
 __version__ = __import__('pipeline').__version__
 
 log = logging.getLogger(__name__)
+
+
+def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
+
+    mask, ccd.data = detect_cosmics(ccd.data)
+
+    ccd.header['GSP_COSM'] = ('LACosmic',
+                              "Cosmic ray rejection method")
+    log.info("Cosmic rays rejected using astroscrappy's lacosmic")
+
+    if save_mask and red_path is not None:
+        mask_ccd = ccd.copy()
+        mask_ccd.mask = mask
+        new_file_name = 'crmask_' + mask_ccd.header['GSP_FNAM']
+        mask_ccd.header['GSP_FNAM'] = new_file_name
+
+        write_fits(ccd=mask_ccd,
+                   full_path=os.path.join(red_path, new_file_name))
+
+    return ccd
 
 
 def add_wcs_keys(ccd):
@@ -155,6 +176,23 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
 
     """
     log.debug("Cosmic ray rejection method from input is '{:s}'".format(method))
+
+    binning, _ = [int(i) for i in ccd.header['CCDSUM'].split()]
+
+    if method == 'default':
+        if binning == 1:
+            method = 'dcr'
+            log.info('Setting cosmic ray rejection method to:'
+                     ' {:s}'.format(method))
+        elif binning == 2:
+            method = 'lacosmic'
+            log.info('Setting cosmic ray rejection method to:'
+                     ' {:s}'.format(method))
+        elif binning == 3:
+            method = 'lacosmic'
+            log.info('Setting cosmic ray rejection method to:'
+                     ' {:s}'.format(method))
+
     if ccd.header['OBSTYPE'] == 'COMP' and method != 'none':
         log.info("Changing cosmic ray rejection method from '{:s}' to 'none'"
                  " for comparison lamp. Prefix 'c' will be added "
@@ -200,11 +238,9 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         return ccd, out_prefix
 
     elif method == 'lacosmic':
-        log.warning('LACosmic does not apply the correction to images '
-                    'instead it updates the mask attribute for CCDData '
-                    'objects. For saved files the mask is a fits extension')
-
-        ccd = lacosmic_cosmicray_rejection(ccd=ccd)
+        ccd = astroscrappy_lacosmic(ccd=ccd,
+                                    red_path=red_path,
+                                    save_mask=keep_files)
 
         out_prefix = prefix + out_prefix
         full_path = os.path.join(red_path, out_prefix + image_name)
@@ -1416,61 +1452,6 @@ def interpolate(spectrum, interpolation_size):
     tck = scipy.interpolate.splrep(x_axis, spectrum, s=0)
     new_spectrum = scipy.interpolate.splev(new_x_axis, tck, der=0)
     return [new_x_axis, new_spectrum]
-
-
-def lacosmic_cosmicray_rejection(ccd, mask_only=False):
-    """Do cosmic ray rejection using `ccdproc.cosmicray_lacosmic`
-
-    This function in fact does not apply any correction, it detects the cosmic
-    rays and updates the attribute mask of the ccd object (CCDData instance).
-    The attribute mask is used later as a mask for the pixels hit by cosmic rays
-
-    Notes:
-        OBS: cosmic ray rejection is working pretty well by defining gain = 1.
-        It's not working when we use the real gain of the image. In this case
-        the sky level changes by a factor equal to the gain.
-        Function to determine the `sigfrac` and `objlim`:
-
-    .. math::
-       y = 0.16 * exptime + 1.2
-
-      Args:
-          ccd (object): A ccdproc.CCDData instance.
-          mask_only (bool): In some cases you may want to obtain the cosmic
-              rays mask only.
-
-      Returns:
-          ccd (object): A CCDData instance with the mask attribute updated or an
-          array which corresponds to the mask.
-
-    """
-    if ccd.header['OBSTYPE'] == 'OBJECT':
-        value = 0.16 * float(ccd.header['EXPTIME']) + 1.2
-        log.info('Cleaning cosmic rays... ')
-
-        ccd = ccdproc.cosmicray_lacosmic(
-            ccd,
-            sigclip=2.5,
-            sigfrac=value,
-            objlim=value,
-            gain=float(ccd.header['GAIN']),
-            readnoise=float(ccd.header['RDNOISE']),
-            satlevel=np.inf,
-            sepmed=True,
-            fsmode='median',
-            psfmodel='gaussy',
-            verbose=False)
-
-        ccd.header['GSP_COSM'] = ("LACosmic", "Cosmic ray rejection method")
-        log.info("Cosmic rays rejected with LACosmic")
-        if mask_only:
-            return ccd.mask
-        else:
-            return ccd
-    else:
-        log.debug('Skipping cosmic ray rejection for image of OBSTYPE: '
-                  '{:s}'.format(ccd.header['OBSTYPE']))
-        return ccd
 
 
 def normalize_master_flat(master, name, method='simple', order=15):
