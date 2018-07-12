@@ -48,11 +48,11 @@ def get_args(arguments=None):
     parser.add_argument('--cosmic',
                         action='store',
                         dest='clean_cosmic',
-                        default='dcr',
-                        choices=['dcr', 'lacosmic', 'none'],
+                        default='default',
+                        choices=['default', 'dcr', 'lacosmic', 'none'],
                         metavar='<method>',
                         help="Clean cosmic rays from all data. Options are: "
-                             "'dcr', 'lacosmic' or 'none'. Default is 'dcr'. "
+                             "'default', 'dcr', 'lacosmic' or 'none'. "
                              "See manual for full description of dcr.")
 
     parser.add_argument('--combine',

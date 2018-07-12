@@ -176,6 +176,23 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
 
     """
     log.debug("Cosmic ray rejection method from input is '{:s}'".format(method))
+
+    binning, _ = [int(i) for i in ccd.header['CCDSUM'].split()]
+
+    if method == 'default':
+        if binning == 1:
+            method = 'dcr'
+            log.info('Setting cosmic ray rejection method to:'
+                     ' {:s}'.format(method))
+        elif binning == 2:
+            method = 'lacosmic'
+            log.info('Setting cosmic ray rejection method to:'
+                     ' {:s}'.format(method))
+        elif binning == 3:
+            method = 'lacosmic'
+            log.info('Setting cosmic ray rejection method to:'
+                     ' {:s}'.format(method))
+
     if ccd.header['OBSTYPE'] == 'COMP' and method != 'none':
         log.info("Changing cosmic ray rejection method from '{:s}' to 'none'"
                  " for comparison lamp. Prefix 'c' will be added "
