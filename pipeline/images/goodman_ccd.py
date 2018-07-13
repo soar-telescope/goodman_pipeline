@@ -131,6 +131,11 @@ def get_args(arguments=None):
                         metavar='<value>',
                         help="Saturation limit. Default to 65.000 ADU (counts)")
 
+    parser.add_argument('--version',
+                        action='store_true',
+                        dest='show_version',
+                        help="Show current version of the Goodman Pipeline")
+
     args = parser.parse_args(args=arguments)
 
     return args
@@ -156,7 +161,7 @@ class MainApp(object):
         # self.instrument = None
         # self.technique = None
         self._pipeline_version = __version__
-    
+
     def __call__(self, args=None):
         """Call method for MainApp
 
@@ -176,6 +181,10 @@ class MainApp(object):
             self.args = get_args()
         else:
             self.args = args
+
+        if self.args.show_version:
+            print("Goodman HTS Pipeline {:s}".format(__version__))
+            sys.exit(0)
 
         if not self._check_args():
             sys.exit()
