@@ -105,7 +105,7 @@ def get_args(arguments=None):
                         help="Ignore flat field correction")
 
     parser.add_argument('--keep-cosmic-files',
-                        action='store_false',
+                        action='store_true',
                         dest='keep_cosmic_files',
                         help="After cleaning cosmic rays with dcr, do not "
                              "remove the input file and the cosmic rays file.")
