@@ -144,6 +144,11 @@ def get_args(arguments=None):
                         dest='plot_results',
                         help="Show wavelength calibrated spectrum at the end.")
 
+    parser.add_argument('--version',
+                        action='store_true',
+                        dest='show_version',
+                        help="Show current version of the Goodman Pipeline")
+
     args = parser.parse_args(args=arguments)
 
     try:
@@ -228,6 +233,10 @@ class MainApp(object):
             self.args = get_args()
         else:
             self.args = args
+
+        if self.args.show_version:
+            print("Version: {:s}".format(__version__))
+            sys.exit(0)
 
         self.log.debug("Initializing reference data locator.")
         self.reference = ReferenceData(reference_dir=self.args.reference_dir)
