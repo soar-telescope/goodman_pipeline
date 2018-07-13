@@ -47,7 +47,8 @@ def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
         mask_ccd.mask = mask
         new_file_name = 'crmask_' + mask_ccd.header['GSP_FNAM']
         mask_ccd.header['GSP_FNAM'] = new_file_name
-        log.info("Saving binary mask of cosmic rays")
+        log.info("Saving binary mask of cosmic rays to "
+                 "{:s}".format(new_file_name))
         write_fits(ccd=mask_ccd,
                    full_path=os.path.join(red_path, new_file_name))
 

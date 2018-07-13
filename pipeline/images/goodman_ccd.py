@@ -107,8 +107,9 @@ def get_args(arguments=None):
     parser.add_argument('--keep-cosmic-files',
                         action='store_true',
                         dest='keep_cosmic_files',
-                        help="After cleaning cosmic rays with dcr, do not "
-                             "remove the input file and the cosmic rays file.")
+                        help="After cleaning cosmic rays with 'dcr', do not "
+                             "remove the input file and the cosmic rays file. "
+                             "For 'lacosmic' it saves the mask to a fits file.")
 
     parser.add_argument('--raw-path',
                         action='store',
