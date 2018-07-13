@@ -235,7 +235,7 @@ class MainApp(object):
             self.args = args
 
         if self.args.show_version:
-            print("Version: {:s}".format(__version__))
+            print("Goodman HTS Pipeline {:s}".format(__version__))
             sys.exit(0)
 
         self.log.debug("Initializing reference data locator.")
