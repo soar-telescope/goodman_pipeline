@@ -47,7 +47,8 @@ def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
         mask_ccd.mask = mask
         new_file_name = 'crmask_' + mask_ccd.header['GSP_FNAM']
         mask_ccd.header['GSP_FNAM'] = new_file_name
-
+        log.info("Saving binary mask of cosmic rays to "
+                 "{:s}".format(new_file_name))
         write_fits(ccd=mask_ccd,
                    full_path=os.path.join(red_path, new_file_name))
 
@@ -233,7 +234,7 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
                                       in_file=in_file,
                                       prefix=prefix,
                                       dcr_par_dir=dcr_par,
-                                      delete=keep_files,
+                                      keep_cosmic_files=keep_files,
                                       save=save)
         return ccd, out_prefix
 
@@ -478,7 +479,7 @@ def convert_time(in_time):
 
 
 def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
-                            delete=False, save=True):
+                            keep_cosmic_files=False, save=True):
     """Runs an external code for cosmic ray rejection
 
     DCR was created by Wojtek Pych and the code can be obtained from
@@ -504,7 +505,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         in_file (str): Name of the file to have its cosmic rays removed
         prefix (str): Prefix to add to the file with the cosmic rays removed
         dcr_par_dir (str): Directory of default dcr.par file
-        delete (bool): True for deleting the input and cosmic ray file.
+        keep_cosmic_files (bool): True for deleting the input and cosmic ray file.
         save (bool): Toggles the option of saving the image.
 
     """
@@ -601,7 +602,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
             log.debug(output_line)
 
     # delete extra files only if the execution ended without error
-    if delete and stderr == b'' and b'USAGE:' not in stdout \
+    if not keep_cosmic_files and stderr == b'' and b'USAGE:' not in stdout \
             and b'ERROR! calc_submean() failed' not in stdout:
         try:
             log.warning('Removing input file: {:s}'.format(full_path_in))
