@@ -1,4 +1,4 @@
-name: goodman
+name: goodmann
 channels:
   - astroconda
 dependencies:
@@ -6,6 +6,7 @@ dependencies:
   - pandas
   - matplotlib
   - scipy
+  - cython
   - astropy>3
   - pip
   - pip:
