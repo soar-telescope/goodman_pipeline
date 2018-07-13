@@ -1,4 +1,4 @@
-name: goodmann
+name: goodman
 channels:
   - astroconda
 dependencies:
