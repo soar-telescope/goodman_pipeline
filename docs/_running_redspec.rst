@@ -1,5 +1,5 @@
-Run redspec
-***********
+Extracting the spectra
+**********************
 
 Is the spectroscopy reduction script. The tasks are the following:
 

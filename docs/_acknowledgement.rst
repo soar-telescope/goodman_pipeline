@@ -1,5 +1,5 @@
 Acknowledgements
-################
+****************
 
 Our work would not be possible without the friendly work atmosphere at CTIO
 headquarters in La Serena, were we can interact with our SOAR and CTIO

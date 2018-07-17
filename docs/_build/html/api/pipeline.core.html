@@ -27,6 +27,7 @@
   
     <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="author" title="About these documents" href="../about.html" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" /> 
 
@@ -81,17 +82,14 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">pipeline.core package</a><ul>
-<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pipeline.core.core">pipeline.core.core module</a></li>
-<li><a class="reference internal" href="#module-pipeline.core">Module contents</a></li>
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../remote_access.html">Remote Access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about.html">About</a></li>
 </ul>
-</li>
-</ul>
-</div>
+
             
           
         </div>
@@ -175,6 +173,15 @@
 </div>
 <div class="section" id="module-pipeline.core.core">
 <span id="pipeline-core-core-module"></span><h2>pipeline.core.core module<a class="headerlink" href="#module-pipeline.core.core" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pipeline.core.core.GenerateDcrParFile">
+<em class="property">class </em><code class="descclassname">pipeline.core.core.</code><code class="descname">GenerateDcrParFile</code><span class="sig-paren">(</span><em>par_file_name='dcr.par'</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.GenerateDcrParFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Creates dcr.par file based on lookup table</p>
+<p><cite>dcr</cite> parameters depend heavily on binning, this class generates a file
+using the default format. The lookup table considers camera and binning.</p>
+</dd></dl>
+
 <dl class="class">
 <dt id="pipeline.core.core.NightDataContainer">
 <em class="property">class </em><code class="descclassname">pipeline.core.core.</code><code class="descname">NightDataContainer</code><span class="sig-paren">(</span><em>path</em>, <em>instrument</em>, <em>technique</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.NightDataContainer" title="Permalink to this definition">¶</a></dt>
@@ -477,6 +484,11 @@ headers.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pipeline.core.core.astroscrappy_lacosmic">
+<code class="descclassname">pipeline.core.core.</code><code class="descname">astroscrappy_lacosmic</code><span class="sig-paren">(</span><em>ccd</em>, <em>red_path=None</em>, <em>save_mask=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.astroscrappy_lacosmic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="pipeline.core.core.call_cosmic_rejection">
 <code class="descclassname">pipeline.core.core.</code><code class="descname">call_cosmic_rejection</code><span class="sig-paren">(</span><em>ccd</em>, <em>image_name</em>, <em>out_prefix</em>, <em>red_path</em>, <em>dcr_par</em>, <em>keep_files=False</em>, <em>prefix='c'</em>, <em>method='dcr'</em>, <em>save=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.call_cosmic_rejection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Call for the appropriate cosmic ray rejection method</p>
@@ -580,7 +592,7 @@ ignore <cite>prefix</cite> or <cite>output_name</cite>.</dd>
 
 <dl class="function">
 <dt id="pipeline.core.core.dcr_cosmicray_rejection">
-<code class="descclassname">pipeline.core.core.</code><code class="descname">dcr_cosmicray_rejection</code><span class="sig-paren">(</span><em>data_path</em>, <em>in_file</em>, <em>prefix</em>, <em>dcr_par_dir</em>, <em>delete=False</em>, <em>save=True</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.dcr_cosmicray_rejection" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pipeline.core.core.</code><code class="descname">dcr_cosmicray_rejection</code><span class="sig-paren">(</span><em>data_path</em>, <em>in_file</em>, <em>prefix</em>, <em>dcr_par_dir</em>, <em>keep_cosmic_files=False</em>, <em>save=True</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.dcr_cosmicray_rejection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Runs an external code for cosmic ray rejection</p>
 <p>DCR was created by Wojtek Pych and the code can be obtained from
 <a class="reference external" href="http://users.camk.edu.pl/pych/DCR/">http://users.camk.edu.pl/pych/DCR/</a> and is written in C. Contrary to
@@ -603,7 +615,7 @@ created that loads the new image and deletes the file.</dd>
 in_file (str): Name of the file to have its cosmic rays removed
 prefix (str): Prefix to add to the file with the cosmic rays removed
 dcr_par_dir (str): Directory of default dcr.par file
-delete (bool): True for deleting the input and cosmic ray file.
+keep_cosmic_files (bool): True for deleting the input and cosmic ray file.
 save (bool): Toggles the option of saving the image.</dd>
 </dl>
 </dd></dl>
@@ -874,22 +886,6 @@ precisely.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pipeline.core.core.lacosmic_cosmicray_rejection">
-<code class="descclassname">pipeline.core.core.</code><code class="descname">lacosmic_cosmicray_rejection</code><span class="sig-paren">(</span><em>ccd</em>, <em>mask_only=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.lacosmic_cosmicray_rejection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do cosmic ray rejection using <cite>ccdproc.cosmicray_lacosmic</cite></p>
-<p>This function in fact does not apply any correction, it detects the cosmic
-rays and updates the attribute mask of the ccd object (CCDData instance).
-The attribute mask is used later as a mask for the pixels hit by cosmic rays</p>
-<dl class="docutils">
-<dt>Notes:</dt>
-<dd>OBS: cosmic ray rejection is working pretty well by defining gain = 1.
-It’s not working when we use the real gain of the image. In this case
-the sky level changes by a factor equal to the gain.
-Function to determine the <cite>sigfrac</cite> and <cite>objlim</cite>:</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
 <dt id="pipeline.core.core.normalize_master_flat">
 <code class="descclassname">pipeline.core.core.</code><code class="descname">normalize_master_flat</code><span class="sig-paren">(</span><em>master</em>, <em>name</em>, <em>method='simple'</em>, <em>order=15</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.normalize_master_flat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Master flat normalization method</p>
@@ -970,13 +966,14 @@ technique (str): Observing technique. ‘Imaging’ or ‘Spectroscopy’.</dd>
 
 <dl class="function">
 <dt id="pipeline.core.core.save_extracted">
-<code class="descclassname">pipeline.core.core.</code><code class="descname">save_extracted</code><span class="sig-paren">(</span><em>ccd</em>, <em>destination</em>, <em>prefix='e'</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.save_extracted" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pipeline.core.core.</code><code class="descname">save_extracted</code><span class="sig-paren">(</span><em>ccd</em>, <em>destination</em>, <em>prefix='e'</em>, <em>target_number=1</em><span class="sig-paren">)</span><a class="headerlink" href="#pipeline.core.core.save_extracted" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save extracted spectrum while adding a prefix.</p>
 <dl class="docutils">
 <dt>Args:</dt>
 <dd>ccd (object): CCDData instance
 destination (str): Path where the file will be saved.
-prefix (str): Prefix to be added to images. Default <cite>e</cite>.</dd>
+prefix (str): Prefix to be added to images. Default <cite>e</cite>.
+target_number (int):</dd>
 <dt>Returns:</dt>
 <dd><cite>ccdproc.CCDData</cite> instance of the image just recorded. although is not
 really necessary.</dd>
@@ -1122,7 +1119,7 @@ overwrite (bool): Overwrite files, default True.</dd>
 
     </p>
     <p>
-         This project has been licensed under: <a href="index.html#license">BSD 3-Clause License.</a>
+         This project has been licensed under: <a href="about.html#license">BSD 3-Clause License.</a>
     </p>
   </div>
   Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 

@@ -22,17 +22,36 @@ Welcome to Goodman HTS Pipeline's Documentation
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org/
 
+This is the User Manual for the *Goodman Spectroscopic Data Reduction
+Pipeline*. It provides an overview of the pipeline's main features,
+instructions on its use and how to run it on our dedicated *Data Reduction
+Server*, and installation instructions for those who wish to run it on their own
+computers.
 
-User Manual
-===========
 
-.. include:: user_manual.rst
+Contents
+========
+
+.. toctree::
+  :maxdepth: 2
 
 
+  overview
+  usage
+  Remote Access <remote_access>
+  install
+  about
 
-Indices and tables
-==================
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. |pipeline name| replace:: *The Goodman Pipeline*
+
+.. |pipeline full name| replace:: *Goodman Spectroscopic Pipeline*
+
+.. |goodman HTS| replace:: Goodman High Throughput Spectrograph
+
+.. |goodman hts| replace:: Goodman Spectrograph
+
+.. |headers change| replace:: March, 2018
+
+
+..    the sequence for section level is `=#*^~&`

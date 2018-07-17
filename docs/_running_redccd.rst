@@ -1,5 +1,5 @@
-Run redccd
-**********
+Processing your 2D images
+*************************
 
 It is the first step in the reduction process, the main tasks are listed below.
 

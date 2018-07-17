@@ -6,7 +6,6 @@ can perform smoothly. We recommend to check your data and your system before
 running it. Otherwise, the pipeline
 can perform in an unexpected way or even crash.
 
-.. include:: _requirements_data.rst
-
+.. include:: _data_requirements.rst
 
 .. include:: _requirements_software.rst

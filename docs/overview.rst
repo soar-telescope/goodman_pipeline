@@ -1,5 +1,5 @@
 Overview
-********
+########
 The Goodman Spectroscopic Data Reduction Pipeline - |pipeline name| - is a Python-based
 package for producing science-ready, wavelength-calibrated, 1-D spectra. The
 goal of |pipeline name| is to provide SOAR users with an easy to use, very well

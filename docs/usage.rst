@@ -1,6 +1,6 @@
-.. _`Running Pipeline`:
-Running the Pipeline
-####################
+.. _`usage`:
+Usage
+#####
 The |pipeline full name| is designed to be simple to use, however help is always
 necessary.
 
@@ -16,9 +16,6 @@ Getting Help.
   ``redspec --help``
 
 
-
-.. include:: _running_working_with_virtualenv.rst
-
 .. include:: _running_prepare_data_for_reduction.rst
 
 .. include:: _running_redccd.rst
@@ -26,4 +23,6 @@ Getting Help.
 .. include:: _running_redspec.rst
 
 .. include:: _running_new_keywords.rst
+
+.. include:: _cosmic_ray_removal.rst
 

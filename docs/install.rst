@@ -1,73 +1,13 @@
-Software Requirements
-*********************
+Install
+#######
 Using the pipeline remotely is the recommended method, in which case you don't need
 to worry about software requirements.
 
 However, for users who wish to go ahead with a local installation, we provide
-simple instructions in the `Setup for local installation`_ section.
+simple instructions in the current section.
 
-Setup for Remote Use
-^^^^^^^^^^^^^^^^^^^^
-The Goodman Spectroscopic Data Reduction Pipeline has been installed on a
-dedicated computer at SOAR. The procedure requires to open a VNC session, for which
-you need to be connected to the SOAR VPN. The credentials for the VPN are the
-same you used for your observing run, provided by your *Support Scientist*, who
-will also give you the information for the data reduction computer VNC
-connection.
-
-.. note:: IRAF is available in the data server at SOAR. Running ``iraf`` will
-    open an *xgterm* and *ds9* windows. ``iraf-only`` will open *xgterm* but
-    not *ds9*
-
-Establish a VNC connection
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-Separately, you should receive a server hostname, IP, display number and
-VNC-password.
-
-.. _`VNC Displays table`:
-.. table:: VNC display number and working folder assigned to each partner.
-
-   ========= ===================== ====================================
-    Display    Partner/Institution     Folder
-   ========= ===================== ====================================
-       :1      NOAO                  ``/home/goodman/data/NOAO``
-       :2      Brazil                ``/home/goodman/data/BRAZIL``
-       :3      UNC                   ``/home/goodman/data/UNC``
-       :4      MSU                   ``/home/goodman/data/MSU``
-       :5      Chile                 ``/home/goodman/data/CHILE``
-   ========= ===================== ====================================
-
-For this tutorial we will call the vnc server host name as ``<vnc-server>``
-the display number  is ``<display-number>`` and your password is ``<password>``.
-
-The VNC connection should work with any VNC Client like TightVNC, TigerVNC,
-RealVNC, etc. The first two run on Linux and can be used directly with the
-``vncviewer`` command line.
-
-.. important::
-
-    Please, help us to create an organized enviroment by creating a new folder
-    using the format ``YYYY-MM-DD`` within your institution's directory and
-    using it to process your data.
-
-VNC from the Terminal
-~~~~~~~~~~~~~~~~~~~~~
-Find the ``<display-number>`` that corresponds to you from the `VNC Displays table`_.
-Open a terminal, and assuming you have installed ``vncviewer``.
-
-    ``vncviewer <vnc-server>:<display-number>``
-
-You will be asked to type in the ``<password>`` provided.
-
-.. important::
-
-    The real values for ``<vnc-server>`` and ``<password>``
-    should be provided by your support scientist.
-
-If the connection succeeds you will see a *Centos 7* Desktop using *Gnome*.
-
-Setup for local installation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Requirements
+************
 
 The |pipeline name| is completely written in Python 3.x and relies on several
 libraries like:
@@ -81,10 +21,13 @@ libraries like:
 * AstroPy/astroplan
 * DCR
 
+Using Conda
+***********
+
 We **do not** recommend the installation of these libraries or the
 |pipeline name| in your system since updates and upgrades may ruin it. We rather
-recomment the use of Virtual Environments. If you are not familiar with this
-term, please check the official documentation by visiting the link below:
+recommend the use of Virtual Environments. If you are not familiar with this
+term, please check the official documentation by visiting the links below:
 
     https://docs.python.org/3/tutorial/venv.html
 
@@ -98,6 +41,12 @@ about installing both can be found in the link below:
 
     https://astroconda.readthedocs.io/
 
+
+.. include:: _working_with_virtualenv.rst
+
+Using PIP
+*********
+
 .. warning::
 
     You may find that `ccdproc` and `astroplan` do not come with Astroconda.
@@ -109,9 +58,13 @@ about installing both can be found in the link below:
 
     ``pip install ccdproc astroplan``
 
+
+
+Setup for local installation
+****************************
 System installation is not recommended because it can mess things up specially in
 Linux and Mac OS. Before you proceed, make sure that your system has all
-the required libraries, as described in `Setup for local installation`_.
+the required libraries, as described in `Requirements`_.
 
 Once you have Python running and all the libraries installed either using
 Conda/AstroConda or not, you may download the last version available in the
@@ -146,12 +99,12 @@ on with the installation.
 .. note::
 
     This will install the pipeline in the currently active Python version.
-    If you have Virtual Environments, make sure that they are active. If not,
+    If you have Virtual Environments, make sure that it is active. If not,
     you can add the ``--user`` option to install only for your user and avoid
     needing root access.
 
-DCR (optional)
-~~~~~~~~~~~~~~
+Installing DCR
+**************
 
 .. admonition:: Acknowledgement Note
 
@@ -182,7 +135,7 @@ You are still encouraged to visit the official
 Goodman Pipeline should cite the DCR paper with the reference indicated above.
 
 Compiling DCR
--------------
+^^^^^^^^^^^^^
 
 Compiling ``dcr`` is actually very simple.
 
@@ -204,7 +157,7 @@ We have successfully compiled *dcr* right out the box in several platforms, such
 
 
 Installing the DCR binary
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This is a suggested method. If you are not so sure what you are doing, we
 recommend you follow the steps shown below. If you are a more advanced user and

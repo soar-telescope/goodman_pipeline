@@ -1,5 +1,5 @@
 .. _user-manual:
-.. include:: introduction.rst
+.. include:: overview.rst
 
 .. raw:: pdf
 

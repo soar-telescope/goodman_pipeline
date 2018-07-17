@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Introduction &mdash; Goodman HTS Pipeline Documentation 1.0.0 documentation</title>
+  <title>License &mdash; Goodman HTS Pipeline Documentation 1.0.0 documentation</title>
   
 
   
@@ -28,7 +28,9 @@
     <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Running the Pipeline" href="running_pipeline.html" />
+    <link rel="prev" title="Welcome to Goodman HTS Pipeline’s Documentation" href="index.html" /> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -81,18 +83,18 @@
               
             
             
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Introduction</a><ul>
-<li><a class="reference internal" href="#license">License</a></li>
-<li><a class="reference internal" href="#overview">Overview</a></li>
-<li><a class="reference internal" href="#features-available">Features Available</a></li>
-<li><a class="reference internal" href="#supported-data">Supported Data</a></li>
-<li><a class="reference internal" href="#future-implementation">Future Implementation</a></li>
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#features-available">Features Available</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#supported-data">Supported Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#future-implementation">Future Implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running_pipeline.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="requirements.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conclusion.html">Conclusion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conclusion.html#acknowledgements">Acknowledgements</a></li>
 </ul>
-</li>
-</ul>
-</div>
+
             
           
         </div>
@@ -136,7 +138,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Introduction</li>
+      <li>License</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -155,15 +157,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
-<p>This is the User Manual for the <em>Goodman Spectroscopic Data Reduction
-Pipeline</em>. It provides an overview of the pipeline’s main features,
-instructions on its use and how to run it on our dedicated <em>Data Reduction
-Server</em>, and installation instructions for those who wish to run it on their own
-computers.</p>
-<div class="section" id="license">
-<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="license">
+<h1>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h1>
 <p>BSD 3-Clause License</p>
 <p>Copyright (c) 2018, SOAR Telescope</p>
 <p>All rights reserved.</p>
@@ -191,7 +186,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
 </div>
 <div class="section" id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
 <p>The Goodman Spectroscopic Data Reduction Pipeline - <a href="#id1"><span class="problematic" id="id2">|pipeline name|</span></a> - is a Python-based
 package for producing science-ready, wavelength-calibrated, 1-D spectra. The
 goal of <a href="#id3"><span class="problematic" id="id4">|pipeline name|</span></a> is to provide SOAR users with an easy to use, very well
@@ -221,7 +216,7 @@ carries out the following steps:</p>
 </ul>
 </div>
 <div class="section" id="features-available">
-<h2>Features Available<a class="headerlink" href="#features-available" title="Permalink to this headline">¶</a></h2>
+<h1>Features Available<a class="headerlink" href="#features-available" title="Permalink to this headline">¶</a></h1>
 <ul class="simple">
 <li>Self-contained, full data reduction package for the most commonly used
 predefined setups with Goodman HTS.  Given the almost limitless number of
@@ -236,12 +231,12 @@ PEP257 – Docstrings Convention (in-code documentation) – Google Style</li>
 </ul>
 </div>
 <div class="section" id="supported-data">
-<h2>Supported Data<a class="headerlink" href="#supported-data" title="Permalink to this headline">¶</a></h2>
+<h1>Supported Data<a class="headerlink" href="#supported-data" title="Permalink to this headline">¶</a></h1>
 <p>We are currently supporting data obtained since <a href="#id5"><span class="problematic" id="id6">|headers change|</span></a>, however you should
 be able to process older data making sure you data meets the <a href="#id11"><span class="problematic" id="id12">`data requirements`_</span></a>.</p>
 </div>
 <div class="section" id="future-implementation">
-<h2>Future Implementation<a class="headerlink" href="#future-implementation" title="Permalink to this headline">¶</a></h2>
+<h1>Future Implementation<a class="headerlink" href="#future-implementation" title="Permalink to this headline">¶</a></h1>
 <p>Here is a list of the features we are planning to implement.</p>
 <dl class="docutils">
 <dt>Additions:</dt>
@@ -261,13 +256,21 @@ be able to process older data making sure you data meets the <a href="#id11"><sp
 </dd>
 </dl>
 </div>
-</div>
 
 
            </div>
            
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="running_pipeline.html" class="btn btn-neutral float-right" title="Running the Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="Welcome to Goodman HTS Pipeline’s Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>
