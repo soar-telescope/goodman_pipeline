@@ -190,3 +190,6 @@ executable binary in your ``$PATH`` variable.
 5. Close and reopen the terminal or load the ``.bashrc`` file.
 
     ``source ~/.bashrc``
+
+
+.. include:: _shortcuts.rst
