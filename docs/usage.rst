@@ -26,4 +26,6 @@ Getting Help.
 
 .. include:: _cosmic_ray_removal.rst
 
+.. include:: _flat_normalization.rst
+
 .. include:: _shortcuts.rst

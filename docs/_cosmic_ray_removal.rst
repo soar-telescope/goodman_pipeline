@@ -1,3 +1,5 @@
+.. _cosmic-ray-removal:
+
 Cosmic Ray Removal
 ******************
 

@@ -10,7 +10,7 @@ spectra can be produced shortly after the shutter closes.
 
 The pipeline is primarily intended to be run on a data reduction dedicated
 computer. Instructions for running the software are provided in the
-`Running Pipeline`_ section of this guide.
+`Usage <usage.html>`_ section of this guide.
 The Goodman Spectroscopic Data Reduction Pipeline project is hosted at GitHub at
 `it's GitHub Repository <https://github.com/soar-telescope/goodman>`_.
 

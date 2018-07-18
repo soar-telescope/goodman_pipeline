@@ -1,4 +1,5 @@
-.. _`data requirements`:
+.. _data-requirements:
+
 Data Requirements
 *****************
 
@@ -39,7 +40,7 @@ insensitive: you may write "HgAr", "HGAR" or "hgar".
 The list of current lamps is the following.
 
 
-.. _`Table Supported Modes`:
+.. _table-supported-modes:
 
 .. table:: List of |goodman hts| supported modes
 
@@ -59,7 +60,7 @@ The list of current lamps is the following.
 
     PageBreak
 
-.. _`Header Requirements`:
+.. _header-requirements:
 
 Headers Requirements
 ~~~~~~~~~~~~~~~~~~~~
@@ -164,4 +165,4 @@ Also, we recommend you follow these good practices:
 - Don't mix different ROI (Region Of Interest), Gain and Readout Noises.
 - Make sure all the required file types are present: BIAS, FLAT, COMP, OBJECT.
 
-
+.. include:: _shortcuts.rst
