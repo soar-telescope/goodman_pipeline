@@ -7,6 +7,3 @@ colleagues in lively and useful discussions that have been important in making
 the Goodman pipeline possible.  We also acknowledge fruitful discussions and
 suggestions from our colleagues Bart Dunlop, Chris Clemens, and Erik Dennihy,
 at University of North Carolina at Chapel Hill.
-
-
-.. include:: _conclusion_team.rst

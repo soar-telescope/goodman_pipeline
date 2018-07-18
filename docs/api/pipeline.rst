@@ -15,10 +15,10 @@ Subpackages
 Submodules
 ----------
 
-pipeline\.info module
----------------------
+pipeline\.version module
+------------------------
 
-.. automodule:: pipeline.info
+.. automodule:: pipeline.version
     :members:
     :undoc-members:
     :show-inheritance:

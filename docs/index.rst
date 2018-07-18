@@ -41,7 +41,11 @@ computers.
 .. toctree::
    :maxdepth: 2
    :caption: About the Goodman Pipeline
+   :titlesonly:
 
-   Q&A <question_and_answers>
-   about
+
+   license
+   authors
+   acknowledgement
+   Questions & Answers <question_and_answers>
    change_history

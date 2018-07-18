@@ -75,7 +75,16 @@ Combined Images
 
 Every image used in a combination of images is recorded in the header of the
 resulting one. The order does not have importance but most likely the header
-of the first one will be used
+of the first one will be used.
+
+The combination is made using the ``ccdproc.combine`` method with the following parameters
+
+- ``method='median'``
+- ``sigma_clip=True``
+- ``sigma_clip_low_thresh=1.0``
+- ``sigma_clip_high_thresh=1.0``
+
+At this moment these parameters are not user-configurable.
 
 .. _`table combined images key`:
 
@@ -93,7 +102,7 @@ Detected lines
 ^^^^^^^^^^^^^^
 
 The *reference lamp library* maintains the lamps non-linearized and also they
-get a record of the pixel value and the equivalent in angstrom. In the following
+get a record of the pixel value and its equivalent in angstrom. In the following
 table a three-line lamp is shown.
 
 .. _`table line list`:
