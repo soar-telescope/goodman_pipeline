@@ -28,16 +28,20 @@ instructions on its use and how to run it on our dedicated *Data Reduction
 Server*, and installation instructions for those who wish to run it on their own
 computers.
 
-
-Contents
-========
-
 .. toctree::
   :maxdepth: 2
-
+  :caption: User Manual
 
   overview
   usage
   Remote Access <remote_access>
   install
-  about
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: About the Goodman Pipeline
+
+   Q&A <question_and_answers>
+   about
+   change_history

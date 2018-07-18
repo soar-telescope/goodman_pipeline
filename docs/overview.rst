@@ -31,3 +31,4 @@ carries out the following steps:
 - Creates a new file for the wavelength-calibrated 1D spectrum
 
 
+.. include:: _shortcuts.rst

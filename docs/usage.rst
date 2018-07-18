@@ -26,3 +26,4 @@ Getting Help.
 
 .. include:: _cosmic_ray_removal.rst
 
+.. include:: _shortcuts.rst

@@ -57,3 +57,6 @@ You will be asked to type in the ``<password>`` provided.
     should be provided by your support scientist.
 
 If the connection succeeds you will see a *Centos 7* Desktop using *Gnome*.
+
+
+.. include:: _shortcuts.rst

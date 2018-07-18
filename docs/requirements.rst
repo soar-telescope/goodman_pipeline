@@ -9,3 +9,5 @@ can perform in an unexpected way or even crash.
 .. include:: _data_requirements.rst
 
 .. include:: _requirements_software.rst
+
+.. include:: _shortcuts.rst
