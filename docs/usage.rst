@@ -1,8 +1,11 @@
 .. _`usage`:
+
 Usage
 #####
-The |pipeline full name| is designed to be simple to use, however help is always
-necessary.
+
+The |pipeline full name| is designed to be simple to use, however simple does
+not always is the best case for everyone, thus he |pipeline name| is also
+flexible.
 
 Getting Help.
   This manual is intended to be the prefered method to get help. However the quickest option is using ``-h`` or ``--help``
@@ -27,5 +30,10 @@ Getting Help.
 .. include:: _cosmic_ray_removal.rst
 
 .. include:: _flat_normalization.rst
+
+.. include:: _extraction_methods.rst
+
+
+.. include:: _file_prefixes.rst
 
 .. include:: _shortcuts.rst

@@ -1,3 +1,5 @@
+.. _install:
+
 Install
 #######
 Using the pipeline remotely is the recommended method, in which case you don't need

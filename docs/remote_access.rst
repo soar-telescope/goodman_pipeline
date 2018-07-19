@@ -1,3 +1,5 @@
+.. _remote-access:
+
 Setup for Remote Use
 ********************
 The Goodman Spectroscopic Data Reduction Pipeline has been installed on a
