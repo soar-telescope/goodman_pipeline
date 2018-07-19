@@ -36,7 +36,8 @@ __version__ = __import__('pipeline').__version__
 extensions = ['sphinx.ext.todo',
               'sphinx.ext.coverage',
               'sphinx.ext.githubpages',
-              'sphinx.ext.autodoc']
+              'sphinx.ext.autodoc',
+              'sphinx.ext.mathbase']
 
 
 # Add any paths that contain templates here, relative to this directory.
