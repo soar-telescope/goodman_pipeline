@@ -15,6 +15,12 @@ the reduction process, the main tasks are listed below.
   + Normalized flat field correction
   + Cosmic ray rejection
 
+.. note::
+
+  Some older Goodman HTS data has headers that are not FITS compliant,
+  In such cases the headers are fixed and that is the only modification done to
+  raw data.
+
 The 2D images are initially reduced using ``redccd``. You can simply move to the
 directory where your raw data is located and do:
 
@@ -29,21 +35,23 @@ tell the pipeline to delete the ``RED`` directory.
 
   ``redccd --auto-clean``
 
-A summary of the most important arguments are presented below.
+A summary of the most important *command line arguments* are presented below.
 
-- ``--cosmic`` Let you select the method to do :ref:`cosmic-ray-removal`.
+- ``--cosmic <method>`` Let you select the method to do :ref:`cosmic-ray-removal`.
 - ``--debug`` Show extended messages and plots of intermediate steps.
-- ``--flat-normalize`` Let you select the method to do :ref:`flat-normalization`.
-- ``--flat-norm-order`` Set order for the model used to do
+- ``--flat-normalize <method>`` Let you select the method to do :ref:`flat-normalization`.
+- ``--flat-norm-order <order>`` Set order for the model used to do
   :ref:`flat-normalization`. Default 15.
 - ``--ignore-bias`` Ignores the existence or lack of ``BIAS`` data.
 - ``--ignore-flats`` Ignores the existence or lack of ``FLAT`` data.
-- ``--raw-path`` Set the directory where the raw data is located, can be relative.
-- ``--red-path`` Set the directory where the reduced data will be stored. Default ``RED``.
-- ``--saturation`` Set the saturation level. Flats exceeding the saturation
+- ``--raw-path <path>`` Set the directory where the raw data is located, can be relative.
+- ``--red-path <path>`` Set the directory where the reduced data will be stored. Default ``RED``.
+- ``--saturation <saturation>`` Set the saturation level. Flats exceeding the saturation
   level will be discarded. Default 65.000 ADU.
 
 
+This is intended to work with *spectroscopic* and *imaging* data, that it why
+the process is split in two.
 
 
 

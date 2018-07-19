@@ -3,9 +3,9 @@
 Flat Normalization
 ******************
 
-There are three possible methods to do the normalization of master flats. For
-the method using a model the default model's order is 15. It can be set using
-``--flat-norm-order``.
+There are three possible ``<method>``(s) to do the normalization of master flats.
+For the method using a model the default model's order is 15. It can be set using
+``--flat-norm-order <order>``.
 
 ``mean``:
   Calculates the mean of the image using ``numpy.mean`` and divide the image by it.
