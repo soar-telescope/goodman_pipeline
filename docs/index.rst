@@ -49,3 +49,10 @@ computers.
    acknowledgement
    Questions & Answers <question_and_answers>
    change_history
+
+API Documentation
+=================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
