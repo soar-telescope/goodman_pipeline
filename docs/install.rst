@@ -105,6 +105,8 @@ on with the installation.
     you can add the ``--user`` option to install only for your user and avoid
     needing root access.
 
+.. _dcr:
+
 Installing DCR
 **************
 
@@ -114,7 +116,9 @@ Installing DCR
 
 In terms of cosmic ray rejection we shifted to a non-python package because the
 results were much better compared to LACosmic's implementation in Astropy.
-LACosmic was not designed to work with spectroscopy.
+LACosmic was not designed to work with spectroscopy. Though since version
+:ref:`1.1.0 <v1.1.0>` we shifted from Astropy to Astroscrappy's implementation
+of LACosmic.
 
 The latest version of the Goodman Spectroscopic Pipeline uses a modified version
 of ``dcr`` to help with the pipeline's workflow. It is included under
