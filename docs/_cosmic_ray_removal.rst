@@ -36,7 +36,7 @@ methods.
 ``none``:
   Skips the cosmic ray removal process.
 
-Asymetric binnings have not being tested but the pipeline only takes in
+Asymetric binnings have not been tested but the pipeline only takes in
 consideration the dispersion axis to decide. This does not mean that the spatial
 binning does not impact the performance of any of the methods, we just don't
 know it yet.
