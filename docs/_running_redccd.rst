@@ -1,3 +1,5 @@
+.. _processing-2d-images:
+
 Processing your 2D images
 *************************
 
