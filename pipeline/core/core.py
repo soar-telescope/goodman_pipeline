@@ -156,15 +156,15 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         ccd (object): a ccdproc.CCDData instance.
         image_name (str): Science image name.
         out_prefix (str): Partial prefix to be added to the image name. Related
-        to previous processes and not cosmic ray rejection.
+          to previous processes and not cosmic ray rejection.
         red_path (str): Path to reduced data directory.
         dcr_par (str): Path to dcr.par file.
         keep_files (bool): If True, the original file and the cosmic ray mask
-        will not be deleted. Default is False.
+          will not be deleted. Default is False.
         prefix (str): Cosmic ray rejection related prefix to be added to image
-        name.
-        method (str): Method to use for cosmic ray rejection. There are three
-        options: `dcr`, `lacosmic` and `none`.
+          name.
+        method (str): Method to use for cosmic ray rejection. There are four
+          options: `default`, `dcr`, `lacosmic` and `none`.
         save (bool): Disables by default saving the images
 
     Returns:
@@ -390,11 +390,11 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
         dest_path (str): Path to where the new image should saved
         prefix (str): Prefix to add to the image file name
         output_name (str): Alternatively a file name can be parsed, this will
-        ignore `prefix`.
+          ignore `prefix`.
         method (str): Method for doing the combination, this goes straight to
-        the call of `ccdproc.combine` function.
+          the call of `ccdproc.combine` function.
         save (bool): If True will save the combined images. If False it will
-        ignore `prefix` or `output_name`.
+          ignore `prefix` or `output_name`.
 
     Returns:
         A combined image as a CCDData object.
@@ -642,12 +642,12 @@ def extraction(ccd,
     Args:
         ccd (object): Instance of ccdproc.CCDData containing a 2D spectrum
         target_trace (object): Instance of astropy.modeling.Model, a low order
-        polynomial that defines the trace of the spectrum in the ccd object.
+          polynomial that defines the trace of the spectrum in the ccd object.
         spatial_profile (object): Instance of astropy.modeling.Model, a Gaussian
-        model previously fitted to the spatial profile of the 2D spectrum
-        contained in the ccd object.
+          model previously fitted to the spatial profile of the 2D spectrum
+          contained in the ccd object.
         extraction_name (str): Extraction type, can be `fractional` or
-        `optimal` though the optimal extraction is not implemented yet.
+          `optimal` though the optimal extraction is not implemented yet.
 
     Returns:
         ccd (object): Instance of ccdproc.CCDData containing a 1D spectrum. The
@@ -680,16 +680,16 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     Args:
         ccd (object): Instance of ccdproc.CCDData that contains a 2D spectrum.
         target_trace (object):  Instance of astropy.modeling.models.Model that
-        defines the trace of the target on the image (ccd).
+          defines the trace of the target on the image (ccd).
         target_stddev (float): Standard deviation value for the spatial profile
-        fitted to the target.
+          fitted to the target.
         extraction_width (int): Width of the extraction area as a function of
-        `target_stddev`. For instance if `extraction_with` is set to 1 the
-        function extract 0.5 to each side from the center of the traced
-        target.
+          `target_stddev`. For instance if `extraction_with` is set to 1 the
+          function extract 0.5 to each side from the center of the traced
+          target.
         background_spacing (float): Number of `target_stddev` to separate the
-        target extraction to the background. This is from the edge of the
-        extraction zone to the edge of the background region.
+          target extraction to the background. This is from the edge of the
+          extraction zone to the edge of the background region.
     """
     assert isinstance(ccd, CCDData)
     assert isinstance(target_trace, Model)
@@ -874,7 +874,7 @@ def get_best_flat(flat_name, path):
 
     Args:
         flat_name (str): Full path of master flat basename. Ends in '\*.fits' for
-        using glob.
+          using glob.
         path (str): Location to look for flats.
 
     Returns:
@@ -950,7 +950,7 @@ def get_slit_trim_section(master_flat):
     such as NaNs -INF +INF, etc.
 
     Args:
-        master_flat (object): A ccdproc.CCDData instance.
+        master_flat (object): A :class:`ccdproc.CCDData` instance.
 
     Returns:
         slit_trim_section (str): Trim section in spatial direction in the format
@@ -1360,9 +1360,9 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
     Args:
         ccd (object): A ccdproc.CCDData instance to be overscan corrected.
         overscan_region (str): The overscan region in the format `[x1:x2,y1:y2]`
-        where x is the spectral axis and y is the spatial axis.
+          where x is the spectral axis and y is the spatial axis.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-        Default False.
+          Default False.
 
     Returns:
         ccd (object): Overscan corrected ccdproc.CCDData instance
@@ -1394,10 +1394,10 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
     Args:
         ccd (object): A ccdproc.CCDData instance.
         trim_section (str): The trimming section in the format `[x1:x2,y1:y2]`
-        where x is the spectral axis and y is the spatial axis.
+          where x is the spectral axis and y is the spatial axis.
         trim_type (str): trimsec or slit trim.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
-        Default False.
+          Default False.
 
     Returns:
         ccd (object): Trimmed ccdproc.CCDData instance
@@ -1851,14 +1851,14 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
     Args:
         ccd (object): A ccdproc.CCDData instance, 2D image.
         model (object): An astropy.modeling.Model instance that contains
-        information regarding the target to be traced.
+          information regarding the target to be traced.
         trace_model (object): An astropy.modeling.Model instance, usually a low
-        order polynomial.
+          order polynomial.
         model_fitter (object): An astropy.modeling.fitting.Fitter instance. Will
-        fit the sampled points to construct the trace model
+          fit the sampled points to construct the trace model
         sampling_step (int): Step for sampling the spectrum.
         nsigmas (int): Number of stddev to each side of the mean to be used for
-        searching the trace.
+          searching the trace.
 
     Returns:
         An `astropy.modeling.Model` instance, that defines the trace of the
@@ -2027,7 +2027,7 @@ def write_fits(ccd,
         full_path (str): Full path of file.
         combined (bool): True if `ccd` is the result of combining images.
         parent_file (str): Name of the file from which ccd originated. If
-        combined is True this will be set to `combined`.
+          combined is True this will be set to `combined`.
         overwrite (bool): Overwrite files, default True.
 
     Returns:
@@ -2821,7 +2821,7 @@ class SpectroscopicMode(object):
         Args:
             grating (float): Grating frequency in lines/mm (unitless value)
             mode (str): Name of the grating's mode for which the camera and
-            grating target values are required.
+              grating target values are required.
 
         Returns:
             Camera and grating target values. None and None if no such values

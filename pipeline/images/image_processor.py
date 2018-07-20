@@ -107,7 +107,7 @@ class ImageProcessor(object):
         """Get the initial trim section
 
         The initial trim section is usually defined in the header with the
-        keyword TRIMSEC but in the case of Goodman HTS this does not work well.
+        keyword ``TRIMSEC`` but in the case of Goodman HTS this does not work well.
         In particular for spectroscopy where is more likely to have combined
         binning and so on.
 
@@ -191,9 +191,9 @@ class ImageProcessor(object):
 
 
         Returns:
-            overscan_region (str): Region for overscan in the format
-            '[min:max,:]' where min is the starting point and max is the end
-            point of the overscan region.
+            overscan_region (str) Region for overscan in the format
+              '[min:max,:]' where min is the starting point and max is the end
+               point of the overscan region.
 
         """
         for group in [self.bias,
