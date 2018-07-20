@@ -1,11 +1,12 @@
 #!/usr/bin/env python2
 # -*- coding: utf8 -*-
-"""Pipeline for GOODMAN spectra Extraction.
+"""Pipeline for Goodman High Troughput Spectrograph spectra Extraction.
 
 This program finds reduced images, i.e. trimmed, bias subtracted, flat fielded,
-etc. that match the <pattern> in the source folder, then classify them in two
-groups: Science or Lamps. For science images, finds the spectrum or spectra and
-traces it doing some fit.
+etc. that match the ``<pattern>`` in the source folder, then classify them in
+two groups: Science or Lamps. For science images, finds the spectrum or spectra
+and traces it doing some fit.
+
 Simon Torres 2016-06-28
 
 """
@@ -45,10 +46,12 @@ warnings.filterwarnings('ignore')
 
 __version__ = __import__('pipeline').__version__
 
+
 def get_args(arguments=None):
     """Handles the argparse library and returns the arguments
 
-    The list of arguments can be found with running `redspec -h`.
+    The list of arguments can be found with running ``redspec -h`` or
+    ``redspec --help``.
 
     Notes:
         The full list of arguments are not listed here as the may evolve in

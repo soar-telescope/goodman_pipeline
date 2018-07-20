@@ -6,11 +6,6 @@ the spectrum and write the solution to the image's header following the FITS
 standard.
 """
 
-# TODO Reformat file - It is confusing at the moment
-# TODO Reformat _ Re-order imports (first "import ...", then
-# "from ... import ..." alphabetically)
-# TODO (simon): Discuss this because there are other rules that will probably
-# conflict with this request.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import ccdproc
@@ -93,7 +88,7 @@ class WavelengthCalibration(object):
         self.slit_offset = None
         self.interpolation_size = 200
         self.line_search_method = 'derivative'
-        """Instrument configuration and spectral characteristics"""
+        # Instrument configuration and spectral characteristics
         self.pixel_size = 15 * u.micrometer
         self.pixel_scale = 0.15 * u.arcsec
         self.goodman_focal_length = 377.3 * u.mm
@@ -109,7 +104,7 @@ class WavelengthCalibration(object):
         self.center_wavelength = None
         self.blue_limit = None
         self.red_limit = None
-        """Interactive wavelength finding"""
+        # Interactive wavelength finding
         self.reference_marks_x = []
         self.reference_marks_y = []
         self.raw_data_marks_x = []
@@ -137,7 +132,7 @@ class WavelengthCalibration(object):
         self.evaluation_comment = None
         # self.binning = self.lamp.header[]
         self.pixel_center = []
-        """this data must come parsed"""
+        # this data must come parsed
         self.path = self.args.source
         # self.science_pack = sci_pack
         # self.sci_filename = self.science_object.file_name
@@ -932,8 +927,8 @@ class WavelengthCalibration(object):
         can use its own method to apply it to a given data.
 
         Returns:
-            wsolution (callable): A callable mathematical function. None if the
-                wavelength solution doesn't exist.
+            A callable mathematical function. None if the wavelength solution
+            doesn't exist.
 
         """
         if self.wsolution is not None:

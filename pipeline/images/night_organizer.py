@@ -203,12 +203,20 @@ class NightOrganizer(object):
 
         This method identifies all combinations of nine **key** keywords that
         can set apart different objects with their respective calibration data
-        or not. The keywords used are: GAIN, RDNOISE, GRATING, FILTER2,
-        CAM_TARG,GRT_TARG, SLIT, OBSRA and OBSDEC.
+        or not. The keywords used are:
+          - ``GAIN``
+          - ``RDNOISE``
+          - ``GRATING``
+          - ``FILTER2``
+          - ``CAM_TARG``
+          - ``GRT_TARG``
+          - ``SLIT``
+          - ``OBSRA``
+          - ``OBSDEC``
 
         This method populates the `data_container` class attribute which is an
-        instance of the class NightDataContainer.
-        A data group is an instance of a Pandas DataFrame.
+        instance of the :class:`pipeline.core.core.NightDataContainer`.
+        A data group is an instance of a :class:`pandas.DataFrame`.
 
         """
 
@@ -321,9 +329,9 @@ class NightOrganizer(object):
         """Organizes data for imaging
 
         For imaging there is no discrimination regarding night data since the
-        process is simpler. It is a three stage process classifying BIAS, FLAT
-        and OBJECT data type. The data is packed in groups that are
-        pandas.DataFrame objects.
+        process is simpler. It is a three stage process classifying ``BIAS``,
+        ``FLAT``  and ``OBJECT`` data type. The data is packed in groups that
+        are :class:`pandas.DataFrame` objects.
 
         """
 
