@@ -4,7 +4,7 @@ Usage
 #####
 
 The |pipeline full name| is designed to be simple to use, however simple does
-not always is the best case for everyone, thus he |pipeline name| is also
+not always is the best case for everyone, thus |pipeline name| is also
 flexible.
 
 Getting Help.

@@ -33,7 +33,7 @@ Though you can modify the behavior in several ways.
 Running ``redccd`` will create a directory called ``RED`` where it will put your
 reduced data. If you want to run it again it will prevent you from accidentally
 removing your already reduced data unless you use ``--auto-clean`` this will
-tell the pipeline to delete the ``RED`` directory.
+tell the pipeline to delete the ``RED`` directory and start over.
 
   ``redccd --auto-clean``
 
@@ -52,7 +52,7 @@ A summary of the most important *command line arguments* are presented below.
   level will be discarded. Default 65.000 ADU.
 
 
-This is intended to work with *spectroscopic* and *imaging* data, that it why
+This is intended to work with *spectroscopic* and *imaging* data, that it is why
 the process is split in two.
 
 

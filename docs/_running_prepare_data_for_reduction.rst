@@ -11,6 +11,7 @@ step, either way, keep in mind the following steps.
 - Make sure all data has the same Region Of Interest or ROI (``ROI``).
 
 The pipeline does not modify the original files unless there are problems with
-fits compliance, is never a bad idea to keep copies of your original data though.
+fits compliance, is never a bad idea to keep copies of your original data in
+a safe place.
 
 
