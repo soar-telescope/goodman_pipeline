@@ -6,7 +6,7 @@ dependencies:
   - pandas
   - matplotlib
   - scipy
-  - cython>=0.21
+  - cython>=0.26
   - astropy>3
   - pip
   - pip:
