@@ -280,12 +280,12 @@ class ImageProcessor(object):
     def create_master_bias(self, bias_group):
         """Create Master Bias
 
-        Given a pandas.DataFrame object that contains a list of compatible bias.
+        Given a :class:`~pandas.DataFrame` object that contains a list of compatible bias.
         This function creates the master flat using ccdproc.combine using median
         and 3-sigma clipping.
 
         Args:
-            bias_group (object): pandas.DataFrame instance that contains a list
+            bias_group (object): :class:`~pandas.DataFrame` instance that contains a list
                 of bias images compatible with each other.
 
         """
@@ -347,14 +347,14 @@ class ImageProcessor(object):
         each image.
 
         Args:
-            flat_group (object): pandas.DataFrame instance. Contains a list of
+            flat_group (object): :class:`~pandas.DataFrame` instance. Contains a list of
                 compatible flat images
             target_name (str): Science target name. This is used in some science
                 case uses only.
 
 
         Returns:
-            The master flat ccdproc.CCDData instance and the name of under which
+            The master flat :class:`~astropy.nddata.CCDData` instance and the name of under which
             the master flat was stored.
 
         """
@@ -456,7 +456,7 @@ class ImageProcessor(object):
         Args:
             header (object): Fits header. Instance of
                 astropy.io.fits.header.Header
-            group (object): pandas.DataFrame instance. Contains filenames as
+            group (object): :class:`~pandas.DataFrame` instance. Contains filenames as
                 well as other important keywords that are defined in
                 ccd.night_organizer.NightOrganizer.keywords
             target_name (str): Optional science target name to be added to the
@@ -546,7 +546,7 @@ class ImageProcessor(object):
         files. if save_all is set to True, all intermediate steps are saved.
 
         Args:
-            science_group (object): pandas.DataFrame instance that contains a
+            science_group (object): :class:`~pandas.DataFrame` instance that contains a
                 list of science images that where observed at the same pointing
                 and time. It also contains a set of selected keywords from the
                 image's header.
@@ -841,7 +841,7 @@ class ImageProcessor(object):
         """Does image reduction for science imaging data.
 
         Args:
-            imaging_group (object): pandas.DataFrame instance that contains a
+            imaging_group (object): :class:`~pandas.DataFrame` instance that contains a
               list of science data that are compatible with a given
               instrument configuration and can be reduced together.
 

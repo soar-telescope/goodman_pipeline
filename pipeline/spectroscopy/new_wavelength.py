@@ -227,7 +227,7 @@ class WavelengthCalibration(object):
             is a special method for dealing with broad lines.
 
         Args:
-            ccd (object): a ccdproc.CCDData instance.
+            ccd (object): a :class:`~astropy.nddata.CCDData` instance.
             lines (list): A line list in pixel values.
             plots (bool): If True will plot spectral line as well as the input
               center and the recentered value.
@@ -341,10 +341,10 @@ class WavelengthCalibration(object):
             in separated methods to have more control on either process.
 
         Args:
-            ccd (CCDData): CCDData instance with 1D data.
+            ccd (object): A :class:`~astropy.ndddata.CCDData` instance with 1D data.
 
         Returns:
-            ccd (object): An instance of `ccdproc.CCDData` with an updated
+            An instance of `:class:`~astropy.nddata.CCDData`` with an updated
               header.
 
         """

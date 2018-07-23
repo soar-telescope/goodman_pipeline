@@ -67,10 +67,10 @@ def add_wcs_keys(ccd):
         This does NOT add a WCS solution, just the keywords.
 
     Args:
-        ccd (object): ccdproc.CCDData instance with no wcs keywords.
+        ccd (object): A :class:~astropy.nddata.CCDData` instance with no wcs keywords.
 
     Returns:
-        ccd (object): ccdproc.CCDData instance with modified header with added
+        ccd (object): A :class:`~astropy.nddata.CCDData` instance with modified header with added
           WCS keywords
 
     """
@@ -162,7 +162,7 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
     There is also the option of skipping cosmic ray removal by using ``none``.
 
     Args:
-        ccd (object): a ccdproc.CCDData instance.
+        ccd (object): a :class:`~astropy.nddata.CCDData` instance.
         image_name (str): Science image name.
         out_prefix (str): Partial prefix to be added to the image name. Related
           to previous processes and not cosmic ray rejection.
@@ -177,7 +177,7 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
         save (bool): Disables by default saving the images
 
     Returns:
-        ccdproc.CCDData instance and `out_prefix` which is the prefix added to
+        :class:`~astropy.nddata.CCDData` instance and `out_prefix` which is the prefix added to
         the image name.
 
     Raises:
@@ -276,22 +276,48 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
 def classify_spectroscopic_data(path, search_pattern):
     """Classify data by grouping them by a set of keywords.
 
-    This functions uses ImageFileCollection from ccdproc. First it creates a
-    collection of information regarding the images located in *path* that match
-    the pattern *search_pattern*
-    The information obtained are all keywords listed in the list *keywords*
-    The ImageFileCollection is translated into pandas.DataFrame and then is used
-    much like an SQL database to select and filter values and in that way put
-    them in groups that are pandas.DataFrame instances.
+    This function uses :class:`~ccdproc.ImageFileCollection`. First it creates a
+    collection of information regarding the images located in ``path`` that
+    match the pattern ``search_pattern``. The information obtained are all
+    keywords listed in the list ``keywords``.
+    The :class:`~ccdproc.ImageFileCollection` object is translated into
+    :class:`~pandas.DataFrame` and then is used much like an SQL database to
+    select and filter values and in that way put them in groups that are
+    :class:`~pandas.DataFrame` instances.
+    The keywords retrieved are:
+    - ``date``
+    - ``slit``
+    - ``date-obs``
+    - ``obstype``
+    - ``object``
+    - ``exptime``
+    - ``obsra``
+    - ``obsdec``
+    - ``grating``
+    - ``cam_targ``
+    - ``grt_targ``
+    - ``filter``
+    - ``filter2``
+    - ``gain``
+    - ``rdnoise``.
 
-    The keywords retrieved are: 'date', 'slit', 'date-obs', 'obstype', 'object',
-    'exptime', 'obsra', 'obsdec', 'grating', 'cam_targ', 'grt_targ', 'filter',
-    'filter2', 'gain' and 'rdnoise'. Then all data is grouped by matching the
-    following keywords: 'slit', 'radeg', 'decdeg', 'grating', 'cam_targ',
-    'grt_targ', 'filter', 'filter2', 'gain' and 'rdnoise' and finally every
-    group is classified as: a comparison lamp-only group, an object-only group
-    or a group of object and comparison lamps. The comparison lamps present in
-    the last group (COMP + OBJECT) are also added in the first one (COMP-only).
+    Then all data is grouped by matching the following keywords:
+
+    - ``slit``
+    - ``radeg``
+    - ``decdeg``
+    - ``grating``
+    - ``cam_targ``
+    - ``grt_targ``
+    - ``filter``
+    - ``filter2``
+    - ``gain``
+    - ``rdnoise``
+
+    And finally,  every group is classified as: a *comparison lamp-only* group,
+    an *object-only* group or a *group of object and comparison lamps*. The
+    comparison lamps present in the last group (``COMP`` + ``OBJECT``) are also
+    added in the first one (``COMP``-only).
 
 
     Args:
@@ -299,8 +325,7 @@ def classify_spectroscopic_data(path, search_pattern):
         search_pattern (str): Prefix to match files.
 
     Returns:
-        data_container (object): Instance of
-          `goodman.pipeline.core.NightDataContainer`
+        Instance of :class:`pipeline.core.core.NightDataContainer`
 
     """
     log.debug("Spectroscopic Data Classification")
@@ -392,10 +417,10 @@ def classify_spectroscopic_data(path, search_pattern):
 def combine_data(image_list, dest_path, prefix=None, output_name=None,
                  method="median",
                  save=False):
-    """Combine a list of CCDData instances.
+    """Combine a list of :class:`~astropy.ndddata.CCDData` instances.
 
     Args:
-        image_list (list): Each element should be an instance of ccdproc.CCDData
+        image_list (list): Each element should be an instance of :class:`~astropy.nddata.CCDData`
         dest_path (str): Path to where the new image should saved
         prefix (str): Prefix to add to the image file name
         output_name (str): Alternatively a file name can be parsed, this will
@@ -406,7 +431,7 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
           ignore `prefix` or `output_name`.
 
     Returns:
-        A combined image as a CCDData object.
+        A combined image as a :class:`~astropy.ndddata.CCDData` object.
 
     """
     # TODO (simon): apparently dest_path is not needed all the time, the full
@@ -494,7 +519,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     DCR was created by Wojtek Pych and the code can be obtained from
     http://users.camk.edu.pl/pych/DCR/ and is written in C. Contrary to
     ccdproc's LACosmic it actually applies the correction, and also doesn't
-    update the mask attribute since it doesn't work with CCDData instances.
+    update the mask attribute since it doesn't work with :class:`~astropy.ndddata.CCDData` instances.
 
     The binary takes three positional arguments, they are: 1. input image,
     2. output image and 3. cosmic rays image. Also it needs that a dcr.par file
@@ -626,7 +651,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         except OSError as error:
             log.error(error)
 
-    # recovers the saved file and returns the CCDData instance
+    # recovers the saved file and returns the :class:`~astropy.ndddata.CCDData` instance
     if os.path.isfile(full_path_out):
         ccd = CCDData.read(full_path_out, unit=u.adu)
         if not save:
@@ -649,7 +674,7 @@ def extraction(ccd,
         Optimal extraction is not implemented.
 
     Args:
-        ccd (object): Instance of ccdproc.CCDData containing a 2D spectrum
+        ccd (object): Instance of :class:`~astropy.nddata.CCDData` containing a 2D spectrum
         target_trace (object): Instance of astropy.modeling.Model, a low order
           polynomial that defines the trace of the spectrum in the ccd object.
         spatial_profile (object): Instance of astropy.modeling.Model, a Gaussian
@@ -659,7 +684,7 @@ def extraction(ccd,
           `optimal` though the optimal extraction is not implemented yet.
 
     Returns:
-        ccd (object): Instance of ccdproc.CCDData containing a 1D spectrum. The
+        ccd (object): Instance of :class:`~astropy.nddata.CCDData` containing a 1D spectrum. The
         attribute 'data' is replaced by the 1D array resulted from the
         extraction process.
 
@@ -687,7 +712,7 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     """Performs an spectrum extraction using fractional pixels.
 
     Args:
-        ccd (object): Instance of ccdproc.CCDData that contains a 2D spectrum.
+        ccd (object): Instance of :class:`~astropy.nddata.CCDData` that contains a 2D spectrum.
         target_trace (object):  Instance of astropy.modeling.models.Model that
           defines the trace of the target on the image (ccd).
         target_stddev (float): Standard deviation value for the spatial profile
@@ -876,7 +901,7 @@ def get_best_flat(flat_name, path):
     function will find the name of the files that matches the base name and then
     will choose the first. Ideally this should go further as to check signal,
     time gap, etc.
-    After it identifies the file it will load it using ccdproc.CCDData and
+    After it identifies the file it will load it using :class:`~astropy.nddata.CCDData` and
     return it along the filename.
     In the case it fails it will return None instead of master_flat and another
     None instead of master_flat_name.
@@ -887,7 +912,7 @@ def get_best_flat(flat_name, path):
         path (str): Location to look for flats.
 
     Returns:
-        master_flat (object): A ccdproc.CCDData instance.
+        master_flat (object): A :class:`~astropy.nddata.CCDData` instance.
         master_flat_name (str): Full path to the chosen master flat.
 
     """
@@ -959,7 +984,7 @@ def get_slit_trim_section(master_flat):
     such as NaNs -INF +INF, etc.
 
     Args:
-        master_flat (object): A :class:`ccdproc.CCDData` instance.
+        master_flat (object): A :class:`~astropy.nddata.CCDData` instance.
 
     Returns:
         slit_trim_section (str): Trim section in spatial direction in the format
@@ -1122,7 +1147,7 @@ def identify_targets(ccd, nfind=3, plots=False):
     level and pick the `nfind` largest ones.
 
     Args:
-        ccd (object): a ccdproc.CCDData instance.
+        ccd (object): a :class:`~astropy.nddata.CCDData` instance.
         nfind (int): Maximum number of targets to be returned.
         plots (bool): To show debugging plots.
 
@@ -1367,14 +1392,14 @@ def image_overscan(ccd, overscan_region, add_keyword=False):
         therefore is 1 based. i.e. it starts in 1 not 0.
 
     Args:
-        ccd (object): A ccdproc.CCDData instance to be overscan corrected.
+        ccd (object): A :class:`~astropy.nddata.CCDData` instance to be overscan corrected.
         overscan_region (str): The overscan region in the format `[x1:x2,y1:y2]`
           where x is the spectral axis and y is the spatial axis.
         add_keyword (bool): Tells ccdproc whether to add a keyword or not.
           Default False.
 
     Returns:
-        ccd (object): Overscan corrected ccdproc.CCDData instance
+        ccd (object): Overscan corrected :class:`~astropy.nddata.CCDData` instance
 
     """
     if overscan_region is not None:
@@ -1401,7 +1426,7 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
         therefore is 1 based. i.e. it starts in 1 not 0.
 
     Args:
-        ccd (object): A ccdproc.CCDData instance.
+        ccd (object): A :class:`~astropy.nddata.CCDData` instance.
         trim_section (str): The trimming section in the format `[x1:x2,y1:y2]`
           where x is the spectral axis and y is the spatial axis.
         trim_type (str): trimsec or slit trim.
@@ -1409,7 +1434,7 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
           Default False.
 
     Returns:
-        ccd (object): Trimmed ccdproc.CCDData instance
+        ccd (object): Trimmed :class:`~astropy.nddata.CCDData` instance
 
     """
     if trim_section is not None:
@@ -1480,13 +1505,13 @@ def normalize_master_flat(master, name, method='simple', order=15):
      unless you have a good reason as well as a very powerful computer.
 
     Args:
-        master (object): Master flat. Has to be a ccdproc.CCDData instance.
+        master (object): Master flat. Has to be a :class:`~astropy.nddata.CCDData` instance.
         name (str): Full path of master flat prior to normalization.
         method (str): Normalization method, 'mean', 'simple' or 'full'.
         order (int): Order of the polynomial to be fitted.
 
     Returns:
-        master (object):  The normalized master flat. ccdproc.CCDData instance.
+        master (object):  The normalized master flat. :class:`~astropy.nddata.CCDData` instance.
 
     """
     assert isinstance(master, CCDData)
@@ -1586,7 +1611,7 @@ def read_fits(full_path, technique='Unknown'):
     """Read fits files while adding important information to the header
 
     It is necessary to record certain data to the image header so that's the
-    reason for this wrapper of `ccdproc.CCDData.read()` to exist. It will add
+    reason for this wrapper of :meth:`~astropy.nddata.CCDData.read` to exist. It will add
     the following keywords. In most cases, if the keyword already exist it will
     skip it except for `GSP_FNAM`, `GSP_PATH` and `BUNIT`.
     GSP_VERS: Goodman Spectroscopic Pipeline version number
@@ -1615,7 +1640,7 @@ def read_fits(full_path, technique='Unknown'):
         technique (str): Observing technique. 'Imaging' or 'Spectroscopy'.
 
     Returns:
-        Instance of `ccdproc.CCDData` corresponding to the file from
+        Instance of :class:`~astropy.nddata.CCDData` corresponding to the file from
           `full_path`.
 
     """
@@ -1725,13 +1750,13 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
     """Save extracted spectrum while adding a prefix.
 
     Args:
-        ccd (object): CCDData instance
+        ccd (object): :class:`~astropy.ndddata.CCDData` instance
         destination (str): Path where the file will be saved.
         prefix (str): Prefix to be added to images. Default `e`.
         target_number (int):
 
     Returns:
-        `ccdproc.CCDData` instance of the image just recorded. although is not
+        :class:`~astropy.nddata.CCDData` instance of the image just recorded. although is not
         really necessary.
 
     """
@@ -1762,9 +1787,9 @@ def search_comp_group(object_group, comp_groups, reference_data):
         This methodology is not recommended for radial velocity studies.
 
     Args:
-        object_group (object): A pandas.DataFrame instances containing a group
+        object_group (object): A :class:`~pandas.DataFrame` instances containing a group
           of images for a given scientific target.
-        comp_groups (list): A list in which every element is a pandas.DataFrame
+        comp_groups (list): A list in which every element is a :class:`~pandas.DataFrame`
           that contains information regarding groups of comparison lamps.
         reference_data (object): Instance of
           `goodman.pipeline.core.ReferenceData` contains all information
@@ -1858,7 +1883,7 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
         (dispersion axis)
 
     Args:
-        ccd (object): A ccdproc.CCDData instance, 2D image.
+        ccd (object): A :class:`~astropy.nddata.CCDData` instance, 2D image.
         model (object): An astropy.modeling.Model instance that contains
           information regarding the target to be traced.
         trace_model (object): An astropy.modeling.Model instance, usually a low
@@ -1968,7 +1993,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
         is at a higher level.
 
     Args:
-        ccd (object): Instance of ccdproc.CCDData
+        ccd (object): Instance of :class:`~astropy.nddata.CCDData`
         target_list (list): List of single target profiles.
         sampling_step (int): Frequency of sampling in pixels
         pol_deg (int): Polynomial degree for fitting the trace
@@ -2032,7 +2057,7 @@ def write_fits(ccd,
     information into the header. Mostly for historical reasons.
 
     Args:
-        ccd (object): `ccdproc.CCDData` instance to be saved to fits.
+        ccd (object): A :class:`~astropy.nddata.CCDData` instance to be saved to fits.
         full_path (str): Full path of file.
         combined (bool): True if `ccd` is the result of combining images.
         parent_file (str): Name of the file from which ccd originated. If
@@ -2040,7 +2065,7 @@ def write_fits(ccd,
         overwrite (bool): Overwrite files, default True.
 
     Returns:
-        `ccdproc.CCDData` instance.
+        :class:`~astropy.nddata.CCDData` instance.
 
     """
     assert isinstance(ccd, CCDData)
@@ -2163,7 +2188,7 @@ class GenerateDcrParFile(object):
 
 class NightDataContainer(object):
     """This class is designed to be the organized data container. It doesn't
-    store image data but a list of pandas.DataFrame objects. Also it stores
+    store image data but a list of :class:`~pandas.DataFrame` objects. Also it stores
     critical variables such as sunrise and sunset times.
 
     """
@@ -2196,18 +2221,18 @@ class NightDataContainer(object):
 
         """For spectroscopy use"""
 
-        # comp_groups will store pandas.DataFrame (groups) that contain only
+        # comp_groups will store :class:`~pandas.DataFrame` (groups) that contain only
         # OBSTYPE == COMP, they should be requested only when needed, for the
         # science case when for every science target is observed with comparison
         # lamps and quartz (if)
         self.comp_groups = None
 
-        # object_groups will store pandas.DataFrame (groups) with only
+        # object_groups will store :class:`~pandas.DataFrame` (groups) with only
         # OBSTYPE == OBJECT this is the case when the observer takes comparison
         # lamps only at the beginning or end of the night.
         self.object_groups = None
 
-        # spec_groups will store pandas.DataFrame (groups) with a set of OBJECT
+        # spec_groups will store :class:`~pandas.DataFrame` (groups) with a set of OBJECT
         # and COMP, this is usually the case for radial velocity studies.
         self.spec_groups = None
 
@@ -2276,7 +2301,7 @@ class NightDataContainer(object):
         """Adds a bias group
 
         Args:
-            bias_group (pandas.DataFrame): Contains a set of keyword values of
+            bias_group (object): A :class:`~pandas.DataFrame` Contains a set of keyword values of
                 grouped image metadata
 
         """
@@ -2301,7 +2326,7 @@ class NightDataContainer(object):
         """"Adds a daytime flat group
 
         Args:
-            day_flats (pandas.DataFrame): Contains a set of keyword values of
+            day_flats (object): A :class:`~pandas.DataFrame` Contains a set of keyword values of
                 grouped image metadata
 
         """
@@ -2317,7 +2342,7 @@ class NightDataContainer(object):
         """Adds a data group
 
         Args:
-            data_group (pandas.DataFrame): Contains a set of keyword values of
+            data_group (object): A :class:`~pandas.DataFrame` Contains a set of keyword values of
                 grouped image metadata
 
         """
@@ -2338,7 +2363,7 @@ class NightDataContainer(object):
         taken without comparison lamps.
 
         Args:
-            comp_group (pandas.DataFrame): Contains a set of keyword values of
+            comp_group (object): A :class:`~pandas.DataFrame` Contains a set of keyword values of
                 grouped image metadata
 
         """
@@ -2354,7 +2379,7 @@ class NightDataContainer(object):
         """Adds a object-only group
 
         Args:
-            object_group (pandas.DataFrame): Contains a set of keyword values of
+            object_group (object): A :class:`~pandas.DataFrame` Contains a set of keyword values of
                 grouped image metadata
 
         """
@@ -2373,7 +2398,7 @@ class NightDataContainer(object):
         comparison lamps.
 
         Args:
-            spec_group (pandas.DataFrame): Contains a set of keyword values of
+            spec_group (object): A :class:`~pandas.DataFrame` Contains a set of keyword values of
                 grouped image metadata
 
         """
@@ -2547,7 +2572,7 @@ class ReferenceData(object):
 
 
         Args:
-            comp_group (object): `pandas.DataFrame` instance that contains
+            comp_group (object): A :class:`~pandas.DataFrame` instance that contains
               meta-data for a group of comparison lamps.
 
         Returns:
@@ -2706,7 +2731,7 @@ class SpectroscopicMode(object):
     def __init__(self):
         """Init method for the Spectroscopic Mode
 
-        This method defines a pandas.DataFrame instance that contains all the
+        This method defines a :class:`~pandas.DataFrame` instance that contains all the
         current standard wavelength modes for Goodman HTS.
 
         """

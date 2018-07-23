@@ -87,7 +87,7 @@ class WCS(object):
             The mathematical model stays as an attribute of the class as `model`
 
         Args:
-            ccd (object): Instance of `ccdproc.CCDData` with FITS's wavelength
+            ccd (object): Instance of `:class:`~astropy.nddata.CCDData`` with FITS's wavelength
               solution.
 
         Returns:
@@ -124,7 +124,7 @@ class WCS(object):
             `goodman.pipeline.spectroscopy.wavelength.py`
 
         Args:
-            ccd (object): Instance of `ccdproc.CCDData`
+            ccd (object): Instance of `:class:`~astropy.nddata.CCDData``
             model (object): Instance of `astropy.modeling.Model` that should be
               the mathematical representation of the wavelength solution of
               `ccd`
@@ -149,7 +149,7 @@ class WCS(object):
             side. So you have to be careful what you write.
 
         Args:
-            ccd (object): CCDData instance. Its header attribute will be
+            ccd (object): :class:`~astropy.ndddata.CCDData` instance. Its header attribute will be
               modified
             model (object): astropy.modeling.Model instance.
 
@@ -175,7 +175,7 @@ class WCS(object):
         """Read a GSP-specific wavelength solution
 
         Args:
-            ccd (object): CCDData instance
+            ccd (object): :class:`~astropy.ndddata.CCDData` instance
 
         Returns:
             astropy.modeling.Model instance
