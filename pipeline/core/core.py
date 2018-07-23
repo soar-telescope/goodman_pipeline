@@ -159,6 +159,8 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
     towards ``astroscrappy.detect_cosmics``. The LACosmic method was developed by Pieter
     G. van Dokkum. See <http://www.astro.yale.edu/dokkum/lacosmic/>
 
+    There is also the option of skipping cosmic ray removal by using ``none``.
+
     Args:
         ccd (object): a ccdproc.CCDData instance.
         image_name (str): Science image name.
