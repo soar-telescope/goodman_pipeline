@@ -141,16 +141,23 @@ def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
                           save=False):
     """Call for the appropriate cosmic ray rejection method
 
-    There are three options when dealing with cosmic ray rejection in this
-    pipeline, the first is ``dcr`` which is a program written in C by Wojtek
+    There are four options when dealing with cosmic ray rejection in this
+    pipeline, The default option is called ``default`` and it will choose the
+    rejection method based on the binning of the image. Note that there are only
+    two *real* methdos: ``dcr`` and ``lacosmic``.
+
+    For ``binning 1x1`` the choice will be ``dcr`` for ``binning 2x2`` and
+    ``3x3`` will be ``lacosmic``.
+
+    The method ``dcr`` is a program written in C by Wojtek
     Pych (http://users.camk.edu.pl/pych/DCR/) that works very well for
     spectroscopy the only negative aspect is that integration with python was
-    difficult and not natively (through subprocess). The second option is
-    `lacosmic` or `ccdproc.cosmicray_lacosmic`
-    (http://www.astro.yale.edu/dokkum/lacosmic/) by Pieter G. van Dokkum. The
-    negative aspect is that it does not work well with spectroscopic data and it
-    does not apply the correction to the images instead it updates the mask
-    attribute. And the third is not doing any correction.
+    difficult and not natively (through subprocess).
+
+    The method `lacosmic` is well known but there are different implementations,
+    we started using :func:`~ccdproc.cosmicray_lacosmic` but later we shifted
+    towards ``astroscrappy.detect_cosmics``. The LACosmic method was developed by Pieter
+    G. van Dokkum. See <http://www.astro.yale.edu/dokkum/lacosmic/>
 
     Args:
         ccd (object): a ccdproc.CCDData instance.
