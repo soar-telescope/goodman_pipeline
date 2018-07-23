@@ -34,7 +34,8 @@ install:
 #- source activate goodman
 - conda env create -q python=$TRAVIS_PYTHON_VERSION -n goodman
 - source activate goodman
-- pip install ccdproc
+- pip install astroscrappy
+
 
 # install
 #- python setup.py test
