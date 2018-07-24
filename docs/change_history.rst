@@ -3,11 +3,22 @@ Change History
 
 .. _v1.1.0:
 
-V1.1.0 12-07-2018
+V1.1.0 24-07-2018
 ^^^^^^^^^^^^^^^^^
+- Bugs fixed
 
+  + ``--keep-cosmic-file`` would work for ``dcr`` but not for ``lacosmic``
+
+- Changed organization of ReadTheDocs information
+
+  + New structure
+  + Added references to external packages
+  + This page is the single place to add changes information. CHANGES.md still
+    exist but contains a link here.
+
+- Added ``--version`` argument.
 - Implemented `astroscrappy's` LACosmic method
-- removed ccdproc's lacosmic
+- removed ccdproc's :func:`~ccdproc.cosmicray_lacosmic`.
 - created  ``default`` method for cosmic ray rejection.
 
   + For binning 1x1 default is dcr
@@ -26,7 +37,7 @@ V1.0.3 11-07-2018
 
   + programatically access to the version number did not work because it was
     based purely on ``setup.cfg`` now ``setup.py`` has  a function that creates the
-    file ``pipeline/version.py`` which is accessed by ``pipeline/__init__.py``
+    file :mod:`pipeline.version` which is accessed by ``pipeline/__init__.py``
   + File naming was making some file dissapear by being overwritten for files
     that contained more than one target the next file name would match the
     previous one. A differentiator was added.
