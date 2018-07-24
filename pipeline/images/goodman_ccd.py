@@ -81,9 +81,10 @@ def get_args(arguments=None):
                         metavar='<normalization_method>',
                         dest='flat_normalize',
                         choices=['mean', 'simple', 'full'],
-                        help='Choose a method to normalize the master flat for '
-                             'spectroscopy. Choices are: mean, simple (model) '
-                             'and full (fits model to each line).')
+                        help="Choose a method to normalize the master flat for "
+                             "spectroscopy. Choices are: 'mean',"
+                             "'simple' (model) and 'full' "
+                             "(fits model to each line). Default 'simple'")
 
     parser.add_argument('--flat-norm-order',
                         action='store',

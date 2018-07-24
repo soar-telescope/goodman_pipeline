@@ -109,7 +109,9 @@ def get_args(arguments=None):
                         metavar='<Extraction Type>',
                         dest='extraction_type',
                         choices=['fractional', 'optimal'],
-                        help='Only fractional pixel extraction is implemented.')
+                        help="Method to perform extraction. 'fractional' or "
+                             "'optimal'. Only fractional pixel extraction is "
+                             "implemented. Default 'fractional'.")
 
     parser.add_argument('--reference-files',
                         action='store',
