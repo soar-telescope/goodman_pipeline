@@ -1496,7 +1496,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
      *mean*: simply divide the data by its mean
 
      *simple*: Calculates the median along the spatial axis in order to obtain
-     the dispersion profile. Then fits a Chebyshev1D model and apply this to all
+     the dispersion profile. Then fits a :class:`~astropy.modeling.polynomial.Chebyshev1D` model and apply this to all
      the data.
 
      *full*: This is for experimental purposes only because it takes a lot of
