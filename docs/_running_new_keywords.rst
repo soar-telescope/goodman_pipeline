@@ -49,25 +49,25 @@ Non-linear wavelength solution
 Since writing non-linear wavelength solutions to the headers using the FITS
 standard (reference) is extremely complex and not necessarily well documented,
 we came up with the solution of simply describing the mathematical model
-from ``astropy.modeling.models``. This allows for maintaining the data
+from astropy's :mod:`~astropy.modeling`. This allows for maintaining the data
 *untouched* while keeping a reliable description of the wavelength solution.
 
-The current implementation will work for writting any polinomial model. Reading is implemented only for ``Chebyshev1D`` which is the
+The current implementation will work for writting any polinomial model. Reading is implemented only for :class:`~astropy.modeling.polynomial.Chebyshev1D` which is the
 model by default.
 
 .. _`table non-linear keywords`:
 .. table:: Keywords used to describe a non-linear wavelength solution.
 
-     ========== =============================================================
+     ========== ====================================================================
       Keyword    Purpose
-     ========== =============================================================
-      GSP_FUNC   Name of mathematical model. ``astropy.modeling.models``
+     ========== ====================================================================
+      GSP_FUNC   Name of mathematical model from astropy's :mod:`~astropy.modeling`
       GSP_ORDR   Order of the model used.
       GSP_NPIX   Number of pixels.
       GSP_C000   Value of parameter ``c0``.
       GSP_C001   Value of parameter ``c1``.
       GSP_C002   Value of parameter ``c2``. This goes on depending the order.
-     ========== =============================================================
+     ========== ====================================================================
 
 .. _`combined images`:
 Combined Images
@@ -77,7 +77,7 @@ Every image used in a combination of images is recorded in the header of the
 resulting one. The order does not have importance but most likely the header
 of the first one will be used.
 
-The combination is made using the ``ccdproc.combine`` method with the following parameters
+The combination is made using the :func:`~ccdproc.combine` method with the following parameters
 
 - ``method='median'``
 - ``sigma_clip=True``

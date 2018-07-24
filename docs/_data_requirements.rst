@@ -148,7 +148,7 @@ Record of `detected lines`_ in Pixel and Angstrom:
 .. warning::
 
     This method has been developed and tested to write correctly polynomial-like
-    models. And ONLY reads ``Chebyshev1D`` models.
+    models. And ONLY reads :class:`~astropy.modeling.polynomial.Chebyshev1D` models.
     Other models will just be ignored. More development will be done based on
     request, suggestions or needs.
 

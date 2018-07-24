@@ -38,8 +38,15 @@ extensions = ['sphinx.ext.todo',
               'sphinx.ext.githubpages',
               'sphinx.ext.autodoc',
               'sphinx.ext.mathbase',
+              'sphinx.ext.intersphinx',
               'sphinxcontrib.napoleon']
 
+
+intersphinx_mapping = {
+    'astropy': ('http://docs.astropy.org/en/latest/', None),
+    'ccdproc': ('https://ccdproc.readthedocs.io/en/latest/', None),
+    'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None),
+    'numpy': ('https://numpy.readthedocs.io/en/latest/', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

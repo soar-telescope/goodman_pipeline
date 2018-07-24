@@ -155,10 +155,10 @@ class WavelengthCalibration(object):
         part has to be implemented in the caller function.
 
         Args:
-            ccd (object): a ccdproc.CCDData instance
+            ccd (object): a :class:`~astropy.nddata.CCDData` instance
             comp_list (list): Comparison lamps for the science target that will
                 be processed here. Every element of this list is an instance of
-                ccdproc.CCDData.
+                :class:`~astropy.nddata.CCDData`.
             object_number (int): In case of multiple detections in a single
                 image this number will be added as a suffix before `.fits` in
                 order to allow for multiple 1D files. Default value is None.
@@ -273,13 +273,13 @@ class WavelengthCalibration(object):
             in separated methods to have more control on either process.
 
         Args:
-            ccd (object): Instance of CCDData
+            ccd (object): Instance of :class:`~astropy.ndddata.CCDData`
             x_axis:
             evaluation_comment (str): A comment with information regarding the
               quality of the wavelength solution
 
         Returns:
-            ccd (object): A ccdproc.CCDData instance with linear wavelength
+            ccd (object): A :class:`~astropy.nddata.CCDData` instance with linear wavelength
               solution on it.
 
         """
@@ -1038,7 +1038,7 @@ class WavelengthCalibration(object):
 
         Args:
             data (array): numpy.ndarray instance. or the data attribute of a
-                ccdproc.CCDData instance.
+                :class:`~astropy.nddata.CCDData` instance.
             lines (list): A line list in pixel values.
             plots (bool): If True will plot spectral line as well as the input
                 center and the recentered value.
