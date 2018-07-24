@@ -23,6 +23,6 @@ Questions & Answers
   *slit illuminated area* only. It works by fitting a box function to the
   dispersion-axis-collapsed spatial profile.
 
-  The box function is :class:`astropy.modeling.models.Box1D` .
+  The box function is :class:`~astropy.modeling.functional_models.Box1D` .
   The reason for doing it is because the non-illuminated area causes all sorts of
   problems in later steps, such as: existence of ``nan`` in master flats.
