@@ -66,13 +66,13 @@ class GSPWcsCalculator(object):
                 angstrom_key = re.sub('GSP_P', 'GSP_A', pixel_key)
                 assert pixel_key[-3:] == angstrom_key[-3:]
                 assert angstrom_key in self.ccd.header
-                if int(self.ccd.header[angstrom_key]) != 0:
+                if int(float(self.ccd.header[angstrom_key])) != 0:
                     self.pixel.append(float(self.ccd.header[pixel_key]))
                     self.angstrom.append(float(self.ccd.header[angstrom_key]))
                 else:
                     print("File: {:s}".format(self.ccd.header['GSP_FNAM']))
                     print("Ignoring keywords: {:s}={:f}, {:s}={:f}".format(pixel_key, self.ccd.header[pixel_key],
-                          angstrom_key, self.ccd.header[angstrom_key]))
+                          angstrom_key, float(self.ccd.header[angstrom_key])))
         # self.pixel = np.asarray(self.pixel, dtype=float)
         # self.angstrom = np.asarray(self.angstrom, dtype=float)
 
