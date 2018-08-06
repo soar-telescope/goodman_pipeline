@@ -853,6 +853,26 @@ def extract_optimal():
     raise NotImplementedError
 
 
+def fix_keywords(path, pattern='*.fits'):
+    """Fix FITS uncompliance of some keywords
+
+    Uses automatic header fixing by :class:`~astropy.nddata.CCDData`. Note that
+    this only fixes FITS compliance.
+
+    Args:
+        path (str): Path to raw data
+        pattern (str): Search pattern for listing file in path.
+
+    """
+    file_list = glob.glob(os.path.join(path, pattern))
+    for _file in file_list:
+        log.info("Fixing file {:s}".format(_file))
+        ccd = CCDData.read(_file, unit='adu')
+
+        ccd.write(_file, overwrite=True)
+        log.info("Fix succeeded!")
+
+
 def fractional_sum(data, index, low_limit, high_limit):
     """Performs a fractional pixels sum
 
