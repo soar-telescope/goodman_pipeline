@@ -1,8 +1,12 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import os
+import sys
 import logging
+
+from astropy.io.fits.verify import VerifyError
 from ccdproc import ImageFileCollection
+from ..core import fix_keywords
 
 
 class DataClassifier(object):
@@ -50,8 +54,20 @@ class DataClassifier(object):
         self.raw_path = raw_path
 
         # define the ImageFileCollection instance right away.
-        # todo add try/except astropy.io.fits.verify.VerifyError: clean exit
-        ifc = ImageFileCollection(self.raw_path)
+
+        try:
+            ifc = ImageFileCollection(self.raw_path)
+
+        except VerifyError as error:
+            self.log.error("Raised VerifyError: {:}".format(error))
+            self.log.critical("Some keywords are not FITS compliant. Trying "
+                              "to fix the headers.")
+
+            fix_keywords(path=self.raw_path)
+
+            self.log.info("Headers have been fixed, please rerun the pipeline!")
+            sys.exit()
+
         self.image_collection = ifc.summary.to_pandas()
 
         self.objects_collection = self.image_collection[
