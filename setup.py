@@ -149,8 +149,8 @@ setup(
 
     scripts=['pipeline/scripts/redccd',
              'pipeline/scripts/redspec',
-             'bin/gsptool-create-reference-lamp',
-             'bin/gsptool-update-gsp_fnam'],
+             'pipeline/scripts/gsptool-create-reference-lamp',
+             'pipeline/scripts/gsptool-update-gsp_fnam'],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
