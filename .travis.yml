@@ -30,24 +30,22 @@ install:
 - conda info -a
 
 # Create astroconda virtual environment
-#- conda env create -q python=$TRAVIS_PYTHON_VERSION -f environment.yml
-#- source activate goodman
-- conda env create -q python=$TRAVIS_PYTHON_VERSION -n goodman
+- conda env create -q python=$TRAVIS_PYTHON_VERSION -f environment.yml
 - source activate goodman
-- pip install astroscrappy
+
 
 
 # install
-#- python setup.py test
-#- python setup.py install
+- python setup.py install
+- python setup.py test
 
 script:
-#- pytest
-#- coverage run --branch --source= setup.py test
+- pytest
+- coverage run --branch --source= setup.py test
 # TODO - How can I add the ./goodman as a source?
 
 after_success:
-#- coveralls
+- coveralls
 
 notifications:
   slack:
