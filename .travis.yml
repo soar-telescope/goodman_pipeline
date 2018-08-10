@@ -33,9 +33,11 @@ install:
 - conda env create -q python=$TRAVIS_PYTHON_VERSION -f environment.yml
 - source activate goodman
 
+
+
 # install
-- python setup.py test
 - python setup.py install
+- python setup.py test
 
 script:
 - pytest
