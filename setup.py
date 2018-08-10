@@ -147,8 +147,8 @@ setup(
                                'data/test_data/master_flat/*',
                                'data/test_data/wcs_data/*']},
 
-    scripts=['bin/redccd',
-             'bin/redspec',
+    scripts=['pipeline/scripts/redccd',
+             'pipeline/scripts/redspec',
              'bin/gsptool-create-reference-lamp',
              'bin/gsptool-update-gsp_fnam'],
 
