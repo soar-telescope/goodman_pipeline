@@ -5,15 +5,21 @@ v1.0.0
 
 import logging
 import requests
+import os
 import re
 
 from distutils.version import LooseVersion
 
 logger = logging.getLogger(__name__)
 
-
-LATEST_URL = \
-    'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
+try:
+    ACCESS_TOKEN = os.environ('GITHUB_ACCESS_TOKEN')
+    LATEST_URL = \
+        'https://api.github.com/repos/soar-telescope/goodman/releases/latest' \
+        '?access_token={:s}'.format(ACCESS_TOKEN)
+except KeyError:
+    LATEST_URL = \
+        'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
 
 
 def get_last(url=LATEST_URL):
