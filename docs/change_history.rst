@@ -1,6 +1,28 @@
 Change History
 ##############
 
+.. _v1.1.1:
+
+V1.1.1 Unreleased
+^^^^^^^^^^^^^^^^^
+
+- Bugs Fixed:
+  + Convertion from string to integer not always works, added intermediate float
+    conversion.
+  + Abrupt exit when the were non-fits compliant keywords. Now it attempts to
+    fix them all automatically and warns the user. Also it ends the execution
+    and informs the user to try again.
+
+- Removed unused code and tools.
+- Relocated module `check_version.py` to `pipeline/core`.
+- Implemented Authorized GitHub API access and added actual version check
+- Moved *command line interface* from `goodman/bin` to `goodman/pipeline/script`
+- Specified version of cython to be able to build.
+- Added reference lamps for all usable modes for the grating 600 l/mm
+- Created method to use automatic keyword fix from ccdproc.
+- Improved help information of arguments
+- Documentation updates
+
 .. _v1.1.0:
 
 V1.1.0 24-07-2018
