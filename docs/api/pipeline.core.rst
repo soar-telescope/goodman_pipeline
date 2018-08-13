@@ -11,6 +11,14 @@ Subpackages
 Submodules
 ----------
 
+pipeline\.core\.check\_version module
+-------------------------------------
+
+.. automodule:: pipeline.core.check_version
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pipeline\.core\.core module
 ---------------------------
 
