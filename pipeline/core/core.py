@@ -1,33 +1,36 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import os
-import re
-import sys
-import time
+
+import calendar
+import datetime
 import glob
 import logging
-import calendar
-import ccdproc
-import datetime
-import numpy as np
 import math
-import pandas
-import scipy
+import os
+import re
 import shutil
 import subprocess
-
+import sys
+import time
 from threading import Timer
-# matplotlib.use('Qt5Agg')
-from matplotlib import pyplot as plt
-from ccdproc import CCDData, ImageFileCollection
-from astroscrappy import detect_cosmics
-from astropy.coordinates import EarthLocation
-from astropy.time import Time
-from astropy.stats import sigma_clip
+
+import ccdproc
+import numpy as np
+import pandas
+import scipy
 from astroplan import Observer
 from astropy import units as u
+from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
+from astropy.stats import sigma_clip
+from astropy.time import Time
+from astroscrappy import detect_cosmics
+from ccdproc import CCDData, ImageFileCollection
+# matplotlib.use('Qt5Agg')
+from matplotlib import pyplot as plt
 from scipy import signal
+
+from . import check_version
 
 __version__ = __import__('pipeline').__version__
 
@@ -1884,7 +1887,25 @@ def setup_logging():
         datetime.datetime.now()))
     log.info("Universal Time: {:}".format(
         datetime.datetime.utcnow()))
-    log.info("Pipeline Version: {:s}".format(__version__))
+
+    try:
+        latest_release = check_version.get_last()
+
+        if "dev" in __version__:
+            log.warning("Running Development version: {:s}".format(__version__))
+            log.info("Latest Release: {:s}".format(latest_release))
+        elif check_version.am_i_updated(__version__):
+            if __version__ == latest_release:
+                log.info("Pipeline Version: {:s} (latest)".format(__version__))
+            else:
+                log.warning("Current Version: {:s}".format(__version__))
+                log.info("Latest Release: {:s}".format(latest_release))
+        else:
+            log.warning("Current Version '{:s}' is outdated.".format(__version__))
+            log.info("Latest Release: {:s}".format(latest_release))
+    except ConnectionRefusedError:
+        log.error('Unauthorized GitHub API Access reached maximum')
+        log.info("Current Version: {:s}".format(__version__))
 
 
 def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
