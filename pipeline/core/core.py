@@ -29,6 +29,8 @@ from astropy import units as u
 from astropy.modeling import (models, fitting, Model)
 from scipy import signal
 
+from ..tools import check_version
+
 __version__ = __import__('pipeline').__version__
 
 log = logging.getLogger(__name__)
@@ -1884,7 +1886,25 @@ def setup_logging():
         datetime.datetime.now()))
     log.info("Universal Time: {:}".format(
         datetime.datetime.utcnow()))
-    log.info("Pipeline Version: {:s}".format(__version__))
+
+    try:
+        latest_release = check_version.get_last()
+
+        if "dev" in __version__:
+            log.warning("Running Development version: {:s}".format(__version__))
+            log.info("Latest Release: {:s}".format(latest_release))
+        elif check_version.am_i_updated(__version__):
+            if __version__ == latest_release:
+                log.info("Pipeline Version: {:s} (latest)".format(__version__))
+            else:
+                log.warning("Current Version: {:s}".format(__version__))
+                log.info("Latest Release: {:s}".format(latest_release))
+        else:
+            log.warning("Current Version '{:s}' is outdated.".format(__version__))
+            log.info("Latest Release: {:s}".format(latest_release))
+    except ConnectionRefusedError:
+        log.error('Unauthorized GitHub API Access reached maximum')
+        log.info("Current Version: {:s}".format(__version__))
 
 
 def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
