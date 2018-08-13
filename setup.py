@@ -147,10 +147,10 @@ setup(
                                'data/test_data/master_flat/*',
                                'data/test_data/wcs_data/*']},
 
-    scripts=['bin/redccd',
-             'bin/redspec',
-             'bin/gsptool-create-reference-lamp',
-             'bin/gsptool-update-gsp_fnam'],
+    scripts=['pipeline/scripts/redccd',
+             'pipeline/scripts/redspec',
+             'pipeline/scripts/gsptool-create-reference-lamp',
+             'pipeline/scripts/gsptool-update-gsp_fnam'],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
