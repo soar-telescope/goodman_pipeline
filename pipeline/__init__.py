@@ -5,7 +5,6 @@ from .version import __version__
 from . import spectroscopy
 from . import images
 from . import core
-from . import tools
 
 from .core import setup_logging
 
