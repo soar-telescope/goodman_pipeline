@@ -133,9 +133,7 @@ setup(
               'pipeline.core',
               'pipeline.images',
               'pipeline.spectroscopy',
-              'pipeline.wcs',
-              'pipeline.tools',
-              'pipeline.tools.reference_lamp_factory',],
+              'pipeline.wcs', ],
 
     package_dir={'pipeline': 'pipeline'},
 
@@ -148,9 +146,7 @@ setup(
                                'data/test_data/wcs_data/*']},
 
     scripts=['pipeline/scripts/redccd',
-             'pipeline/scripts/redspec',
-             'pipeline/scripts/gsptool-create-reference-lamp',
-             'pipeline/scripts/gsptool-update-gsp_fnam'],
+             'pipeline/scripts/redspec', ],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
