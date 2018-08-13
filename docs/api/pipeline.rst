@@ -8,6 +8,7 @@ Subpackages
 
     pipeline.core
     pipeline.images
+    pipeline.scripts
     pipeline.spectroscopy
     pipeline.tools
     pipeline.wcs

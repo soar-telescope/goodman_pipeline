@@ -12,6 +12,14 @@ pipeline\.core\.tests\.test\_ccdproc module
     :undoc-members:
     :show-inheritance:
 
+pipeline\.core\.tests\.test\_check\_version module
+--------------------------------------------------
+
+.. automodule:: pipeline.core.tests.test_check_version
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pipeline\.core\.tests\.test\_core module
 ----------------------------------------
 

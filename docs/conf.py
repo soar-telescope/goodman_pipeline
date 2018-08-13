@@ -46,7 +46,8 @@ intersphinx_mapping = {
     'astropy': ('http://docs.astropy.org/en/latest/', None),
     'ccdproc': ('https://ccdproc.readthedocs.io/en/latest/', None),
     'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None),
-    'numpy': ('https://numpy.readthedocs.io/en/latest/', None)}
+    'numpy': ('https://numpy.readthedocs.io/en/latest/', None),
+    'cython': ('http://docs.cython.org/en/latest/', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
