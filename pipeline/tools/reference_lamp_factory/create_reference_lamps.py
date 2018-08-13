@@ -10,13 +10,13 @@ from pipeline.tools.reference_lamp_factory.line_matcher import LineMatcher
 from pipeline.tools.reference_lamp_factory.wcs_model_calculator import \
     GSPWcsCalculator
 
-from pipeline.core import (read_fits,
-                           write_fits,
-                           identify_targets,
-                           trace,
-                           extraction,
-                           SpectroscopicMode,
-                           combine_data)
+from ...core import (read_fits,
+                     write_fits,
+                     identify_targets,
+                     trace,
+                     extraction,
+                     SpectroscopicMode,
+                     combine_data)
 
 from pipeline.spectroscopy.new_wavelength import WavelengthCalibration
 
