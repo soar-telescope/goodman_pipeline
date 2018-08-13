@@ -3,7 +3,7 @@ __author__ = 'Bruno Quint'
 
 import unittest
 
-from ...tools import check_version
+from pipeline.core import check_version
 
 __version__ = __import__('pipeline').__version__
 
