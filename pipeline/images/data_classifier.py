@@ -74,15 +74,26 @@ class DataClassifier(object):
             self.image_collection.obstype != 'BIAS']
 
         self.nights_dict = {}
-        self.log.debug('Raw path: ' + self.raw_path)
+        self.log.debug('Raw path: {:s}'.format(self.raw_path))
 
         self._get_instrument()
-        self.log.info('Instrument: ' + self.instrument + ' Camera')
+        if self.instrument is not None:
+            self.log.info('Instrument: {:s} Camera'.format(self.instrument))
+        else:
+            self.log.critical("Unable to determine which camera was used.")
+            self.log.info("Make sure you only have 'Blue' or 'Red' camera data "
+                          "only, not both.")
+            sys.exit()
 
         self._get_obs_technique()
-        self.log.info('Observing Technique: ' + self.technique)
+        if self.technique is not None:
+            self.log.info('Observing Technique: {:s}'.format(self.technique))
+        else:
+            self.log.critical("Unable to determine observing technique used.")
+            sys.exit()
 
         if self.instrument is not None and self.technique is not None:
+
             # folder name is used as key for the dictionary
             night = os.path.basename(self.raw_path)
 
