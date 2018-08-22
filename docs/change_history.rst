@@ -7,7 +7,8 @@ V1.1.1 Unreleased
 ^^^^^^^^^^^^^^^^^
 
 - Bugs Fixed:
-
+  + Added clean exit when pipeline is unable to determine ``instrument`` or
+    ``technique`` used.
   + Conversion from string to integer not always works, added intermediate float
     conversion.
   + Abrupt exit when there were non-fits-compliant keywords. Now it attempts to
