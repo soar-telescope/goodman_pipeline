@@ -7,6 +7,7 @@ V1.1.1 23-08-2018
 ^^^^^^^^^^^^^^^^^
 
 - Bugs Fixed:
+
   + Added clean exit when pipeline is unable to determine ``instrument`` or
     ``technique`` used.
   + Conversion from string to integer not always works, added intermediate float
