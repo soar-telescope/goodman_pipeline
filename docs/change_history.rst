@@ -8,8 +8,12 @@ V1.1.2 Unreleased
 
 - Bugs Fixed:
 
-  + pandas DataFrame index is unusable when partial parts are eliminated
+  + :class:`~pandas.DataFrame` index is unusable when partial parts are eliminated.
     Added ``index_reset(drop=True)``
+
+- Improved some logging messages
+
+  + Informs in debug mode the files that are discarded.
 
 .. _v1.1.1:
 
