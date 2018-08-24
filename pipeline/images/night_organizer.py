@@ -94,20 +94,26 @@ class NightOrganizer(object):
         if self.technique == 'Spectroscopy':
             self.log.warning("Ignoring all Imaging data. Assuming they are "
                              "all acquisition exposures")
+
+            _imaging_file = self.file_collection[
+                self.file_collection.wavmode == 'Imaging']
+            for _file in _imaging_file['file']:
+                self.log.debug("Discarding image: {:s}".format(_file))
+
             self.file_collection = self.file_collection[
-                self.file_collection.wavmode != 'Imaging']
+                self.file_collection.wavmode != 'Imaging'].reset_index(drop=True)
+
         elif self.technique == 'Imaging':
             self.log.warning("Ignoring all files where `wavmode` is not "
                              "Imaging.")
             self.file_collection = self.file_collection[
-                self.file_collection.wavmode == 'Imaging']
+                self.file_collection.wavmode == 'Imaging'].reset_index(drop=True)
 
         # add two columns that will contain the ra and dec in degrees
 
         self.file_collection['radeg'] = ''
         self.file_collection['decdeg'] = ''
         for i in self.file_collection.index.tolist():
-
             radeg, decdeg = ra_dec_to_deg(self.file_collection.obsra.iloc[i],
                                           self.file_collection.obsdec.iloc[i])
 
@@ -158,7 +164,7 @@ class NightOrganizer(object):
 
             if self.data_container.is_empty:
                 self.log.debug('data_container is empty')
-                data_container_list.append(None)
+                # data_container_list.append(None)
                 # sys.exit('ERROR: There is no data to process!')
             else:
                 self.log.debug('Appending classified data')
@@ -167,10 +173,13 @@ class NightOrganizer(object):
         # Warn the user in case the list of data_container element is empty or
         # all the elements are None
         # print(data_container_list)
-        if len(data_container_list) == 0 or not all(data_container_list):
+        if len(data_container_list) == 0:
+            return [None],
+        elif not all(data_container_list):
             self.log.warning("It is possible that there is no valid data.")
-
-        return data_container_list
+            return [None]
+        else:
+            return data_container_list
 
     def check_header_cards(self):
         """Check if the header contains all the keywords (cards) expected.
@@ -315,7 +324,7 @@ class NightOrganizer(object):
 
             else:
                 # Comparison lamps are processed as science data.
-                data_container.add_data_group(data_group)
+                data_container.add_spec_group(data_group)
 
                 if 'FLAT' in group_obstype:
                     # grab flats and put them in the flats group as well
