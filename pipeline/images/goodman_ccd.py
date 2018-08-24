@@ -298,9 +298,9 @@ class MainApp(object):
                     # print(self.data_container)
                     if self.data_container is None or \
                             self.data_container.is_empty:
-                        self.log.debug("Data container is empty")
-                        self.log.error('Discarding night {:s} '
-                                       '(or part of it)'.format(str(night)))
+                        self.log.info("Data container is empty")
+                        self.log.error('Discarding night {:s}'
+                                       ''.format(str(night)))
                     else:
                         self.log.debug("Initializing image processing "
                                        "procedure")
