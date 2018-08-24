@@ -1,6 +1,16 @@
 Change History
 ##############
 
+.. _v1.1.2:
+
+V1.1.2 Unreleased
+^^^^^^^^^^^^^^^^^
+
+- Bugs Fixed:
+
+  + pandas DataFrame index is unusable when partial parts are eliminated
+    Added ``index_reset(drop=True)``
+
 .. _v1.1.1:
 
 V1.1.1 23-08-2018
