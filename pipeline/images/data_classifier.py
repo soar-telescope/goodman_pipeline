@@ -116,9 +116,12 @@ class DataClassifier(object):
         instconf = self.objects_collection.instconf.unique()
 
         if len(instconf) > 1:
+            for _inst in instconf:
+                self.log.debug("INSTCONF = {:s} is present.".format(_inst))
             self.log.warning("Camera changes are forbidden during the night")
         elif len(instconf) == 1:
             self.instrument = instconf[0]
+            self.log.debug("Detected {:s} camera.".format(self.instrument))
         else:
             self.log.error("Impossible to determine which camera was used.")
 
