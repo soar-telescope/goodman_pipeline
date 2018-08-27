@@ -18,6 +18,9 @@ V1.1.2 Unreleased
   + In general, it informs more, when it does an action and when it does not.
     What files are discarded,
 
+- Removed ability to process several folders in sequence, now the pipeline has to
+  be run for each folder separately.
+
 .. _v1.1.1:
 
 V1.1.1 23-08-2018

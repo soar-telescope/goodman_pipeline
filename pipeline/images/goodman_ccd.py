@@ -282,27 +282,16 @@ class MainApp(object):
                          "exist".format(self.args.raw_path))
             return False
 
-        raw_folder_content = glob.glob(os.path.join(self.args.raw_path, '*'))
-        if len(raw_folder_content) <= 1 and not \
-                any([os.path.isdir(_item) for _item in raw_folder_content]):
-            log.critical(
-                "Raw data folder \"{:s}\" is empty.".format(self.args.raw_path))
-            return False
-        elif any(['.fits' in _item for _item in raw_folder_content]):
-            log.debug("Raw data folder \"{:s}\" contains {:d} FITS files."
-                      "".format(self.args.raw_path, len(raw_folder_content)))
+        raw_folder_content = glob.glob(os.path.join(self.args.raw_path,
+                                                    '*fits'))
 
-        elif all([os.path.isdir(_item) for _item in raw_folder_content]) and \
-                any([len(glob.glob(os.path.join(_folder, "*.fits"))) > 0
-                     for _folder in raw_folder_content]):
-
-            log.debug(
-                "Raw data folder \"{:s}\" contains {:d} folders with data."
-                "".format(self.args.raw_path, len(raw_folder_content)))
+        if any(['.fits' in _item for _item in raw_folder_content]):
+            self.log.info("Found {:d} fits files in {:s}."
+                          "".format(len(raw_folder_content),
+                                    self.args.raw_path))
         else:
-            log.critical("Raw data folder \"{:s}\" does not contain any "
-                         "\"*.fits\" files nor any folder with \"*.fits\" "
-                         "files in it.".format(self.args.raw_path))
+            self.log.critical("Raw data folder \"{:s}\" does not contain any "
+                              "'*.fits' files.".format(self.args.raw_path))
             return False
 
         # check start
@@ -376,7 +365,7 @@ class MainApp(object):
             try:
                 os.path.os.makedirs(dcr_par_full_path)
                 self.log.info('Created dcr.par empty directory: '
-                             '{:s}'.format(dcr_par_full_path))
+                              '{:s}'.format(dcr_par_full_path))
                 self.args.dcr_par_dir = dcr_par_full_path
             except OSError as err:
                 self.log.error(err)
