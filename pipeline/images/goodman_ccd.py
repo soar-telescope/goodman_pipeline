@@ -244,8 +244,9 @@ class MainApp(object):
 
             if os.path.isdir(self.args.red_path):
                 if os.listdir(self.args.red_path) != []:
-                    self.log.warning('Reduced Data Path is not empty')
+                    self.log.warning('Folder for reduced data is not empty')
                     if self.args.auto_clean:
+                        self.log.info("--auto-clean is set")
                         for _file in os.listdir(self.args.red_path):
                             try:
                                 os.unlink(os.path.join(self.args.red_path,
@@ -262,8 +263,9 @@ class MainApp(object):
                         self.log.info('Cleaned Reduced data directory:'
                                       ' {:s}'.format(self.args.red_path))
                     else:
-                        self.log.error('Please clean the reduced data folder '
-                                       'or use --auto-clean')
+                        self.log.error('Please defined another folder using '
+                                       '--red-path or or use --auto-clean to'
+                                       'automatically wipe out the current one.')
                         break
                 self.args.red_path = os.path.abspath(self.args.red_path)
                 self.log.debug(os.path.abspath(self.args.red_path))
@@ -271,8 +273,9 @@ class MainApp(object):
                 try:
                     self.log.warning("Reduction folder doesn't exist.")
                     os.mkdir(os.path.abspath(self.args.red_path))
-                    self.log.info('Created reduced data directory!')
-                    self.log.info(os.path.abspath(self.args.red_path))
+                    self.log.info('Created directory for reduced data.')
+                    self.log.info("New directory: {:s}".format(
+                        os.path.abspath(self.args.red_path)))
                 except OSError as error:
                     self.log.error(error)
             # check ends

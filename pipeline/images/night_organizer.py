@@ -166,12 +166,10 @@ class NightOrganizer(object):
                 self.imaging_night()
 
             if self.data_container.is_empty:
-                self.log.warning("The following files will be discarded.")
+                self.log.warning("The following files will be discarded:")
                 for _file in sub_collection['file'].tolist():
                     self.log.warning("{:s}".format(_file))
                 self.log.debug('data_container is empty')
-                # data_container_list.append(None)
-                # sys.exit('ERROR: There is no data to process!')
             else:
                 self.log.info('Found valid data, appending to data container '
                               'list')
