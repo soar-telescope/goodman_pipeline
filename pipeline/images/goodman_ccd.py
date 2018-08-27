@@ -231,55 +231,6 @@ class MainApp(object):
                                '{:s}'.format(data_folder))
                 continue
 
-            # # check start
-            # self.args.raw_path = data_folder
-            if self.args.red_path == './RED' or len(folders) > 1:
-
-                self.log.info('No special reduced data path defined. '
-                              'Proceeding with defaults.')
-
-                if self.args.raw_path not in self.args.red_path:
-                    self.args.red_path = os.path.join(self.args.raw_path, 'RED')
-                    # print(self.args.red_path)
-
-            if os.path.isdir(self.args.red_path):
-                if os.listdir(self.args.red_path) != []:
-                    self.log.warning('Folder for reduced data is not empty')
-                    if self.args.auto_clean:
-                        self.log.info("--auto-clean is set")
-                        for _file in os.listdir(self.args.red_path):
-                            try:
-                                os.unlink(os.path.join(self.args.red_path,
-                                                       _file))
-                            except OSError as error:
-                                self.log.error(
-                                    'OSError: {:s}'.format(str(error)))
-                                self.log.warning('Removing Directory '
-                                                 '{:s}'.format(_file))
-
-                                shutil.rmtree(os.path.join(self.args.red_path,
-                                                           _file))
-
-                        self.log.info('Cleaned Reduced data directory:'
-                                      ' {:s}'.format(self.args.red_path))
-                    else:
-                        self.log.error('Please defined another folder using '
-                                       '--red-path or or use --auto-clean to'
-                                       'automatically wipe out the current one.')
-                        break
-                self.args.red_path = os.path.abspath(self.args.red_path)
-                self.log.debug(os.path.abspath(self.args.red_path))
-            else:
-                try:
-                    self.log.warning("Reduction folder doesn't exist.")
-                    os.mkdir(os.path.abspath(self.args.red_path))
-                    self.log.info('Created directory for reduced data.')
-                    self.log.info("New directory: {:s}".format(
-                        os.path.abspath(self.args.red_path)))
-                except OSError as error:
-                    self.log.error(error)
-            # check ends
-
             # print(self.data_classifier.nights_dict)
             for night in self.data_classifier.nights_dict:
                 nd = self.data_classifier.nights_dict[night]
@@ -353,6 +304,61 @@ class MainApp(object):
                          "\"*.fits\" files nor any folder with \"*.fits\" "
                          "files in it.".format(self.args.raw_path))
             return False
+
+        # check start
+        if self.args.red_path == './RED':
+
+            self.log.info('No special reduced data path defined. '
+                          'Proceeding with defaults.')
+
+            if self.args.raw_path not in self.args.red_path:
+                self.args.red_path = os.path.join(self.args.raw_path, 'RED')
+                self.log.debug("Folder for reduced data defined to: {:s}"
+                               "".format(self.args.red_path))
+
+        if os.path.isdir(self.args.red_path):
+            if os.listdir(self.args.red_path) != []:
+                self.log.warning('Folder for reduced data is not empty')
+                if self.args.auto_clean:
+                    self.log.info("--auto-clean is set")
+                    for _file in os.listdir(self.args.red_path):
+                        try:
+                            _to_delete = os.path.join(self.args.red_path, _file)
+
+                            os.unlink(_to_delete)
+
+                            self.log.debug("Cleanup: Deleting {:s}"
+                                           "".format(_to_delete))
+                        except OSError as error:
+                            self.log.error(
+                                'OSError: {:s}'.format(str(error)))
+                            self.log.warning('Removing Directory '
+                                             '{:s}'.format(_file))
+
+                            shutil.rmtree(os.path.join(self.args.red_path,
+                                                       _file))
+
+                    self.log.info('Cleaned Reduced data directory:'
+                                  ' {:s}'.format(self.args.red_path))
+                else:
+                    self.log.error('Please define another folder using '
+                                   '--red-path or or use --auto-clean to '
+                                   'automatically wipe the current one.')
+                    return False
+            else:
+                self.log.info("Folder for reduced data is empty (good).")
+                self.args.red_path = os.path.abspath(self.args.red_path)
+                self.log.debug(os.path.abspath(self.args.red_path))
+        else:
+            try:
+                self.log.warning("Reduction folder doesn't exist.")
+                os.mkdir(os.path.abspath(self.args.red_path))
+                self.log.info('Created directory for reduced data.')
+                self.log.info("New directory: {:s}".format(
+                    os.path.abspath(self.args.red_path)))
+            except OSError as error:
+                self.log.error(error)
+                # check ends
 
         # updated full path for default dcr.par file. If it doesn't exist it will
         # create an empty one.
