@@ -628,8 +628,8 @@ class ImageProcessor(object):
                 self.log.warning('Slit Trimming will be skipped, '
                                  '--ignore-flats is activated')
             else:
-                self.log.info('Master flat inexistent, cant find slit trim '
-                              'section')
+                self.log.info("Master flat inexistent, can't find slit trim "
+                              "section")
             if slit_trim is not None:
 
                 master_flat = image_trim(ccd=master_flat,

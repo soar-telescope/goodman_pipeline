@@ -13,9 +13,10 @@ V1.1.2 Unreleased
 
 - Eliminated ``None`` elements in list of instances of :class:`pipeline.core.core.NightDataContainer`
 
-- Improved some logging messages
+- Improved several logging messages
 
-  + Informs in debug mode the files that are discarded.
+  + In general, it informs more, when it does an action and when it does not.
+    What files are discarded,
 
 .. _v1.1.1:
 
