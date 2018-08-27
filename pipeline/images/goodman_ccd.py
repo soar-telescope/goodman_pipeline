@@ -190,79 +190,70 @@ class MainApp(object):
 
         if not self._check_args():
             sys.exit()
+
         # Division point for the future implementation of *live reduction mode*
 
-        folders = glob.glob(os.path.join(self.args.raw_path, '*'))
-        if any('.fits' in item for item in folders):
-            folders = [self.args.raw_path]
-        for data_folder in folders:
-            if not os.path.isdir(data_folder):
-                continue
+        try:
+            self.log.debug('Calling data_classifier '
+                           'Instance of DataClassifier')
+            self.data_classifier(raw_path=self.args.raw_path)
+        except AttributeError as error:
 
-            self.args.raw_path = data_folder
+            if 'instconf' in error.args[0]:
+                self.log.error("Card '{:s}' ".format('instconf'.upper()) +
+                               "not found inside headers. "
+                               "This keyword contains which Goodman "
+                               "Camera was used for this observation. "
+                               "Please add it manually (Blue/Red) and "
+                               "run again. Leaving the program now.")
+                sys.exit(1)
 
+            if 'wavmode' in error.args[0]:
+                self.log.error(
+                    "Card '{:s}' ".format('wavmode'.upper()) +
+                    "not found inside headers. This keyword contains what "
+                    "is the Goodman Wavelength Configuration that was used"
+                    " for this observation. Please add it manually (see "
+                    "https://github.com/soar-telescope/goodman/blob/development/goodman_modes.md) "
+                    "and run again. Leaving the program now.")
+                sys.exit(1)
+
+            self.log.error(error)
+            self.log.error('Empty or Invalid data directory:'
+                           '{:s}'.format(self.args.raw_path))
+
+        # print(self.data_classifier.nights_dict)
+        for night in self.data_classifier.nights_dict:
+            nd = self.data_classifier.nights_dict[night]
+            self.log.debug('Initializing night organizer procedure')
+            night_organizer = NightOrganizer(
+                full_path=nd['full_path'],
+                instrument=nd['instrument'],
+                technique=nd['technique'],
+                ignore_bias=self.args.ignore_bias,
+                ignore_flats=self.args.ignore_flats)
+
+            self.log.debug('Calling night organizer procedure')
             try:
-                self.log.debug('Calling data_classifier '
-                               'Instance of DataClassifier')
-                self.data_classifier(raw_path=self.args.raw_path)
-            except AttributeError as error:
-
-                if 'instconf' in error.args[0]:
-                    self.log.error("Card '{:s}' ".format('instconf'.upper()) +
-                                   "not found inside headers. "
-                                   "This keyword contains which Goodman "
-                                   "Camera was used for this observation. "
-                                   "Please add it manually (BLUE/RED) and "
-                                   "run again. Leaving the program now.")
-                    sys.exit(1)
-
-                if 'wavmode' in error.args[0]:
-                    self.log.error(
-                        "Card '{:s}' ".format('wavmode'.upper()) +
-                        "not found inside headers. This keyword contains what "
-                        "is the Goodman Wavelength Configuration that was used"
-                        " for this observation. Please add it manually (see "
-                        "https://github.com/soar-telescope/goodman/blob/development/goodman_modes.md) "
-                        "and run again. Leaving the program now.")
-                    sys.exit(1)
-
-                self.log.error(error)
-                self.log.error('Empty or Invalid data directory:'
-                               '{:s}'.format(data_folder))
-                continue
-
-            # print(self.data_classifier.nights_dict)
-            for night in self.data_classifier.nights_dict:
-                nd = self.data_classifier.nights_dict[night]
-                self.log.debug('Initializing night organizer procedure')
-                night_organizer = NightOrganizer(
-                    full_path=nd['full_path'],
-                    instrument=nd['instrument'],
-                    technique=nd['technique'],
-                    ignore_bias=self.args.ignore_bias,
-                    ignore_flats=self.args.ignore_flats)
-
-                self.log.debug('Calling night organizer procedure')
-                try:
-                    data_container_list = night_organizer()
-                except IOError as error:
-                    self.log.critical(error)
-                    sys.exit(1)
-                for self.data_container in data_container_list:
-                    # print(self.data_container)
-                    if self.data_container is None or \
-                            self.data_container.is_empty:
-                        self.log.info("Data container is empty")
-                        self.log.error('Discarding night {:s}'
-                                       ''.format(str(night)))
-                    else:
-                        self.log.debug("Initializing image processing "
-                                       "procedure")
-                        process_images = ImageProcessor(
-                            args=self.args,
-                            data_container=self.data_container)
-                        self.log.debug("Calling image processing procedure.")
-                        process_images()
+                data_container_list = night_organizer()
+            except IOError as error:
+                self.log.critical(error)
+                sys.exit(1)
+            for self.data_container in data_container_list:
+                # print(self.data_container)
+                if self.data_container is None or \
+                        self.data_container.is_empty:
+                    self.log.info("Data container is empty")
+                    self.log.error('Discarding night {:s}'
+                                   ''.format(str(night)))
+                else:
+                    self.log.debug("Initializing image processing "
+                                   "procedure")
+                    process_images = ImageProcessor(
+                        args=self.args,
+                        data_container=self.data_container)
+                    self.log.debug("Calling image processing procedure.")
+                    process_images()
 
     def _check_args(self):
         """Perform checks to arguments
@@ -306,7 +297,15 @@ class MainApp(object):
                                "".format(self.args.red_path))
 
         if os.path.isdir(self.args.red_path):
-            if os.listdir(self.args.red_path) != []:
+            try:
+                _directory_content = os.listdir(self.args.red_path)
+            except PermissionError as error:
+                self.log.debug(error)
+                self.log.critical("Unable to read on directory {:s}"
+                                  "".format(self.args.red_path))
+                sys.exit()
+
+            if  _directory_content != []:
                 self.log.warning('Folder for reduced data is not empty')
                 if self.args.auto_clean:
                     self.log.info("--auto-clean is set")
@@ -324,8 +323,16 @@ class MainApp(object):
                             self.log.warning('Removing Directory '
                                              '{:s}'.format(_file))
 
-                            shutil.rmtree(os.path.join(self.args.red_path,
-                                                       _file))
+                            try:
+                                shutil.rmtree(os.path.join(self.args.red_path,
+                                                           _file))
+                            except PermissionError as error:
+                                self.log.debug(error)
+                                self.log.critical("Unable to delete files on "
+                                                  "directory {:s}"
+                                                  "".format(self.args.red_path))
+                                self.log.info("Please check permissions")
+                                return False
 
                     self.log.info('Cleaned Reduced data directory:'
                                   ' {:s}'.format(self.args.red_path))
