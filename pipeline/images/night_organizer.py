@@ -133,6 +133,11 @@ class NightOrganizer(object):
 
         data_container_list = []
         for i in readout_configurations.index:
+            self.log.info("Organizing data for this configuration: "
+                           "Gain: {:.2f}, Noise: {:.2f}, ROI: {:s}"
+                           "".format(readout_configurations.iloc[i]['gain'],
+                                     readout_configurations.iloc[i]['rdnoise'],
+                                     readout_configurations.iloc[i]['roi']))
             if not self.data_container.is_empty:
                 self.log.debug("Reset data container")
                 self.data_container = NightDataContainer(
@@ -144,8 +149,6 @@ class NightOrganizer(object):
                 gain=readout_configurations.iloc[i]['gain'],
                 rdnoise=readout_configurations.iloc[i]['rdnoise'],
                 roi=readout_configurations.iloc[i]['roi'])
-
-            # print(self.data_container)
 
             sub_collection = self.file_collection[
                 ((self.file_collection['gain'] ==
@@ -163,11 +166,15 @@ class NightOrganizer(object):
                 self.imaging_night()
 
             if self.data_container.is_empty:
+                self.log.warning("The following files will be discarded.")
+                for _file in sub_collection['file'].tolist():
+                    self.log.warning("{:s}".format(_file))
                 self.log.debug('data_container is empty')
                 # data_container_list.append(None)
                 # sys.exit('ERROR: There is no data to process!')
             else:
-                self.log.debug('Appending classified data')
+                self.log.info('Found valid data, appending to data container '
+                              'list')
                 data_container_list.append(self.data_container)
 
         # Warn the user in case the list of data_container element is empty or
@@ -251,8 +258,9 @@ class NightOrganizer(object):
 
         if not self.ignore_bias:
             if len(bias_collection) == 0:
-                self.log.critical('There is no BIAS images. Use --ignore-bias '
-                                  'to continue without BIAS.')
+                self.log.critical('There is no BIAS images for this '
+                                  'configuration. Use --ignore-bias '
+                                  'to proceed without BIAS.')
                 # sys.exit('CRITICAL ERROR: BIAS not Found.')
                 return False
             else:

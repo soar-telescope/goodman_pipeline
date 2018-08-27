@@ -11,6 +11,8 @@ V1.1.2 Unreleased
   + :class:`~pandas.DataFrame` index is unusable when partial parts are eliminated.
     Added ``index_reset(drop=True)``
 
+- Eliminated ``None`` elements in list of instances of :class:`pipeline.core.core.NightDataContainer`
+
 - Improved some logging messages
 
   + Informs in debug mode the files that are discarded.
