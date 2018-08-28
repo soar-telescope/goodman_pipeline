@@ -305,7 +305,7 @@ class MainApp(object):
                                   "".format(self.args.red_path))
                 sys.exit()
 
-            if  _directory_content != []:
+            if _directory_content != []:
                 self.log.warning('Folder for reduced data is not empty')
                 if self.args.auto_clean:
                     self.log.info("--auto-clean is set")
