@@ -119,7 +119,6 @@ class GenerateDcrFile(TestCase):
             os.remove(self.create._file_name)
 
 
-
 class MasterFlatTest(TestCase):
 
     def setUp(self):
@@ -226,6 +225,11 @@ class CentralWavelength(TestCase):
 
 class AddWCSKeywordsTest(TestCase):
 
+    def setUp(self):
+        self.test_ccd = CCDData(data=np.ones((100, 100)),
+                                meta=fits.Header(),
+                                unit='adu')
+
     def test_add_wcs_keys(self):
         wcs_keys = ['BANDID1',
                     'APNUM1',
@@ -241,25 +245,179 @@ class AddWCSKeywordsTest(TestCase):
                     'DC-FLAG',
                     'DCLOG1']
 
-        test_ccd = CCDData(data=np.ones((100, 100)),
-                           meta=fits.Header(),
-                           unit='adu')
 
-        test_ccd = add_wcs_keys(ccd=test_ccd)
+
+        self.test_ccd = add_wcs_keys(ccd=self.test_ccd)
         for key in wcs_keys:
-            self.assertIn(key, test_ccd.header)
+            self.assertIn(key, self.test_ccd.header)
+
+    @skip
+    def test_add_wcs_keys_error(self):
+        wcs_keys = ['BANDID1',
+                    'APNUM1',
+                    'WCSDIM',
+                    'CTYPE1',
+                    'CRVAL1',
+                    'CRPIX1',
+                    'CDELT1',
+                    'CD1_1',
+                    'LTM1_1',
+                    'WAT0_001',
+                    'WAT1_001',
+                    'DC-FLAG',
+                    'DCLOG1']
 
 
 class CosmicRayRejectionTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.file_name = 'cr_test.fits'
+
+        self.ccd.header.set('CCDSUM', value='1 1')
+        self.ccd.header.set('OBSTYPE', value='OBJECT')
+        self.ccd.header.set('INSTCONF', value='Red')
+        self.ccd.header.set('GSP_FNAM', value=self.file_name)
+        self.ccd.header.set('GSP_COSM', value='none')
+
+        self.red_path = os.getcwd()
+        self.out_prefix = 'prefix'
 
     @skip
     def test_dcr_cosmicray_rejection(self):
         pass
 
-    @skip
-    def test_call_cosmic_rejection(self):
-        pass
+    def test_call_cosmic_rejection_default_1x1(self):
+        prefix = 'new_'
+        initial_value = self.ccd.data[50, 50]
+        self.ccd.data[50, 50] = 50000
 
+        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
+                                                image_name=self.file_name,
+                                                out_prefix=self.out_prefix,
+                                                red_path=self.red_path,
+                                                dcr_par=os.getcwd(),
+                                                keep_files=True,
+                                                prefix=prefix,
+                                                method='default',
+                                                save=True)
+        self.assertAlmostEqual(initial_value, ccd.data[50, 50])
+        self.assertEqual(out_prefix, prefix + self.out_prefix)
+        self.assertEqual(ccd.header['GSP_FNAM'],
+                         prefix + self.out_prefix + self.file_name)
+        self.assertEqual(ccd.header['GSP_COSM'], 'DCR')
+
+        self.assertTrue(os.path.isfile('dcr.par'))
+        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+
+    def test_call_cosmic_rejection_default_2x2(self):
+        self.ccd.header.set('CCDSUM', value='2 2')
+        prefix = 'new_'
+        initial_value = self.ccd.data[50, 50]
+        self.ccd.data[50, 50] = 50000
+
+        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
+                                                image_name=self.file_name,
+                                                out_prefix=self.out_prefix,
+                                                red_path=self.red_path,
+                                                dcr_par=os.getcwd(),
+                                                keep_files=True,
+                                                prefix=prefix,
+                                                method='default',
+                                                save=True)
+        self.assertAlmostEqual(initial_value, ccd.data[50, 50])
+        self.assertEqual(out_prefix, prefix + self.out_prefix)
+        self.assertEqual(ccd.header['GSP_FNAM'],
+                         prefix + self.out_prefix + self.file_name)
+        self.assertEqual(ccd.header['GSP_COSM'], 'LACosmic')
+        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+
+    def test_call_cosmic_rejection_default_3x3(self):
+        self.ccd.header.set('CCDSUM', value='3 3')
+        prefix = 'new_'
+        initial_value = self.ccd.data[50, 50]
+        self.ccd.data[50, 50] = 50000
+
+        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
+                                                image_name=self.file_name,
+                                                out_prefix=self.out_prefix,
+                                                red_path=self.red_path,
+                                                dcr_par=os.getcwd(),
+                                                keep_files=True,
+                                                prefix=prefix,
+                                                method='default',
+                                                save=True)
+        self.assertAlmostEqual(initial_value, ccd.data[50, 50])
+        self.assertEqual(out_prefix, prefix + self.out_prefix)
+        self.assertEqual(ccd.header['GSP_FNAM'],
+                         prefix + self.out_prefix + self.file_name)
+        self.assertEqual(ccd.header['GSP_COSM'], 'LACosmic')
+
+        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+
+    def test_call_cosmic_rejection_none(self):
+        prefix = 'new_'
+        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
+                                                image_name=self.file_name,
+                                                out_prefix=self.out_prefix,
+                                                red_path=self.red_path,
+                                                dcr_par=os.getcwd(),
+                                                keep_files=True,
+                                                prefix=prefix,
+                                                method='none',
+                                                save=True)
+        self.assertEqual(out_prefix, self.out_prefix)
+        self.assertEqual(ccd.header['GSP_FNAM'],
+                         self.out_prefix + self.file_name)
+        self.assertEqual(ccd.header['GSP_COSM'], 'none')
+        self.assertTrue(os.path.isfile('prefixcr_test.fits'))
+
+    def test_call_cosmic_rejection_comp_lamp(self):
+        self.ccd.header.set('OBSTYPE', value='COMP')
+        prefix = 'new_'
+        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
+                                                image_name=self.file_name,
+                                                out_prefix=self.out_prefix,
+                                                red_path=self.red_path,
+                                                dcr_par=os.getcwd(),
+                                                keep_files=True,
+                                                prefix=prefix,
+                                                method='default',
+                                                save=True)
+        self.assertEqual(out_prefix, prefix + self.out_prefix)
+        self.assertEqual(ccd.header['GSP_FNAM'],
+                         prefix + self.out_prefix + self.file_name)
+        self.assertEqual(ccd.header['GSP_COSM'], 'none')
+
+
+    def test_call_cosmic_rejection_not_implemented_error(self):
+        prefix = 'new_'
+        self.assertRaises(NotImplementedError,
+                          call_cosmic_rejection,
+                          self.ccd,
+                          self.file_name,
+                          self.out_prefix,
+                          self.red_path,
+                          os.getcwd(),
+                          True,
+                          prefix,
+                          'not_implemented_method',
+                          True)
+
+
+    def tearDown(self):
+        files_to_delete = ['dcr.par',
+                           'goodman_log.txt',
+                           'cosmic_test.fits',
+                           'new_prefixcr_test.fits',
+                           'prefixcr_test.fits',
+                           'crmask_cr_test.fits']
+
+        for _file in files_to_delete:
+            if os.path.isfile(_file):
+                os.unlink(_file)
 
 class TimeConversionTest(TestCase):
 
