@@ -289,6 +289,7 @@ class CosmicRayRejectionTest(TestCase):
     def test_dcr_cosmicray_rejection(self):
         pass
 
+    @skip
     def test_call_cosmic_rejection_default_1x1(self):
         prefix = 'new_'
         initial_value = self.ccd.data[50, 50]
@@ -384,13 +385,12 @@ class CosmicRayRejectionTest(TestCase):
                                                 dcr_par=os.getcwd(),
                                                 keep_files=True,
                                                 prefix=prefix,
-                                                method='default',
+                                                method='lacosmic',
                                                 save=True)
         self.assertEqual(out_prefix, prefix + self.out_prefix)
         self.assertEqual(ccd.header['GSP_FNAM'],
                          prefix + self.out_prefix + self.file_name)
         self.assertEqual(ccd.header['GSP_COSM'], 'none')
-
 
     def test_call_cosmic_rejection_not_implemented_error(self):
         prefix = 'new_'
@@ -406,7 +406,6 @@ class CosmicRayRejectionTest(TestCase):
                           'not_implemented_method',
                           True)
 
-
     def tearDown(self):
         files_to_delete = ['dcr.par',
                            'goodman_log.txt',
@@ -418,6 +417,7 @@ class CosmicRayRejectionTest(TestCase):
         for _file in files_to_delete:
             if os.path.isfile(_file):
                 os.unlink(_file)
+
 
 class TimeConversionTest(TestCase):
 
@@ -497,6 +497,14 @@ class ExtractionTest(TestCase):
 
     def test_extract_optimal(self):
         self.assertRaises(NotImplementedError, extract_optimal)
+
+    def test_extract__optimal_not_implemented(self):
+        self.assertRaises(NotImplementedError,
+                          extraction,
+                          self.fake_image,
+                          self.target_trace,
+                          self.target_profile,
+                          'optimal')
 
     def test_extraction(self):
         extracted = extraction(ccd=self.fake_image,
