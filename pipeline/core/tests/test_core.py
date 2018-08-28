@@ -45,6 +45,7 @@ from ..core import (astroscrappy_lacosmic,
                     normalize_master_flat,
                     ra_dec_to_deg,
                     read_fits,
+                    save_extracted,
                     search_comp_group,
                     setup_logging,
                     trace,
@@ -657,6 +658,7 @@ class FitsFileIOAndOps(TestCase):
                                    comment='Fake values')
 
         self.file_name = 'sample_file.fits'
+        self.target_non_zero = 4
         self.current_directory = os.getcwd()
         self.full_path = os.path.join(self.current_directory, self.file_name)
         self.parent_file = 'parent_file.fits'
@@ -692,6 +694,11 @@ class FitsFileIOAndOps(TestCase):
                          data_value - overscan_value)
         self.assertEqual(self.fake_image.header['GSP_OVER'], overscan_region)
 
+    def test_image_overscan_none(self):
+        new_fake_image = image_overscan(ccd=self.fake_image,
+                                        overscan_region=None)
+        self.assertEqual(new_fake_image, self.fake_image)
+
     def test_image_trim(self):
         self.assertEqual(self.fake_image.data.shape, (100, 100))
         trim_section = '[1:50,:]'
@@ -702,6 +709,87 @@ class FitsFileIOAndOps(TestCase):
         self.assertEqual(self.fake_image.data.shape, (100, 50))
         self.assertEqual(self.fake_image.header['GSP_TRIM'], trim_section)
 
+    def test_save_extracted_target_zero(self):
+        self.fake_image.header.set('GSP_FNAM', value=self.file_name)
+        same_fake_image = save_extracted(ccd=self.fake_image,
+                                         destination=self.current_directory,
+                                         prefix='e',
+                                         target_number=0)
+        self.assertEqual(same_fake_image, self.fake_image)
+        self.assertTrue(os.path.isfile('e' + self.file_name))
+
+    def test_save_extracted_target_non_zero(self):
+        self.fake_image.header.set('GSP_FNAM', value=self.file_name)
+        same_fake_image = save_extracted(ccd=self.fake_image,
+                                         destination=self.current_directory,
+                                         prefix='e',
+                                         target_number=self.target_non_zero)
+        self.assertEqual(same_fake_image, self.fake_image)
+        self.assertTrue(os.path.isfile('e' + re.sub('.fits',
+                                       '_target_{:d}.fits'.format(
+                                           self.target_non_zero),
+                                       self.file_name)))
+
     def tearDown(self):
-        self.assertTrue(os.path.isfile(self.full_path))
-        os.remove(self.full_path)
+        files_to_remove = [self.full_path,
+                           'e' + self.file_name,
+                           'e' + re.sub('.fits',
+                                        '_target_{:d}.fits'.format(
+                                            self.target_non_zero),
+                                        self.file_name)]
+
+        for _file in files_to_remove:
+            if os.path.isfile(_file):
+                os.unlink(_file)
+
+
+class NightDataContainerTests(TestCase):
+
+    def setUp(self):
+        self.container = NightDataContainer(path=os.getcwd(),
+                                            instrument='Red',
+                                            technique='Spectroscopy')
+
+    @skip
+    def test___repr___method(self):
+        pass
+
+    @skip
+    def test__get_group_repr(self):
+        pass
+
+    @skip
+    def test_add_bias(self):
+        pass
+
+    @skip
+    def test_add_day_flats(self):
+        pass
+
+    @skip
+    def test_add_data_group(self):
+        pass
+
+    @skip
+    def test_add_comp_group(self):
+        pass
+
+    @skip
+    def test_add_object_group(self):
+        pass
+
+    @skip
+    def test_add_spec_group(self):
+        pass
+
+    @skip
+    def test_set_sun_times(self):
+        pass
+
+    @skip
+    def test_set_twilight_times(self):
+        pass
+
+    @skip
+    def test_set_readout(self):
+        pass
