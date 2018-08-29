@@ -21,6 +21,7 @@ from ..core import (GenerateDcrParFile,
                     NoMatchFound,
                     NotEnoughLinesDetected,
                     NoTargetException,
+                    ReferenceData,
                     SpectroscopicMode)
 
 
@@ -87,6 +88,10 @@ def test_lacosmic_cosmicray_rejection():
 
 
 def test_classify_spectroscopic_data():
+    pass
+
+
+def test_interpolate():
     pass
 
 
@@ -596,6 +601,81 @@ class RaDecConversion(TestCase):
                                       declination=self.dec)
         self.assertAlmostEqual(radeg, self.reference_ra)
         self.assertAlmostEqual(decdeg, self.reference_dec)
+
+
+class ReferenceDataTest(TestCase):
+
+    def setUp(self):
+        self.rd = ReferenceData(
+            reference_dir=os.path.join(os.getcwd(), 'pipeline/data/ref_comp'))
+        self.ccd = CCDData(data=np.ones((800, 2000)),
+                           meta=fits.Header(),
+                           unit='adu')
+
+        self.columns = ['object', 'grating', 'grt_targ', 'cam_targ']
+
+        self.data_exist = [['HgArNe', 'SYZY_400', 7.5, 16.1],
+                           ['HgAr', 'SYZY_400', 7.5, 16.1]]
+
+        self.data_does_not_exist = [['HgArNe', 'SYZY_800', 7.5, 16.1],
+                                    ['HgAr', 'SYZY_800', 7.5, 16.1]]
+
+    def test_get_reference_lamp_exist(self):
+        self.ccd.header.set('OBJECT', value='HgArNe')
+        self.ccd.header.set('WAVMODE', value='400 m2')
+
+        ref_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
+
+        self.assertIsInstance(ref_lamp, CCDData)
+        self.assertEqual(ref_lamp.header['OBJECT'], self.ccd.header['OBJECT'])
+        self.assertEqual(ref_lamp.header['WAVMODE'], self.ccd.header['WAVMODE'])
+
+    def test_get_reference_lamp_does_not_exist(self):
+        self.ccd.header.set('OBJECT', value='HgArCu')
+        self.ccd.header.set('WAVMODE', value='400 m5')
+
+        self.assertRaises(NotImplementedError,
+                          self.rd.get_reference_lamp,
+                          self.ccd.header)
+
+    def test_lamp_exist(self):
+        self.assertTrue(self.rd.lamp_exists(object_name='HgArNe',
+                                            grating='SYZY_400',
+                                            grt_targ=7.5,
+                                            cam_targ=16.1))
+
+        self.assertFalse(self.rd.lamp_exists(object_name='HgArCu',
+                                             grating='SYZY_400',
+                                             grt_targ=7.5,
+                                             cam_targ=16.1))
+
+    def test_check_comp_group__lamp_exists(self):
+        comp_group = pandas.DataFrame(self.data_exist,
+                                      columns=self.columns)
+
+        new_group = self.rd.check_comp_group(comp_group=comp_group)
+
+        self.assertIsInstance(new_group, pandas.DataFrame)
+        self.assertFalse(comp_group.equals(new_group))
+        self.assertEqual(len(new_group), 1)
+
+    def test_check_comp_group__lamp_does_not_exist(self):
+        comp_group = pandas.DataFrame(self.data_does_not_exist,
+                                      columns=self.columns)
+
+        new_group = self.rd.check_comp_group(comp_group=comp_group)
+
+        self.assertIsInstance(new_group, pandas.DataFrame)
+        self.assertTrue(comp_group.equals(new_group))
+
+
+class SpectroscopicModeTest(TestCase):
+
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
 
 
 class TargetsTest(TestCase):

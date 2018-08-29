@@ -2584,8 +2584,8 @@ class ReferenceData(object):
         Args:
             object_name (str): Name of the lamp from 'OBJECT' keyword.
             grating (str): Grating from 'GRATING' keyword.
-            grt_targ (str): Grating target from keyword 'GRT_TARG'.
-            cam_targ (str): Camera target from keyword 'CAM_TARG'.
+            grt_targ (float): Grating target from keyword 'GRT_TARG'.
+            cam_targ (float): Camera target from keyword 'CAM_TARG'.
 
         Returns:
             True of False depending if a single matching lamp exist.
