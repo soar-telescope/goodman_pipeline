@@ -10,7 +10,7 @@ branches:
 
 before_install:
 - ./install_dcr.sh
-- export PATH:"$PATH:$HOME/build/soar-telescope/pipeline/data/dcr-source/dcr"
+- export PATH="$PATH:$HOME/build/soar-telescope/pipeline/data/dcr-source/dcr"
 
 install:
 - sudo apt-get update
