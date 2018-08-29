@@ -487,6 +487,21 @@ class ExtractionTest(TestCase):
         np.testing.assert_array_almost_equal(extracted_array,
                                              self.reference_result)
 
+    def test_fractional_extraction_obstype_object(self):
+        self.fake_image.header.set('OBSTYPE', value='OBJECT')
+        # Perform extraction
+        extracted_array, background = extract_fractional_pixel(
+            ccd=self.fake_image,
+            target_trace=self.target_trace,
+            target_stddev=self.stddev,
+            extraction_width=self.n_stddev,
+            background_spacing=self.distance)
+        # assert isinstance(fake_image, CCDData)
+        self.assertIsInstance(extracted_array, CCDData)
+
+        np.testing.assert_array_almost_equal(extracted_array,
+                                             np.zeros(extracted_array.shape))
+
     def test_fractional_sum(self):
 
         fake_image = np.ones((100, 100))
