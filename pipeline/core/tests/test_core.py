@@ -672,10 +672,63 @@ class ReferenceDataTest(TestCase):
 class SpectroscopicModeTest(TestCase):
 
     def setUp(self):
-        pass
+        self.sm = SpectroscopicMode()
+        self.ccd = CCDData(data=np.ones((800, 2000)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd.header.set('GRATING', value='SYZY_400')
+        self.ccd.header.set('CAM_TARG', value='16.1')
+        self.ccd.header.set('GRT_TARG', value='7.5')
+        self.ccd.header.set('FILTER2', value='GG455')
 
-    def tearDown(self):
-        pass
+    def test__call__(self):
+        self.assertRaises(SyntaxError, self.sm)
+
+        mode_m2_header = self.sm(header=self.ccd.header)
+
+        self.assertEqual(mode_m2_header, 'm2')
+
+        mode_m2_keywords = self.sm(grating=self.ccd.header['GRATING'],
+                                   camera_targ=self.ccd.header['CAM_TARG'],
+                                   grating_targ=self.ccd.header['GRT_TARG'],
+                                   blocking_filter=self.ccd.header['FILTER2'])
+
+        self.assertEqual(mode_m2_keywords, 'm2')
+
+    def test_get_mode(self):
+        mode_m2 = self.sm.get_mode(grating='400',
+                                   camera_targ='16.1',
+                                   grating_targ='7.5',
+                                   blocking_filter='GG455')
+        self.assertEqual(mode_m2, 'm2')
+
+        mode_custom_400 = self.sm.get_mode(grating='400',
+                                           camera_targ='16.1',
+                                           grating_targ='6.6',
+                                           blocking_filter='GG455')
+
+        self.assertEqual(mode_custom_400, 'Custom_7000nm')
+
+        mode_custom_2100 = self.sm.get_mode(grating='2100',
+                                            camera_targ='16.1',
+                                            grating_targ='7.5',
+                                            blocking_filter='GG455')
+        self.assertEqual(mode_custom_2100, 'Custom_1334nm')
+
+    def test_get_cam_grt_targ_angle(self):
+
+        cam_targ, grt_targ = self.sm.get_cam_grt_targ_angle(1800, 'm10')
+        self.assertIsNone(cam_targ)
+        self.assertIsNone(grt_targ)
+
+        cam_targ, grt_targ = self.sm.get_cam_grt_targ_angle(930, 'm5')
+        self.assertEqual(cam_targ, '39.4')
+        self.assertEqual(grt_targ, '19.7')
+
+        cam_targ, grt_targ = self.sm.get_cam_grt_targ_angle(930, 'm7')
+        self.assertIsNone(cam_targ)
+        self.assertIsNone(grt_targ)
+
 
 
 class TargetsTest(TestCase):

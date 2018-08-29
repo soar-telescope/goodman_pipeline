@@ -2840,13 +2840,19 @@ class SpectroscopicMode(object):
                                  camera_targ=camera_targ,
                                  grating_targ=grating_targ,
                                  blocking_filter=blocking_filter)
-        else:
+        elif not all(x is None for x in (
+                grating, camera_targ, grating_targ, blocking_filter)):
             grating = re.sub('[A-Za-z_-]', '', grating)
 
             return self.get_mode(grating=grating,
                                  camera_targ=camera_targ,
                                  grating_targ=grating_targ,
                                  blocking_filter=blocking_filter)
+        else:
+            raise SyntaxError("Either a fits header or grating, camera angle, "
+                              "grating angle and order blocking filter are "
+                              "required.")
+
 
     def get_mode(self, grating, camera_targ, grating_targ, blocking_filter):
         """Get the camera's optical configuration mode.
