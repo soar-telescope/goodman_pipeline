@@ -295,7 +295,6 @@ class CosmicRayRejectionTest(TestCase):
     def test_dcr_cosmicray_rejection(self):
         pass
 
-    @skip
     def test_call_cosmic_rejection_default_1x1(self):
         prefix = 'new_'
         initial_value = self.ccd.data[50, 50]
