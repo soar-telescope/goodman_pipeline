@@ -77,66 +77,62 @@ def add_wcs_keys(ccd):
           WCS keywords
 
     """
-    try:
-        log.debug("Adding FITS LINEAR wcs keywords to header.")
-        ccd.header.set('BANDID1',
-                       value='spectrum - background none, weights none, '
-                             'clean no',
-                       comment='')
+    log.debug("Adding FITS LINEAR wcs keywords to header.")
+    ccd.header.set('BANDID1',
+                   value='spectrum - background none, weights none, '
+                         'clean no',
+                   comment='')
 
-        ccd.header.set('APNUM1',
-                       value='1 1 0 0',
-                       comment='')
+    ccd.header.set('APNUM1',
+                   value='1 1 0 0',
+                   comment='')
 
-        ccd.header.set('WCSDIM',
-                       value=1,
-                       comment='')
+    ccd.header.set('WCSDIM',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('CTYPE1',
-                       value='LINEAR',
-                       comment='')
+    ccd.header.set('CTYPE1',
+                   value='LINEAR',
+                   comment='')
 
-        ccd.header.set('CRVAL1',
-                       value=1,
-                       comment='')
+    ccd.header.set('CRVAL1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('CRPIX1',
-                       value=1,
-                       comment='')
+    ccd.header.set('CRPIX1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('CDELT1',
-                       value=1,
-                       comment='')
+    ccd.header.set('CDELT1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('CD1_1',
-                       value=1,
-                       comment='')
+    ccd.header.set('CD1_1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('LTM1_1',
-                       value=1,
-                       comment='')
+    ccd.header.set('LTM1_1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('WAT0_001',
-                       value='system=equispec',
-                       comment='')
+    ccd.header.set('WAT0_001',
+                   value='system=equispec',
+                   comment='')
 
-        ccd.header.set('WAT1_001',
-                       value='wtype=linear label=Wavelength units=angstroms',
-                       comment='')
+    ccd.header.set('WAT1_001',
+                   value='wtype=linear label=Wavelength units=angstroms',
+                   comment='')
 
-        ccd.header.set('DC-FLAG',
-                       value=0,
-                       comment='')
+    ccd.header.set('DC-FLAG',
+                   value=0,
+                   comment='')
 
-        ccd.header.set('DCLOG1',
-                       value='REFSPEC1 = non set',
-                       comment='')
+    ccd.header.set('DCLOG1',
+                   value='REFSPEC1 = non set',
+                   comment='')
 
-        return ccd
+    return ccd
 
-    except TypeError as err:
-        log.error("Can't add wcs keywords to header")
-        log.debug(err)
 
 
 def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
