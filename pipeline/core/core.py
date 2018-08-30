@@ -77,66 +77,62 @@ def add_wcs_keys(ccd):
           WCS keywords
 
     """
-    try:
-        log.debug("Adding FITS LINEAR wcs keywords to header.")
-        ccd.header.set('BANDID1',
-                       value='spectrum - background none, weights none, '
-                             'clean no',
-                       comment='')
+    log.debug("Adding FITS LINEAR wcs keywords to header.")
+    ccd.header.set('BANDID1',
+                   value='spectrum - background none, weights none, '
+                         'clean no',
+                   comment='')
 
-        ccd.header.set('APNUM1',
-                       value='1 1 0 0',
-                       comment='')
+    ccd.header.set('APNUM1',
+                   value='1 1 0 0',
+                   comment='')
 
-        ccd.header.set('WCSDIM',
-                       value=1,
-                       comment='')
+    ccd.header.set('WCSDIM',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('CTYPE1',
-                       value='LINEAR',
-                       comment='')
+    ccd.header.set('CTYPE1',
+                   value='LINEAR',
+                   comment='')
 
-        ccd.header.set('CRVAL1',
-                       value=1,
-                       comment='')
+    ccd.header.set('CRVAL1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('CRPIX1',
-                       value=1,
-                       comment='')
+    ccd.header.set('CRPIX1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('CDELT1',
-                       value=1,
-                       comment='')
+    ccd.header.set('CDELT1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('CD1_1',
-                       value=1,
-                       comment='')
+    ccd.header.set('CD1_1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('LTM1_1',
-                       value=1,
-                       comment='')
+    ccd.header.set('LTM1_1',
+                   value=1,
+                   comment='')
 
-        ccd.header.set('WAT0_001',
-                       value='system=equispec',
-                       comment='')
+    ccd.header.set('WAT0_001',
+                   value='system=equispec',
+                   comment='')
 
-        ccd.header.set('WAT1_001',
-                       value='wtype=linear label=Wavelength units=angstroms',
-                       comment='')
+    ccd.header.set('WAT1_001',
+                   value='wtype=linear label=Wavelength units=angstroms',
+                   comment='')
 
-        ccd.header.set('DC-FLAG',
-                       value=0,
-                       comment='')
+    ccd.header.set('DC-FLAG',
+                   value=0,
+                   comment='')
 
-        ccd.header.set('DCLOG1',
-                       value='REFSPEC1 = non set',
-                       comment='')
+    ccd.header.set('DCLOG1',
+                   value='REFSPEC1 = non set',
+                   comment='')
 
-        return ccd
+    return ccd
 
-    except TypeError as err:
-        log.error("Can't add wcs keywords to header")
-        log.debug(err)
 
 
 def call_cosmic_rejection(ccd, image_name, out_prefix, red_path,
@@ -2584,8 +2580,8 @@ class ReferenceData(object):
         Args:
             object_name (str): Name of the lamp from 'OBJECT' keyword.
             grating (str): Grating from 'GRATING' keyword.
-            grt_targ (str): Grating target from keyword 'GRT_TARG'.
-            cam_targ (str): Camera target from keyword 'CAM_TARG'.
+            grt_targ (float): Grating target from keyword 'GRT_TARG'.
+            cam_targ (float): Camera target from keyword 'CAM_TARG'.
 
         Returns:
             True of False depending if a single matching lamp exist.
@@ -2840,13 +2836,19 @@ class SpectroscopicMode(object):
                                  camera_targ=camera_targ,
                                  grating_targ=grating_targ,
                                  blocking_filter=blocking_filter)
-        else:
+        elif not all(x is None for x in (
+                grating, camera_targ, grating_targ, blocking_filter)):
             grating = re.sub('[A-Za-z_-]', '', grating)
 
             return self.get_mode(grating=grating,
                                  camera_targ=camera_targ,
                                  grating_targ=grating_targ,
                                  blocking_filter=blocking_filter)
+        else:
+            raise SyntaxError("Either a fits header or grating, camera angle, "
+                              "grating angle and order blocking filter are "
+                              "required.")
+
 
     def get_mode(self, grating, camera_targ, grating_targ, blocking_filter):
         """Get the camera's optical configuration mode.
