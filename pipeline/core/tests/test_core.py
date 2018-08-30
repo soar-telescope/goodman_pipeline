@@ -43,6 +43,7 @@ from ..core import (astroscrappy_lacosmic,
                     identify_targets,
                     image_overscan,
                     image_trim,
+                    interpolate,
                     normalize_master_flat,
                     ra_dec_to_deg,
                     read_fits,
@@ -91,8 +92,17 @@ def test_classify_spectroscopic_data():
     pass
 
 
-def test_interpolate():
-    pass
+class InterpolationTest(TestCase):
+
+    def test_interpolate(self):
+        initial_array = np.sin(np.arange(0, 3 * np.pi))
+        initial_length = len(initial_array)
+
+        new_x_axis, new_array = interpolate(spectrum=initial_array,
+                                            interpolation_size=100)
+
+        self.assertEqual(len(new_x_axis), len(new_array))
+        self.assertEqual(len(new_array), initial_length * 100)
 
 
 class GenerateDcrFile(TestCase):
