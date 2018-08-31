@@ -3,8 +3,9 @@ from __future__ import absolute_import
 import numpy as np
 import os
 
-
+from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.io import fits
+from astropy.modeling import models
 from ccdproc import CCDData
 from unittest import TestCase, skip
 from ..wavelength import (WavelengthCalibration,
@@ -28,7 +29,7 @@ class WavelengthCalibrationTests(TestCase):
         arguments = get_args(argument_list)
         self.wc = WavelengthCalibration(args=arguments)
 
-        self.ccd = CCDData(data=np.ones((100, 100)),
+        self.ccd = CCDData(data=np.random.random_sample(200),
                            meta=fits.Header(),
                            unit='adu')
         self.ccd = add_wcs_keys(ccd=self.ccd)
@@ -64,7 +65,7 @@ class WavelengthCalibrationTests(TestCase):
     def test_automatic_wavelength_solution(self):
         pass
 
-    def test_bin_reference_data(self):
+    def test__bin_reference_data(self):
         wavelength = np.linspace(3000, 7000, 4000)
         intensity = np.random.random_sample(4000)
 
@@ -78,6 +79,37 @@ class WavelengthCalibrationTests(TestCase):
             self.assertEqual(len(wavelength), len(intensity))
             self.assertEqual(len(new_wavelength), len(new_intensity))
             self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
+
+    def test__cross_correlation(self):
+        self.wc.lamp = self.ccd.copy()
+
+        x_axis = np.arange(0, 4060, 1)
+
+        reference = np.zeros(4060)
+        gaussian = models.Gaussian1D(stddev=2)
+
+        for i in sorted(np.random.choice(x_axis, 30)):
+            gaussian.mean.value = i
+            reference += gaussian(x_axis)
+
+        offset = np.random.choice(range(1, 15), 1)[0]
+        
+        for slit in [1, 2, 3, 4, 5]:
+
+            new_array = np.append(reference[offset:], np.zeros(offset))
+
+            if slit > 3:
+                box_kernel = Box1DKernel(width=slit / 0.15)
+                new_array = convolve(new_array, box_kernel)
+
+            self.assertEqual(len(reference), len(new_array))
+
+            self.wc.lamp.header['SLIT'] = '{:d}.0" long slit'.format(slit)
+
+            correlation_value = self.wc._cross_correlation(reference=reference,
+                                                           new_array=new_array)
+            self.assertEqual(correlation_value, offset)
+
 
 
 def test_process_spectroscopy_data():
