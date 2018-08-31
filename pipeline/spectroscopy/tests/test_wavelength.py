@@ -133,6 +133,21 @@ class WavelengthCalibrationTests(TestCase):
         self.assertEqual(n_points, 10)
         self.assertEqual(n_rej, 3)
 
+    def test__get_lines_in_lamp(self):
+        pass
+
+    def test__get_spectral_characteristics(self):
+        self.ccd.header.set('GRATING', 'SYZY_400')
+        self.ccd.header.set('GRT_ANG', 7.5)
+        self.ccd.header.set('CAM_ANG', 16.1)
+        self.ccd.header.set('CCDSUM', '1 1')
+        self.wc.lamp = self.ccd.copy()
+
+        spec_charact = self.wc._get_spectral_characteristics()
+
+        self.assertIsInstance(spec_charact, dict)
+        self.assertEqual(len(spec_charact), 7)
+
 
 
 def test_process_spectroscopy_data():
