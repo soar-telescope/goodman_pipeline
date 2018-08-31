@@ -110,6 +110,29 @@ class WavelengthCalibrationTests(TestCase):
                                                            new_array=new_array)
             self.assertEqual(correlation_value, offset)
 
+    def test__evaluate_solution(self):
+
+        differences = np.array([0.5] * 10)
+
+        clipped_differences = np.ma.masked_array(differences,
+                                                 mask=[0,
+                                                       0,
+                                                       1,
+                                                       0,
+                                                       0,
+                                                       1,
+                                                       0,
+                                                       0,
+                                                       1,
+                                                       0])
+
+        rms_error, n_points, n_rej = self.wc._evaluate_solution(
+            clipped_differences=clipped_differences)
+
+        self.assertEqual(rms_error, 0.5)
+        self.assertEqual(n_points, 10)
+        self.assertEqual(n_rej, 3)
+
 
 
 def test_process_spectroscopy_data():
