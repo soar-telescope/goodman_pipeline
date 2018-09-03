@@ -2302,7 +2302,15 @@ class NightDataContainer(object):
                                                      self.roi))
             class_info += str("\nIs Empty: {:s}\n".format(str(self.is_empty)))
 
-            group_info = "\n Data Grouping Information\n"
+            group_info = "\nData Grouping Information\n"
+            group_info += "BIAS Group:\n"
+            group_info += self._get_group_repr(self.bias)
+            group_info += "Day FLATs Group:\n"
+            group_info += self._get_group_repr(self.day_flats)
+            group_info += "Dome FLATs Group:\n"
+            group_info += self._get_group_repr(self.dome_flats)
+            group_info += "Sky FLATs Group:\n"
+            group_info += self._get_group_repr(self.sky_flats)
             if self.technique == 'Spectroscopy':
 
                 group_info += "COMP Group:\n"
@@ -2311,6 +2319,12 @@ class NightDataContainer(object):
                 group_info += self._get_group_repr(self.object_groups)
                 group_info += "OBJECT + COMP Group:\n"
                 group_info += self._get_group_repr(self.spec_groups)
+                # group_info += self._get_group_repr(self.data_groups)
+
+                class_info += group_info
+            elif self.technique == 'Imaging':
+                group_info += "DATA Group:\n"
+                group_info += self._get_group_repr(self.data_groups)
 
                 class_info += group_info
             return class_info
@@ -2326,7 +2340,10 @@ class NightDataContainer(object):
         group_str = ""
         if group is not None:
             for i in range(len(group)):
-                group_str += " Group {:d}\n".format(i + 1)
+                if len(group) == 1:
+                    group_str += "Files in Group\n"
+                else:
+                    group_str += "Files in Group {:d}\n".format(i + 1)
                 for _file in group[i]['file']:
                     group_str += "  {:s}\n".format(_file)
             return group_str

@@ -55,6 +55,7 @@ class ImageProcessor(object):
         self.dome_flats = data_container.dome_flats
         self.sky_flats = data_container.sky_flats
         self.data_groups = data_container.data_groups
+        self.spec_groups = data_container.spec_groups
         self.sun_set = data_container.sun_set_time
         self.sun_rise = data_container.sun_rise_time
         self.morning_twilight = data_container.morning_twilight
@@ -81,7 +82,8 @@ class ImageProcessor(object):
                       self.day_flats,
                       self.dome_flats,
                       self.sky_flats,
-                      self.data_groups]:
+                      self.data_groups,
+                      self.spec_groups]:
             if group is not None:
                 for sub_group in group:
                     group_obstype = sub_group.obstype.unique()
@@ -626,8 +628,8 @@ class ImageProcessor(object):
                 self.log.warning('Slit Trimming will be skipped, '
                                  '--ignore-flats is activated')
             else:
-                self.log.info('Master flat inexistent, cant find slit trim '
-                              'section')
+                self.log.info("Master flat inexistent, can't find slit trim "
+                              "section")
             if slit_trim is not None:
 
                 master_flat = image_trim(ccd=master_flat,
