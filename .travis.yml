@@ -8,7 +8,13 @@ branches:
   - master
   - development
 
+before_install:
+- ./install_dcr.sh
+
+
 install:
+- export PATH="$PATH:$HOME/build/soar-telescope/goodman/dcrbin"
+
 - sudo apt-get update
 
 # Here we install Anaconda to work with Virtual Environments. We do this
