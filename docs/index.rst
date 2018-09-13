@@ -9,7 +9,7 @@
    - Make sure titles are not left in the bottom of a page and the content in the next.
 
 ===============================================
-Welcome to the Goodman HTS Pipeline's Documentation
+Welcome to the Goodman HTS Pipeline Pages
 ===============================================
 
 .. image:: https://travis-ci.org/soar-telescope/goodman.svg?branch=master
