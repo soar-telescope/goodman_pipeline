@@ -8,9 +8,9 @@
    - Add License
    - Make sure titles are not left in the bottom of a page and the content in the next.
 
-===============================================
-Welcome to the Goodman HTS Pipeline Docs
-===============================================
+=================================================
+Welcome to the Goodman HTS Pipeline Documentation
+=================================================
 
 .. image:: https://travis-ci.org/soar-telescope/goodman.svg?branch=master
     :target: https://travis-ci.org/soar-telescope/goodman
