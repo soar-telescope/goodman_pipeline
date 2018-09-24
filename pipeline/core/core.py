@@ -2675,7 +2675,7 @@ class ReferenceData(object):
                 angstrom_key = re.sub('GSP_P', 'GSP_A', pixel_key)
                 assert pixel_key[-3:] == angstrom_key[-3:]
                 assert angstrom_key in self._ccd.header
-                if int(self._ccd.header[angstrom_key]) != 0:
+                if int(float(self._ccd.header[angstrom_key])) != 0:
                     self.lines_pixel.append(float(self._ccd.header[pixel_key]))
                     self.lines_angstrom.append(
                         float(self._ccd.header[angstrom_key]))
@@ -2687,7 +2687,7 @@ class ReferenceData(object):
                             pixel_key,
                             self._ccd.header[pixel_key],
                             angstrom_key,
-                            self._ccd.header[angstrom_key]))
+                            float(self._ccd.header[angstrom_key])))
 
     def _validate_lines(self):
         """Calls all available validation methods
