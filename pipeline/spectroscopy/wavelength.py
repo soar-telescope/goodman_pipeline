@@ -384,13 +384,6 @@ class WavelengthCalibration(object):
 
             self.wcs.binning = self.serial_binning
 
-        reference_lamp_copy = reference_lamp_ccd.copy()
-
-        gaussian_kernel = Gaussian1DKernel(stddev=3.)
-
-        reference_lamp_copy.data = convolve(reference_lamp_copy.data,
-                                            gaussian_kernel)
-
         '''detect lines in comparison lamp (not reference)'''
         lamp_lines_pixel = self._get_lines_in_lamp()
         lamp_lines_angst = self.wcs.model(lamp_lines_pixel)
@@ -406,11 +399,12 @@ class WavelengthCalibration(object):
         self.log.debug('Length / NLines {:.3f}'.format(
             len(self.lamp.data) / float(len(lamp_lines_pixel))))
 
-        half_width = int((len(self.lamp.data) /
-                          float(len(lamp_lines_pixel))))
-
         global_cross_corr = self._cross_correlation(reference_lamp_ccd.data,
                                                     self.lamp.data)
+
+        half_width = np.max(
+            [int((len(self.lamp.data) / float(len(lamp_lines_pixel)))),
+             4 * global_cross_corr])
 
         for i in range(len(lamp_lines_pixel)):
             line_value_pixel = lamp_lines_pixel[i]
@@ -431,6 +425,7 @@ class WavelengthCalibration(object):
             lamp_sample = self.lamp.data[xmin:xmax]
 
             correlation_value = self._cross_correlation(ref_sample, lamp_sample)
+
             self.log.debug('Cross correlation value '
                            '{:s} vs {:s}'.format(str(global_cross_corr),
                                                  str(correlation_value)))
@@ -459,7 +454,8 @@ class WavelengthCalibration(object):
             if False:
                 # print(global_cross_corr, correlation_value)
                 plt.ion()
-                plt.title('Samples after cross correlation')
+                plt.title('Samples after cross correlation\n Shift {:.3f}'
+                          ''.format(correlation_value))
                 plt.xlabel('Pixel Axis')
                 plt.ylabel('Intensity')
 
@@ -518,7 +514,7 @@ class WavelengthCalibration(object):
 
         clipped_differences = sigma_clip(wavelength_differences,
                                          sigma=2,
-                                         iters=1,
+                                         iters=3,
                                          cenfunc=np.ma.median)
 
         if np.ma.is_masked(clipped_differences):
@@ -676,13 +672,14 @@ class WavelengthCalibration(object):
         else:
             return wavelength, intensity
 
-    def _cross_correlation(self, reference, new_array, mode='full'):
+    def _cross_correlation(self, reference, new_array, mode='full', plot=False):
         """Do cross correlation of two arrays
 
         Args:
             reference (array): Reference array.
             new_array (array): Array to be matched.
             mode (str): Correlation mode for `scipy.signal.correlate`.
+            plot (bool): Switch debugging plots on or off.
 
         Returns:
             correlation_value (int): Shift value in pixels.
@@ -692,7 +689,7 @@ class WavelengthCalibration(object):
         if float(re.sub('[A-Za-z" ]', '', self.lamp.header['SLIT'])) > 3:
 
             box_width = float(
-                re.sub('[A-Za-z" ]', '', self.lamp.header['SLIT'])) / 0.15
+                re.sub('[A-Za-z" ]', '', self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
 
             self.log.debug('BOX WIDTH: {:f}'.format(box_width))
             box_kernel = Box1DKernel(width=box_width)
@@ -702,7 +699,9 @@ class WavelengthCalibration(object):
             cyaxis1 *= max_before / max_after
 
         else:
-            gaussian_kernel = Gaussian1DKernel(stddev=2.)
+            kernel_stddev = float(
+                re.sub('[A-Za-z" ]', '', self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
+            gaussian_kernel = Gaussian1DKernel(stddev=kernel_stddev)
             cyaxis1 = convolve(reference, gaussian_kernel)
             cyaxis2 = convolve(new_array, gaussian_kernel)
 
@@ -715,7 +714,7 @@ class WavelengthCalibration(object):
                               len(ccorr))
 
         correlation_value = x_ccorr[max_index]
-        if False:
+        if plot:
             plt.ion()
             plt.title('Cross Correlation')
             plt.xlabel('Lag Value')
