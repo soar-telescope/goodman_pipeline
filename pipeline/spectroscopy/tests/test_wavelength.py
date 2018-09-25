@@ -33,6 +33,9 @@ class WavelengthCalibrationTests(TestCase):
                            meta=fits.Header(),
                            unit='adu')
         self.ccd = add_wcs_keys(ccd=self.ccd)
+        self.ccd.header.set('SLIT',
+                            value='1.0" long slit',
+                            comment="slit [arcsec]")
 
     def test_add_wavelength_solution(self):
         self.wc.rms_error = 0.1
@@ -83,6 +86,7 @@ class WavelengthCalibrationTests(TestCase):
 
     def test__cross_correlation(self):
         self.wc.lamp = self.ccd.copy()
+        self.wc.serial_binning = 1
 
         x_axis = np.arange(0, 4060, 1)
 
