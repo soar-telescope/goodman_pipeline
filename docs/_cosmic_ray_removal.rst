@@ -3,6 +3,13 @@
 Cosmic Ray Removal
 ******************
 
+.. warning::
+
+  The parameters for either cosmic ray removal method are not fully understood
+  neither tuned but they work for most common instrument configurations. If
+  your extracted spectrum shows weird features, specially if you use a custom
+  mode, the most likely culprit are the parameters of the method you chose.
+  Please let us know.
 
 The argument ``--cosmic <method>`` has four options but there are only two real
 methods.
