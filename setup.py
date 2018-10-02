@@ -78,7 +78,7 @@ setup(
     long_description=LONG_DESCRIPTION,
 
     # The project's main homepage.
-    url='https://github.com/soar-telescope/goodman',
+    url='https://github.com/soar-telescope/goodman_pipeline',
 
     # Author details
     author=u'Simon Torres R., '
@@ -129,15 +129,15 @@ setup(
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
 
-    packages=['pipeline',
-              'pipeline.core',
-              'pipeline.images',
-              'pipeline.spectroscopy',
-              'pipeline.wcs', ],
+    packages=['goodman_pipeline',
+              'goodman_pipeline.core',
+              'goodman_pipeline.images',
+              'goodman_pipeline.spectroscopy',
+              'goodman_pipeline.wcs', ],
 
-    package_dir={'pipeline': 'pipeline'},
+    package_dir={'goodman_pipeline': 'goodman_pipeline'},
 
-    package_data={'pipeline': ['data/params/dcr.par',
+    package_data={'goodman_pipeline': ['data/params/dcr.par',
                                'data/params/*.json',
                                'data/ref_comp/*fits',
                                'data/dcr-source/README.md',
@@ -145,8 +145,8 @@ setup(
                                'data/test_data/master_flat/*',
                                'data/test_data/wcs_data/*']},
 
-    scripts=['pipeline/scripts/redccd',
-             'pipeline/scripts/redspec', ],
+    scripts=['goodman_pipeline/scripts/redccd',
+             'goodman_pipeline/scripts/redspec', ],
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:

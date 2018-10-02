@@ -32,7 +32,7 @@ from scipy import signal
 
 from . import check_version
 
-__version__ = __import__('pipeline').__version__
+__version__ = __import__('goodman_pipeline').__version__
 
 log = logging.getLogger(__name__)
 
@@ -2731,8 +2731,9 @@ class ReferenceData(object):
         """Load all csv files from strong lines in NIST."""
         nist_path = kwargs.get(
             'path',
-            os.path.join(os.path.dirname(sys.modules['pipeline'].__file__),
-                         'data/nist_list'))
+            os.path.join(os.path.dirname(
+                sys.modules['goodman_pipeline'].__file__),
+                'data/nist_list'))
         assert os.path.isdir(nist_path)
         nist_files = glob.glob(os.path.join(nist_path, "*.txt"))
         for nist_file in nist_files:

@@ -3,9 +3,9 @@ __author__ = 'Bruno Quint'
 
 import unittest
 
-from pipeline.core import check_version
+from goodman_pipeline.core import check_version
 
-__version__ = __import__('pipeline').__version__
+__version__ = __import__('goodman_pipeline').__version__
 
 
 class TestVersionChecker(unittest.TestCase):
