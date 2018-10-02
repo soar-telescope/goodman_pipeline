@@ -14,8 +14,8 @@ Welcome to the Goodman HTS Pipeline Documentation
 
 .. image:: https://travis-ci.org/soar-telescope/goodman_pipeline.svg?branch=master
     :target: https://travis-ci.org/soar-telescope/goodman_pipeline
-.. image:: https://coveralls.io/repos/github/soar-telescope/goodman/badge.svg?branch=master
-    :target: https://coveralls.io/github/soar-telescope/goodman?branch=master
+.. image:: https://coveralls.io/repos/github/soar-telescope/goodman_pipeline/badge.svg?branch=master
+    :target: https://coveralls.io/github/soar-telescope/goodman_pipeline?branch=master
 .. image:: https://readthedocs.org/projects/goodman/badge/?version=latest
     :target: http://goodman.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
