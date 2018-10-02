@@ -18,6 +18,7 @@ Getting Help.
 
   ``redspec --help``
 
+.. include:: _observing.rst
 
 .. include:: _running_prepare_data_for_reduction.rst
 
