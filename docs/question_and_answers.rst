@@ -5,13 +5,11 @@ Questions & Answers
 
 1. What is the Goodman High Throughput Spectrograph?.
 
-  This is thoroughly documented in `SOAR web site <http://www.ctio.noao.edu/soar/content/goodman-high-throughput-spectrograph>`_
-  and links within.
-
+  answer.
 
 2. How does the pipeline select the reference lamp?.
 
-   The lamps are selected comparing two keywords. ``OBJECT`` and ``WAVMODE``
+  answer.
 
 3. How should I organize the data?.
 
