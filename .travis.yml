@@ -13,7 +13,7 @@ before_install:
 
 
 install:
-- export PATH="$PATH:$HOME/build/soar-telescope/goodman/dcrbin"
+- export PATH="$PATH:$HOME/build/soar-telescope/goodman_pipeline/dcrbin"
 
 - sudo apt-get update
 
@@ -37,7 +37,7 @@ install:
 
 # Create astroconda virtual environment
 - conda env create -q python=$TRAVIS_PYTHON_VERSION -f environment.yml
-- source activate goodman
+- source activate goodman_pipeline
 
 # install
 - python setup.py test

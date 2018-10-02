@@ -31,7 +31,7 @@
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-__version__ = __import__('pipeline').__version__
+__version__ = __import__('goodman_pipeline').__version__
 
 extensions = ['sphinx.ext.todo',
               'sphinx.ext.coverage',

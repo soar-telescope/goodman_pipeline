@@ -44,7 +44,7 @@ SHOW_PLOTS = False
 
 warnings.filterwarnings('ignore')
 
-__version__ = __import__('pipeline').__version__
+__version__ = __import__('goodman_pipeline').__version__
 
 
 def get_args(arguments=None):
@@ -163,7 +163,7 @@ def get_args(arguments=None):
     except KeyError as error:
         log.debug("KeyError {:s}".format(str(error)))
         ref_full_path = os.path.join(
-            os.path.dirname(sys.modules['pipeline'].__file__),
+            os.path.dirname(sys.modules['goodman_pipeline'].__file__),
             args.reference_dir)
     if not os.path.isdir(ref_full_path):
         log.info("Reference files directory doesn't exist.")

@@ -17,7 +17,7 @@ class TestWCSBase(TestCase):
 
     def setUp(self):
         self.data_path = os.path.join(
-            os.path.dirname(sys.modules['pipeline'].__file__),
+            os.path.dirname(sys.modules['goodman_pipeline'].__file__),
             'data/test_data/wcs_data')
 
         self.wcs = WCS()

@@ -1,4 +1,4 @@
-name: goodman
+name: goodman_pipeline
 channels:
   - astroconda
 dependencies:

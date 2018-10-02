@@ -150,7 +150,7 @@ class MasterFlatTest(TestCase):
         # expected master flat to be retrieved by get_best_flat
         self.reference_flat_name = 'master_flat_1200m2_0.84_dome.fits'
         # location of sample flats
-        self.flat_path = 'pipeline/data/test_data/master_flat'
+        self.flat_path = 'goodman_pipeline/data/test_data/master_flat'
         slit = re.sub('[A-Za-z" ]',
                       '',
                       self.master_flat.header['SLIT'])
@@ -616,7 +616,8 @@ class ReferenceDataTest(TestCase):
 
     def setUp(self):
         self.rd = ReferenceData(
-            reference_dir=os.path.join(os.getcwd(), 'pipeline/data/ref_comp'))
+            reference_dir=os.path.join(os.getcwd(),
+                                       'goodman_pipeline/data/ref_comp'))
         self.ccd = CCDData(data=np.ones((800, 2000)),
                            meta=fits.Header(),
                            unit='adu')

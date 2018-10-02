@@ -1,6 +1,6 @@
 #!/bin/bash
 
-make --directory pipeline/data/dcr-source/dcr
-chmod +x pipeline/data/dcr-source/dcr/dcr
+make --directory goodman_pipeline/data/dcr-source/dcr
+chmod +x goodman_pipeline/data/dcr-source/dcr/dcr
 mkdir dcrbin
-cp -v  pipeline/data/dcr-source/dcr/dcr dcrbin
+cp -v  goodman_pipeline/data/dcr-source/dcr/dcr dcrbin

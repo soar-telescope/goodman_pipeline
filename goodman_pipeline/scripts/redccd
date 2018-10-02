@@ -2,7 +2,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from pipeline.images import MainApp
+from goodman_pipeline.images import MainApp
 import logging
 
 log = logging.getLogger(__name__)
