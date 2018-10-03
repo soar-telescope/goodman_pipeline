@@ -539,7 +539,7 @@ class WavelengthCalibration(object):
 
         self._evaluate_solution(clipped_differences=clipped_differences)
 
-        if self.args.plot_results or self.args.debug_mode or \
+        if self.args.plot_results or self.args.debug_with_plots or \
                 self.args.save_plots:
             plt.close('all')
             plt.switch_backend('Qt5Agg')
@@ -556,7 +556,7 @@ class WavelengthCalibration(object):
             #     self.i_fig.clf()
             #     self.i_fig.canvas.set_window_title(
             #         'Blank')
-            if not self.args.debug_mode:
+            if not self.args.debug_with_plots:
                 plt.ion()
                 # plt.show()
             else:
@@ -626,7 +626,7 @@ class WavelengthCalibration(object):
 
                 plt.ioff()
                 plt.clf()
-            if self.args.debug_mode or self.args.plot_results:
+            if self.args.debug_with_plots or self.args.plot_results:
                 # print('Here is {0.filename}@{0.lineno}:'.format(inspect.getframeinfo(inspect.currentframe())))
                 # print(dir(self.i_fig))
                 manager = plt.get_current_fig_manager()
@@ -636,7 +636,7 @@ class WavelengthCalibration(object):
                 elif plt.get_backend() == u'Qt5Agg':
                     manager.window.showMaximized()
 
-                if self.args.debug_mode:
+                if self.args.debug_with_plots:
                     plt.show()
                 elif self.args.plot_results:
                     plt.draw()
@@ -812,7 +812,7 @@ class WavelengthCalibration(object):
             # lines_center = peaks
             lines_center = self._recenter_lines(no_nan_lamp_data, peaks)
 
-        if self.args.debug_mode:
+        if self.args.debug_with_plots:
             # print(new_order, slit_size, )
             plt.close('all')
             fig, ax = plt.subplots()
@@ -1205,14 +1205,14 @@ class WavelengthCalibration(object):
         #     eval_comment=self.evaluation_comment,
         #     header=ccd.header)
 
-        if self.args.plot_results or self.args.debug_mode or \
+        if self.args.plot_results or self.args.debug_with_plots or \
                 self.args.save_plots:
 
             plt.close(1)
             if self.args.plot_results:
                 plt.ion()
                 # plt.show()
-            elif self.args.debug_mode:
+            elif self.args.debug_with_plots:
                 plt.ioff()
 
             wavelength_axis = self.wsolution(range(ccd.data.size))
@@ -1255,14 +1255,14 @@ class WavelengthCalibration(object):
                 self.log.info('Saved plot as {:s} file '
                               'DPI=300'.format(plot_name))
 
-            if self.args.debug_mode or self.args.plot_results:
+            if self.args.debug_with_plots or self.args.plot_results:
                 manager = plt.get_current_fig_manager()
                 if plt.get_backend() == u'GTK3Agg':
                     manager.window.maximize()
                 elif plt.get_backend() == u'Qt5Agg':
                     manager.window.showMaximized()
 
-                if self.args.debug_mode:
+                if self.args.debug_with_plots:
                     plt.show()
                 elif self.args.plot_results:
                     plt.draw()

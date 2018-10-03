@@ -125,6 +125,11 @@ def get_args(arguments=None):
                         dest='debug_mode',
                         help="Debugging Mode")
 
+    parser.add_argument('--debug-plot',
+                        action='store_true',
+                        dest='debug_with_plots',
+                        help="Debugging show debugging plots")
+
     parser.add_argument('--max-targets',
                         action='store',
                         dest='max_n_targets',
@@ -411,7 +416,7 @@ class MainApp(object):
                             extracted_target_and_lamps.append([extracted,
                                                                all_lamps])
 
-                            if self.args.debug_mode:
+                            if self.args.debug_with_plots:
                                 # print(plt.get_backend())
                                 plt.close('all')
                                 fig, ax = plt.subplots(1, 1)
