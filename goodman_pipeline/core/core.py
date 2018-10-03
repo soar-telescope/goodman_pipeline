@@ -1655,6 +1655,7 @@ def read_fits(full_path, technique='Unknown'):
     GSP_SLIT: Slit trim section, obtained from the slit illuminated area.
     GSP_BIAS: Master bias image used. Default `none`.
     GSP_FLAT: Master flat image used. Default `none`.
+    GSP_SCTR: Science target file
     GSP_NORM: Flat normalization method.
     GSP_COSM: Cosmic ray rejection method.
     GSP_EXTR: Extraction window at first column
@@ -1734,6 +1735,11 @@ def read_fits(full_path, technique='Unknown'):
                        value='none',
                        comment='Master flat image')
 
+    if 'GSP_SCTR' not in all_keys:
+        ccd.header.set('GSP_SCTR',
+                        value='none',
+                        comment='Science target file (for lamps)')
+
     if 'GSP_NORM' not in all_keys:
         ccd.header.set('GSP_NORM',
                        value='none',
@@ -1807,7 +1813,7 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
              "{:s}".format(new_file_name))
     full_path = os.path.join(destination, new_file_name)
     write_fits(ccd=ccd, full_path=full_path, parent_file=file_name)
-    return ccd
+    return new_file_name
 
 
 def search_comp_group(object_group, comp_groups, reference_data):
