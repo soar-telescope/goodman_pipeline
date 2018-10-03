@@ -1735,11 +1735,6 @@ def read_fits(full_path, technique='Unknown'):
                        value='none',
                        comment='Master flat image')
 
-    if 'GSP_SCTR' not in all_keys:
-        ccd.header.set('GSP_SCTR',
-                        value='none',
-                        comment='Science target file (for lamps)')
-
     if 'GSP_NORM' not in all_keys:
         ccd.header.set('GSP_NORM',
                        value='none',

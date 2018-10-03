@@ -395,8 +395,8 @@ class MainApp(object):
                                 spatial_profile=single_profile,
                                 extraction_name=extraction_type)
                             sci_name = save_extracted(ccd=extracted,
-                                                 destination=self.args.destination,
-                                                 target_number=target_number)
+                                                      destination=self.args.destination,
+                                                      target_number=target_number)
                             # print(spec_file)
 
                             # lamp extraction
@@ -404,7 +404,9 @@ class MainApp(object):
                             if comp_ccd_list:
                                 for comp_lamp in comp_ccd_list:
                                     comp_lamp.header.set('GSP_SCTR',
-                                                         value=sci_name)
+                                                         value=sci_name,
+                                                         comment='Science target file the lamp was extracted for.')
+
                                     extracted_lamp = extraction(
                                         ccd=comp_lamp,
                                         target_trace=single_trace,
