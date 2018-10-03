@@ -756,13 +756,22 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
 
         if apnum1 is None:
             # TODO (simon): add secondary targets
+
             apnum1 = '{:d} {:d} {:.2f} {:.2f}'.format(1,
                                                       1,
                                                       low_limit,
                                                       high_limit)
+
             ccd.header.set('APNUM1',
                            value=apnum1,
                            comment="Aperture in first column")
+
+            ccd.header.set('GSP_EXTR',
+                           value="{:.2f} {:.2f}".format(low_limit, high_limit))
+
+            log.info("Extraction aperture in first column: {:s}".format(
+                ccd.header['GSP_EXTR']))
+
 
         column_sum = fractional_sum(data=ccd.data,
                                     index=i,
@@ -1648,6 +1657,7 @@ def read_fits(full_path, technique='Unknown'):
     GSP_FLAT: Master flat image used. Default `none`.
     GSP_NORM: Flat normalization method.
     GSP_COSM: Cosmic ray rejection method.
+    GSP_EXTR: Extraction window at first column
     GSP_WRMS: Wavelength solution RMS Error.
     GSP_WPOI: Number of points used to calculate the wavelength solution
     Error.
@@ -1733,6 +1743,11 @@ def read_fits(full_path, technique='Unknown'):
         ccd.header.set('GSP_COSM',
                        value='none',
                        comment='Cosmic ray rejection method')
+
+    if 'GSP_EXTR' not in all_keys:
+        ccd.header.set('GSP_EXTR',
+                       value='none',
+                       comment='Extraction window at first column')
 
     if 'GSP_WRMS' not in all_keys:
         ccd.header.set('GSP_WRMS',
