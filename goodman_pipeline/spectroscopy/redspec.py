@@ -40,7 +40,7 @@ from ccdproc import CCDData
 import matplotlib.pyplot as plt
 import warnings
 
-SHOW_PLOTS = False
+SHOW_PLOTS = True
 
 warnings.filterwarnings('ignore')
 
@@ -364,7 +364,7 @@ class MainApp(object):
                                    "identification.")
                     target_list = identify_targets(ccd=ccd,
                                                    nfind=3,
-                                                   plots=SHOW_PLOTS)
+                                                   plots=self.args.debug_with_plots)
 
                     # trace
                     if len(target_list) > 0:

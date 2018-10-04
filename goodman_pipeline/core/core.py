@@ -1198,10 +1198,16 @@ def identify_targets(ccd, nfind=3, plots=False):
     order = int(round(float(slit_size) / (0.15 * serial_binning)))
 
     if plots:
-        plt.title(ccd.header['GSP_FNAM'])
-        plt.imshow(ccd.data, clim=(30, 250))
-        plt.xlabel('Dispersion Axis (x)')
-        plt.ylabel('Spatial Axis (y)')
+        z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
+        z2 = np.median(ccd.data) + np.std(ccd.data)
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        ax.set_title(ccd.header['GSP_FNAM'])
+        ax.imshow(ccd.data, clim=(z1, z2))
+        ax.set_xlabel('Dispersion Axis (x)')
+        ax.set_ylabel('Spatial Axis (y)')
+        plt.tight_layout()
         plt.show()
 
     median_profile = np.median(ccd.data, axis=1)
@@ -1228,14 +1234,31 @@ def identify_targets(ccd, nfind=3, plots=False):
     fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
 
     if plots:
-        plt.title('Background Fitting Model Defined')
-        plt.plot(median_profile, color='k')
-        plt.plot(linear_model(range(ccd.data.shape[0])), color='r')
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        ax.set_title('Background Fitting Model Defined')
+        ax.plot(median_profile, color='k', label='Median profile')
+        ax.plot(linear_model(range(ccd.data.shape[0])),
+                color='r',
+                label='Background Linear Model')
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Median Intensity")
+        ax.legend(loc='best')
+        plt.tight_layout()
         plt.show()
 
-        plt.title('Background Fitted Model')
-        plt.plot(median_profile, color='k')
-        plt.plot(fitted_background(range(ccd.data.shape[0])), color='r')
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+        ax.set_title('Background Fitted Model')
+        ax.plot(median_profile, color='k', label='Median profile')
+        ax.plot(fitted_background(range(ccd.data.shape[0])),
+                color='r',
+                label='Fitted Background Linear Model')
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Median Intensity")
+        ax.legend(loc='best')
+        plt.tight_layout()
         plt.show()
 
     # Removing Background
@@ -1273,20 +1296,26 @@ def identify_targets(ccd, nfind=3, plots=False):
     if plots:
         plt.ioff()
         plt.close()
+
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
         # if plt.isinteractive():
         #     plt.ioff()
-        plt.title('Median Along Dispersion Axis (spatial)')
-        plt.plot(background_subtracted, label='Background Subtracted Data')
-        plt.plot(new_x_axis,
+        ax.set_title('Median Along Dispersion Axis (spatial)')
+        ax.plot(background_subtracted, label='Background Subtracted Data')
+        ax.plot(new_x_axis,
                  clipped_final_profile,
                  color='r',
-                 label='Sigma Clip Data')
+                 label='Sigma Clipped Data')
 
-        plt.axhline(background_level, color='m', label='Min-Max Difference')
+        ax.axhline(background_level, color='m', label='Min-Max Difference')
         # plt.plot(final_profile, color='r')
         # plt.plot(median_profile)
         # plt.plot(background_array)
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Median Intensity")
         plt.legend(loc='best')
+        plt.tight_layout()
         if plt.isinteractive():
             plt.draw()
             plt.pause(5)
@@ -1338,10 +1367,18 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     if plots:
         plt.ioff()
-        plt.plot(final_profile)
-        plt.axhline(_upper_limit, color='g')
+
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        ax.plot(final_profile, label='Background subtracted profile')
+        ax.axhline(_upper_limit, color='g', label='Upper limit')
         for peak in selected_peaks:
-            plt.axvline(peak, color='r')
+            ax.axvline(peak, color='r', label='Peak location')
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Background subtracted median intensity")
+        ax.legend(loc='best')
+        plt.tight_layout()
         plt.show()
 
     # build the model to return
@@ -1393,9 +1430,16 @@ def identify_targets(ccd, nfind=3, plots=False):
             log.error("Discarding target with stddev: {:.3f}".format(
                 fitted_gaussian.stddev.value))
     if plots:
-        plt.plot(median_profile, color='b')
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        ax.plot(median_profile, color='b', label='Median Profile')
         for profile in profile_model:
-            plt.plot(profile(range(len(median_profile))), color='r')
+            ax.plot(profile(range(len(median_profile))), color='r', label="Fitted profile(s)")
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Median Intensity")
+        ax.legend(loc='best')
+        plt.tight_layout()
         plt.show()
 
     # plt.imshow(ccd.data, clim=(50, 200), cmap='gray')
