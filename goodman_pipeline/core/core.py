@@ -1325,6 +1325,9 @@ def identify_targets(ccd, nfind=3, plots=False):
     # Identify targets
     # Now that the profile is flat it should be easier to identify targets.
 
+    # apply median filter
+    final_profile = signal.medfilt(final_profile, kernel_size=1)
+
     filtered_profile = np.where(np.abs(
         final_profile > final_profile.min() + 0.03 * final_profile.max()),
         final_profile,
@@ -1339,6 +1342,8 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     # convert the list to array
     filtered_profile = np.array(none_to_zero_prof)
+
+    order *=2
 
     # find the peaks
     peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
