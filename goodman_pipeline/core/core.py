@@ -1856,8 +1856,8 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
     log.info("Saving uncalibrated(w) extracted spectrum to file: "
              "{:s}".format(new_file_name))
     full_path = os.path.join(destination, new_file_name)
-    write_fits(ccd=ccd, full_path=full_path, parent_file=file_name)
-    return new_file_name
+    ccd = write_fits(ccd=ccd, full_path=full_path, parent_file=file_name)
+    return ccd
 
 
 def search_comp_group(object_group, comp_groups, reference_data):
