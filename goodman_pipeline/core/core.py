@@ -2142,6 +2142,7 @@ def write_fits(ccd,
     ccd.header.set('GSP_FNAM', value=os.path.basename(full_path))
 
     # write to file
+    log.info("Saving FITS file to {:s}".format(os.path.basename(full_path)))
     ccd.write(full_path, overwrite=overwrite)
     assert os.path.isfile(full_path)
     return ccd
