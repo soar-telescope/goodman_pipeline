@@ -756,13 +756,22 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
 
         if apnum1 is None:
             # TODO (simon): add secondary targets
+
             apnum1 = '{:d} {:d} {:.2f} {:.2f}'.format(1,
                                                       1,
                                                       low_limit,
                                                       high_limit)
+
             ccd.header.set('APNUM1',
                            value=apnum1,
                            comment="Aperture in first column")
+
+            ccd.header.set('GSP_EXTR',
+                           value="{:.2f} {:.2f}".format(low_limit, high_limit))
+
+            log.info("Extraction aperture in first column: {:s}".format(
+                ccd.header['GSP_EXTR']))
+
 
         column_sum = fractional_sum(data=ccd.data,
                                     index=i,
@@ -1189,10 +1198,16 @@ def identify_targets(ccd, nfind=3, plots=False):
     order = int(round(float(slit_size) / (0.15 * serial_binning)))
 
     if plots:
-        plt.title(ccd.header['GSP_FNAM'])
-        plt.imshow(ccd.data, clim=(30, 250))
-        plt.xlabel('Dispersion Axis (x)')
-        plt.ylabel('Spatial Axis (y)')
+        z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
+        z2 = np.median(ccd.data) + np.std(ccd.data)
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        ax.set_title(ccd.header['GSP_FNAM'])
+        ax.imshow(ccd.data, clim=(z1, z2))
+        ax.set_xlabel('Dispersion Axis (x)')
+        ax.set_ylabel('Spatial Axis (y)')
+        plt.tight_layout()
         plt.show()
 
     median_profile = np.median(ccd.data, axis=1)
@@ -1219,14 +1234,31 @@ def identify_targets(ccd, nfind=3, plots=False):
     fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
 
     if plots:
-        plt.title('Background Fitting Model Defined')
-        plt.plot(median_profile, color='k')
-        plt.plot(linear_model(range(ccd.data.shape[0])), color='r')
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        ax.set_title('Background Fitting Model Defined')
+        ax.plot(median_profile, color='k', label='Median profile')
+        ax.plot(linear_model(range(ccd.data.shape[0])),
+                color='r',
+                label='Background Linear Model')
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Median Intensity")
+        ax.legend(loc='best')
+        plt.tight_layout()
         plt.show()
 
-        plt.title('Background Fitted Model')
-        plt.plot(median_profile, color='k')
-        plt.plot(fitted_background(range(ccd.data.shape[0])), color='r')
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+        ax.set_title('Background Fitted Model')
+        ax.plot(median_profile, color='k', label='Median profile')
+        ax.plot(fitted_background(range(ccd.data.shape[0])),
+                color='r',
+                label='Fitted Background Linear Model')
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Median Intensity")
+        ax.legend(loc='best')
+        plt.tight_layout()
         plt.show()
 
     # Removing Background
@@ -1264,20 +1296,26 @@ def identify_targets(ccd, nfind=3, plots=False):
     if plots:
         plt.ioff()
         plt.close()
+
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
         # if plt.isinteractive():
         #     plt.ioff()
-        plt.title('Median Along Dispersion Axis (spatial)')
-        plt.plot(background_subtracted, label='Background Subtracted Data')
-        plt.plot(new_x_axis,
+        ax.set_title('Median Along Dispersion Axis (spatial)')
+        ax.plot(background_subtracted, label='Background Subtracted Data')
+        ax.plot(new_x_axis,
                  clipped_final_profile,
                  color='r',
-                 label='Sigma Clip Data')
+                 label='Sigma Clipped Data')
 
-        plt.axhline(background_level, color='m', label='Min-Max Difference')
+        ax.axhline(background_level, color='m', label='Min-Max Difference')
         # plt.plot(final_profile, color='r')
         # plt.plot(median_profile)
         # plt.plot(background_array)
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Median Intensity")
         plt.legend(loc='best')
+        plt.tight_layout()
         if plt.isinteractive():
             plt.draw()
             plt.pause(5)
@@ -1286,6 +1324,9 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     # Identify targets
     # Now that the profile is flat it should be easier to identify targets.
+
+    # apply median filter
+    final_profile = signal.medfilt(final_profile, kernel_size=1)
 
     filtered_profile = np.where(np.abs(
         final_profile > final_profile.min() + 0.03 * final_profile.max()),
@@ -1301,6 +1342,8 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     # convert the list to array
     filtered_profile = np.array(none_to_zero_prof)
+
+    order *=2
 
     # find the peaks
     peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
@@ -1329,10 +1372,18 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     if plots:
         plt.ioff()
-        plt.plot(final_profile)
-        plt.axhline(_upper_limit, color='g')
+
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        ax.plot(final_profile, label='Background subtracted profile')
+        ax.axhline(_upper_limit, color='g', label='Upper limit')
         for peak in selected_peaks:
-            plt.axvline(peak, color='r')
+            ax.axvline(peak, color='r', label='Peak location')
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Background subtracted median intensity")
+        ax.legend(loc='best')
+        plt.tight_layout()
         plt.show()
 
     # build the model to return
@@ -1384,9 +1435,16 @@ def identify_targets(ccd, nfind=3, plots=False):
             log.error("Discarding target with stddev: {:.3f}".format(
                 fitted_gaussian.stddev.value))
     if plots:
-        plt.plot(median_profile, color='b')
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        ax.plot(median_profile, color='b', label='Median Profile')
         for profile in profile_model:
-            plt.plot(profile(range(len(median_profile))), color='r')
+            ax.plot(profile(range(len(median_profile))), color='r', label="Fitted profile(s)")
+        ax.set_xlabel("Spatial Axis (Pixels)")
+        ax.set_ylabel("Median Intensity")
+        ax.legend(loc='best')
+        plt.tight_layout()
         plt.show()
 
     # plt.imshow(ccd.data, clim=(50, 200), cmap='gray')
@@ -1646,8 +1704,10 @@ def read_fits(full_path, technique='Unknown'):
     GSP_SLIT: Slit trim section, obtained from the slit illuminated area.
     GSP_BIAS: Master bias image used. Default `none`.
     GSP_FLAT: Master flat image used. Default `none`.
+    GSP_SCTR: Science target file
     GSP_NORM: Flat normalization method.
     GSP_COSM: Cosmic ray rejection method.
+    GSP_EXTR: Extraction window at first column
     GSP_WRMS: Wavelength solution RMS Error.
     GSP_WPOI: Number of points used to calculate the wavelength solution
     Error.
@@ -1734,6 +1794,11 @@ def read_fits(full_path, technique='Unknown'):
                        value='none',
                        comment='Cosmic ray rejection method')
 
+    if 'GSP_EXTR' not in all_keys:
+        ccd.header.set('GSP_EXTR',
+                       value='none',
+                       comment='Extraction window at first column')
+
     if 'GSP_WRMS' not in all_keys:
         ccd.header.set('GSP_WRMS',
                        value='none',
@@ -1791,7 +1856,7 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
     log.info("Saving uncalibrated(w) extracted spectrum to file: "
              "{:s}".format(new_file_name))
     full_path = os.path.join(destination, new_file_name)
-    write_fits(ccd=ccd, full_path=full_path, parent_file=file_name)
+    ccd = write_fits(ccd=ccd, full_path=full_path, parent_file=file_name)
     return ccd
 
 
@@ -2126,6 +2191,7 @@ def write_fits(ccd,
     ccd.header.set('GSP_FNAM', value=os.path.basename(full_path))
 
     # write to file
+    log.info("Saving FITS file to {:s}".format(os.path.basename(full_path)))
     ccd.write(full_path, overwrite=overwrite)
     assert os.path.isfile(full_path)
     return ccd

@@ -40,7 +40,7 @@ from ccdproc import CCDData
 import matplotlib.pyplot as plt
 import warnings
 
-SHOW_PLOTS = False
+SHOW_PLOTS = True
 
 warnings.filterwarnings('ignore')
 
@@ -124,6 +124,11 @@ def get_args(arguments=None):
                         action='store_true',
                         dest='debug_mode',
                         help="Debugging Mode")
+
+    parser.add_argument('--debug-plot',
+                        action='store_true',
+                        dest='debug_with_plots',
+                        help="Debugging show debugging plots")
 
     parser.add_argument('--max-targets',
                         action='store',
@@ -359,7 +364,7 @@ class MainApp(object):
                                    "identification.")
                     target_list = identify_targets(ccd=ccd,
                                                    nfind=3,
-                                                   plots=SHOW_PLOTS)
+                                                   plots=self.args.debug_with_plots)
 
                     # trace
                     if len(target_list) > 0:
@@ -389,15 +394,19 @@ class MainApp(object):
                                 target_trace=single_trace,
                                 spatial_profile=single_profile,
                                 extraction_name=extraction_type)
-                            save_extracted(ccd=extracted,
-                                           destination=self.args.destination,
-                                           target_number=target_number)
+                            saved_ccd = save_extracted(ccd=extracted,
+                                                      destination=self.args.destination,
+                                                      target_number=target_number)
                             # print(spec_file)
 
                             # lamp extraction
                             all_lamps = []
                             if comp_ccd_list:
                                 for comp_lamp in comp_ccd_list:
+                                    comp_lamp.header.set('GSP_SCTR',
+                                                         value=saved_ccd.header['GSP_FNAM'],
+                                                         comment='Science target file the lamp was extracted for.')
+
                                     extracted_lamp = extraction(
                                         ccd=comp_lamp,
                                         target_trace=single_trace,
@@ -411,7 +420,7 @@ class MainApp(object):
                             extracted_target_and_lamps.append([extracted,
                                                                all_lamps])
 
-                            if self.args.debug_mode:
+                            if self.args.debug_with_plots:
                                 # print(plt.get_backend())
                                 plt.close('all')
                                 fig, ax = plt.subplots(1, 1)
