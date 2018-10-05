@@ -1207,10 +1207,10 @@ def identify_targets(ccd, nfind=3, plots=False):
         mng.window.showMaximized()
 
         ax.set_title(ccd.header['GSP_FNAM'])
-        ax.imshow(ccd.data, clim=(z1, z2))
+        ax.imshow(ccd.data, clim=(z1, z2), cmap='gray')
         ax.set_xlabel('Dispersion Axis (x)')
         ax.set_ylabel('Spatial Axis (y)')
-        plt.tight_layout()
+        fig.tight_layout()
         plt.show()
 
     median_profile = np.median(ccd.data, axis=1)
@@ -1988,7 +1988,7 @@ def setup_logging():
         log.info("Current Version: {:s}".format(__version__))
 
 
-def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
+def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2, plots=False):
     """Find the trace of a spectrum
 
     This function is called by the `trace_targets` function, the difference is
@@ -2014,6 +2014,7 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
         sampling_step (int): Step for sampling the spectrum.
         nsigmas (int): Number of stddev to each side of the mean to be used for
           searching the trace.
+        plots (bool): Toggles debugging plot
 
     Returns:
         An `astropy.modeling.Model` instance, that defines the trace of the
@@ -2078,23 +2079,50 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2):
 
     fitted_trace = model_fitter(trace_model, sampling_axis, sample_values)
 
-    if False:
-        plt.title(ccd.header['GSP_FNAM'])
-        plt.imshow(ccd.data, clim=(30, 200))
-        plt.plot(sampling_axis, sample_values, color='y', marker='o')
-        plt.axhspan(lower_limit,
-                    upper_limit,
-                    alpha=0.4,
-                    color='g')
-        plt.plot(fitted_trace(range(dispersion_length)), color='c')
+    sampling_differences = [(fitted_trace(sampling_axis[i]) - sample_values[i]) ** 2 for i in range(len(sampling_axis))]
+
+    rms_error = np.sqrt(np.sum(np.array(sampling_differences))/len(sampling_differences))
+
+    log.info("Trace fitting RMS error: {:.2f}".format(rms_error))
+
+
+    if plots:
+        z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
+        z2 = np.median(ccd.data) + np.std(ccd.data)
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
+
+        ax.set_title("Tracing information\n{:s}\nRMS Error {:.2f}".format(ccd.header['GSP_FNAM'], rms_error))
+        ax.imshow(ccd.data, clim=(z1, z2), cmap='gray')
+        ax.plot(sampling_axis,
+                sample_values,
+                color='b',
+                marker='o',
+                alpha=0.4,
+                label='Sampling points')
+
+        ax.axhspan(lower_limit,
+                   upper_limit,
+                   alpha=0.4,
+                   color='g',
+                   label='Approximate extraction window')
+        ax.plot(fitted_trace(range(dispersion_length)),
+                color='r',
+                linestyle='--',
+                label='Fitted Trace Model')
         # plt.plot(model(range(spatial_length)))
+        ax.legend(loc='best')
+        plt.tight_layout()
         if plt.isinteractive():
             plt.draw()
             plt.pause(2)
         else:
             plt.show()
 
-    return fitted_trace
+    return fitted_trace, rms_error
 
 
 def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
@@ -2143,12 +2171,15 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
 
     for profile in target_list:
 
-        single_trace = trace(ccd=ccd,
-                             model=profile,
-                             trace_model=trace_model,
-                             model_fitter=model_fitter,
-                             sampling_step=sampling_step,
-                             nsigmas=nsigmas)
+        single_trace, trace_rms = trace(ccd=ccd,
+                                        model=profile,
+                                        trace_model=trace_model,
+                                        model_fitter=model_fitter,
+                                        sampling_step=sampling_step,
+                                        nsigmas=nsigmas,
+                                        plots=plots)
+        print(single_trace)
+        print(trace_rms)
 
         if 0 < single_trace.c0.value < ccd.shape[0]:
             log.debug('Adding trace to list')
@@ -2168,9 +2199,11 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
         mng.window.showMaximized()
 
         ax.set_title("Trace(s) for {:s}".format(ccd.header['GSP_FNAM']))
-        ax.imshow(ccd.data, clim=(z1, z2))
+        ax.imshow(ccd.data, clim=(z1, z2), cmap='gray')
+        ax.plot([], color='r', label='Trace(s)')
         for strace, prof in all_traces:
             ax.plot(strace(range(ccd.data.shape[1])), color='r')
+        ax.legend(loc='best')
         plt.tight_layout()
         plt.show()
     return all_traces
