@@ -372,7 +372,8 @@ class MainApp(object):
                         trace_list = trace_targets(ccd=ccd,
                                                    target_list=target_list,
                                                    sampling_step=5,
-                                                   pol_deg=2)
+                                                   pol_deg=2,
+                                                   plots=self.args.debug_with_plots)
                     else:
                         self.log.error("The list of identified targets is "
                                        "empty.")

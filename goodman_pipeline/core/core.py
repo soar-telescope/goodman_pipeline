@@ -1203,6 +1203,9 @@ def identify_targets(ccd, nfind=3, plots=False):
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
 
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
+
         ax.set_title(ccd.header['GSP_FNAM'])
         ax.imshow(ccd.data, clim=(z1, z2))
         ax.set_xlabel('Dispersion Axis (x)')
@@ -1237,6 +1240,9 @@ def identify_targets(ccd, nfind=3, plots=False):
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
 
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
+
         ax.set_title('Background Fitting Model Defined')
         ax.plot(median_profile, color='k', label='Median profile')
         ax.plot(linear_model(range(ccd.data.shape[0])),
@@ -1250,6 +1256,10 @@ def identify_targets(ccd, nfind=3, plots=False):
 
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
+
         ax.set_title('Background Fitted Model')
         ax.plot(median_profile, color='k', label='Median profile')
         ax.plot(fitted_background(range(ccd.data.shape[0])),
@@ -1299,6 +1309,9 @@ def identify_targets(ccd, nfind=3, plots=False):
 
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
         # if plt.isinteractive():
         #     plt.ioff()
         ax.set_title('Median Along Dispersion Axis (spatial)')
@@ -1376,6 +1389,9 @@ def identify_targets(ccd, nfind=3, plots=False):
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
 
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
+
         ax.plot(final_profile, label='Background subtracted profile')
         ax.axhline(_upper_limit, color='g', label='Upper limit')
         for peak in selected_peaks:
@@ -1437,6 +1453,9 @@ def identify_targets(ccd, nfind=3, plots=False):
     if plots:
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
 
         ax.plot(median_profile, color='b', label='Median Profile')
         for profile in profile_model:
@@ -2140,10 +2159,19 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
                       '{:.4f}'.format(single_trace.c0.value))
 
     if plots:
-        plt.title('Traces')
-        plt.imshow(ccd.data)
+        z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
+        z2 = np.median(ccd.data) + np.std(ccd.data)
+        fig, ax = plt.subplots()
+        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
+
+        ax.set_title("Trace(s) for {:s}".format(ccd.header['GSP_FNAM']))
+        ax.imshow(ccd.data, clim=(z1, z2))
         for strace, prof in all_traces:
-            plt.plot(strace(range(ccd.data.shape[1])), color='r')
+            ax.plot(strace(range(ccd.data.shape[1])), color='r')
+        plt.tight_layout()
         plt.show()
     return all_traces
 
