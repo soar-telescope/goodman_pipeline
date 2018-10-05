@@ -782,11 +782,11 @@ class TargetsTest(TestCase):
     def test_trace(self):
         trace_model = models.Polynomial1D(degree=2)
         fitter = fitting.LevMarLSQFitter()
-        test_trace = trace(ccd=self.ccd,
-                           model=self.profile_1,
-                           trace_model=trace_model,
-                           model_fitter=fitter,
-                           sampling_step=5)
+        test_trace, trace_rms = trace(ccd=self.ccd,
+                                      model=self.profile_1,
+                                      trace_model=trace_model,
+                                      model_fitter=fitter,
+                                      sampling_step=5)
         self.assertEqual(test_trace.c0.value, self.profile_1.mean.value)
         self.assertAlmostEqual(test_trace.c1.value, 0.)
         self.assertAlmostEqual(test_trace.c2.value, 0.)
