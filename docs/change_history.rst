@@ -3,13 +3,59 @@ Change History
 
 .. _v1.1.2:
 
-V1.1.2 Unreleased
+V1.1.2 05-10-2018
 ^^^^^^^^^^^^^^^^^
+
+- Project and package renamed to ``goodman_pipeline`` this is because the
+  previous was too generic. Now we have this structure::
+
+   goodman_pipeline/
+      docs/
+      goodman_pipeline/
+         core/
+         images/
+         ..etc
+      setup.py
+      ..etc
 
 - Bugs Fixed:
 
   + :class:`~pandas.DataFrame` index is unusable when partial parts are eliminated.
     Added ``index_reset(drop=True)``
+  + Data conversion from string to integer needed to be converted to float first.
+
+  + For low SNR data there was confusion of noise with targets, added a median
+    filter and increased the the ``order`` value of peak detection.
+
+- Created several new keywords:
+
+  ``GSP_EXTR``:
+    Extraction window at the first column.
+
+  ``GSP_SCTR``:
+    Used for extracted comparison lamps, contains the name of the file of
+    science target that the lamp was extracted for.
+
+  ``GSP_LAMP``:
+    For science targets, it records the name of the lamp used for the wavelength
+    calibration.
+
+- "Sliding" cross correlation window (to trace non-linearity of wavelength
+  solution) is set to the maximum value between the length of the lamp spectrum
+  in pixels and four times the global cross correlation of the reference lamp to
+  the new one.
+
+- Iterations in sigma clipping of differences between obtained wavelength
+  values and laboratory values was increased from 1 to 3. This is for removing
+  bad fitted lines and also RMS error calculation.
+
+- Gaussian Kernel size for reference lamp convolution is now dependent on slit size and binning
+
+- Added reference lamps for all gratings and their modes except ``1200M0``
+
+- Created script ``install_dcr.sh``
+
+- Increased code coverage
 
 - Eliminated ``None`` elements in list of instances of :class:`pipeline.core.core.NightDataContainer`
 
@@ -17,6 +63,11 @@ V1.1.2 Unreleased
 
   + In general, it informs more, when it does an action and when it does not.
     What files are discarded,
+  + Debugging plots are more complete for ``identify_targets``.
+
+- Created new argument ``--debug-plot`` dedicated for *graphical debugging*, the
+  old ``--debug`` will show additional messages but will not produce any
+  graphical output.
 
 - Removed ability to process several folders in sequence, now the pipeline has to
   be run for each folder separately.
