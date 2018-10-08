@@ -244,7 +244,7 @@ class WavelengthCalibration(object):
             if len(wavelength_solutions) > 1:
                 self.log.warning("The current version of the pipeline does not "
                                  "combine multiple solution instead it saves a "
-                                 "single version of the pipeline for each "
+                                 "single version of the science file for each "
                                  "wavelength solution calculated.")
                 for i in range(len(wavelength_solutions)):
                     # TODO (simon): Combine Multiple solutions
