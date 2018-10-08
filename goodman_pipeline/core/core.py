@@ -1855,6 +1855,31 @@ def read_fits(full_path, technique='Unknown'):
     return ccd
 
 
+def record_trace_information(ccd, trace_info):
+    last_keyword = None
+    for info_key in trace_info:
+        info_value, info_comment = trace_info[info_key]
+        log.debug(
+            "Adding trace information: "
+            "{:s} = {:s} / {:s}".format(info_key,
+                                        str(info_value),
+                                        info_comment))
+
+        if last_keyword is None:
+            ccd.header.set(info_key,
+                           value=info_value,
+                           comment=info_comment)
+            last_keyword = info_key
+        else:
+            ccd.header.set(info_key,
+                           value=info_value,
+                           comment=info_comment,
+                           after=last_keyword)
+            last_keyword = info_key
+
+    return ccd
+
+
 def save_extracted(ccd, destination, prefix='e', target_number=1):
     """Save extracted spectrum while adding a prefix.
 

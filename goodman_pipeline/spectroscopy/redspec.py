@@ -21,6 +21,7 @@ from ..core import (classify_spectroscopic_data,
                     identify_targets,
                     trace_targets,
                     extraction,
+                    record_trace_information,
                     save_extracted)
 
 from ..core import (NoMatchFound,
@@ -389,27 +390,8 @@ class MainApp(object):
                         else:
                             target_number = 0
                         try:
-                            last_keyword = None
-                            for info_key in trace_info:
-                                info_value, info_comment = trace_info[info_key]
-                                self.log.debug(
-                                    "Adding trace information: "
-                                    "{:s} = {:s} / {:s}".format(info_key,
-                                                                str(info_value),
-                                                                info_comment))
-
-                                if last_keyword is None:
-                                    ccd.header.set(info_key,
-                                                  value=info_value,
-                                                  comment=info_comment)
-                                    last_keyword = info_key
-                                else:
-                                    ccd.header.set(info_key,
-                                                   value=info_value,
-                                                   comment=info_comment,
-                                                   after=last_keyword)
-                                    last_keyword = info_key
-
+                            ccd = record_trace_information(ccd=ccd,
+                                                           trace_info=trace_info)
                             # target extraction
                             extracted = extraction(
                                 ccd=ccd,
@@ -429,6 +411,8 @@ class MainApp(object):
                                                          value=saved_ccd.header['GSP_FNAM'],
                                                          comment='Science target file the lamp was extracted for.')
 
+                                    comp_lamp = record_trace_information(ccd=comp_lamp,
+                                                                         trace_info=trace_info)
                                     extracted_lamp = extraction(
                                         ccd=comp_lamp,
                                         target_trace=single_trace,
@@ -438,7 +422,9 @@ class MainApp(object):
                                         ccd=extracted_lamp,
                                         destination=self.args.destination,
                                         target_number=target_number)
+
                                     all_lamps.append(extracted_lamp)
+
                             extracted_target_and_lamps.append([extracted,
                                                                all_lamps])
 
