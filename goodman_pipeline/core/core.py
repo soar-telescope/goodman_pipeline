@@ -2089,6 +2089,37 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2, plots
 
     rms_error = np.sqrt(np.sum(np.array(sampling_differences))/len(sampling_differences))
 
+    log.debug("RMS Error of unclipped trace differences {:.3f}".format(rms_error))
+
+    clipped_values = sigma_clip(sampling_differences,
+                                sigma=2,
+                                iters=3,
+                                cenfunc=np.ma.median)
+    if np.ma.is_masked(clipped_values):
+        _sampling_axis = list(sampling_axis)
+        _sample_values = list(sample_values)
+
+        sampling_axis = []
+        sample_values = []
+        for i in range(len(clipped_values)):
+            if clipped_values[i] is not np.ma.masked:
+                sampling_axis.append(_sampling_axis[i])
+                sample_values.append(_sample_values[i])
+
+        log.debug("Re-fitting the trace for a better trace.")
+
+        fitted_trace = model_fitter(trace_model, sampling_axis, sample_values)
+
+        sampling_differences = [
+            (fitted_trace(sampling_axis[i]) - sample_values[i]) ** 2 for i in
+            range(len(sampling_axis))]
+
+        rms_error = np.sqrt(
+            np.sum(np.array(sampling_differences)) / len(sampling_differences))
+
+        log.debug(
+            "RMS Error after sigma-clipping trace differences {:.3f}".format(rms_error))
+
     trace_info = collections.OrderedDict()
 
     trace_info['GSP_TMOD'] = [fitted_trace.__class__.__name__,
