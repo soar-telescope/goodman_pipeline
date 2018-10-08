@@ -799,7 +799,7 @@ class TargetsTest(TestCase):
                                    pol_deg=2,
                                    nsigmas=2,
                                    plots=False)
-        for new_trace, profile in all_traces:
+        for new_trace, profile, trace_info in all_traces:
             self.assertEqual(new_trace.c0.value, profile.mean.value)
             self.assertAlmostEqual(new_trace.c1.value, 0)
             self.assertAlmostEqual(new_trace.c2.value, 0)

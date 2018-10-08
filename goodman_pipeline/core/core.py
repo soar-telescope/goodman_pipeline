@@ -2,6 +2,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import calendar
+import collections
 import datetime
 import glob
 import logging
@@ -1813,6 +1814,11 @@ def read_fits(full_path, technique='Unknown'):
                        value='none',
                        comment='Cosmic ray rejection method')
 
+    if 'GSP_TMOD' not in all_keys:
+        ccd.header.set('GSP_TMOD',
+                        value='none',
+                        comment='Model name used to fit trace')
+
     if 'GSP_EXTR' not in all_keys:
         ccd.header.set('GSP_EXTR',
                        value='none',
@@ -2041,7 +2047,7 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2, plots
 
         lower_limit = np.max([0, int(sample_center - nsigmas * model_stddev)])
         upper_limit = np.min([int(sample_center + nsigmas * model_stddev),
-                             spatial_length])
+                              spatial_length])
 
         # print(sample_center, nsigmas, model_stddev, lower_limit, upper_limit)
 
@@ -2070,7 +2076,7 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2, plots
         sample_values.append(sample_peak + lower_limit)
 
         if np.abs(sample_peak + lower_limit - model_mean) < \
-                nsigmas * model_stddev:
+                        nsigmas * model_stddev:
             sample_center = int(sample_peak + lower_limit)
         else:
             # print(np.abs(sample_peak + lower_limit - model_mean),
@@ -2083,8 +2089,22 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2, plots
 
     rms_error = np.sqrt(np.sum(np.array(sampling_differences))/len(sampling_differences))
 
-    log.info("Trace fitting RMS error: {:.2f}".format(rms_error))
+    trace_info = collections.OrderedDict()
 
+    trace_info['GSP_TMOD'] = [fitted_trace.__class__.__name__,
+                               'Model name used to fit trace']
+
+    trace_info['GSP_TORD'] = [fitted_trace.degree,
+                              'Degree of the model used to fit target trace']
+
+    for i in range(fitted_trace.degree + 1):
+        trace_info['GSP_TC{:02d}'.format(i)] = [
+            fitted_trace.__getattr__('c{:d}'.format(i)).value,
+            'Parameter c{:d}'.format(i)]
+
+    trace_info['GSP_TERR'] = [rms_error, 'RMS error of target trace']
+
+    log.info("Target tracing RMS error: {:.3f}".format(rms_error))
 
     if plots:
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
@@ -2122,7 +2142,7 @@ def trace(ccd, model, trace_model, model_fitter, sampling_step, nsigmas=2, plots
         else:
             plt.show()
 
-    return fitted_trace, rms_error
+    return fitted_trace, trace_info
 
 
 def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
@@ -2171,19 +2191,19 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
 
     for profile in target_list:
 
-        single_trace, trace_rms = trace(ccd=ccd,
-                                        model=profile,
-                                        trace_model=trace_model,
-                                        model_fitter=model_fitter,
-                                        sampling_step=sampling_step,
-                                        nsigmas=nsigmas,
-                                        plots=plots)
-        print(single_trace)
-        print(trace_rms)
+        single_trace, trace_info = trace(ccd=ccd,
+                                         model=profile,
+                                         trace_model=trace_model,
+                                         model_fitter=model_fitter,
+                                         sampling_step=sampling_step,
+                                         nsigmas=nsigmas,
+                                         plots=plots)
+        # print(single_trace)
+        # print(trace_rms)
 
         if 0 < single_trace.c0.value < ccd.shape[0]:
             log.debug('Adding trace to list')
-            all_traces.append([single_trace, profile])
+            all_traces.append([single_trace, profile, trace_info])
         else:
             log.error("Unable to trace target.")
             log.error('Trace is out of boundaries. Center: '
@@ -2201,7 +2221,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
         ax.set_title("Trace(s) for {:s}".format(ccd.header['GSP_FNAM']))
         ax.imshow(ccd.data, clim=(z1, z2), cmap='gray')
         ax.plot([], color='r', label='Trace(s)')
-        for strace, prof in all_traces:
+        for strace, prof, trace_info in all_traces:
             ax.plot(strace(range(ccd.data.shape[1])), color='r')
         ax.legend(loc='best')
         plt.tight_layout()
