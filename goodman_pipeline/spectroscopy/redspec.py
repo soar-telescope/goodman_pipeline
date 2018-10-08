@@ -372,7 +372,8 @@ class MainApp(object):
                         trace_list = trace_targets(ccd=ccd,
                                                    target_list=target_list,
                                                    sampling_step=5,
-                                                   pol_deg=2)
+                                                   pol_deg=2,
+                                                   plots=self.args.debug_with_plots)
                     else:
                         self.log.error("The list of identified targets is "
                                        "empty.")
@@ -380,14 +381,35 @@ class MainApp(object):
 
                     # if len(trace_list) > 0:
                     extracted_target_and_lamps = []
-                    for single_trace, single_profile in trace_list:
+                    for single_trace, single_profile, trace_info in trace_list:
                         if len(trace_list) > 1:
                             target_number = trace_list.index(
                                 [single_trace,
-                                 single_profile]) + 1
+                                 single_profile, trace_info]) + 1
                         else:
                             target_number = 0
                         try:
+                            last_keyword = None
+                            for info_key in trace_info:
+                                info_value, info_comment = trace_info[info_key]
+                                self.log.debug(
+                                    "Adding trace information: "
+                                    "{:s} = {:s} / {:s}".format(info_key,
+                                                                str(info_value),
+                                                                info_comment))
+
+                                if last_keyword is None:
+                                    ccd.header.set(info_key,
+                                                  value=info_value,
+                                                  comment=info_comment)
+                                    last_keyword = info_key
+                                else:
+                                    ccd.header.set(info_key,
+                                                   value=info_value,
+                                                   comment=info_comment,
+                                                   after=last_keyword)
+                                    last_keyword = info_key
+
                             # target extraction
                             extracted = extraction(
                                 ccd=ccd,

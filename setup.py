@@ -96,7 +96,7 @@ setup(
 
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
 
         # Indicate who your project is intended for
@@ -104,7 +104,7 @@ setup(
         'Intended Audience :: Education',
         'Intended Audience :: Science/Research',
 
-        'License :: OSI Approved :: {:s}'.format(LICENSE),
+        'License :: OSI Approved :: BSD License',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.

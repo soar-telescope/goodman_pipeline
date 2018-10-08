@@ -84,6 +84,7 @@ class WavelengthCalibrationTests(TestCase):
             self.assertEqual(len(new_wavelength), len(new_intensity))
             self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
 
+    @skip
     def test__cross_correlation(self):
         self.wc.lamp = self.ccd.copy()
         self.wc.serial_binning = 1

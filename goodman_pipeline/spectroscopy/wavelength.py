@@ -244,7 +244,7 @@ class WavelengthCalibration(object):
             if len(wavelength_solutions) > 1:
                 self.log.warning("The current version of the pipeline does not "
                                  "combine multiple solution instead it saves a "
-                                 "single version of the pipeline for each "
+                                 "single version of the science file for each "
                                  "wavelength solution calculated.")
                 for i in range(len(wavelength_solutions)):
                     # TODO (simon): Combine Multiple solutions
@@ -550,11 +550,14 @@ class WavelengthCalibration(object):
             # print(self.i_fig)
             self.i_fig = None
             if self.i_fig is None:
-                self.i_fig = plt.figure(figsize=(15, 10))
+                self.i_fig = plt.figure()
                 self.i_fig.canvas.set_window_title(
                     'Automatic Wavelength Solution')
                 self.ax1 = self.i_fig.add_subplot(111)
                 self.ax1.set_rasterization_zorder(1)
+
+                mng = plt.get_current_fig_manager()
+                mng.window.showMaximized()
             # else:
             #     print("clear figure")
             #     self.i_fig.clf()
@@ -822,6 +825,10 @@ class WavelengthCalibration(object):
             fig, ax = plt.subplots()
             # ax = fig.add_subplot(111)
             fig.canvas.set_window_title('Lines Detected')
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+
             ax.set_title('Lines detected in Lamp\n'
                          '{:s}'.format(lamp_header['OBJECT']))
             ax.set_xlabel('Pixel Axis')
@@ -840,6 +847,7 @@ class WavelengthCalibration(object):
 
             ax.plot(raw_pixel_axis, no_nan_lamp_data, color='k')
             ax.legend(loc='best')
+            plt.tight_layout()
             plt.show()
 
         return lines_center
@@ -1230,6 +1238,9 @@ class WavelengthCalibration(object):
             fig, ax1 = plt.subplots(1)
             fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
             # ax1 = fig.add_subplot(111)
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
 
             ax1.set_title(fig_title)
             ax1.set_xlabel('Wavelength (Angstrom)')
