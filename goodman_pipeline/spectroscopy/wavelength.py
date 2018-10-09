@@ -755,7 +755,9 @@ class WavelengthCalibration(object):
         self.rms_error = np.sqrt(
             np.sum(square_differences) / len(square_differences))
 
-        self.log.info('RMS Error : {:.3f}'.format(self.rms_error))
+        self.log.info('Wavelength solution RMS Error : {:.3f}'.format(
+            self.rms_error))
+
         return self.rms_error, self.n_points, self.n_rejections
 
     def _get_lines_in_lamp(self, ccddata_lamp=None):
