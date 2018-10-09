@@ -491,7 +491,7 @@ class ExtractionTest(TestCase):
 
     def test_fractional_extraction(self):
         # Perform extraction
-        extracted_array, background = extract_fractional_pixel(
+        extracted_array, background, info = extract_fractional_pixel(
             ccd=self.fake_image,
             target_trace=self.target_trace,
             target_stddev=self.stddev,
@@ -506,7 +506,7 @@ class ExtractionTest(TestCase):
     def test_fractional_extraction_obstype_object(self):
         self.fake_image.header.set('OBSTYPE', value='OBJECT')
         # Perform extraction
-        extracted_array, background = extract_fractional_pixel(
+        extracted_array, background, info = extract_fractional_pixel(
             ccd=self.fake_image,
             target_trace=self.target_trace,
             target_stddev=self.stddev,

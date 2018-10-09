@@ -696,11 +696,27 @@ def extraction(ccd,
     assert isinstance(target_trace, Model)
 
     if extraction_name == 'fractional':
-        extracted, background = extract_fractional_pixel(
+        extracted, background, bkg_info = extract_fractional_pixel(
             ccd=ccd,
             target_trace=target_trace,
             target_stddev=spatial_profile.stddev.value,
             extraction_width=2)
+
+        background_1, background_2 = bkg_info
+
+
+        if background_1 is not None:
+            log.info('Background extraction zone 1: {:s}'.format(background_1))
+            extracted.header.set('GSP_BKG1', value=background_1)
+        else:
+            log.info("Background extraction zone 1: 'none'")
+
+        if background_2 is not None:
+            log.info('Background extraction zone 2: {:s}'.format(background_2))
+            extracted.header.set('GSP_BKG2', value=background_2)
+        else:
+            log.info("Background extraction zone 2: 'none'")
+
         return extracted
 
     elif extraction_name == 'optimal':
@@ -736,6 +752,9 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     trace_points = target_trace(disp_axis)
 
     apnum1 = None
+
+    background_info_1 = None
+    background_info_2 = None
 
     non_background_sub = []
     extracted_spectrum = []
@@ -830,10 +849,19 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
             # background = 0
             if background_1 is not None and background_2 is None:
                 background = background_1
+                if background_info_1 is None:
+                    background_info_1 = "{:.2f} {:.2f}".format(low_1, high_1)
             elif background_1 is None and background_2 is not None:
                 background = background_2
+                if background_info_2 is None:
+                    background_info_2 = "{:.2f} {:.2f}".format(low_2, high_2)
             else:
                 background = np.mean([background_1, background_2])
+                if background_info_1 is None:
+                    background_info_1 = "{:.2f} {:.2f}".format(low_1, high_1)
+                if background_info_2 is None:
+                    background_info_2 = "{:.2f} {:.2f}".format(low_2, high_2)
+
 
             # actual background subtraction
             background_subtracted_column_sum = column_sum - background
@@ -850,7 +878,8 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
         for i in range(int(new_ccd.header['NAXIS']), 1, -1):
             new_ccd.header.remove(keyword="NAXIS{:d}".format(i))
         new_ccd.header.set('NAXIS', value=1)
-    return new_ccd, np.asarray(background_list)
+    return new_ccd, np.asarray(background_list), [background_info_1,
+                                                  background_info_2]
 
 
 def extract_optimal():
@@ -1728,6 +1757,8 @@ def read_fits(full_path, technique='Unknown'):
     GSP_NORM: Flat normalization method.
     GSP_COSM: Cosmic ray rejection method.
     GSP_EXTR: Extraction window at first column
+    GSP_BKG1: First background extraction zone
+    GSP_BKG2: Second background extraction zone
     GSP_WRMS: Wavelength solution RMS Error.
     GSP_WPOI: Number of points used to calculate the wavelength solution
     Error.
@@ -1823,6 +1854,16 @@ def read_fits(full_path, technique='Unknown'):
         ccd.header.set('GSP_EXTR',
                        value='none',
                        comment='Extraction window at first column')
+
+    if 'GSP_BKG1' not in all_keys:
+        ccd.header.set('GSP_BKG1',
+                       value='none',
+                       comment='First background extraction zone')
+
+    if 'GSP_BKG2' not in all_keys:
+        ccd.header.set('GSP_BKG2',
+                       value='none',
+                       comment='Second background extraction zone')
 
     if 'GSP_WRMS' not in all_keys:
         ccd.header.set('GSP_WRMS',
