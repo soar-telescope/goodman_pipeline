@@ -6,12 +6,19 @@ Change History
 V1.1.3 Unreleased
 ^^^^^^^^^^^^^^^^^
 
-- Nothing yet
+- Made all plots full screen and the images using the ``gray`` cmap.
+- Trace information is printed in the logs and also is recorded in the image's
+  header
+- Added sigma clipping to target tracing functions
 
 .. _v1.1.2:
 
 V1.1.2 05-10-2018
 ^^^^^^^^^^^^^^^^^
+
+- Version 1.1.2 is pip instalable
+
+  ``pip install goodman-pipeline``
 
 - Project and package renamed to ``goodman_pipeline`` this is because the
   previous was too generic. Now we have this structure::
