@@ -1846,12 +1846,7 @@ def read_fits(full_path, technique='Unknown'):
         ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
 
     ccd.header.set('BUNIT', after='CCDSUM')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
-    # ccd.header.set('', value='', comment='')
+
     return ccd
 
 

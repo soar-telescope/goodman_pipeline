@@ -7,6 +7,7 @@ from astropy.modeling import Model
 from astropy.modeling import (models,
                               fitting)
 import astropy.units as u
+import collections
 import numpy as np
 import os
 import pandas
@@ -47,6 +48,7 @@ from ..core import (astroscrappy_lacosmic,
                     normalize_master_flat,
                     ra_dec_to_deg,
                     read_fits,
+                    record_trace_information,
                     save_extracted,
                     search_comp_group,
                     setup_logging,
@@ -677,6 +679,42 @@ class ReferenceDataTest(TestCase):
 
         self.assertIsInstance(new_group, pandas.DataFrame)
         self.assertTrue(comp_group.equals(new_group))
+
+
+class RecordTraceInformationTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((800, 2000)),
+                           meta=fits.Header(),
+                           unit='adu')
+
+        self.all_keywords = ['GSP_TMOD',
+                             'GSP_TORD',
+                             'GSP_TC00',
+                             'GSP_TC01',
+                             'GSP_TC02',
+                             'GSP_TERR']
+
+        self.trace_info = collections.OrderedDict()
+
+        self.trace_info['GSP_TMOD'] = ['Polinomial1D',
+                                       'Model name used to fit trace']
+
+        self.trace_info['GSP_TORD'] = [2, 'Degree of the model used to fit '
+                                          'target trace']
+
+        self.trace_info['GSP_TC00'] = [500, 'Parameter c0']
+        self.trace_info['GSP_TC01'] = [1, 'Parameter c1']
+        self.trace_info['GSP_TC02'] = [2, 'Parameter c2']
+        self.trace_info['GSP_TERR'] = [0.5, 'RMS error of target trace']
+
+    def test_record_trace_information(self):
+        ccd = record_trace_information(ccd=self.ccd, trace_info=self.trace_info)
+        new_keys = [key for key in ccd.header.keys()]
+
+        self.assertTrue(all([key in new_keys for key in self.all_keywords]))
+        self.assertEqual(ccd.header['GSP_TMOD'], 'Polinomial1D')
+        self.assertEqual(ccd.header['GSP_TORD'], 2)
 
 
 class SpectroscopicModeTest(TestCase):
