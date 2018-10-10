@@ -994,7 +994,7 @@ class WavelengthCalibration(object):
 
             smoothed_linearized_data = signal.medfilt(linearized_data)
             # print('sl ', smoothed_linearized_data)
-            if plots:
+            if plots: # pragma: no cover
                 fig6 = plt.figure(6)
                 plt.xlabel('Wavelength (Angstrom)')
                 plt.ylabel('Intensity (Counts)')
@@ -1116,12 +1116,12 @@ class WavelengthCalibration(object):
                            abs(data[line] - data[right_limit])]
 
             if max(differences) / min(differences) >= 2.:
-                if plots:
+                if plots: # pragma: no cover
                     plt.axvspan(line - 1, line + 1, color='g', alpha=0.3)
                 new_center.append(line)
             else:
                 new_center.append(centroid)
-        if plots:
+        if plots: # pragma: no cover
             fig, ax = plt.subplots(1, 1)
             fig.canvas.set_window_title('Lines Detected in Lamp')
             ax.axhline(median, color='b')

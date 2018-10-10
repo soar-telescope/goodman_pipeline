@@ -115,10 +115,10 @@ def make_2d_spectra(separation_fwhm=0, n_targets=1, fwhm=8., intens=0., noise_le
         plt.xlabel('Pixel Axis')
         plt.ylabel('Peak Intensity')
         plt.savefig('img/' + hdu_name_file.replace('.fits','.png'), dpi=300)
-        if plots:
+        if plots: # pragma: no cover
             plt.show()
 
-    if plots:
+    if plots: # pragma: no cover
         plt.title('Target Separation %s - N targets %s' % (str(separation_fwhm), targets))
         plt.imshow(rotated_image)
         plt.show()
