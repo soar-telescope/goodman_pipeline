@@ -6,6 +6,7 @@ import datetime
 import glob
 import logging
 import numpy as np
+import matplotlib.pyplot as plt
 import random
 import re
 import os
@@ -104,6 +105,13 @@ class ImageProcessor(object):
                         else:
                             self.log.info('Processing Imaging Science Data')
                             self.process_imaging_science(sub_group)
+
+    def _is_file_saturated(self, ccd):
+        if ccd.data.max() > float(self.args.saturation_limit):
+
+            return True
+        else:
+            return False
 
     def define_trim_section(self, technique=None):
         """Get the initial trim section
@@ -349,8 +357,8 @@ class ImageProcessor(object):
         each image.
 
         Args:
-            flat_group (object): :class:`~pandas.DataFrame` instance. Contains a list of
-                compatible flat images
+            flat_group (DataFrame): :class:`~pandas.DataFrame` instance.
+              Contains a list of compatible flat images
             target_name (str): Science target name. This is used in some science
                 case uses only.
 
@@ -407,9 +415,7 @@ class ImageProcessor(object):
             else:
                 self.log.error('Unknown observation technique: ' +
                                self.technique)
-            # TODO (simon): Improve this part. One hot pixel could rule out a
-            # todo (cont): perfectly expososed image.
-            if ccd.data.max() > float(self.args.saturation_limit):
+            if self._is_file_saturated(ccd=ccd):
                 self.log.warning('Removing saturated image {:s}. '
                                  'Use --saturation to change saturation '
                                  'level'.format(flat_file))
@@ -417,6 +423,7 @@ class ImageProcessor(object):
             else:
                 cleaned_flat_list.append(flat_file)
                 master_flat_list.append(ccd)
+
         if master_flat_list != []:
             master_flat = ccdproc.combine(master_flat_list,
                                           method='median',
