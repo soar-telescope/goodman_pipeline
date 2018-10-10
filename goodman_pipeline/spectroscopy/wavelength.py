@@ -536,7 +536,7 @@ class WavelengthCalibration(object):
         self._evaluate_solution(clipped_differences=clipped_differences)
 
         if self.args.plot_results or self.args.debug_with_plots or \
-                self.args.save_plots:
+                self.args.save_plots: # pragma: no cover
             plt.close('all')
             plt.switch_backend('Qt5Agg')
             # print(self.i_fig)
@@ -625,7 +625,7 @@ class WavelengthCalibration(object):
 
                 plt.ioff()
                 plt.clf()
-            if self.args.debug_with_plots or self.args.plot_results:
+            if self.args.debug_with_plots or self.args.plot_results: # pragma: no cover
 
                 manager = plt.get_current_fig_manager()
 
@@ -817,7 +817,7 @@ class WavelengthCalibration(object):
             # lines_center = peaks
             lines_center = self._recenter_lines(no_nan_lamp_data, peaks)
 
-        if self.args.debug_with_plots:
+        if self.args.debug_with_plots: # pragma: no cover
             # print(new_order, slit_size, )
             plt.close('all')
             fig, ax = plt.subplots()
@@ -1217,7 +1217,7 @@ class WavelengthCalibration(object):
         #     header=ccd.header)
 
         if self.args.plot_results or self.args.debug_with_plots or \
-                self.args.save_plots:
+                self.args.save_plots:  # pragma: no cover
 
             plt.close(1)
             if self.args.plot_results:
@@ -1269,7 +1269,7 @@ class WavelengthCalibration(object):
                 self.log.info('Saved plot as {:s} file '
                               'DPI=300'.format(plot_name))
 
-            if self.args.debug_with_plots or self.args.plot_results:
+            if self.args.debug_with_plots or self.args.plot_results:  # pragma: no cover
                 manager = plt.get_current_fig_manager()
                 if plt.get_backend() == u'GTK3Agg':
                     manager.window.maximize()

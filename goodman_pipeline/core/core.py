@@ -1113,7 +1113,7 @@ def get_slit_trim_section(master_flat):
     log.debug("Slit Trim Section: {:s}".format(slit_trim_section))
 
     # debugging plots that have to be manually turned on
-    if False:
+    if False:  # pragma: no cover
         manager = plt.get_current_fig_manager()
         manager.window.showMaximized()
         plt.title('Slit Edge Detection')
@@ -1242,7 +1242,7 @@ def identify_targets(ccd, nfind=3, plots=False):
     # estimate for stddev of gaussian
     order = int(round(float(slit_size) / (0.15 * serial_binning)))
 
-    if plots: # pragma: no cover
+    if plots:  # pragma: no cover
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
         z2 = np.median(ccd.data) + np.std(ccd.data)
         fig, ax = plt.subplots()
@@ -1281,7 +1281,7 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
 
-    if plots: # pragma: no cover
+    if plots:  # pragma: no cover
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
 
