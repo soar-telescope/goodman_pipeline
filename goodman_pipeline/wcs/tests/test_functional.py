@@ -196,6 +196,7 @@ class TestWCS(TestWCSBase):
         blank_ccd = CCDData(data=np.ones(ccd.data.shape),
                           meta=fits.Header(),
                           unit='adu')
+        blank_ccd.header.set('GSP_WREJ', value=None, comment='empty')
 
         new_ccd = self.wcs.write_gsp_wcs(ccd=blank_ccd, model=model)
 
