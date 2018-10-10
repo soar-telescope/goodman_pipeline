@@ -157,16 +157,25 @@ class WCS(object):
         assert isinstance(ccd, CCDData)
         assert isinstance(model, Model)
 
-        ccd.header.set('GSP_FUNC', value=model.__class__.name,
-                       comment="Mathematical model of non-linearized data")
+        ccd.header.set('GSP_FUNC',
+                       value=model.__class__.name,
+                       comment="Mathematical model of non-linearized data",
+                       after='GSP_WREJ')
         ccd.header.set('GSP_ORDR', value=model.degree,
-                       comment="Mathematical model order")
+                       comment="Mathematical model order",
+                       after='GSP_FUNC')
         ccd.header.set('GSP_NPIX', value=ccd.size,
-                       comment="Number of Pixels")
+                       comment="Number of Pixels",
+                       after='GSP_ORDR')
+        last_keyword = 'GSP_NPIX'
         for i in range(model.degree + 1):
             ccd.header.set('GSP_C{:03d}'.format(i),
                            value=model.__getattr__('c{:d}'.format(i)).value,
-                           comment="Value of parameter c{:d}".format(i))
+                           comment="Value of parameter c{:d}".format(i),
+                           after=last_keyword)
+
+            last_keyword = 'GSP_C{:03d}'.format(i)
+
         return ccd
 
     def read_gsp_wcs(self, ccd):
