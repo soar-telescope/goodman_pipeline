@@ -536,7 +536,7 @@ class WavelengthCalibration(object):
         self._evaluate_solution(clipped_differences=clipped_differences)
 
         if self.args.plot_results or self.args.debug_with_plots or \
-                self.args.save_plots: # pragma: no cover
+                self.args.save_plots:  # pragma: no cover
             plt.close('all')
             plt.switch_backend('Qt5Agg')
             # print(self.i_fig)
@@ -625,7 +625,7 @@ class WavelengthCalibration(object):
 
                 plt.ioff()
                 plt.clf()
-            if self.args.debug_with_plots or self.args.plot_results: # pragma: no cover
+            if self.args.debug_with_plots or self.args.plot_results:  # pragma: no cover
 
                 manager = plt.get_current_fig_manager()
 
@@ -817,7 +817,7 @@ class WavelengthCalibration(object):
             # lines_center = peaks
             lines_center = self._recenter_lines(no_nan_lamp_data, peaks)
 
-        if self.args.debug_with_plots: # pragma: no cover
+        if self.args.debug_with_plots:  # pragma: no cover
             # print(new_order, slit_size, )
             plt.close('all')
             fig, ax = plt.subplots()
@@ -994,7 +994,7 @@ class WavelengthCalibration(object):
 
             smoothed_linearized_data = signal.medfilt(linearized_data)
             # print('sl ', smoothed_linearized_data)
-            if plots: # pragma: no cover
+            if plots:  # pragma: no cover
                 fig6 = plt.figure(6)
                 plt.xlabel('Wavelength (Angstrom)')
                 plt.ylabel('Intensity (Counts)')
@@ -1116,12 +1116,12 @@ class WavelengthCalibration(object):
                            abs(data[line] - data[right_limit])]
 
             if max(differences) / min(differences) >= 2.:
-                if plots: # pragma: no cover
+                if plots:  # pragma: no cover
                     plt.axvspan(line - 1, line + 1, color='g', alpha=0.3)
                 new_center.append(line)
             else:
                 new_center.append(centroid)
-        if plots: # pragma: no cover
+        if plots:  # pragma: no cover
             fig, ax = plt.subplots(1, 1)
             fig.canvas.set_window_title('Lines Detected in Lamp')
             ax.axhline(median, color='b')

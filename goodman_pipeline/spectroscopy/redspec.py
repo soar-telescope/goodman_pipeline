@@ -428,7 +428,7 @@ class MainApp(object):
                             extracted_target_and_lamps.append([extracted,
                                                                all_lamps])
 
-                            if self.args.debug_with_plots: # pragma: no cover
+                            if self.args.debug_with_plots:  # pragma: no cover
                                 # print(plt.get_backend())
                                 plt.close('all')
                                 fig, ax = plt.subplots(1, 1)

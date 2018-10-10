@@ -1342,7 +1342,7 @@ def identify_targets(ccd, nfind=3, plots=False):
     background_level = np.abs(np.max(clipped_final_profile) -
                               np.min(clipped_final_profile))
 
-    if plots: # pragma: no cover
+    if plots:  # pragma: no cover
         plt.ioff()
         plt.close()
 
@@ -1418,7 +1418,7 @@ def identify_targets(ccd, nfind=3, plots=False):
         else:
             log.debug('Discarding peak: {:.3f}'.format(val))
 
-    if plots: # pragma: no cover
+    if plots:  # pragma: no cover
         plt.ioff()
 
         fig, ax = plt.subplots()
@@ -1484,7 +1484,8 @@ def identify_targets(ccd, nfind=3, plots=False):
         else:
             log.error("Discarding target with stddev: {:.3f}".format(
                 fitted_gaussian.stddev.value))
-    if plots: # pragma: no cover
+
+    if plots:  # pragma: no cover
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
 
@@ -2218,7 +2219,7 @@ def trace(ccd,
 
     log.info("Target tracing RMS error: {:.3f}".format(rms_error))
 
-    if plots: # pragma: no cover
+    if plots:  # pragma: no cover
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
         z2 = np.median(ccd.data) + np.std(ccd.data)
         fig, ax = plt.subplots()
@@ -2323,7 +2324,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
             log.error('Trace is out of boundaries. Center: '
                       '{:.4f}'.format(single_trace.c0.value))
 
-    if plots: # pragma: no cover
+    if plots:  # pragma: no cover
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
         z2 = np.median(ccd.data) + np.std(ccd.data)
         fig, ax = plt.subplots()
