@@ -6,8 +6,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import logging
-import matplotlib.pyplot as plt
-import numpy as np
 import shlex
 import sys
 
@@ -87,8 +85,8 @@ class WCS(object):
             The mathematical model stays as an attribute of the class as `model`
 
         Args:
-            ccd (object): Instance of `:class:`~astropy.nddata.CCDData`` with FITS's wavelength
-              solution.
+            ccd (CCDData) Instance of `:class:`~astropy.nddata.CCDData``
+              with FITS's wavelength solution.
 
         Returns:
             A list with an array representing the wavelength axis and another
@@ -124,7 +122,7 @@ class WCS(object):
             `goodman.pipeline.spectroscopy.wavelength.py`
 
         Args:
-            ccd (object): Instance of `:class:`~astropy.nddata.CCDData``
+            ccd (CCDData) Instance of `:class:`~astropy.nddata.CCDData``
             model (object): Instance of `astropy.modeling.Model` that should be
               the mathematical representation of the wavelength solution of
               `ccd`
@@ -149,8 +147,8 @@ class WCS(object):
             side. So you have to be careful what you write.
 
         Args:
-            ccd (object): :class:`~astropy.ndddata.CCDData` instance. Its header attribute will be
-              modified
+            ccd (CCDData) :class:`~astropy.nddata.CCDData` instance. Its header
+              attribute will be modified
             model (object): astropy.modeling.Model instance.
 
         Returns:
@@ -175,7 +173,7 @@ class WCS(object):
         """Read a GSP-specific wavelength solution
 
         Args:
-            ccd (object): :class:`~astropy.ndddata.CCDData` instance
+            ccd (CCDData) :class:`~astropy.nddata.CCDData` instance
 
         Returns:
             astropy.modeling.Model instance
@@ -331,11 +329,9 @@ class WCS(object):
             # developed neither tested
 
             self._set_math_model()
-            self.wavelength_and_intensity = [self.model(range(self.wcs_dict['pnum'])),
-                                             self.ccd.data]
-            # plt.plot(self.wavelength_and_intensity[0],
-            #          self.wavelength_and_intensity[1])
-            # plt.show()
+            self.wavelength_and_intensity = [
+                self.model(range(self.wcs_dict['pnum'])),
+                self.ccd.data]
 
     def _read_linear(self):
         """Linear solution reader
@@ -345,7 +341,7 @@ class WCS(object):
 
         Returns:
             Callable wavelength solution model. Instance of
-                astropy.modeling.Model
+              :class:`~astropy.modeling.Model`
         """
         self.wcs_dict = {'crval': self.wcs.crval[0],
                          'crpix': self.wcs.crpix[0],
@@ -376,7 +372,6 @@ class WCS(object):
         else:
             raise NotImplementedError("Model {:s} not implemented"
                                       "".format(self.model.__class__.__name__))
-
 
     def _set_math_model(self):
 

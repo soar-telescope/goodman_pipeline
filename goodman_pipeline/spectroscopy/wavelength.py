@@ -9,7 +9,6 @@ standard.
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import ccdproc
-import inspect
 import glob
 import logging
 import os
@@ -19,7 +18,6 @@ import sys
 import astropy.units as u
 
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
 import numpy as np
 import scipy.interpolate
 from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
@@ -68,11 +66,10 @@ class WavelengthCalibration(object):
             for next release.
 
         Args:
-            args (object): Runtime arguments.
+            args (Namespace): Runtime arguments.
 
         """
 
-        # TODO - Documentation missing
         self.log = logging.getLogger(__name__)
         self.args = args
         self.poly_order = 3
@@ -157,7 +154,7 @@ class WavelengthCalibration(object):
         part has to be implemented in the caller function.
 
         Args:
-            ccd (object): a :class:`~astropy.nddata.CCDData` instance
+            ccd (CCDData) a :class:`~astropy.nddata.CCDData` instance
             comp_list (list): Comparison lamps for the science target that will
                 be processed here. Every element of this list is an instance of
                 :class:`~astropy.nddata.CCDData`.
@@ -205,11 +202,7 @@ class WavelengthCalibration(object):
 
                 self.lines_center = self._get_lines_in_lamp()
                 self.spectral = self._get_spectral_characteristics()
-                object_name = ccd.header['OBJECT']
-                # if self.args.interactive_ws:
-                #     self._interactive_wavelength_solution(
-                #         object_name=object_name)
-                # else:
+
                 self._automatic_wavelength_solution(
                         corr_tolerance=self.cross_corr_tolerance)
 
@@ -277,14 +270,14 @@ class WavelengthCalibration(object):
             in separated methods to have more control on either process.
 
         Args:
-            ccd (object): Instance of :class:`~astropy.ndddata.CCDData`
+            ccd (CCDData) Instance of :class:`~astropy.nddata.CCDData`
             x_axis:
             evaluation_comment (str): A comment with information regarding the
               quality of the wavelength solution
 
         Returns:
-            ccd (object): A :class:`~astropy.nddata.CCDData` instance with linear wavelength
-              solution on it.
+            ccd (CCDData) A :class:`~astropy.nddata.CCDData` instance with
+              linear wavelength solution on it.
 
         """
         # TODO (simon): Move this to WCS class
@@ -434,7 +427,6 @@ class WavelengthCalibration(object):
                            '{:s} vs {:s}'.format(str(global_cross_corr),
                                                  str(correlation_value)))
 
-            # print(global_cross_corr, correlation_value, global_cross_corr - correlation_value, - corr_tolerance < (global_cross_corr - correlation_value) < corr_tolerance)
             if - corr_tolerance < (global_cross_corr - correlation_value) < \
                     corr_tolerance:
                 """record value for reference wavelength"""
@@ -453,7 +445,7 @@ class WavelengthCalibration(object):
                 self.log.debug("Local cross correlation value {:.3f} is too far"
                                " from global cross correlation value "
                                "{:.3f}".format(correlation_value,
-                                             global_cross_corr))
+                                               global_cross_corr))
 
             if False:
                 # print(global_cross_corr, correlation_value)
@@ -544,7 +536,7 @@ class WavelengthCalibration(object):
         self._evaluate_solution(clipped_differences=clipped_differences)
 
         if self.args.plot_results or self.args.debug_with_plots or \
-                self.args.save_plots:
+                self.args.save_plots:  # pragma: no cover
             plt.close('all')
             plt.switch_backend('Qt5Agg')
             # print(self.i_fig)
@@ -615,9 +607,9 @@ class WavelengthCalibration(object):
                     'GSP_FNAM']
                 out_file_name = re.sub('.fits', '', out_file_name)
 
-                file_count = len(glob.glob(os.path.join(self.args.destination,
-                                                        out_file_name + '*'))) +\
-                             1
+                file_count = len(glob.glob(
+                    os.path.join(self.args.destination,
+                                 out_file_name + '*'))) + 1
 
                 out_file_name += '_RMS_{:.3f}_{:03d}.pdf'.format(self.rms_error,
                                                                  file_count)
@@ -626,16 +618,15 @@ class WavelengthCalibration(object):
                 plt.savefig(pdf_pages, format='pdf')
                 pdf_pages.close()
 
-                # # saves png images
-                #
-                plot_name = os.path.join(plots_path, re.sub('pdf', 'png', out_file_name))
+                plot_name = os.path.join(plots_path,
+                                         re.sub('pdf', 'png', out_file_name))
+
                 plt.savefig(plot_name, rasterized=True, format='png', dpi=300)
 
                 plt.ioff()
                 plt.clf()
-            if self.args.debug_with_plots or self.args.plot_results:
-                # print('Here is {0.filename}@{0.lineno}:'.format(inspect.getframeinfo(inspect.currentframe())))
-                # print(dir(self.i_fig))
+            if self.args.debug_with_plots or self.args.plot_results:  # pragma: no cover
+
                 manager = plt.get_current_fig_manager()
 
                 if plt.get_backend() == u'GTK3Agg':
@@ -696,7 +687,9 @@ class WavelengthCalibration(object):
         if float(re.sub('[A-Za-z" ]', '', self.lamp.header['SLIT'])) > 3:
 
             box_width = float(
-                re.sub('[A-Za-z" ]', '', self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
+                re.sub('[A-Za-z" ]',
+                       '',
+                       self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
 
             self.log.debug('BOX WIDTH: {:f}'.format(box_width))
             box_kernel = Box1DKernel(width=box_width)
@@ -707,7 +700,10 @@ class WavelengthCalibration(object):
 
         else:
             kernel_stddev = float(
-                re.sub('[A-Za-z" ]', '', self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
+                re.sub('[A-Za-z" ]',
+                       '',
+                       self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
+
             gaussian_kernel = Gaussian1DKernel(stddev=kernel_stddev)
             cyaxis1 = convolve(reference, gaussian_kernel)
             cyaxis2 = convolve(new_array, gaussian_kernel)
@@ -737,7 +733,7 @@ class WavelengthCalibration(object):
         """Calculates Root Mean Square Error for the wavelength solution.
 
         Args:
-            clipped_differences (array): Numpy masked array of differences
+            clipped_differences (ndarray): Numpy masked array of differences
               between reference line values in angstrom and the value calculated
               using the model of the wavelength solution.
 
@@ -821,7 +817,7 @@ class WavelengthCalibration(object):
             # lines_center = peaks
             lines_center = self._recenter_lines(no_nan_lamp_data, peaks)
 
-        if self.args.debug_with_plots:
+        if self.args.debug_with_plots:  # pragma: no cover
             # print(new_order, slit_size, )
             plt.close('all')
             fig, ax = plt.subplots()
@@ -904,7 +900,8 @@ class WavelengthCalibration(object):
 
         limit_angle = np.arctan(
             self.pixel_count *
-            ((self.pixel_size * self.serial_binning)/ self.goodman_focal_length) / 2)
+            ((self.pixel_size * self.serial_binning) /
+             self.goodman_focal_length) / 2)
 
         self.blue_limit = (
             (np.sin(self.alpha) + np.sin(self.beta - limit_angle.to(u.rad))) /
@@ -997,7 +994,7 @@ class WavelengthCalibration(object):
 
             smoothed_linearized_data = signal.medfilt(linearized_data)
             # print('sl ', smoothed_linearized_data)
-            if plots:
+            if plots:  # pragma: no cover
                 fig6 = plt.figure(6)
                 plt.xlabel('Wavelength (Angstrom)')
                 plt.ylabel('Intensity (Counts)')
@@ -1050,7 +1047,7 @@ class WavelengthCalibration(object):
             is a special method for dealing with broad lines.
 
         Args:
-            data (array): numpy.ndarray instance. or the data attribute of a
+            data (ndarray): numpy.ndarray instance. or the data attribute of a
                 :class:`~astropy.nddata.CCDData` instance.
             lines (list): A line list in pixel values.
             plots (bool): If True will plot spectral line as well as the input
@@ -1119,12 +1116,12 @@ class WavelengthCalibration(object):
                            abs(data[line] - data[right_limit])]
 
             if max(differences) / min(differences) >= 2.:
-                if plots:
+                if plots:  # pragma: no cover
                     plt.axvspan(line - 1, line + 1, color='g', alpha=0.3)
                 new_center.append(line)
             else:
                 new_center.append(centroid)
-        if plots:
+        if plots:  # pragma: no cover
             fig, ax = plt.subplots(1, 1)
             fig.canvas.set_window_title('Lines Detected in Lamp')
             ax.axhline(median, color='b')
@@ -1160,7 +1157,7 @@ class WavelengthCalibration(object):
             method for dealing with narrower lines.
 
         Args:
-            lamp_data (array): numpy.ndarray instance. It contains the lamp
+            lamp_data (ndarray): numpy.ndarray instance. It contains the lamp
                 data.
             lines (list): A line list in pixel values.
             order (float): A rough estimate of the FWHM of the lines in pixels
@@ -1220,7 +1217,7 @@ class WavelengthCalibration(object):
         #     header=ccd.header)
 
         if self.args.plot_results or self.args.debug_with_plots or \
-                self.args.save_plots:
+                self.args.save_plots:  # pragma: no cover
 
             plt.close(1)
             if self.args.plot_results:
@@ -1272,7 +1269,7 @@ class WavelengthCalibration(object):
                 self.log.info('Saved plot as {:s} file '
                               'DPI=300'.format(plot_name))
 
-            if self.args.debug_with_plots or self.args.plot_results:
+            if self.args.debug_with_plots or self.args.plot_results:  # pragma: no cover
                 manager = plt.get_current_fig_manager()
                 if plt.get_backend() == u'GTK3Agg':
                     manager.window.maximize()
@@ -1286,10 +1283,13 @@ class WavelengthCalibration(object):
                     plt.pause(2)
                     plt.ioff()
 
-
                 # return wavelength_solution
 
-    def _save_wavelength_calibrated(self, ccd, original_filename, index=None, lamp=False):
+    def _save_wavelength_calibrated(self,
+                                    ccd,
+                                    original_filename,
+                                    index=None,
+                                    lamp=False):
         if index is None:
             f_end = '.fits'
         else:
@@ -1315,10 +1315,11 @@ class WavelengthCalibration(object):
                           ''.format(ccd.header['OBSTYPE'],
                                     os.path.basename(new_filename),
                                     self.wcal_lamp_file))
-            ccd.header.set('GSP_LAMP',
-                           value=self.wcal_lamp_file,
-                           comment='Reference lamp used to obtain wavelength solution',
-                           after='GSP_FLAT')
+            ccd.header.set(
+                'GSP_LAMP',
+                value=self.wcal_lamp_file,
+                comment='Reference lamp used to obtain wavelength solution',
+                after='GSP_FLAT')
 
         write_fits(ccd=ccd,
                    full_path=new_filename,
@@ -1396,7 +1397,7 @@ class WavelengthSolution(object):
             same keywords.
 
         Args:
-            header (object): Instance of astropy.io.fits.header.Header.
+            header (Header): Instance of astropy.io.fits.header.Header.
 
         Returns:
             A dictionary that contains key information regarding the kind of
@@ -1412,6 +1413,7 @@ class WavelengthSolution(object):
         else:
             try:
                 self.log.debug('{:s} Camera'.format(header['INSTCONF']))
+
                 spectral_dict = {'camera': header['INSTCONF'],
                                  'grating': header['GRATING'],
                                  'roi': header['ROI'],
@@ -1423,11 +1425,11 @@ class WavelengthSolution(object):
                                  'cam_ang': header['CAM_ANG'],
                                  'grt_ang': header['GRT_ANG']}
 
-                # for key in dict.keys():
-                # print(key, dict[key])
                 return spectral_dict
+
             except KeyError:
                 self.log.debug('(Old) Blue Camera')
+
                 spectral_dict = {'camera': 'blue',
                                  'grating': header['GRATING'],
                                  'ccdsum': header['CCDSUM'],
@@ -1439,8 +1441,6 @@ class WavelengthSolution(object):
                                  'cam_ang': header['CAM_ANG'],
                                  'grt_ang': header['GRT_ANG']}
 
-                # for key in dict.keys():
-                # print(key, dict[key])
                 return spectral_dict
 
     def check_compatibility(self, header=None):
@@ -1540,7 +1540,7 @@ class WavelengthSolution(object):
         solutions or instances of this class are stored somewhere/somehow.
 
         Args:
-            header (object): FITS header instance from
+            header (Header): FITS header instance from
                 astropy.io.fits.header.Header.
 
         Returns:

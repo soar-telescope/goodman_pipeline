@@ -1,3 +1,4 @@
+astroscrappy
 recommonmark
 numpy
 pandas
