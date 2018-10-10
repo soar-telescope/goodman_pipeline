@@ -787,7 +787,9 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
                            comment="Aperture in first column")
 
             ccd.header.set('GSP_EXTR',
-                           value="{:.2f} {:.2f}".format(low_limit, high_limit))
+                           value="{:.2f}:{:.2f} column {:d}".format(low_limit,
+                                                                    high_limit,
+                                                                    i+1))
 
             log.info("Extraction aperture in first column: {:s}".format(
                 ccd.header['GSP_EXTR']))
@@ -850,17 +852,21 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
             if background_1 is not None and background_2 is None:
                 background = background_1
                 if background_info_1 is None:
-                    background_info_1 = "{:.2f} {:.2f}".format(low_1, high_1)
+                    background_info_1 = "{:.2f}:{:.2f} column {:d}".format(
+                        low_1, high_1, i+1)
             elif background_1 is None and background_2 is not None:
                 background = background_2
                 if background_info_2 is None:
-                    background_info_2 = "{:.2f} {:.2f}".format(low_2, high_2)
+                    background_info_2 = "{:.2f}:{:.2f} column {:d}".format(
+                        low_2, high_2, i+1)
             else:
                 background = np.mean([background_1, background_2])
                 if background_info_1 is None:
-                    background_info_1 = "{:.2f} {:.2f}".format(low_1, high_1)
+                    background_info_1 = "{:.2f}:{:.2f} column {:d}".format(
+                        low_1, high_1, i+1)
                 if background_info_2 is None:
-                    background_info_2 = "{:.2f} {:.2f}".format(low_2, high_2)
+                    background_info_2 = "{:.2f}:{:.2f} column {:d}".format(
+                        low_2, high_2, i+1)
 
 
             # actual background subtraction
