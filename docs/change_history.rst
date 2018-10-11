@@ -5,7 +5,16 @@ Change History
 
 V1.1.3 Unreleased
 ^^^^^^^^^^^^^^^^^
-
+- Improved method to detect saturated images. Added a table with the *half full
+  well* for all the readout modes possible and created a method to easily
+  retrieve the value. This is a big improvement since in earlier versions the
+  saturation limit was set to 65000 ADU regardless the input data and the user
+  had to set a different one using the argument ``--saturation``.
+- Repurposed the ``--saturation`` command line argument, now is used to define
+  the percentage of pixels above the saturation level, which for simplicity is
+  the value of half full well. A default value of 1 percent was set as default.
+- Added record information of target trace into the header and logs.
+- Added record of background extraction regions into the header and logs.
 - Made all plots full screen and the images using the ``gray`` cmap.
 - Trace information is printed in the logs and also is recorded in the image's
   header

@@ -6,6 +6,7 @@ import datetime
 import glob
 import logging
 import numpy as np
+import matplotlib.pyplot as plt
 import random
 import re
 import os
@@ -23,7 +24,7 @@ from ..core import (astroscrappy_lacosmic,
                     read_fits,
                     write_fits)
 
-from ..core import SpectroscopicMode
+from ..core import SaturationValues, SpectroscopicMode
 
 
 class ImageProcessor(object):
@@ -38,9 +39,9 @@ class ImageProcessor(object):
         """Initialization method for ImageProcessor class
 
         Args:
-            args (object): argparse instance
-            data_container (object): Contains relevant information of the night
-                and the data itself.
+            args (Namespace): argparse instance
+            data_container (DataFrame): Contains relevant information of the
+            night and the data itself.
         """
         # TODO (simon): Check how inheritance could be used here.
         self.log = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ class ImageProcessor(object):
         self.trim_section = self.define_trim_section(
             technique=self.technique)
         self.overscan_region = self.get_overscan_region()
+        self.saturation_values = SaturationValues()
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
         self.master_bias_name = None
@@ -104,6 +106,39 @@ class ImageProcessor(object):
                         else:
                             self.log.info('Processing Imaging Science Data')
                             self.process_imaging_science(sub_group)
+
+    def _is_file_saturated(self, ccd):
+        """Detects a saturated image
+
+        It counts the number of pixels above the saturation level, then finds
+        which percentage they represents and if it is above the threshold it
+        will return True. The percentage threshold can be set using the command
+        line argument ``--saturation``.
+
+        Args:
+            ccd (CCDData): Image to be tested for saturation
+
+        Returns:
+            True for saturated and False for non-saturated
+
+        """
+
+        pixels_above_saturation = np.count_nonzero(
+            ccd.data[np.where(
+                ccd.data > self.saturation_values.get_saturation_value(
+                    ccd=ccd))])
+
+        total_pixels = np.count_nonzero(ccd.data)
+
+        saturated_percent = (pixels_above_saturation * 100.) / total_pixels
+
+        if saturated_percent >= float(self.args.saturation_threshold):
+            self.log.warning("The current image has more than {:s} percent of "
+                             "pixels above saturation level".format(
+                self.args.saturation_threshold))
+            return True
+        else:
+            return False
 
     def define_trim_section(self, technique=None):
         """Get the initial trim section
@@ -349,8 +384,8 @@ class ImageProcessor(object):
         each image.
 
         Args:
-            flat_group (object): :class:`~pandas.DataFrame` instance. Contains a list of
-                compatible flat images
+            flat_group (DataFrame): :class:`~pandas.DataFrame` instance.
+              Contains a list of compatible flat images
             target_name (str): Science target name. This is used in some science
                 case uses only.
 
@@ -407,9 +442,7 @@ class ImageProcessor(object):
             else:
                 self.log.error('Unknown observation technique: ' +
                                self.technique)
-            # TODO (simon): Improve this part. One hot pixel could rule out a
-            # todo (cont): perfectly expososed image.
-            if ccd.data.max() > float(self.args.saturation_limit):
+            if self._is_file_saturated(ccd=ccd):
                 self.log.warning('Removing saturated image {:s}. '
                                  'Use --saturation to change saturation '
                                  'level'.format(flat_file))
@@ -417,6 +450,7 @@ class ImageProcessor(object):
             else:
                 cleaned_flat_list.append(flat_file)
                 master_flat_list.append(ccd)
+
         if master_flat_list != []:
             master_flat = ccdproc.combine(master_flat_list,
                                           method='median',

@@ -23,6 +23,7 @@ from ..core import (GenerateDcrParFile,
                     NotEnoughLinesDetected,
                     NoTargetException,
                     ReferenceData,
+                    SaturationValues,
                     SpectroscopicMode)
 
 
@@ -989,3 +990,28 @@ class NightDataContainerTests(TestCase):
     @skip
     def test_set_readout(self):
         pass
+
+
+class SaturationValuesTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd.header.set('INSTCONF', value='Red')
+        self.ccd.header.set('GAIN', value=1.48)
+        self.ccd.header.set('RDNOISE', value=3.89)
+
+        self.half_full_well = 69257
+
+        self.saturation_values = SaturationValues(ccd=self.ccd)
+
+    def test_half_full_well_value(self):
+        self.assertEqual(self.saturation_values.saturation_value,
+                         self.half_full_well)
+
+    def test_empty_result(self):
+        self.ccd.header['GAIN'] = 2.3
+        result = self.saturation_values.get_saturation_value(ccd=self.ccd)
+        self.assertIsNone(result)
+        self.assertIsNone(self.saturation_values.saturation_value)

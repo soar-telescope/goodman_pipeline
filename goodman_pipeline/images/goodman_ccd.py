@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 __version__ = __import__('goodman_pipeline').__version__
 
+
 def get_args(arguments=None):
     """Get command line arguments.
 
@@ -128,10 +129,11 @@ def get_args(arguments=None):
 
     parser.add_argument('--saturation',
                         action='store',
-                        default=65000.,
-                        dest='saturation_limit',
+                        default=1.,
+                        dest='saturation_threshold',
                         metavar='<value>',
-                        help="Saturation limit. Default to 65.000 ADU (counts)")
+                        help="Maximum percent of pixels above saturation"
+                             "threshold. Default 1%")
 
     parser.add_argument('--version',
                         action='store_true',
