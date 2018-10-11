@@ -108,6 +108,20 @@ class ImageProcessor(object):
                             self.process_imaging_science(sub_group)
 
     def _is_file_saturated(self, ccd):
+        """Detects a saturated image
+
+        It counts the number of pixels above the saturation level, then finds
+        which percentage they represents and if it is above the threshold it
+        will return True. The percentage threshold can be set using the command
+        line argument ``--saturation``.
+
+        Args:
+            ccd (CCDData): Image to be tested for saturation
+
+        Returns:
+            True for saturated and False for non-saturated
+
+        """
 
         pixels_above_saturation = np.count_nonzero(
             ccd.data[np.where(
