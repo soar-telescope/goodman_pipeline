@@ -3045,6 +3045,60 @@ class ReferenceData(object):
                         index=False)
 
 
+class SaturationValues(object):
+
+    def __init__(self, ccd=None):
+        self.log = logging.getLogger(__name__)
+        self.__saturation = None
+        columns = ['camera',
+                   'read_rate',
+                   'analog_attn',
+                   'gain',
+                   'read_noise',
+                   'half_full_well']
+
+        saturation_table = [['Blue', 50, 0, 0.25, 3.33, 279600],
+                            ['Blue', 50, 2, 0.47, 3.35, 148723],
+                            ['Blue', 50, 3, 0.91, 3.41, 76813],
+                            ['Blue', 100, 0, 0.56, 3.69, 124821],
+                            ['Blue', 100, 2, 1.06, 3.72, 65943],
+                            ['Blue', 100, 3, 2.06, 3.99, 33932],
+                            ['Blue', 200, 0, 1.4, 4.74, 49928],
+                            ['Blue', 200, 2, 2.67, 5.12, 26179],
+                            ['Blue', 400, 0, 5.67, 8.62, 12328],
+                            ['Red', 100, 3, 1.54, 3.45, 66558],
+                            ['Red', 100, 2, 3.48, 5.88, 29454],
+                            ['Red', 344, 3, 1.48, 3.89, 69275],
+                            ['Red', 344, 0, 3.87, 7.05, 26486],
+                            ['Red', 750, 2, 1.47, 5.27, 69728],
+                            ['Red', 750, 0, 3.77, 8.99, 27188]]
+        self._sdf = pandas.DataFrame(saturation_table,
+                                     columns=columns)
+
+        if ccd is not None:
+            self.get_saturation_value(ccd=ccd)
+
+    @property
+    def saturation_value(self):
+        if self.__saturation is None:
+            self.log.error('Saturation value not set')
+            return None
+        else:
+            return self.__saturation
+
+    def get_saturation_value(self, ccd):
+        hfw = self._sdf.half_full_well[
+            (self._sdf.gain == ccd.header['GAIN']) &
+            (self._sdf.read_noise == ccd.header['RDNOISE'])]
+
+        if hfw.empty:
+            self.log.critical('Unable to obtain saturation level')
+        else:
+            self.__saturation = float(hfw.to_string(index=False))
+            self.log.debug("Set saturation level as {:.0f}".format(
+                self.__saturation))
+
+
 class SpectroscopicMode(object):
 
     def __init__(self):
