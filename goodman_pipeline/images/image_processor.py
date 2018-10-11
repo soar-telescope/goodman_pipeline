@@ -133,6 +133,9 @@ class ImageProcessor(object):
         saturated_percent = (pixels_above_saturation * 100.) / total_pixels
 
         if saturated_percent >= float(self.args.saturation_threshold):
+            self.log.warning("The current image has more than {:s} percent of "
+                             "pixels above saturation level".format(
+                self.args.saturation_threshold))
             return True
         else:
             return False
