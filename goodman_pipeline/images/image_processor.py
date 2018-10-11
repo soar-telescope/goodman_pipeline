@@ -39,9 +39,9 @@ class ImageProcessor(object):
         """Initialization method for ImageProcessor class
 
         Args:
-            args (object): argparse instance
-            data_container (object): Contains relevant information of the night
-                and the data itself.
+            args (Namespace): argparse instance
+            data_container (DataFrame): Contains relevant information of the
+            night and the data itself.
         """
         # TODO (simon): Check how inheritance could be used here.
         self.log = logging.getLogger(__name__)
@@ -130,9 +130,9 @@ class ImageProcessor(object):
 
         total_pixels = np.count_nonzero(ccd.data)
 
-        saturated_percent = (pixels_above_saturation * 100) / total_pixels
+        saturated_percent = (pixels_above_saturation * 100.) / total_pixels
 
-        if saturated_percent >= self.args.saturation_threshold:
+        if saturated_percent >= float(self.args.saturation_threshold):
             return True
         else:
             return False

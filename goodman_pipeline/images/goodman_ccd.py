@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 
 __version__ = __import__('goodman_pipeline').__version__
 
+
 def get_args(arguments=None):
     """Get command line arguments.
 
