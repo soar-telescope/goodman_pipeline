@@ -3088,6 +3088,7 @@ class SaturationValues(object):
 
     def get_saturation_value(self, ccd):
         hfw = self._sdf.half_full_well[
+            (self._sdf.camera == ccd.header['INSTCONF']) &
             (self._sdf.gain == ccd.header['GAIN']) &
             (self._sdf.read_noise == ccd.header['RDNOISE'])]
 
@@ -3097,6 +3098,7 @@ class SaturationValues(object):
             self.__saturation = float(hfw.to_string(index=False))
             self.log.debug("Set saturation level as {:.0f}".format(
                 self.__saturation))
+            return self.__saturation
 
 
 class SpectroscopicMode(object):

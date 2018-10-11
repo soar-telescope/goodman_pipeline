@@ -24,7 +24,7 @@ from ..core import (astroscrappy_lacosmic,
                     read_fits,
                     write_fits)
 
-from ..core import SpectroscopicMode
+from ..core import SaturationValues, SpectroscopicMode
 
 
 class ImageProcessor(object):
@@ -66,6 +66,7 @@ class ImageProcessor(object):
         self.trim_section = self.define_trim_section(
             technique=self.technique)
         self.overscan_region = self.get_overscan_region()
+        self.saturation_values = SaturationValues()
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
         self.master_bias_name = None
@@ -107,8 +108,17 @@ class ImageProcessor(object):
                             self.process_imaging_science(sub_group)
 
     def _is_file_saturated(self, ccd):
-        if ccd.data.max() > float(self.args.saturation_limit):
 
+        pixels_above_saturation = np.count_nonzero(
+            ccd.data[np.where(
+                ccd.data > self.saturation_values.get_saturation_value(
+                    ccd=ccd))])
+
+        total_pixels = np.count_nonzero(ccd.data)
+
+        saturated_percent = (pixels_above_saturation * 100) / total_pixels
+
+        if saturated_percent >= 1:
             return True
         else:
             return False

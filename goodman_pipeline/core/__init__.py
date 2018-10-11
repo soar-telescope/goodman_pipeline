@@ -8,6 +8,7 @@ from .core import (GenerateDcrParFile,
                    NotEnoughLinesDetected,
                    NoTargetException,
                    ReferenceData,
+                   SaturationValues,
                    SpectroscopicMode)
 
 # import of functions in core.py
