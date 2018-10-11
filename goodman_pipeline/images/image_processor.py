@@ -118,7 +118,7 @@ class ImageProcessor(object):
 
         saturated_percent = (pixels_above_saturation * 100) / total_pixels
 
-        if saturated_percent >= 1:
+        if saturated_percent >= self.args.saturation_threshold:
             return True
         else:
             return False
