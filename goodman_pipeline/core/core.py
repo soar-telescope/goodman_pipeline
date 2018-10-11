@@ -3132,6 +3132,8 @@ class SaturationValues(object):
 
         if hfw.empty:
             self.log.critical('Unable to obtain saturation level')
+            self.__saturation = None
+            return None
         else:
             self.__saturation = float(hfw.to_string(index=False))
             self.log.debug("Set saturation level as {:.0f}".format(
