@@ -111,7 +111,7 @@ pdf_documents = [('user_manual',
 
 html_theme = 'sphinx_rtd_theme'
 
-html_logo = 'img/soar_logo.png'
+html_logo = '_static/soar_logo.png'
 
 html_context = {'license': 'BSD 3-Clause License'}
 
