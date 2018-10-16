@@ -32,8 +32,8 @@ If you wish to know more about the instrument please check the
 If you are having trouble operating the Goodman Pipeline we suggest the following
 procedure.
 
-* Check [existing issues](https://github.com/soar-telescope/goodman/issues) or 
-open a [new Issue](https://github.com/soar-telescope/goodman/issues/new) on GitHub.
+* Check [existing issues](https://github.com/soar-telescope/goodman_pipeline/issues) or 
+open a [new Issue](https://github.com/soar-telescope/goodman_pipeline/issues/new) on GitHub.
 
 ## Development Team
 

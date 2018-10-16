@@ -18,7 +18,7 @@ of ``dcr`` to help with the pipeline's workflow. It is included under
 
   ``<path_to_download_location>/goodman_pipeline/goodman_pipeline/data/dcr-source/dcr/``
 
-``goodman`` is the folder that will be created once you untar or unzip the latest
+``goodman_pipeline-<version>`` is the folder that will be created once you untar or unzip the latest
 release of the |pipeline name|.
 
 .. important::
@@ -90,3 +90,4 @@ executable binary in your ``$PATH`` variable.
 
     ``source ~/.bashrc``
 
+.. include:: _shortcuts.rst

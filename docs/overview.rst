@@ -12,7 +12,7 @@ spectra can be produced shortly after the shutter closes.
 The pipeline is primarily intended to be run on a data reduction dedicated
 computer though it is available for local installation. The |pipeline full name|
 project is hosted at GitHub at
-`it's GitHub Repository <https://github.com/soar-telescope/goodman>`_.
+`it's GitHub Repository <https://github.com/soar-telescope/goodman_pipeline>`_.
 
 Instructions for running the software are provided in the :ref:`usage` section
 of this guide. How to access the the data reduction server is on

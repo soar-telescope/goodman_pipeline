@@ -2,109 +2,102 @@
 
 Install
 #######
-Using the pipeline remotely is the recommended method, in which case you don't need
-to worry about software requirements.
 
-However, for users who wish to go ahead with a local installation, we provide
-simple instructions in the current section.
+We do not have the resources to provide installation support, thus we provide
+a server with the latest and older versions installed that users with access rights
+can use, however, the installation process is simple.
 
-Requirements
+Installation Overview
+*********************
+
+The required steps for a successful installation may vary, but here is a general
+list.
+
+Install *astroconda*.
+  Visit `AstroConda site <https://astroconda.readthedocs.io/en/latest/>`_ and use
+  their instructions on how to install and basic setup. Make sure you add
+  the `astroconda channel <https://astroconda.readthedocs.io/en/latest/installation.html#configure-conda-to-use-the-astroconda-channel>`_
+
+Create a *virtual environment*.
+  This will depend on the method of installation but here is the official
+  documentation on `virtual environment management <https://conda.io/docs/user-guide/tasks/manage-environments.html>`_.
+
+Install all requirements.
+  This can be done along with the virtual environment creation, but it might be
+  necessary to manually install dependencies.
+
+Run test code.
+  This is optional only possible if you are installing from source code.
+
+Install the goodman pipeline.
+  The most important step (of course).
+
+Getting the code
+****************
+
+There are several ways to get the goodman pipeline code on your computer.
+
+1. Clone the repository: Cloning the `repository <https://github.com/soar-telescope/goodman_pipeline>`_ will
+   get you the latest version of the code, this could be a very unstable version,
+   so is not recommended. Also is very likely that you will download things you don't need.
+
+2. Get a release: A release is like a snapshot of a very special stage of development.
+   Though is not easy to guarantee that the code will not break a released version should
+   be stable in the sense that no experimental code should exist. Also, is a
+   special packaging of the necessary parts for operation. The releases are listed
+   `here <https://github.com/soar-telescope/goodman_pipeline/releases>`_. make sure
+   it has a green tag that says **Latest Release**.
+
+3. Using pip: Since version :ref:`1.1.2 <v1.1.2>` the goodman pipeline can be installed using
+   pip: ``pip install goodman-pipeline`` however this does not install astroconda
+   neither creates the virtual environment.
+
+
+Dependencies
 ************
 
-The |pipeline name| is completely written in Python 3.x and relies on several
-libraries like:
+We have made an enormous effort to maintain dependencies under control, with
+one exception, but don't worry that we have :ref:`detailed instruccions <dcr>` for
+dealing with it.
 
-* NumPy
-* SciPy
-* MatPlotLib
-* Pandas
-* AstroPy
-* AstroPy/ccdproc
-* AstroPy/astroplan
-* DCR
+For the ordinary dependencies we make use of the great tools provided by astroconda.
+With one step we can create a virtual environment with all the dependencies on it.
+This does not work for the pip installation, but either by cloning the repository or
+by downloading a release you get a file called `environment.yml` that can be used by
+conda in the following way:
 
-Using Conda
-***********
+  ``conda env create -f environment.yml``
 
-We **do not** recommend the installation of these libraries or the
-|pipeline name| in your system since updates and upgrades may ruin it. We rather
-recommend the use of Virtual Environments. If you are not familiar with this
-term, please check the official documentation by visiting the links below:
+This will create a virtual environment called ``goodman_pipeline`` that you can start
+using by running.
 
-    https://docs.python.org/3/tutorial/venv.html
-
-    or
-
-    http://docs.python-guide.org/en/latest/dev/virtualenvs/
-
-Another option is to install **Conda**, a Virtual Environment Manager, or
-**AstroConda**, the same but for astronomers. Everything you need to know
-about installing both can be found in the link below:
-
-    https://astroconda.readthedocs.io/
-
-
-.. include:: _working_with_virtualenv.rst
-
-Using PIP
-*********
-
-.. warning::
-
-    You may find that `ccdproc` and `astroplan` do not come with Astroconda.
-    They are not available on any Conda channel either. That means that you will
-    have to install them separately. You can do so by downloading the source files
-    and installing them by hand, or simply
-    `activate your Virtual Environment <https://conda.io/docs/user-guide/tasks/manage-environments.html#activating-an-environment>`_ and
-    then install these two packages using pip with
-
-    ``pip install ccdproc astroplan``
-
-
-
-Setup for local installation
-****************************
-System installation is not recommended because it can mess things up specially in
-Linux and Mac OS. Before you proceed, make sure that your system has all
-the required libraries, as described in `Requirements`_.
-
-Once you have Python running and all the libraries installed either using
-Conda/AstroConda or not, you may download the last version available in the
-following address:
-
-    https://github.com/soar-telescope/goodman/releases/latest
-
-Before continuing, make sure that your Virtual Environment is active if this is
-the case. There are several ways of doing this but normally the command below
-should work:
-
-    ``$ source activate <my_environment_name>``
-
-Where ``<my_environment_name>`` is the name of your Virtual Environment (e.g.
-astroconda).
-
-Now you can finally install the |pipeline name|. Download the file, decompress
-it, and enter the directory created during the file decompression. Test the
-installation by typing:
-
-    ``$ python setup.py test``
-
-If you have any errors, check the traceback. If you find difficulties carring
-on at this poing, you may contact us by `opening a new issue <https://github.com/soar-telescope/goodman/issues>`_     or using the e-mail
-`goodman-pipeline@ctio.noao.edu`.
-
-If no error messages start popping up in your screen, you are good to carry
-on with the installation.
-
-    ``$ python setup.py install``
-
-.. note::
-
-    This will install the pipeline in the currently active Python version.
-    If you have Virtual Environments, make sure that it is active. If not,
-    you can add the ``--user`` option to install only for your user and avoid
-    needing root access.
+  ``source activate goodman_pipeline``
 
 .. include:: _install_dcr.rst
 
-.. include:: _shortcuts.rst
+Running tests
+*************
+
+*Test code is code to test the code*, yes, that's right, and the |pipeline full name|
+comes with a lot of it. Ideally the 100% of the code should be covered, we are not
+there yet but we are getting closer. Running the test code is not a requirement
+but it helps a lot to identify problems. Go to the extraction folder
+(where the file ``setup.py`` exist) and execute the following instruction:
+
+  ``python setup.py test``
+
+This will detect the test code and execute it. Failure or success will be informed.
+
+Installation
+************
+
+If the previous steps ended successfully this should be easy. Go to the extraction
+folder and execute the following instruction:
+
+  ``python setup.py install``
+
+
+Alternatively, after the creation of the virtual environment you can install the pipeline
+using pip.
+
+  ``pip install goodman-pipeline``
