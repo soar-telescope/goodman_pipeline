@@ -14,7 +14,10 @@ import sys
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
+from setuptools.command.install import install
 
+import subprocess
+from threading import Timer
 from sphinx.setup_command import BuildDoc
 # To use a consistent encoding
 from codecs import open
@@ -40,6 +43,46 @@ except ImportError:
     from configparser import ConfigParser
 conf = ConfigParser()
 
+
+class CustomInstallCommand(install):
+    """Custom install command to allow dcr installation."""
+
+    def _install_dcr(self, install_script='install_dcr.sh'):
+        print("Running DCR installer")
+        command = 'sh {:s}'.format(install_script)
+
+        try:
+            install_dcr = subprocess.Popen(command.split(),
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
+
+        except OSError as error:
+            print(error)
+
+        install_timer = Timer(10, self._kill_process, [install_dcr])
+
+        try:
+            install_timer.start()
+            stdout, stderr = install_dcr.communicate()
+        finally:
+            install_timer.cancel()
+
+        for _line in stdout.split(b'\n'):
+            print(_line.decode("utf-8"))
+
+        for _line in stderr.split(b'\n'):
+            print(_line.decode("utf-8"))
+
+    @staticmethod
+    def _kill_process(process):
+        process.kill()
+
+    def run(self):
+
+        self._install_dcr(install_script='install_dcr.sh')
+        install.run(self)
+
+
 # conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 conf.read([os.path.join(os.path.dirname(__file__), 'setup.cfg')])
 metadata = dict(conf.items('metadata'))
@@ -63,7 +106,8 @@ create_version_py(PACKAGENAME, VERSION)
 
 
 cmdclassd = {'build_sphinx': BuildDoc,
-             'build_docs': BuildDoc}
+             'build_docs': BuildDoc,
+             'install': CustomInstallCommand}
 
 setup(
     name=metadata['package_name'],

@@ -20,8 +20,6 @@ else
 		if [ -f $SOURCE_DIR/dcr ]
 		then
 			echo "Adding executing permission"
-			echo $SOURCE_DIR
-			echo $PATH
 			chmod +x $SOURCE_DIR/dcr
 
 			if [ -d $ENV_PATH/bin ] &&  echo $PATH | grep -q $ENV_PATH/bin 
