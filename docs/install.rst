@@ -27,10 +27,11 @@ Install all requirements.
   necessary to manually install dependencies.
 
 Run test code.
-  This is optional only possible if you are installing from source code.
+  This is optional and only possible if you are installing from source code or
+  a released version.
 
 Install the goodman pipeline.
-  The most important step (of course).
+  The most important step (of course). Go to installation_
 
 Getting the code
 ****************
@@ -87,6 +88,8 @@ but it helps a lot to identify problems. Go to the extraction folder
   ``python setup.py test``
 
 This will detect the test code and execute it. Failure or success will be informed.
+
+.. _installation:
 
 Installation
 ************
