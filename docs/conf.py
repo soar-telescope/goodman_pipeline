@@ -111,6 +111,8 @@ pdf_documents = [('user_manual',
 
 html_theme = 'sphinx_rtd_theme'
 
+html_logo = '_static/soar_logo.png'
+
 html_context = {'license': 'BSD 3-Clause License'}
 
 # Theme options are theme-specific and customize the look and feel of a theme

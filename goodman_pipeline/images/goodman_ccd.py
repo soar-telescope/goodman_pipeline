@@ -216,7 +216,7 @@ class MainApp(object):
                     "not found inside headers. This keyword contains what "
                     "is the Goodman Wavelength Configuration that was used"
                     " for this observation. Please add it manually (see "
-                    "https://github.com/soar-telescope/goodman/blob/development/goodman_modes.md) "
+                    "https://github.com/soar-telescope/goodman_pipeline/blob/development/goodman_modes.md) "
                     "and run again. Leaving the program now.")
                 sys.exit(1)
 

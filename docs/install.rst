@@ -2,200 +2,105 @@
 
 Install
 #######
-Using the pipeline remotely is the recommended method, in which case you don't need
-to worry about software requirements.
 
-However, for users who wish to go ahead with a local installation, we provide
-simple instructions in the current section.
+We do not have the resources to provide installation support, thus we provide
+a server with the latest and older versions installed that users with access rights
+can use, however, the installation process is simple.
 
-Requirements
+Installation Overview
+*********************
+
+The required steps for a successful installation may vary, but here is a general
+list.
+
+Install *astroconda*.
+  Visit `AstroConda site <https://astroconda.readthedocs.io/en/latest/>`_ and use
+  their instructions on how to install and basic setup. Make sure you add
+  the `astroconda channel <https://astroconda.readthedocs.io/en/latest/installation.html#configure-conda-to-use-the-astroconda-channel>`_
+
+Create a *virtual environment*.
+  This will depend on the method of installation but here is the official
+  documentation on `virtual environment management <https://conda.io/docs/user-guide/tasks/manage-environments.html>`_.
+
+Install all requirements.
+  This can be done along with the virtual environment creation, but it might be
+  necessary to manually install dependencies.
+
+Run test code.
+  This is optional and only possible if you are installing from source code or
+  a released version.
+
+Install the goodman pipeline.
+  The most important step (of course). Go to installation_
+
+Getting the code
+****************
+
+There are several ways to get the goodman pipeline code on your computer.
+
+1. Clone the repository: Cloning the `repository <https://github.com/soar-telescope/goodman_pipeline>`_ will
+   get you the latest version of the code, this could be a very unstable version,
+   so is not recommended. Also is very likely that you will download things you don't need.
+
+2. Get a release: A release is like a snapshot of a very special stage of development.
+   Though is not easy to guarantee that the code will not break a released version should
+   be stable in the sense that no experimental code should exist. Also, is a
+   special packaging of the necessary parts for operation. The releases are listed
+   `here <https://github.com/soar-telescope/goodman_pipeline/releases>`_. make sure
+   it has a green tag that says **Latest Release**.
+
+3. Using pip: Since version :ref:`1.1.2 <v1.1.2>` the goodman pipeline can be installed using
+   pip: ``pip install goodman-pipeline`` however this does not install astroconda
+   neither creates the virtual environment.
+
+
+Dependencies
 ************
 
-The |pipeline name| is completely written in Python 3.x and relies on several
-libraries like:
+We have made an enormous effort to maintain dependencies under control, with
+one exception, but don't worry that we have :ref:`detailed instruccions <dcr>` for
+dealing with it.
 
-* NumPy
-* SciPy
-* MatPlotLib
-* Pandas
-* AstroPy
-* AstroPy/ccdproc
-* AstroPy/astroplan
-* DCR
+For the ordinary dependencies we make use of the great tools provided by astroconda.
+With one step we can create a virtual environment with all the dependencies on it.
+This does not work for the pip installation, but either by cloning the repository or
+by downloading a release you get a file called `environment.yml` that can be used by
+conda in the following way:
 
-Using Conda
-***********
+  ``conda env create -f environment.yml``
 
-We **do not** recommend the installation of these libraries or the
-|pipeline name| in your system since updates and upgrades may ruin it. We rather
-recommend the use of Virtual Environments. If you are not familiar with this
-term, please check the official documentation by visiting the links below:
+This will create a virtual environment called ``goodman_pipeline`` that you can start
+using by running.
 
-    https://docs.python.org/3/tutorial/venv.html
+  ``source activate goodman_pipeline``
 
-    or
+.. include:: _install_dcr.rst
 
-    http://docs.python-guide.org/en/latest/dev/virtualenvs/
+Running tests
+*************
 
-Another option is to install **Conda**, a Virtual Environment Manager, or
-**AstroConda**, the same but for astronomers. Everything you need to know
-about installing both can be found in the link below:
+*Test code is code to test the code*, yes, that's right, and the |pipeline full name|
+comes with a lot of it. Ideally the 100% of the code should be covered, we are not
+there yet but we are getting closer. Running the test code is not a requirement
+but it helps a lot to identify problems. Go to the extraction folder
+(where the file ``setup.py`` exist) and execute the following instruction:
 
-    https://astroconda.readthedocs.io/
+  ``python setup.py test``
 
+This will detect the test code and execute it. Failure or success will be informed.
 
-.. include:: _working_with_virtualenv.rst
+.. _installation:
 
-Using PIP
-*********
+Installation
+************
 
-.. warning::
+If the previous steps ended successfully this should be easy. Go to the extraction
+folder and execute the following instruction:
 
-    You may find that `ccdproc` and `astroplan` do not come with Astroconda.
-    They are not available on any Conda channel either. That means that you will
-    have to install them separately. You can do so by downloading the source files
-    and installing them by hand, or simply
-    `activate your Virtual Environment <https://conda.io/docs/user-guide/tasks/manage-environments.html#activating-an-environment>`_ and
-    then install these two packages using pip with
+  ``python setup.py install``
 
-    ``pip install ccdproc astroplan``
 
+Alternatively, after the creation of the virtual environment you can install the pipeline
+using pip.
 
-
-Setup for local installation
-****************************
-System installation is not recommended because it can mess things up specially in
-Linux and Mac OS. Before you proceed, make sure that your system has all
-the required libraries, as described in `Requirements`_.
-
-Once you have Python running and all the libraries installed either using
-Conda/AstroConda or not, you may download the last version available in the
-following address:
-
-    https://github.com/soar-telescope/goodman/releases/latest
-
-Before continuing, make sure that your Virtual Environment is active if this is
-the case. There are several ways of doing this but normally the command below
-should work:
-
-    ``$ source activate <my_environment_name>``
-
-Where ``<my_environment_name>`` is the name of your Virtual Environment (e.g.
-astroconda).
-
-Now you can finally install the |pipeline name|. Download the file, decompress
-it, and enter the directory created during the file decompression. Test the
-installation by typing:
-
-    ``$ python setup.py test``
-
-If you have any errors, check the traceback. If you find difficulties carring
-on at this poing, you may contact us by `opening a new issue <https://github.com/soar-telescope/goodman/issues>`_     or using the e-mail
-`goodman-pipeline@ctio.noao.edu`.
-
-If no error messages start popping up in your screen, you are good to carry
-on with the installation.
-
-    ``$ python setup.py install``
-
-.. note::
-
-    This will install the pipeline in the currently active Python version.
-    If you have Virtual Environments, make sure that it is active. If not,
-    you can add the ``--user`` option to install only for your user and avoid
-    needing root access.
-
-.. _dcr:
-
-Installing DCR
-**************
-
-.. admonition:: Acknowledgement Note
-
-  Please cite: Pych, W., 2004, PASP, 116, 148
-
-In terms of cosmic ray rejection we shifted to a non-python package because the
-results were much better compared to LACosmic's implementation in Astropy.
-LACosmic was not designed to work with spectroscopy. Though since version
-:ref:`1.1.0 <v1.1.0>` we shifted from Astropy to Astroscrappy's implementation
-of LACosmic.
-
-The latest version of the Goodman Spectroscopic Pipeline uses a modified version
-of ``dcr`` to help with the pipeline's workflow. It is included under
-
-  ``<path_to_download_location>/goodman/pipeline/data/dcr-source/dcr/``
-
-``goodman`` is the folder that will be created once you untar or unzip the latest
-release of the |pipeline name|.
-
-.. important::
-
-    The changes we made to DCR include deletion of all ``HISTORY`` and ``COMMENT`` keywords,
-    which we don't use in the pipeline. And addition of a couple of custom
-    keywords, such as: ``GSP_FNAM``, which stores the name of the file being
-    created. ``GSP_DCRR`` which stores the reference to the paper to cite.
-
-
-You are still encouraged to visit the official
-`Link <http://users.camk.edu.pl/pych/DCR/>`_. We remind again that users of the
-Goodman Pipeline should cite the DCR paper with the reference indicated above.
-
-Compiling DCR
-^^^^^^^^^^^^^
-
-Compiling ``dcr`` is actually very simple.
-
-  ``cd <path_to_download_location>/goodman/pipeline/data/dcr-source/dcr/``
-
-Then simply type:
-
-  ``make``
-
-This will compile `dcr` and also it will create other files. The executable
-binary here is ``dcr``.
-
-We have successfully compiled *dcr* right out the box in several platforms, such as:
-
-- Ubuntu 16.04
-- Centos 7.1, 7.4
-- MacOS Sierra
-- Solaris 11
-
-
-Installing the DCR binary
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This is a suggested method. If you are not so sure what you are doing, we
-recommend you follow the steps shown below. If you are a more advanced user and
-you want to do it your own way, all you have to achieve is to have the ``dcr``
-executable binary in your ``$PATH`` variable.
-
-1. Open a terminal
-2. In your home directory create a hidden directory ``.bin`` (Home directory
-   should be the default when you open a new terminal window)
-
-   ``mkdir ~/.bin``
-
-3. Move the binary of your choice and rename it ``dcr``. If you compiled it,
-   most likely it's already called ``dcr`` so you can ignore the renaming part of
-   this step.
-
-   ``mv dcr.Ubuntu16.04 ~/.bin/dcr``
-
-   Or
-
-   ``mv dcr ~/.bin/dcr``
-
-4. Add your ``$HOME/.bin`` directory to your ``$PATH`` variable. Open the file
-   ``.bashrc`` and add the following line.
-
-   ``export PATH=$PATH:/home/myusername/.bin``
-
-   Where ``/home/myusername`` is of course your home directory.
-
-5. Close and reopen the terminal or load the ``.bashrc`` file.
-
-    ``source ~/.bashrc``
-
-
-.. include:: _shortcuts.rst
+  ``pip install goodman-pipeline``
