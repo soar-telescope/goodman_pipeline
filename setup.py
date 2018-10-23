@@ -10,14 +10,10 @@ https://github.com/pypa/sampleproject
 """
 
 import os
-import sys
 
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
-from setuptools.command.install import install
 
-import subprocess
-from threading import Timer
 from sphinx.setup_command import BuildDoc
 # To use a consistent encoding
 from codecs import open
@@ -44,45 +40,6 @@ except ImportError:
 conf = ConfigParser()
 
 
-class CustomInstallCommand(install):
-    """Custom install command to allow dcr installation."""
-
-    def _install_dcr(self, install_script='install_dcr.sh'):
-        print("Running DCR installer")
-        command = 'sh {:s}'.format(install_script)
-
-        try:
-            install_dcr = subprocess.Popen(command.split(),
-                                           stdout=subprocess.PIPE,
-                                           stderr=subprocess.PIPE)
-
-        except OSError as error:
-            print(error)
-
-        install_timer = Timer(10, self._kill_process, [install_dcr])
-
-        try:
-            install_timer.start()
-            stdout, stderr = install_dcr.communicate()
-        finally:
-            install_timer.cancel()
-
-        for _line in stdout.split(b'\n'):
-            print(_line.decode("utf-8"))
-
-        for _line in stderr.split(b'\n'):
-            print(_line.decode("utf-8"))
-
-    @staticmethod
-    def _kill_process(process):
-        process.kill()
-
-    def run(self):
-
-        self._install_dcr(install_script='install_dcr.sh')
-        install.run(self)
-
-
 # conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 conf.read([os.path.join(os.path.dirname(__file__), 'setup.cfg')])
 metadata = dict(conf.items('metadata'))
@@ -106,8 +63,7 @@ create_version_py(PACKAGENAME, VERSION)
 
 
 cmdclassd = {'build_sphinx': BuildDoc,
-             'build_docs': BuildDoc,
-             'install': CustomInstallCommand}
+             'build_docs': BuildDoc}
 
 setup(
     name=metadata['package_name'],
@@ -182,56 +138,16 @@ setup(
     package_dir={'goodman_pipeline': 'goodman_pipeline'},
 
     package_data={'goodman_pipeline': ['data/params/dcr.par',
-                               'data/params/*.json',
-                               'data/ref_comp/*fits',
-                               'data/dcr-source/README.md',
-                               'data/dcr-source/dcr/*',
-                               'data/test_data/master_flat/*',
-                               'data/test_data/wcs_data/*']},
+                                       'data/params/*.json',
+                                       'data/ref_comp/*fits',
+                                       'data/dcr-source/README.md',
+                                       'data/dcr-source/dcr/*',
+                                       'data/test_data/master_flat/*',
+                                       'data/test_data/wcs_data/*']},
 
     scripts=['goodman_pipeline/scripts/redccd',
              'goodman_pipeline/scripts/redspec', ],
 
-    # Alternatively, if you want to distribute just a my_module.py, uncomment
-    # this:
-    #   py_modules=["my_module"],
-
-    # List run-time dependencies here.  These will be installed by pip when
-    # your project is installed. For an analysis of "install_requires" vs pip's
-    # requirements files see:
-    # https://packaging.python.org/en/latest/requirements.html
-    #install_requires=[''],
-
-    # List additional groups of dependencies here (e.g. development
-    # dependencies). You can install these using the following syntax,
-    # for example:
-    # $ pip install -e .[dev,test]
-    # extras_require={
-    #    'docs': ['astropy_sphinx_theme'],
-    #    'test': ['coverage'],
-    # },
-
-    # If there are data files included in your packages that need to be
-    # installed, specify them here.  If using Python 2.6 or less, then these
-    # have to be included in MANIFEST.in as well.
-    #package_data={
-    #    'sample': ['package_data.dat'],
-    #},
-
-    # Although 'package_data' is the preferred approach, in some case you may
-    # need to place data files outside of your packages. See:
-    # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa
-    # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-    # data_files=[('dcr-source', ['dcr-source'])],
-
-    # To provide executable scripts, use entry points in preference to the
-    # "scripts" keyword. Entry points provide cross-platform support and allow
-    # pip to create the appropriate form of executable for the target platform.
-    #entry_points={
-    #    'console_scripts': [
-    #        'sample=sample:main',
-    #    ],
-    #},
-)
+   )
 
 
