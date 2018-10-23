@@ -7,100 +7,127 @@ We do not have the resources to provide installation support, thus we provide
 a server with the latest and older versions installed that users with access rights
 can use, however, the installation process is simple.
 
-Installation Overview
-*********************
+.. note::
 
-The required steps for a successful installation may vary, but here is a general
-list.
+  In this tutorial we use Miniconda3 as but you can also do it with Anaconda by
+  visiting `<https://www.anaconda.com/download/>`_ for downloading
+  the Anaconda installer for either operating system.
 
-Install *astroconda*.
-  Visit `AstroConda site <https://astroconda.readthedocs.io/en/latest/>`_ and use
-  their instructions on how to install and basic setup. Make sure you add
-  the `astroconda channel <https://astroconda.readthedocs.io/en/latest/installation.html#configure-conda-to-use-the-astroconda-channel>`_
+Ubuntu
+******
 
-Create a *virtual environment*.
-  This will depend on the method of installation but here is the official
-  documentation on `virtual environment management <https://conda.io/docs/user-guide/tasks/manage-environments.html>`_.
+This installation process has been tested in a live version
+(previously known as *Live CD*) of Ubuntu 18.04.
 
-Install all requirements.
-  This can be done along with the virtual environment creation, but it might be
-  necessary to manually install dependencies.
+1. Install ``make`` and ``gcc``
 
-Run test code.
-  This is optional and only possible if you are installing from source code or
-  a released version.
+  ``sudo apt install gcc make``
 
-Install the goodman pipeline.
-  The most important step (of course). Go to installation_
+2. Download Miniconda
 
-Getting the code
-****************
+  ``wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh``
 
-There are several ways to get the goodman pipeline code on your computer.
+Mac OS
+******
 
-1. Clone the repository: Cloning the `repository <https://github.com/soar-telescope/goodman_pipeline>`_ will
-   get you the latest version of the code, this could be a very unstable version,
-   so is not recommended. Also is very likely that you will download things you don't need.
+This installation was tested on MacOS High Sierra.
 
-2. Get a release: A release is like a snapshot of a very special stage of development.
-   Though is not easy to guarantee that the code will not break a released version should
-   be stable in the sense that no experimental code should exist. Also, is a
-   special packaging of the necessary parts for operation. The releases are listed
-   `here <https://github.com/soar-telescope/goodman_pipeline/releases>`_. make sure
-   it has a green tag that says **Latest Release**.
+1. Install `Xcode <https://itunes.apple.com/us/app/xcode/id497799835?mt=12>`_ command Line Tools. You can do it from the *App Store* or from command line.
 
-3. Using pip: Since version :ref:`1.1.2 <v1.1.2>` the goodman pipeline can be installed using
-   pip: ``pip install goodman-pipeline`` however this does not install astroconda
-   neither creates the virtual environment.
+  ``xcode-select --install``
+
+2. Download Anaconda or Miniconda
+
+  ``curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --output miniconda.sh``
 
 
-Dependencies
+Common Steps
 ************
 
-We have made an enormous effort to maintain dependencies under control, with
-one exception, but don't worry that we have :ref:`detailed instruccions <dcr>` for
-dealing with it.
+1. Install Miniconda
 
-For the ordinary dependencies we make use of the great tools provided by astroconda.
-With one step we can create a virtual environment with all the dependencies on it.
-This does not work for the pip installation, but either by cloning the repository or
-by downloading a release you get a file called `environment.yml` that can be used by
-conda in the following way:
+  ``bash miniconda.sh``
+
+  Answer the questions and reopen the terminal at the end.
+
+2. Configure conda to use the Astroconda Channel
+
+  ``conda config --add channels http://ssb.stsci.edu/astroconda``
+
+3. Get the `latest release <https://github.com/soar-telescope/goodman_pipeline/releases>`_
+   of the |pipeline full name| from github. There is a ``.zip`` and ``.tar.gz``
+   files, the following steps will continue with the latter.
+
+   Make sure there is a green tag that says Latest release. For instance, for
+   the version ``v1.1.2`` the file is called.
+
+   ``goodman_pipeline-1.1.2.tar.gz``
+
+
+4. Extract the file (you can't copy and paste this line)
+
+  ``tar -xvf goodman_pipeline-<latest tag>.tar.gz``
+
+  where ``<latest tag>`` is the version number of the latest release.
+
+5. Move into the directory containing the package.
+
+  ``cd goodman_pipeline-<latest tag>``
+
+  If you do ``ls`` you should find some interesting files on it such as:
+  ``setup.py`` and ``environment.yml`` and ``install_dcr.sh``.
+
+6. Create the virtual environment. The ``environment.yml`` file contains a preset
+   definition of a virtual environment that Anaconda will understand, also
+   ensures that the |pipeline full name| will work. Even the name of the virtual
+   environment is set there.
 
   ``conda env create -f environment.yml``
 
-This will create a virtual environment called ``goodman_pipeline`` that you can start
-using by running.
+  This will create a virtual environment called ``goodman_pipeline``. To activate it
 
   ``source activate goodman_pipeline``
 
-.. include:: _install_dcr.rst
+7. Install ``DCR``. This script requires a virtual environment activated.
 
-Running tests
-*************
+  ``sh install_dcr.sh``
 
-*Test code is code to test the code*, yes, that's right, and the |pipeline full name|
-comes with a lot of it. Ideally the 100% of the code should be covered, we are not
-there yet but we are getting closer. Running the test code is not a requirement
-but it helps a lot to identify problems. Go to the extraction folder
-(where the file ``setup.py`` exist) and execute the following instruction:
+  To test if it worked you can close and reopen the terminal or do ``source ~/.bashrc``
+  or ``source ~/.bash_profile`` and then.
+
+  ``dcr``
+
+  You should get something like this::
+
+      (goodman_pipeline) [user@servername goodman_pipeline]$ dcr
+
+            This is a modified version of DCR! for the Goodman Spectroscopic Pipeline
+            Please visit the author's site to get the original version:
+            Modification Version: 0.0.1
+
+            http://users.camk.edu.pl/pych/DCR/
+
+
+            USAGE:  dcr  input_file  cleaned_file  cosmicrays_file
+
+      File 'dcr.par' must be present in the working directory.
+          ~~~~~~
+
+
+8. Run tests.
 
   ``python setup.py test``
 
-This will detect the test code and execute it. Failure or success will be informed.
-
-.. _installation:
-
-Installation
-************
-
-If the previous steps ended successfully this should be easy. Go to the extraction
-folder and execute the following instruction:
+9. Install the pipeline
 
   ``python setup.py install``
 
+Using pip
+*********
 
-Alternatively, after the creation of the virtual environment you can install the pipeline
-using pip.
+The |pipeline full name| Can also be installed using pip, but it does not install
+``dcr``, so if you are updating your goodman pipeline only you can use:
 
   ``pip install goodman-pipeline``
+
+.. include:: _shortcuts.rst
