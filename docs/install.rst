@@ -5,7 +5,8 @@ Install
 
 We do not have the resources to provide installation support, thus we provide
 a server with the latest and older versions installed that users with access rights
-can use, however, the installation process is simple.
+can use. However, the installation process is simple, and is described below (we hope that in enough detail)
+so that users can follow the steps and end up with a running version of the pipeline.
 
 .. note::
 
@@ -69,7 +70,7 @@ Common Steps
   ``tar -xvf goodman_pipeline-<latest tag>.tar.gz``
 
   where ``<latest tag>`` is the version number of the latest release.
-
+http://localhost/pipeline/install.html
 5. Move into the directory containing the package.
 
   ``cd goodman_pipeline-<latest tag>``
@@ -95,6 +96,7 @@ Common Steps
   To test if it worked you can close and reopen the terminal or do ``source ~/.bashrc``
   or ``source ~/.bash_profile`` and then.
 
+
   ``dcr``
 
   You should get something like this::
@@ -112,7 +114,6 @@ Common Steps
 
       File 'dcr.par' must be present in the working directory.
           ~~~~~~
-
 
 8. Run tests.
 
