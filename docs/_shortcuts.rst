@@ -9,4 +9,7 @@
 .. |headers change| replace:: March, 2018
 
 
+
 ..    the sequence for section level is `=#*^~&`
+
+.. |tag latest| replace:: 1.1.2

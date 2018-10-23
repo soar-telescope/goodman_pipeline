@@ -1,9 +1,9 @@
 Change History
 ##############
 
-.. _v1.1.3:
+.. _v1.2.0:
 
-V1.1.3 Unreleased
+V1.2.0 Unreleased
 ^^^^^^^^^^^^^^^^^
 - Improved method to detect saturated images. Added a table with the *half full
   well* for all the readout modes possible and created a method to easily
