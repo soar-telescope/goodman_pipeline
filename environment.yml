@@ -2,7 +2,7 @@ name: goodman_pipeline
 channels:
   - astroconda
 dependencies:
-  - numpy
+  - numpy=1.15.2
   - pandas
   - matplotlib
   - scipy
