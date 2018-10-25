@@ -70,7 +70,7 @@ Common Steps
   ``tar -xvf goodman_pipeline-<latest tag>.tar.gz``
 
   where ``<latest tag>`` is the version number of the latest release.
-http://localhost/pipeline/install.html
+
 5. Move into the directory containing the package.
 
   ``cd goodman_pipeline-<latest tag>``
