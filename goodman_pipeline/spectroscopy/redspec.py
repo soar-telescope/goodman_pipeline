@@ -446,7 +446,6 @@ class MainApp(object):
                                 elif plt.get_backend() == u'Qt5Agg':
                                     manager.window.showMaximized()
 
-
                                 ax.set_title(
                                     "{:s} Extraction centered near "
                                     "{:.2f} \n File: {:s}".format(

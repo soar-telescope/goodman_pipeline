@@ -798,9 +798,8 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
                            comment="Aperture in first column")
 
             ccd.header.set('GSP_EXTR',
-                           value="{:.2f}:{:.2f} column {:d}".format(low_limit,
-                                                                    high_limit,
-                                                                    i+1))
+                           value="{:.2f}:{:.2f}".format(low_limit,
+                                                        high_limit))
 
             log.info("Extraction aperture in first column: {:s}".format(
                 ccd.header['GSP_EXTR']))
@@ -1947,7 +1946,13 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
         new_suffix = '_target_{:d}.fits'.format(target_number)
         file_name = re.sub('.fits', new_suffix, file_name)
 
-    new_file_name = prefix + file_name
+    if ccd.header['OBSTYPE'] == 'COMP':
+        print(ccd.header['GSP_EXTR'])
+        new_file_name = prefix + file_name
+        print()
+    else:
+        new_file_name = prefix + file_name
+
     log.info("Saving uncalibrated(w) extracted spectrum to file: "
              "{:s}".format(new_file_name))
     full_path = os.path.join(destination, new_file_name)
