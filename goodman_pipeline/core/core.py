@@ -1947,9 +1947,10 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
         file_name = re.sub('.fits', new_suffix, file_name)
 
     if ccd.header['OBSTYPE'] == 'COMP':
-        print(ccd.header['GSP_EXTR'])
+        extraction_region = re.sub(':','-', ccd.header['GSP_EXTR'])
+        file_name = re.sub('.fits', '_{:s}.fits'.format(extraction_region), file_name)
         new_file_name = prefix + file_name
-        print()
+
     else:
         new_file_name = prefix + file_name
 
