@@ -225,7 +225,7 @@ class WavelengthCalibration(object):
                         lamp=True)
 
                     wavelength_solutions.append(self.wsolution)
-                    reference_lamp_names.append(self.calibration_lamp)
+                    reference_lamp_names.append(self.wcal_lamp_file)
                 else:
                     self.log.error('It was not possible to get a wavelength '
                                    'solution from lamp '
@@ -242,12 +242,12 @@ class WavelengthCalibration(object):
                 for i in range(len(wavelength_solutions)):
                     # TODO (simon): Combine Multiple solutions
                     self.wsolution = wavelength_solutions[i]
-                    self.calibration_lamp = reference_lamp_names[i]
+                    self.wcal_lamp_file = reference_lamp_names[i]
                     self._save_science_data(ccd=ccd, index=i + 1)
 
             elif len(wavelength_solutions) == 1:
                 self.wsolution = wavelength_solutions[0]
-                self.calibration_lamp = reference_lamp_names[0]
+                self.wcal_lamp_file = reference_lamp_names[0]
                 self._save_science_data(ccd=ccd)
             else:
                 self.log.error("No wavelength solution.")
@@ -1293,7 +1293,7 @@ class WavelengthCalibration(object):
         if index is None:
             f_end = '.fits'
         else:
-            f_end = '_{:d}.fits'.format(index)
+            f_end = '_ws_{:d}.fits'.format(index)
 
         new_filename = os.path.join(self.args.destination,
                                     self.args.output_prefix +
