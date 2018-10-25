@@ -5,6 +5,8 @@ Change History
 
 V1.2.0 Unreleased
 ^^^^^^^^^^^^^^^^^
+- Changed install instruction with exact steps and commands instead of
+  referencing documentation.
 - Improved method to detect saturated images. Added a table with the *half full
   well* for all the readout modes possible and created a method to easily
   retrieve the value. This is a big improvement since in earlier versions the
