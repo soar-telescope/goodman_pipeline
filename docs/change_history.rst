@@ -5,6 +5,17 @@ Change History
 
 V1.2.0 Unreleased
 ^^^^^^^^^^^^^^^^^
+- Bugs removed:
+
+  + If there was more than one lamp for a science target the lamp recorded as used
+    was one of them only.
+  + A percentage symbols was added to the help of ``--saturation`` argument, this
+    caused a crash when ``redccd -h`` or ``redccd --help`` was used.
+- Numpy is fixed to the version ``1.15.2`` until further notice.
+- Reference lamps now get the extraction window added to the end of the file name.
+  This is to avoid overwritting the lamps when they were used for more than one target.
+- DCR install script is now more advanced and requires a virtual environment to work on.
+- Added SOAR Logo to ReadTheDocs page.
 - Changed install instruction with exact steps and commands instead of
   referencing documentation.
 - Improved method to detect saturated images. Added a table with the *half full
