@@ -48,8 +48,11 @@ A summary of the most important *command line arguments* are presented below.
 - ``--ignore-flats`` Ignores the existence or lack of ``FLAT`` data.
 - ``--raw-path <path>`` Set the directory where the raw data is located, can be relative.
 - ``--red-path <path>`` Set the directory where the reduced data will be stored. Default ``RED``.
-- ``--saturation <saturation>`` Set the saturation level. Flats exceeding the saturation
-  level will be discarded. Default 65.000 ADU.
+- ``--saturation <saturation>`` Set the saturation threshold in percentage. There
+  is a table with all the readout modes and their values at which saturation is
+  reached, then all the pixels exceeding that value are counted. If the percentage
+  is larger that the threshold defined with this argument the flat is marked as
+  saturated. The default value is 1 percent.
 
 
 This is intended to work with *spectroscopic* and *imaging* data, that it is why

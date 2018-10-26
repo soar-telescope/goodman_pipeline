@@ -5,4 +5,4 @@ goodman_pipeline
    :maxdepth: 4
 
    goodman_pipeline
-   setup
+

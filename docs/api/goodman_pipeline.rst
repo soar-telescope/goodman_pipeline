@@ -8,7 +8,6 @@ Subpackages
 
     goodman_pipeline.core
     goodman_pipeline.images
-    goodman_pipeline.scripts
     goodman_pipeline.spectroscopy
     goodman_pipeline.wcs
 

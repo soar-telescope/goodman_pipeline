@@ -1,5 +1,3 @@
-.. _extracting-the-spectra:
-
 Extracting the spectra
 **********************
 
@@ -33,12 +31,12 @@ behavior for every user or science case, we have implemented a set of
   ``cfzsto``. See :ref:`file-prefixes`.
 - ``--extraction <method>`` Select the :ref:`extraction-methods`. The only one
   implemented at the moment is ``fractional`` .
-- ``--reference-files <path>`` Folder where to find :ref:`reference-lamps`
-- ``--debug`` Shows extended and more messages. Also show plots of intermediate
-  steps.
+- ``--reference-files <path>`` Folder where to find the reference lamps.
+- ``--debug`` Shows extended and more messages.
+- ``--debug-plot`` Shows plots of intermediate steps.
 - ``--max-targets <value>`` Maximum number of targets to detect in a single
   image. Default is 3.
-- ``--save-plots`` Save plots as described in :ref:`plotting`
+- ``--save-plots`` Save plots.
 - ``--plot-results`` Show plots during execution.
 
 The mathematical model used to define the wavelength solution is recorded

@@ -229,7 +229,7 @@ class NightOrganizer(object):
           - ``OBSDEC``
 
         This method populates the `data_container` class attribute which is an
-        instance of the :class:`pipeline.core.core.NightDataContainer`.
+        instance of the :class:`goodman_pipeline.core.core.NightDataContainer`.
         A data group is an instance of a :class:`pandas.DataFrame`.
 
         """

@@ -3,8 +3,19 @@ Change History
 
 .. _v1.2.0:
 
-V1.2.0 Unreleased
+V1.2.0 26-10-2018
 ^^^^^^^^^^^^^^^^^
+- Bugs removed:
+
+  + If there was more than one lamp for a science target the lamp recorded as used
+    was one of them only.
+  + A percentage symbols was added to the help of ``--saturation`` argument, this
+    caused a crash when ``redccd -h`` or ``redccd --help`` was used.
+- Numpy is fixed to the version ``1.15.2`` until further notice.
+- Reference lamps now get the extraction window added to the end of the file name.
+  This is to avoid overwritting the lamps when they were used for more than one target.
+- DCR install script is now more advanced and requires a virtual environment to work on.
+- Added SOAR Logo to ReadTheDocs page.
 - Changed install instruction with exact steps and commands instead of
   referencing documentation.
 - Improved method to detect saturated images. Added a table with the *half full
@@ -82,7 +93,7 @@ V1.1.2 05-10-2018
 
 - Increased code coverage
 
-- Eliminated ``None`` elements in list of instances of :class:`pipeline.core.core.NightDataContainer`
+- Eliminated ``None`` elements in list of instances of :class:`goodman_pipeline.core.core.NightDataContainer`
 
 - Improved several logging messages
 
@@ -113,7 +124,7 @@ V1.1.1 23-08-2018
     and informs the user to try again.
 
 - Removed unused code and tools.
-- Relocated module :mod:`pipeline.core.check_version` to ``pipeline/core``.
+- Relocated module :mod:`goodman_pipeline.core.check_version` to ``pipeline/core``.
 - Implemented Authorized GitHub API access and added actual version check
 - Moved *command line interface* from ``goodman/bin/`` to ``goodman/pipeline/script/``
 - Specified version of :mod:`cython` to be able to build.

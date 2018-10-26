@@ -1,13 +1,6 @@
 goodman\_pipeline\.core package
 ===============================
 
-Subpackages
------------
-
-.. toctree::
-
-    goodman_pipeline.core.tests
-
 Submodules
 ----------
 

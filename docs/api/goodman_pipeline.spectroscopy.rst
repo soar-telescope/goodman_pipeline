@@ -1,12 +1,6 @@
 goodman\_pipeline\.spectroscopy package
 =======================================
 
-Subpackages
------------
-
-.. toctree::
-
-    goodman_pipeline.spectroscopy.tests
 
 Submodules
 ----------

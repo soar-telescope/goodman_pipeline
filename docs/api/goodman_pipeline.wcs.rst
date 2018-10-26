@@ -1,13 +1,6 @@
 goodman\_pipeline\.wcs package
 ==============================
 
-Subpackages
------------
-
-.. toctree::
-
-    goodman_pipeline.wcs.tests
-
 Submodules
 ----------
 

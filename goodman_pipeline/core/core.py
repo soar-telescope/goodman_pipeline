@@ -331,7 +331,7 @@ def classify_spectroscopic_data(path, search_pattern):
         search_pattern (str): Prefix to match files.
 
     Returns:
-        Instance of :class:`pipeline.core.core.NightDataContainer`
+        Instance of :class:`goodman_pipeline.core.core.NightDataContainer`
 
     """
     log.debug("Spectroscopic Data Classification")
@@ -526,8 +526,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
     DCR was created by Wojtek Pych and the code can be obtained from
     http://users.camk.edu.pl/pych/DCR/ and is written in C. Contrary to
     ccdproc's LACosmic it actually applies the correction, and also doesn't
-    update the mask attribute since it doesn't work with
-      :class:`~astropy.nddata.CCDData` instances.
+    update the mask attribute since it doesn't work with :class:`~astropy.nddata.CCDData` instances.
 
     The binary takes three positional arguments, they are: 1. input image,
     2. output image and 3. cosmic rays image. Also it needs that a dcr.par file
