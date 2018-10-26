@@ -398,18 +398,21 @@ class MainApp(object):
                                 target_trace=single_trace,
                                 spatial_profile=single_profile,
                                 extraction_name=extraction_type)
-                            saved_ccd = save_extracted(ccd=extracted,
-                                                      destination=self.args.destination,
-                                                      target_number=target_number)
+                            saved_ccd = save_extracted(
+                                ccd=extracted,
+                                destination=self.args.destination,
+                                target_number=target_number)
                             # print(spec_file)
 
                             # lamp extraction
                             all_lamps = []
                             if comp_ccd_list:
                                 for comp_lamp in comp_ccd_list:
-                                    comp_lamp.header.set('GSP_SCTR',
-                                                         value=saved_ccd.header['GSP_FNAM'],
-                                                         comment='Science target file the lamp was extracted for.')
+                                    comp_lamp.header.set(
+                                        'GSP_SCTR',
+                                        value=saved_ccd.header['GSP_FNAM'],
+                                        comment='Science target file the lamp '
+                                                'was extracted for.')
 
                                     comp_lamp = record_trace_information(ccd=comp_lamp,
                                                                          trace_info=trace_info)
@@ -445,7 +448,6 @@ class MainApp(object):
                                     manager.window.maximize()
                                 elif plt.get_backend() == u'Qt5Agg':
                                     manager.window.showMaximized()
-
 
                                 ax.set_title(
                                     "{:s} Extraction centered near "

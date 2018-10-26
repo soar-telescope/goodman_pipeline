@@ -850,15 +850,29 @@ class FitsFileIOAndOps(TestCase):
         self.fake_image = CCDData(data=np.ones((100, 100)),
                                   meta=fits.Header(),
                                   unit='adu')
-        self.fake_image.header.set('CCDSUM',
-                                   value='1 1',
-                                   comment='Fake values')
 
         self.file_name = 'sample_file.fits'
         self.target_non_zero = 4
         self.current_directory = os.getcwd()
         self.full_path = os.path.join(self.current_directory, self.file_name)
         self.parent_file = 'parent_file.fits'
+
+        self.fake_image.header.set('CCDSUM',
+                                   value='1 1',
+                                   comment='Fake values')
+
+        self.fake_image.header.set('OBSTYPE',
+                                   value='OBJECT',
+                                   comment='Fake values')
+
+        self.fake_image.header.set('GSP_FNAM',
+                                   value=self.file_name,
+                                   comment='Fake values')
+
+        self.fake_image.header.set('GSP_PNAM',
+                                   value=self.parent_file,
+                                   comment='Fake values')
+
         self.fake_image.write(self.full_path, overwrite=False)
 
     def test_write_fits(self):
@@ -927,13 +941,20 @@ class FitsFileIOAndOps(TestCase):
                                            self.target_non_zero),
                                        self.file_name)))
 
+    def test_save_extracted_target_zero_comp(self):
+        self.fake_image.header.set('GSP_FNAM', value=self.file_name)
+        self.fake_image.header.set('OBSTYPE', value='COMP')
+        self.fake_image.header.set('GSP_EXTR', value='100.00:101.00')
+        same_fake_image = save_extracted(ccd=self.fake_image,
+                                         destination=self.current_directory,
+                                         prefix='e',
+                                         target_number=0)
+
+        self.assertEqual(same_fake_image, self.fake_image)
+        self.assertTrue(os.path.isfile(self.fake_image.header['GSP_FNAM']))
+
     def tearDown(self):
-        files_to_remove = [self.full_path,
-                           'e' + self.file_name,
-                           'e' + re.sub('.fits',
-                                        '_target_{:d}.fits'.format(
-                                            self.target_non_zero),
-                                        self.file_name)]
+        files_to_remove = [self.full_path, self.fake_image.header['GSP_FNAM']]
 
         for _file in files_to_remove:
             if os.path.isfile(_file):
