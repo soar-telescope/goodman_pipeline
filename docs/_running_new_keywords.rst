@@ -9,6 +9,7 @@ of all the keywords added by |pipeline name|, though not all of them are
 added to all the images.
 
 .. _`general keywords`:
+
 General Purpose Keywords
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -34,15 +35,42 @@ used to keep track of the file name.
      GSP_SLIT   Slit trim section. From slit-illuminated area.
      GSP_BIAS   Master bias file used.
      GSP_FLAT   Master flat file used.
+     GSP_SCTR   Science target file name (for lamps only)
+     GSP_LAMP   Reference lamp used to obtain wavelength solution
      GSP_NORM   Master flat normalization method.
      GSP_COSM   Cosmic ray rejection method.
+     GSP_TERR   RMS error of target trace
+     GSP_EXTR   Extraction window at first column
+     GSP_BKG1   First background extraction zone
+     GSP_BKG2   Second background extraction zone
      GSP_WRMS   Wavelength solution RMS Error.
      GSP_WPOI   Number of points used to calculate RMS Error.
      GSP_WREJ   Number of points rejected from RMS Error Calculation.
      GSP_DCRR   Reference paper for DCR software (cosmic ray rejection).
     ========== =============================================================
 
+.. _`target-trace-model`:
+
+Target Trace Model
+^^^^^^^^^^^^^^^^^^
+
+.. _`table trace model keywords`:
+
+.. table:: Keywords used to describe the model used to fit the target's trace.
+
+     ========== ====================================================================
+      Keyword    Purpose
+     ========== ====================================================================
+      GSP_TMOD   Name of mathematical model from astropy's :mod:`~astropy.modeling`
+      GSP_TORD   Order of the model used.
+      GSP_TC00   Value of parameter ``c0``.
+      GSP_TC01   Value of parameter ``c1``.
+      GSP_TC02   Value of parameter ``c2``. This goes on depending the order.
+     ========== ====================================================================
+
+
 .. _`non-linear wavelength solutions`:
+
 Non-linear wavelength solution
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -56,6 +84,7 @@ The current implementation will work for writting any polinomial model. Reading 
 model by default.
 
 .. _`table non-linear keywords`:
+
 .. table:: Keywords used to describe a non-linear wavelength solution.
 
      ========== ====================================================================
@@ -69,7 +98,9 @@ model by default.
       GSP_C002   Value of parameter ``c2``. This goes on depending the order.
      ========== ====================================================================
 
+
 .. _`combined images`:
+
 Combined Images
 ^^^^^^^^^^^^^^^
 

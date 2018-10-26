@@ -34,8 +34,8 @@ behavior for every user or science case, we have implemented a set of
 - ``--extraction <method>`` Select the :ref:`extraction-methods`. The only one
   implemented at the moment is ``fractional`` .
 - ``--reference-files <path>`` Folder where to find :ref:`reference-lamps`
-- ``--debug`` Shows extended and more messages. Also show plots of intermediate
-  steps.
+- ``--debug`` Shows extended and more messages.
+- ``--debug-plot`` Shows plots of intermediate steps.
 - ``--max-targets <value>`` Maximum number of targets to detect in a single
   image. Default is 3.
 - ``--save-plots`` Save plots as described in :ref:`plotting`
