@@ -1,5 +1,0 @@
-.. _plotting:
-
-Plotting & Save
-***************
-
