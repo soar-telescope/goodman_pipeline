@@ -854,6 +854,10 @@ class FitsFileIOAndOps(TestCase):
                                    value='1 1',
                                    comment='Fake values')
 
+        self.fake_image.header.set('OBSTYPE',
+                                   value='OBJECT',
+                                   comment='Fake values')
+
         self.file_name = 'sample_file.fits'
         self.target_non_zero = 4
         self.current_directory = os.getcwd()
