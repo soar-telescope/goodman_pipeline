@@ -132,8 +132,8 @@ def get_args(arguments=None):
                         default=1.,
                         dest='saturation_threshold',
                         metavar='<value>',
-                        help="Maximum percent of pixels above saturation"
-                             "threshold. Default 1%")
+                        help="Maximum percent of pixels above saturation "
+                             "threshold. Default 1 percent.")
 
     parser.add_argument('--version',
                         action='store_true',
