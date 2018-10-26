@@ -3,7 +3,7 @@ Change History
 
 .. _v1.2.0:
 
-V1.2.0 Unreleased
+V1.2.0 26-10-2018
 ^^^^^^^^^^^^^^^^^
 - Bugs removed:
 
