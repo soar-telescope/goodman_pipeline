@@ -82,7 +82,7 @@ V1.1.2 05-10-2018
 
 - Increased code coverage
 
-- Eliminated ``None`` elements in list of instances of :class:`pipeline.core.core.NightDataContainer`
+- Eliminated ``None`` elements in list of instances of :class:`goodman_pipeline.core.core.NightDataContainer`
 
 - Improved several logging messages
 
@@ -113,7 +113,7 @@ V1.1.1 23-08-2018
     and informs the user to try again.
 
 - Removed unused code and tools.
-- Relocated module :mod:`pipeline.core.check_version` to ``pipeline/core``.
+- Relocated module :mod:`goodman_pipeline.core.check_version` to ``pipeline/core``.
 - Implemented Authorized GitHub API access and added actual version check
 - Moved *command line interface* from ``goodman/bin/`` to ``goodman/pipeline/script/``
 - Specified version of :mod:`cython` to be able to build.

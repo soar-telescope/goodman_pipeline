@@ -1,13 +1,6 @@
 goodman\_pipeline\.images package
 =================================
 
-Subpackages
------------
-
-.. toctree::
-
-    goodman_pipeline.images.tests
-
 Submodules
 ----------
 
