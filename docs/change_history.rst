@@ -1,6 +1,13 @@
 Change History
 ##############
 
+.. _v1.2.1:
+
+V1.2.1 Unreleased
+^^^^^^^^^^^^^^^^^
+
+- Install instructions updated
+
 .. _v1.2.0:
 
 V1.2.0 26-10-2018
