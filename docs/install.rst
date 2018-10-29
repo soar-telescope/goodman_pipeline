@@ -45,6 +45,10 @@ This installation was tested on MacOS High Sierra.
 Common Steps
 ************
 
+.. warning::
+
+  This installation instructions work with **BASH** only.
+
 1. Install Miniconda
 
   ``bash miniconda.sh``
@@ -93,8 +97,7 @@ Common Steps
 
   ``sh install_dcr.sh``
 
-  To test if it worked you can close and reopen the terminal or do ``source ~/.bashrc``
-  or ``source ~/.bash_profile`` and then.
+  To test if it worked you can do:
 
 
   ``dcr``
