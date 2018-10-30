@@ -1,4 +1,4 @@
-language: python
+language: c
 
 python:
 - '3.5'
@@ -12,12 +12,7 @@ branches:
   only:
   - master
 
-# before_install:
-# - ./install_dcr.sh
-
-
 install:
-# - export PATH="$PATH:$HOME/build/soar-telescope/goodman_pipeline/dcrbin"
 
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     sudo apt-get update &&
@@ -26,7 +21,7 @@ install:
   fi
 
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-
+    brew install python3 &&
     curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --output miniconda.sh;
 
   fi
