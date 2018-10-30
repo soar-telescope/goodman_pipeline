@@ -20,13 +20,13 @@ install:
 # - export PATH="$PATH:$HOME/build/soar-telescope/goodman_pipeline/dcrbin"
 
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-    - sudo apt-get update;
-    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    sudo apt-get update
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
 
   fi
 
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-    -
+
     curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --output miniconda.sh;
 
   fi
