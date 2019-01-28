@@ -10,7 +10,7 @@ dependencies:
   - astropy>3
   - pip
   - pip:
-    - ccdproc
+    - ccdproc==1.3.0
     - coveralls
     - astroplan
     - sphinx
