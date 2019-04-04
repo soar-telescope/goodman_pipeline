@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 from threading import Timer
+import pickle
 
 import ccdproc
 import numpy as np
@@ -1243,6 +1244,8 @@ def identify_targets(ccd, nfind=3, plots=False):
     if plots:  # pragma: no cover
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
         z2 = np.median(ccd.data) + np.std(ccd.data)
+
+        plt.switch_backend('Qt5Agg')
         fig, ax = plt.subplots()
         fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
 
@@ -1389,7 +1392,7 @@ def identify_targets(ccd, nfind=3, plots=False):
     # convert the list to array
     filtered_profile = np.array(none_to_zero_prof)
 
-    order *= 2
+    # order *= 2
 
     # find the peaks
     peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
@@ -1441,39 +1444,51 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     profile_model = []
     for peak in selected_peaks:
-        peak_value = median_profile[peak]
+        # fname = ccd.header['GSP_FNAM'] + '_' + str(peak) + '_' + 'median_profile.pkl'
+        # mp = open(fname, "wb")
+        # pickle.dump(median_profile, mp)
+        # mp.close()
+        print('Background Level: {:f}'.format(background_level))
+
+        peak_value = final_profile[peak]
+        original_gaussian = models.Gaussian1D(amplitude=peak_value,
+                                     mean=peak,
+                                     stddev=order).rename(
+            'OriginalGaussian_{:d}'.format(peak))
         gaussian = models.Gaussian1D(amplitude=peak_value,
                                      mean=peak,
                                      stddev=order).rename(
-            'Gaussian_{:d}'.format(peak))
+            'Gaussian_{:}'.format(peak))
         # print('Gaussian ', gaussian)
         # fixes mean and amplitude already found, just finding stddev
         gaussian.mean.fixed = True
         gaussian.amplitude.fixed = True
         fitted_gaussian = fitter(gaussian,
-                                 range(len(median_profile)),
-                                 median_profile)
+                                 range(len(final_profile)),
+                                 final_profile)
 
         # after being fitted, unfix the parameters and now fix stddev
-        fitted_gaussian.mean.fixed = False
-        fitted_gaussian.amplitude.fixed = False
-        fitted_gaussian.stddev.fixed = True
+        # fitted_gaussian.mean.fixed = False
+        # fitted_gaussian.amplitude.fixed = False
+        # fitted_gaussian.stddev.fixed = True
 
         # manually forcing the use of the best stddev if possitive
         # this disables the pipeline for extended sources
-        if best_stddev is None:
-            best_stddev = fitted_gaussian.stddev.value
-        elif best_stddev < fitted_gaussian.stddev.value:
-            fitted_gaussian.stddev.value = best_stddev
-        else:
-            best_stddev = fitted_gaussian.stddev.value
-        if best_stddev < 0:
-            best_stddev = None
+        # if best_stddev is None:
+        #     best_stddev = fitted_gaussian.stddev.value
+        # elif best_stddev < fitted_gaussian.stddev.value:
+        #     fitted_gaussian.stddev.value = best_stddev
+        # else:
+        #     best_stddev = fitted_gaussian.stddev.value
+        # if best_stddev < 0:
+        #     best_stddev = None
 
-        # print(fitted_gaussian.stddev.value)
-        # plt.plot(median_profile, color='b')
-        # plt.plot(fitted_gaussian(range(len(median_profile))), color='r')
-        # plt.show()
+        print(fitted_gaussian.stddev.value)
+        plt.title('Testing fitting')
+        plt.plot(final_profile, color='b')
+        plt.plot(fitted_gaussian(range(len(final_profile))), color='r')
+        plt.plot(original_gaussian(range(len(final_profile))), color='g')
+        plt.show()
 
         # this ensures the profile returned are valid
         if (fitted_gaussian.stddev.value > 0) and \
@@ -1490,10 +1505,10 @@ def identify_targets(ccd, nfind=3, plots=False):
         mng = plt.get_current_fig_manager()
         mng.window.showMaximized()
 
-        ax.plot(median_profile, color='b', label='Median Profile')
+        ax.plot(final_profile, color='b', label='Median Profile')
         for profile in profile_model:
 
-            ax.plot(profile(range(len(median_profile))),
+            ax.plot(profile(range(len(final_profile))),
                     color='r',
                     label="Fitted profile(s)")
 
