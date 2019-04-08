@@ -1620,7 +1620,7 @@ def identify_targets(ccd, nfind=3, plots=False):
     identified_targets = identify(ccd=ccd,
                                   nfind=nfind,
                                   background_threshold=3,
-                                  model_name='gaussian',
+                                  model_name='moffat',
                                   plots=plots)
 
     return identified_targets
@@ -3444,6 +3444,10 @@ class IdentifySpectroscopicTargets(object):
                  plots=False):
         assert isinstance(ccd, CCDData)
         assert ccd.header['OBSTYPE'] == 'OBJECT'
+        self.file_name = ccd.header['GSP_FNAM']
+
+        log.info('Searching spectroscopic targets in file: {:s}'
+                 ''.format(self.file_name))
 
         self.ccd = ccd
         self.nfind = nfind
@@ -3452,11 +3456,12 @@ class IdentifySpectroscopicTargets(object):
         self.background_threshold = background_threshold
 
         self.slit_size = re.sub('[a-zA-Z"]', '', self.ccd.header['SLIT'])
+        log.debug('Slit size: {:s}'.format(self.slit_size))
         self.serial_binning = int(self.ccd.header['CCDSUM'].split()[0])
+        log.debug('Serial binning: {:d}'.format(self.serial_binning))
 
         self.order = int(round(float(self.slit_size) / (0.15 * self.serial_binning)))
 
-        self.file_name = ccd.header['GSP_FNAM']
 
         if self.plots:  # pragma: no cover
             z1 = np.mean(self.ccd.data) - 0.5 * np.std(self.ccd.data)
@@ -3519,6 +3524,9 @@ class IdentifySpectroscopicTargets(object):
         else:
             raise NotImplementedError
 
+        log.info('Fitting Linear1D model to spatial profile to detect '
+                 'background shape')
+
         clipped_profile = sigma_clip(spatial_profile, sigma=2, iters=5)
 
         linear_model = models.Linear1D(slope=0,
@@ -3536,7 +3544,7 @@ class IdentifySpectroscopicTargets(object):
 
         self.background_model = linear_fitter(linear_model, new_x_axis, new_profile)
 
-        if plots:  # pragma: no cover
+        if plots or self.plots:  # pragma: no cover
             fig, ax = plt.subplots()
             fig.canvas.set_window_title(file_name)
 
@@ -3597,6 +3605,9 @@ class IdentifySpectroscopicTargets(object):
             else:
                 file_name = self.file_name
 
+        log.info('Subtracting background shape and level spatial profile for '
+                 'better target identification')
+
         background_array = background_model(range(len(spatial_profile)))
 
         background_subtracted = spatial_profile - background_array
@@ -3615,6 +3626,8 @@ class IdentifySpectroscopicTargets(object):
 
         self.background_level = np.abs(np.max(clipped_final_profile) -
                                        np.min(clipped_final_profile))
+        log.debug('New background level after subtraction was found to be '
+                  '{:.2f}'.format(self.background_level))
 
         if plots or self.plots:  # pragma: no cover
             plt.ioff()
@@ -3669,6 +3682,8 @@ class IdentifySpectroscopicTargets(object):
             else:
                 file_name = self.file_name
 
+        log.info("Finding all peaks in spatial profile")
+
         spatial_profile = signal.medfilt(spatial_profile, kernel_size=1)
         _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
 
@@ -3685,8 +3700,9 @@ class IdentifySpectroscopicTargets(object):
         self.all_peaks = signal.argrelmax(filtered_profile,
                                           axis=0,
                                           order=order)[0]
+        log.debug("Found {:d} peaks".format(len(self.all_peaks)))
 
-        if plots:  # pragma: no cover
+        if plots or self.plots:  # pragma: no cover
             plt.ioff()
 
             fig, ax = plt.subplots()
@@ -3756,6 +3772,9 @@ class IdentifySpectroscopicTargets(object):
         else:
             raise NotImplementedError
 
+        log.info("Selecting the {:d} most intense peaks out of {:d} found"
+                 "".format(nfind, len(detected_peaks)))
+
         peak_data_values = [spatial_profile[i] for i in detected_peaks]
 
         sorted_values = np.sort(peak_data_values)[::-1]
@@ -3765,17 +3784,26 @@ class IdentifySpectroscopicTargets(object):
         n_strongest_values = sorted_values[:nfind]
 
         self.selected_peaks = []
+        log.info("Validating peaks by setting threshold {:d} times the "
+                 "background level {:.2f}".format(background_threshold,
+                                                  background_level))
+        log.debug('Intensity threshold set to: {:.2f}'
+                  ''.format(background_threshold * background_level))
         for peak_value in n_strongest_values:
+            index = np.where(peak_data_values == peak_value)[0]
             if peak_value > background_threshold * background_level:
-                index = np.where(peak_data_values == peak_value)[0]
                 self.selected_peaks.append(detected_peaks[index[0]])
                 log.info(
                     'Selecting peak: Centered: {:.1f} Intensity {:.3f}'.format(
                         self.selected_peaks[-1], peak_value))
             else:
-                log.debug('Discarding peak: {:.3f}'.format(peak_value))
+                log.debug('Discarding peak: Center {:.1f} Intensity {:.3f} '
+                          'Reason: Below intensity threshold ({:.2f})'
+                          ''.format(detected_peaks[index[0]],
+                                    peak_value,
+                                    background_threshold * background_level))
 
-        if plots:  # pragma: no cover
+        if plots or self.plots:  # pragma: no cover
             plt.ioff()
 
             fig, ax = plt.subplots()
@@ -3833,7 +3861,7 @@ class IdentifySpectroscopicTargets(object):
                 selected_peaks=selected_peaks,
                 order=order,
                 file_name=file_name,
-                plots=plots)
+                plots=plots or self.plots)
             return self.profile_model
 
         if model_name == 'moffat':
@@ -3843,7 +3871,7 @@ class IdentifySpectroscopicTargets(object):
                 selected_peaks=selected_peaks,
                 order=order,
                 file_name=file_name,
-                plots=plots)
+                plots=plots or self.plots)
             return self.profile_model
 
     @staticmethod
