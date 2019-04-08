@@ -39,6 +39,9 @@ __version__ = __import__('goodman_pipeline').__version__
 log = logging.getLogger(__name__)
 
 
+
+
+
 def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
 
     mask, ccd.data = detect_cosmics(ccd.data)
@@ -1207,10 +1210,17 @@ def get_twilight_time(date_obs):
 
 
 def identify_fit_background(spatial_profile, file_name='', plots=False):
-    # Fitting Background
+    """
 
-    # Before doing the fitting we will do a sigma clipping in order to
-    # remove any feature.
+    Args:
+        spatial_profile :
+        file_name (String):
+        plots:
+
+    Returns:
+
+    """
+
     clipped_profile = sigma_clip(spatial_profile, sigma=2, iters=5)
 
     linear_model = models.Linear1D(slope=0,
@@ -1223,8 +1233,8 @@ def identify_fit_background(spatial_profile, file_name='', plots=False):
     new_profile = clipped_profile[~clipped_profile.mask]
 
     # also the indexes are different
-    new_x_axis = [i for i in range(len(clipped_profile))
-                  if not clipped_profile.mask[i]]
+    new_x_axis = np.array([i for i in range(len(clipped_profile))
+                           if not clipped_profile.mask[i]])
 
     fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
 
@@ -1265,24 +1275,30 @@ def identify_fit_background(spatial_profile, file_name='', plots=False):
 
     return fitted_background
 
-def identify_subtract_background(spatial_profile, background_model, file_name='', plots=False):
-    # Removing Background
-    # Remove the background and set negative values to zero
 
-    # build an array of the same dimensions of the profile
+def identify_subtract_background(spatial_profile, background_model, file_name='', plots=False):
+    """
+
+    Args:
+        spatial_profile:
+        background_model:
+        file_name:
+        plots:
+
+    Returns:
+
+    """
+
     background_array = background_model(range(len(spatial_profile)))
 
     background_subtracted = spatial_profile - background_array
 
-    # set negative values to zero
     background_subtracted[background_subtracted < 0] = 0
 
     final_profile = background_subtracted.copy()
 
-    # sigma clip and then get some features of the noise.
     clipped_final_profile = sigma_clip(final_profile, sigma=3, iters=3)
 
-    # define the propper x-axis
     new_x_axis = [i for i in range(len(clipped_final_profile)) if
                   not clipped_final_profile.mask[i]]
 
@@ -1323,12 +1339,18 @@ def identify_subtract_background(spatial_profile, background_model, file_name=''
     return background_subtracted, background_level
 
 
-def identify_get_peaks(spatial_profile, background_level, nfind, order=2, file_name='', plots=False):
+def identify_get_peaks(spatial_profile, order=2, file_name='', plots=False):
+    """
 
-    # Identify targets
-    # Now that the profile is flat it should be easier to identify targets.
+    Args:
+        spatial_profile:
+        order:
+        file_name:
+        plots:
 
-    # apply median filter
+    Returns:
+
+    """
     spatial_profile = signal.medfilt(spatial_profile, kernel_size=1)
     _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
 
@@ -1337,18 +1359,11 @@ def identify_get_peaks(spatial_profile, background_level, nfind, order=2, file_n
         spatial_profile,
         None)
 
-    # print(_upper_limit)
-    # print(np.median(spatial_profile))
-
-    # replace the None elements to zero.
     none_to_zero_prof = [0 if it is None else it for it in filtered_profile]
 
-    # convert the list to array
     filtered_profile = np.array(none_to_zero_prof)
 
     # order *= 2
-
-    # find the peaks
     all_peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
 
     if plots:  # pragma: no cover
@@ -1376,29 +1391,44 @@ def identify_get_peaks(spatial_profile, background_level, nfind, order=2, file_n
     return all_peaks
 
 
-def identify_filter_peaks(spatial_profile, detected_peaks, background_level, nfind, file_name='', plots=False):
-    # find profile values for peaks found
-    values = [spatial_profile[i] for i in detected_peaks]
+def identify_filter_peaks(spatial_profile,
+                          detected_peaks,
+                          background_level,
+                          nfind,
+                          background_threshold=3,
+                          file_name='Filename: ',
+                          plots=False):
+    """
 
-    # sort values and reverse the order so that larger values are first
-    sorted_values = np.sort(values)[::-1]
+    Args:
+        spatial_profile:
+        detected_peaks:
+        background_level:
+        nfind:
+        background_threshold:
+        file_name:
+        plots:
+
+    Returns:
+
+    """
+
+    peak_data_values = [spatial_profile[i] for i in detected_peaks]
+
+    sorted_values = np.sort(peak_data_values)[::-1]
+
     _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
 
-    # pick nfind top values
-    n_top_values = sorted_values[:nfind]
-    # print(n_top_values)
+    n_strongest_values = sorted_values[:nfind]
 
-    # retrieve the original index (real location) of the detected_peaks
     selected_peaks = []
-    for val in n_top_values:
-        # TODO (simon): replace the 3 below by a parameter in a conf file.
-        # discard peaks smaller than twice the level of background
-        if val > 3 * background_level:
-            index = np.where(values == val)[0]
-            #     print(index[0])
+    for peak_value in n_strongest_values:
+        if peak_value > background_threshold * background_level:
+            index = np.where(peak_data_values == peak_value)[0]
             selected_peaks.append(detected_peaks[index[0]])
+            log.info('Selecting peak: Centered: {:.1f} Intensity {:.3f}'.format(selected_peaks[-1], peak_value))
         else:
-            log.debug('Discarding peak: {:.3f}'.format(val))
+            log.debug('Discarding peak: {:.3f}'.format(peak_value))
 
     if plots:  # pragma: no cover
         plt.ioff()
@@ -1423,6 +1453,19 @@ def identify_filter_peaks(spatial_profile, detected_peaks, background_level, nfi
 
 
 def identify_fit_model(spatial_profile, peaks, order, model='gaussian', file_name='', plots=False):
+    """
+
+    Args:
+        spatial_profile:
+        peaks:
+        order:
+        model:
+        file_name:
+        plots:
+
+    Returns:
+
+    """
     fitter = fitting.LevMarLSQFitter()
     profile_model = []
     for peak in peaks:
@@ -1444,7 +1487,9 @@ def identify_fit_model(spatial_profile, peaks, order, model='gaussian', file_nam
             if (fitted_gaussian.stddev.value > 0) and \
                     (fitted_gaussian.stddev.value < 4 * order):
                 profile_model.append(fitted_gaussian)
-                log.info("Recording target centered at: {:.2f} ")
+                log.info("Recording target centered at: {:.2f}, stddev: {:.2f}"
+                         "".format(fitted_gaussian.mean.value,
+                                   fitted_gaussian.stddev.value))
             else:
                 log.error("Discarding target with stddev: {:.3f}".format(
                     fitted_gaussian.stddev.value))
@@ -1504,11 +1549,13 @@ def identify_targets(ccd, nfind=3, plots=False):
     # TODO (simon): therefore some refactoring might be needed.
     assert isinstance(ccd, CCDData)
     assert ccd.header['OBSTYPE'] == 'OBJECT'
+
     slit_size = re.sub('[a-zA-Z"]', '', ccd.header['SLIT'])
     serial_binning = int(ccd.header['CCDSUM'].split()[0])
-    # order will be used for finding the peaks later but also as an initial
-    # estimate for stddev of gaussian
+
     order = int(round(float(slit_size) / (0.15 * serial_binning)))
+
+    file_name = ccd.header['GSP_FNAM']
 
     if plots:  # pragma: no cover
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
@@ -1516,12 +1563,12 @@ def identify_targets(ccd, nfind=3, plots=False):
 
         plt.switch_backend('Qt5Agg')
         fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+        fig.canvas.set_window_title(file_name)
 
         mng = plt.get_current_fig_manager()
         mng.window.showMaximized()
 
-        ax.set_title(ccd.header['GSP_FNAM'])
+        ax.set_title(file_name)
         ax.imshow(ccd.data, clim=(z1, z2), cmap='gray')
         ax.set_xlabel('Dispersion Axis (x)')
         ax.set_ylabel('Spatial Axis (y)')
@@ -1531,7 +1578,7 @@ def identify_targets(ccd, nfind=3, plots=False):
     median_profile = np.median(ccd.data, axis=1)
 
     background_model = identify_fit_background(spatial_profile=median_profile,
-                                               file_name=ccd.header['GSP_FNAM'],
+                                               file_name=file_name,
                                                plots=plots)
 
     background_subtracted_profile, background_level = identify_subtract_background(
@@ -1541,8 +1588,6 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     all_peaks = identify_get_peaks(
         spatial_profile=background_subtracted_profile,
-        background_level=background_level,
-        nfind=nfind,
         order=order,
         plots=plots)
 
@@ -1562,9 +1607,13 @@ def identify_targets(ccd, nfind=3, plots=False):
 
     if profile_model == []:
         log.error("Impossible to identify targets.")
-        return profile_model
     else:
-        return profile_model
+        log.info('Identified {:d} target{:s}'.format(
+            len(profile_model),
+            ['s' if len(profile_model) > 1 else ''][0]))
+
+    return profile_model
+
 
 def image_overscan(ccd, overscan_region, add_keyword=False):
     """Apply overscan correction to data
