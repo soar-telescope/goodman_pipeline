@@ -1636,6 +1636,7 @@ def identify_targets(ccd,
 
     return identified_targets
 
+
 def image_overscan(ccd, overscan_region, add_keyword=False):
     """Apply overscan correction to data
 
