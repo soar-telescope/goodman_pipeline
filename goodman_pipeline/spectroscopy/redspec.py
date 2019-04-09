@@ -149,6 +149,15 @@ def get_args(arguments=None):
                         help="Maximum number of targets to be found in a "
                              "single image. Default 3")
 
+    parser.add_argument('--background-threshold',
+                        action='store',
+                        dest='background_threshold',
+                        type=int,
+                        default=3,
+                        help="Multiplier for background level used to "
+                             "discriminate usable targets. Default 3 times "
+                             "background level")
+
     parser.add_argument('--save-plots',
                         action='store_true',
                         dest='save_plots',
@@ -275,11 +284,16 @@ class MainApp(object):
         self.log.debug("Calling _run method for MainApp")
         self._run(data_container=data_container,
                   extraction_type=self.args.extraction_type,
-                  target_fit_model=self.args.target_fit_model)
+                  target_fit_model=self.args.target_fit_model,
+                  background_threshold=self.args.background_threshold)
 
         self.log.info("END")
 
-    def _run(self, data_container, extraction_type, target_fit_model):
+    def _run(self,
+             data_container,
+             extraction_type,
+             target_fit_model,
+             background_threshold):
         assert data_container.is_empty is False
         assert any(extraction_type == option for option in ['fractional',
                                                             'optimal'])
@@ -373,10 +387,12 @@ class MainApp(object):
                     # identify
                     self.log.debug("Calling procedure for target "
                                    "identification.")
-                    target_list = identify_targets(ccd=ccd,
-                                                   nfind=3,
-                                                   plots=self.args.debug_with_plots,
-                                                   fit_model=target_fit_model)
+                    target_list = identify_targets(
+                        ccd=ccd,
+                        fit_model=target_fit_model,
+                        background_threshold=background_threshold,
+                        nfind=3,
+                        plots=self.args.debug_with_plots)
 
                     # trace
                     if len(target_list) > 0:
