@@ -114,6 +114,15 @@ def get_args(arguments=None):
                              "'optimal'. Only fractional pixel extraction is "
                              "implemented. Default 'fractional'.")
 
+    parser.add_argument('--fit-targets-with',
+                        action='store',
+                        default='moffat',
+                        type=str,
+                        dest='target_fit_model',
+                        choices=['moffat', 'gaussian'],
+                        help="Model to fit peaks found on spatial profile "
+                             "while searching for spectroscopic targets.")
+
     parser.add_argument('--reference-files',
                         action='store',
                         default='data/ref_comp/',
@@ -188,7 +197,7 @@ def get_args(arguments=None):
         log.error("Source Directory {:s} doesn't exist.".format(args.source))
         if 'test' not in parser.prog:
             parser.print_help()
-        parser.exit("Leaving the Program.")
+        parser.exit(0, "Leaving the Program.")
 
     if not os.path.isabs(args.destination):
         args.destination = os.path.join(os.getcwd(), args.destination)
@@ -201,7 +210,7 @@ def get_args(arguments=None):
         except OSError as err:
             log.error(err)
             parser.print_help()
-            parser.exit("Leaving the Program.")
+            parser.exit(0, "Leaving the Program.")
     return args
 
 
@@ -265,11 +274,12 @@ class MainApp(object):
 
         self.log.debug("Calling _run method for MainApp")
         self._run(data_container=data_container,
-                  extraction_type=self.args.extraction_type)
+                  extraction_type=self.args.extraction_type,
+                  target_fit_model=self.args.target_fit_model)
 
         self.log.info("END")
 
-    def _run(self, data_container, extraction_type):
+    def _run(self, data_container, extraction_type, target_fit_model):
         assert data_container.is_empty is False
         assert any(extraction_type == option for option in ['fractional',
                                                             'optimal'])
@@ -365,7 +375,8 @@ class MainApp(object):
                                    "identification.")
                     target_list = identify_targets(ccd=ccd,
                                                    nfind=3,
-                                                   plots=self.args.debug_with_plots)
+                                                   plots=self.args.debug_with_plots,
+                                                   fit_model=target_fit_model)
 
                     # trace
                     if len(target_list) > 0:

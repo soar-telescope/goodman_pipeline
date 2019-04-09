@@ -1621,13 +1621,13 @@ def get_twilight_time(date_obs):
 #
 #     return profile_model
 
-def identify_targets(ccd, nfind=3, plots=False):
+def identify_targets(ccd, fit_model, nfind=3, plots=False):
     identify = IdentifySpectroscopicTargets()
 
     identified_targets = identify(ccd=ccd,
                                   nfind=nfind,
                                   background_threshold=3,
-                                  model_name='moffat',
+                                  model_name=fit_model,
                                   plots=plots)
 
     return identified_targets
