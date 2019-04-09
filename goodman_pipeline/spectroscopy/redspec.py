@@ -114,6 +114,15 @@ def get_args(arguments=None):
                              "'optimal'. Only fractional pixel extraction is "
                              "implemented. Default 'fractional'.")
 
+    parser.add_argument('--fit-targets-with',
+                        action='store',
+                        default='moffat',
+                        type=str,
+                        dest='target_fit_model',
+                        choices=['moffat', 'gaussian'],
+                        help="Model to fit peaks found on spatial profile "
+                             "while searching for spectroscopic targets.")
+
     parser.add_argument('--reference-files',
                         action='store',
                         default='data/ref_comp/',
@@ -139,6 +148,15 @@ def get_args(arguments=None):
                         default=3,
                         help="Maximum number of targets to be found in a "
                              "single image. Default 3")
+
+    parser.add_argument('--background-threshold',
+                        action='store',
+                        dest='background_threshold',
+                        type=int,
+                        default=3,
+                        help="Multiplier for background level used to "
+                             "discriminate usable targets. Default 3 times "
+                             "background level")
 
     parser.add_argument('--save-plots',
                         action='store_true',
@@ -188,7 +206,7 @@ def get_args(arguments=None):
         log.error("Source Directory {:s} doesn't exist.".format(args.source))
         if 'test' not in parser.prog:
             parser.print_help()
-        parser.exit("Leaving the Program.")
+        parser.exit(0, "Leaving the Program.")
 
     if not os.path.isabs(args.destination):
         args.destination = os.path.join(os.getcwd(), args.destination)
@@ -201,7 +219,7 @@ def get_args(arguments=None):
         except OSError as err:
             log.error(err)
             parser.print_help()
-            parser.exit("Leaving the Program.")
+            parser.exit(0, "Leaving the Program.")
     return args
 
 
@@ -265,11 +283,17 @@ class MainApp(object):
 
         self.log.debug("Calling _run method for MainApp")
         self._run(data_container=data_container,
-                  extraction_type=self.args.extraction_type)
+                  extraction_type=self.args.extraction_type,
+                  target_fit_model=self.args.target_fit_model,
+                  background_threshold=self.args.background_threshold)
 
         self.log.info("END")
 
-    def _run(self, data_container, extraction_type):
+    def _run(self,
+             data_container,
+             extraction_type,
+             target_fit_model,
+             background_threshold):
         assert data_container.is_empty is False
         assert any(extraction_type == option for option in ['fractional',
                                                             'optimal'])
@@ -363,9 +387,12 @@ class MainApp(object):
                     # identify
                     self.log.debug("Calling procedure for target "
                                    "identification.")
-                    target_list = identify_targets(ccd=ccd,
-                                                   nfind=3,
-                                                   plots=self.args.debug_with_plots)
+                    target_list = identify_targets(
+                        ccd=ccd,
+                        fit_model=target_fit_model,
+                        background_threshold=background_threshold,
+                        nfind=3,
+                        plots=self.args.debug_with_plots)
 
                     # trace
                     if len(target_list) > 0:
@@ -383,6 +410,11 @@ class MainApp(object):
                     # if len(trace_list) > 0:
                     extracted_target_and_lamps = []
                     for single_trace, single_profile, trace_info in trace_list:
+                        if single_profile.__class__.name == 'Gaussian1D':
+                            single_profile_center = single_profile.mean.value
+                        elif single_profile.__class__.name == 'Moffat1D':
+                            single_profile_center = single_profile.x_0.value
+
                         if len(trace_list) > 1:
                             target_number = trace_list.index(
                                 [single_trace,
@@ -440,7 +472,7 @@ class MainApp(object):
 
                                 fig.canvas.set_window_title(
                                     'Extracted Data: Target Center ~ '
-                                    '{:.2f}'.format(single_profile.mean.value))
+                                    '{:.2f}'.format(single_profile_center))
 
                                 manager = plt.get_current_fig_manager()
 
@@ -453,7 +485,7 @@ class MainApp(object):
                                     "{:s} Extraction centered near "
                                     "{:.2f} \n File: {:s}".format(
                                         extracted.header['OBJECT'],
-                                        single_profile.mean.value,
+                                        single_profile_center,
                                         extracted.header['GSP_FNAM'])
                                 )
                                 if all_lamps:

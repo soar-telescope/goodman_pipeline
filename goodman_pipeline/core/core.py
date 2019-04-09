@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 from threading import Timer
+import pickle
 
 import ccdproc
 import numpy as np
@@ -36,6 +37,9 @@ from . import check_version
 __version__ = __import__('goodman_pipeline').__version__
 
 log = logging.getLogger(__name__)
+
+
+
 
 
 def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
@@ -705,11 +709,18 @@ def extraction(ccd,
     assert isinstance(ccd, CCDData)
     assert isinstance(target_trace, Model)
 
+    if spatial_profile.__class__.name == 'Gaussian1D':
+        target_stddev = spatial_profile.stddev.value
+    elif spatial_profile.__class__.name == 'Moffat1D':
+        target_stddev = spatial_profile.gamma.value
+    else:
+        raise NotImplementedError
+
     if extraction_name == 'fractional':
         extracted, background, bkg_info = extract_fractional_pixel(
             ccd=ccd,
             target_trace=target_trace,
-            target_stddev=spatial_profile.stddev.value,
+            target_stddev=target_stddev,
             extraction_width=2)
 
         background_1, background_2 = bkg_info
@@ -1205,309 +1216,425 @@ def get_twilight_time(date_obs):
             sun_rise_time)
 
 
-def identify_targets(ccd, nfind=3, plots=False):
-    """Identify spectroscopic targets in an image
+# def identify_fit_background(spatial_profile, file_name='', plots=False):
+#     """
+#
+#     Args:
+#         spatial_profile :
+#         file_name (String):
+#         plots:
+#
+#     Returns:
+#
+#     """
+#
+#     clipped_profile = sigma_clip(spatial_profile, sigma=2, iters=5)
+#
+#     linear_model = models.Linear1D(slope=0,
+#                                    intercept=np.median(spatial_profile))
+#
+#     linear_fitter = fitting.LinearLSQFitter()
+#
+#     # the fitters do not support masked arrays so we need to have a new
+#     # array without the masked (clipped) elements.
+#     new_profile = clipped_profile[~clipped_profile.mask]
+#
+#     # also the indexes are different
+#     new_x_axis = np.array([i for i in range(len(clipped_profile))
+#                            if not clipped_profile.mask[i]])
+#
+#     fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
+#
+#     if plots:  # pragma: no cover
+#         fig, ax = plt.subplots()
+#         fig.canvas.set_window_title(file_name)
+#
+#         mng = plt.get_current_fig_manager()
+#         mng.window.showMaximized()
+#
+#         ax.set_title('Background Fitting Model Defined')
+#         ax.plot(spatial_profile, color='k', label='Median profile')
+#         ax.plot(linear_model(range(len(spatial_profile))),
+#                 color='r',
+#                 label='Background Linear Model')
+#         ax.set_xlabel("Spatial Axis (Pixels)")
+#         ax.set_ylabel("Median Intensity")
+#         ax.legend(loc='best')
+#         plt.tight_layout()
+#         plt.show()
+#
+#         fig, ax = plt.subplots()
+#         fig.canvas.set_window_title(file_name)
+#
+#         mng = plt.get_current_fig_manager()
+#         mng.window.showMaximized()
+#
+#         ax.set_title('Background Fitted Model')
+#         ax.plot(spatial_profile, color='k', label='Median profile')
+#         ax.plot(fitted_background(range(len(spatial_profile))),
+#                 color='r',
+#                 label='Fitted Background Linear Model')
+#         ax.set_xlabel("Spatial Axis (Pixels)")
+#         ax.set_ylabel("Median Intensity")
+#         ax.legend(loc='best')
+#         plt.tight_layout()
+#         plt.show()
+#
+#     return fitted_background
+#
+#
+# def identify_subtract_background(spatial_profile, background_model, file_name='', plots=False):
+#     """
+#
+#     Args:
+#         spatial_profile:
+#         background_model:
+#         file_name:
+#         plots:
+#
+#     Returns:
+#
+#     """
+#
+#     background_array = background_model(range(len(spatial_profile)))
+#
+#     background_subtracted = spatial_profile - background_array
+#
+#     background_subtracted[background_subtracted < 0] = 0
+#
+#     final_profile = background_subtracted.copy()
+#
+#     clipped_final_profile = sigma_clip(final_profile, sigma=3, iters=3)
+#
+#     new_x_axis = [i for i in range(len(clipped_final_profile)) if
+#                   not clipped_final_profile.mask[i]]
+#
+#     clipped_final_profile = clipped_final_profile[
+#         ~clipped_final_profile.mask]
+#
+#     background_level = np.abs(np.max(clipped_final_profile) -
+#                               np.min(clipped_final_profile))
+#
+#     if plots:  # pragma: no cover
+#         plt.ioff()
+#         plt.close()
+#
+#         fig, ax = plt.subplots()
+#         fig.canvas.set_window_title(file_name)
+#
+#         mng = plt.get_current_fig_manager()
+#         mng.window.showMaximized()
+#
+#         ax.set_title('Median Along Dispersion Axis (spatial)')
+#         ax.plot(background_subtracted, label='Background Subtracted Data')
+#         ax.plot(new_x_axis,
+#                 clipped_final_profile,
+#                 color='r',
+#                 label='Sigma Clipped Data')
+#
+#         ax.axhline(background_level, color='m', label='Min-Max Difference')
+#         ax.set_xlabel("Spatial Axis (Pixels)")
+#         ax.set_ylabel("Median Intensity")
+#         plt.legend(loc='best')
+#         plt.tight_layout()
+#         if plt.isinteractive():
+#             plt.draw()
+#             plt.pause(5)
+#         else:
+#             plt.show()
+#
+#     return background_subtracted, background_level
+#
+#
+# def identify_get_peaks(spatial_profile, order=2, file_name='', plots=False):
+#     """
+#
+#     Args:
+#         spatial_profile:
+#         order:
+#         file_name:
+#         plots:
+#
+#     Returns:
+#
+#     """
+#     spatial_profile = signal.medfilt(spatial_profile, kernel_size=1)
+#     _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
+#
+#     filtered_profile = np.where(np.abs(
+#         spatial_profile > spatial_profile.min() + 0.03 * spatial_profile.max()),
+#         spatial_profile,
+#         None)
+#
+#     none_to_zero_prof = [0 if it is None else it for it in filtered_profile]
+#
+#     filtered_profile = np.array(none_to_zero_prof)
+#
+#     # order *= 2
+#     all_peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
+#
+#     if plots:  # pragma: no cover
+#         plt.ioff()
+#
+#         fig, ax = plt.subplots()
+#         fig.canvas.set_window_title(file_name)
+#
+#         ax.set_title('All detected Peaks')
+#
+#         mng = plt.get_current_fig_manager()
+#         mng.window.showMaximized()
+#
+#         ax.plot(spatial_profile, label='Background subtracted profile')
+#         ax.axhline(_upper_limit, color='g', label='Detection Threshold')
+#         ax.plot([], color='r', label='Peak location')
+#         for peak in all_peaks:
+#             ax.axvline(peak, color='r')
+#         ax.set_xlabel("Spatial Axis (Pixels)")
+#         ax.set_ylabel("Background subtracted median intensity")
+#         ax.legend(loc='best')
+#         plt.tight_layout()
+#         plt.show()
+#
+#     return all_peaks
+#
+#
+# def identify_filter_peaks(spatial_profile,
+#                           detected_peaks,
+#                           background_level,
+#                           nfind,
+#                           background_threshold=3,
+#                           file_name='Filename: ',
+#                           plots=False):
+#     """
+#
+#     Args:
+#         spatial_profile:
+#         detected_peaks:
+#         background_level:
+#         nfind:
+#         background_threshold:
+#         file_name:
+#         plots:
+#
+#     Returns:
+#
+#     """
+#
+#     peak_data_values = [spatial_profile[i] for i in detected_peaks]
+#
+#     sorted_values = np.sort(peak_data_values)[::-1]
+#
+#     _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
+#
+#     n_strongest_values = sorted_values[:nfind]
+#
+#     selected_peaks = []
+#     for peak_value in n_strongest_values:
+#         if peak_value > background_threshold * background_level:
+#             index = np.where(peak_data_values == peak_value)[0]
+#             selected_peaks.append(detected_peaks[index[0]])
+#             log.info('Selecting peak: Centered: {:.1f} Intensity {:.3f}'.format(selected_peaks[-1], peak_value))
+#         else:
+#             log.debug('Discarding peak: {:.3f}'.format(peak_value))
+#
+#     if plots:  # pragma: no cover
+#         plt.ioff()
+#
+#         fig, ax = plt.subplots()
+#         fig.canvas.set_window_title(file_name)
+#
+#         mng = plt.get_current_fig_manager()
+#         mng.window.showMaximized()
+#
+#         ax.plot(spatial_profile, label='Background subtracted profile')
+#         ax.axhline(_upper_limit, color='g', label='Upper limit')
+#         for peak in selected_peaks:
+#             ax.axvline(peak, color='r', label='Peak location')
+#         ax.set_xlabel("Spatial Axis (Pixels)")
+#         ax.set_ylabel("Background subtracted median intensity")
+#         ax.legend(loc='best')
+#         plt.tight_layout()
+#         plt.show()
+#
+#     return selected_peaks
+#
+#
+# def identify_fit_model(spatial_profile, peaks, order, model='gaussian', file_name='', plots=False):
+#     """
+#
+#     Args:
+#         spatial_profile:
+#         peaks:
+#         order:
+#         model:
+#         file_name:
+#         plots:
+#
+#     Returns:
+#
+#     """
+#     fitter = fitting.LevMarLSQFitter()
+#     profile_model = []
+#     for peak in peaks:
+#         peak_value = spatial_profile[peak]
+#         if model == 'gaussian':
+#             gaussian = models.Gaussian1D(amplitude=peak_value,
+#                                          mean=peak,
+#                                          stddev=order).rename(
+#                 'Gaussian_{:}'.format(peak))
+#             # print('Gaussian ', gaussian)
+#             # fixes mean and amplitude already found, just finding stddev
+#             gaussian.mean.fixed = True
+#             gaussian.amplitude.fixed = True
+#             fitted_gaussian = fitter(gaussian,
+#                                      range(len(spatial_profile)),
+#                                      spatial_profile)
+#
+#             # this ensures the profile returned are valid
+#             if (fitted_gaussian.stddev.value > 0) and \
+#                     (fitted_gaussian.stddev.value < 4 * order):
+#                 profile_model.append(fitted_gaussian)
+#                 log.info("Recording target centered at: {:.2f}, stddev: {:.2f}"
+#                          "".format(fitted_gaussian.mean.value,
+#                                    fitted_gaussian.stddev.value))
+#             else:
+#                 log.error("Discarding target with stddev: {:.3f}".format(
+#                     fitted_gaussian.stddev.value))
+#         if model == 'moffat':
+#             raise NotImplementedError
+#
+#     if plots:  # pragma: no cover
+#         fig, ax = plt.subplots()
+#         fig.canvas.set_window_title(file_name)
+#
+#         mng = plt.get_current_fig_manager()
+#         mng.window.showMaximized()
+#         ax.set_title('Successfully fitted profiles')
+#
+#         ax.plot(spatial_profile, color='b', label='Median Profile')
+#         for profile in profile_model:
+#
+#             ax.plot(profile(range(len(spatial_profile))),
+#                     color='r',
+#                     label="Fitted profile(s)")
+#
+#         ax.set_xlabel("Spatial Axis (Pixels)")
+#         ax.set_ylabel("Median Intensity")
+#         ax.legend(loc='best')
+#         plt.tight_layout()
+#         plt.show()
+#
+#     return profile_model
+#
+#
+# def identify_targets(ccd, nfind=3, plots=False):
+#     """Identify spectroscopic targets in an image
+#
+#     This function collapses the image along the dispersion direction using a
+#     median, This highlights the spatial features present in a 2D spectrum
+#     (image), Then does a sigma clip to remove any features in order to fit the
+#     background level and shape, the fit is a linear function. Once the
+#     background has been removed it will equal to zero all negative values. It
+#     will perform a new sigma clipping but this time to determinate the
+#     background amplitude. Finally it finds all the peaks above the background
+#     level and pick the `nfind` largest ones.
+#
+#     Args:
+#         ccd (CCDData) a :class:`~astropy.nddata.CCDData` instance.
+#         nfind (int): Maximum number of targets to be returned.
+#         plots (bool): To show debugging plots.
+#
+#     Returns:
+#         profile_model (object): an astropy.modeling.Model instance, it could be
+#           a Gaussian1D or a list of  Gaussian1D. Each of them represent a
+#           point source spectrum found. In the past a `CompoundModel` was
+#           returned but the processing of those was slightly more complicated
+#           than a list of Gaussian1Ds.
+#
+#     """
+#     # TODO (simon): This method is a bit too crowded or not straightforward
+#     # TODO (simon): therefore some refactoring might be needed.
+#     assert isinstance(ccd, CCDData)
+#     assert ccd.header['OBSTYPE'] == 'OBJECT'
+#
+#     slit_size = re.sub('[a-zA-Z"]', '', ccd.header['SLIT'])
+#     serial_binning = int(ccd.header['CCDSUM'].split()[0])
+#
+#     order = int(round(float(slit_size) / (0.15 * serial_binning)))
+#
+#     file_name = ccd.header['GSP_FNAM']
+#
+#     if plots:  # pragma: no cover
+#         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
+#         z2 = np.median(ccd.data) + np.std(ccd.data)
+#
+#         plt.switch_backend('Qt5Agg')
+#         fig, ax = plt.subplots()
+#         fig.canvas.set_window_title(file_name)
+#
+#         mng = plt.get_current_fig_manager()
+#         mng.window.showMaximized()
+#
+#         ax.set_title(file_name)
+#         ax.imshow(ccd.data, clim=(z1, z2), cmap='gray')
+#         ax.set_xlabel('Dispersion Axis (x)')
+#         ax.set_ylabel('Spatial Axis (y)')
+#         fig.tight_layout()
+#         plt.show()
+#
+#     median_profile = np.median(ccd.data, axis=1)
+#
+#     background_model = identify_fit_background(spatial_profile=median_profile,
+#                                                file_name=file_name,
+#                                                plots=plots)
+#
+#     background_subtracted_profile, background_level = identify_subtract_background(
+#         spatial_profile=median_profile,
+#         background_model=background_model,
+#         plots=plots)
+#
+#     all_peaks = identify_get_peaks(
+#         spatial_profile=background_subtracted_profile,
+#         order=order,
+#         plots=plots)
+#
+#     filtered_peaks = identify_filter_peaks(
+#         spatial_profile=background_subtracted_profile,
+#         detected_peaks=all_peaks,
+#         background_level=background_level,
+#         nfind=nfind,
+#         plots=plots)
+#
+#     profile_model = identify_fit_model(
+#         spatial_profile=background_subtracted_profile,
+#         peaks=filtered_peaks,
+#         model='gaussian',
+#         order=order,
+#         plots=plots)
+#
+#     if profile_model == []:
+#         log.error("Impossible to identify targets.")
+#     else:
+#         log.info('Identified {:d} target{:s}'.format(
+#             len(profile_model),
+#             ['s' if len(profile_model) > 1 else ''][0]))
+#
+#     return profile_model
 
-    This function collapses the image along the dispersion direction using a
-    median, This highlights the spatial features present in a 2D spectrum
-    (image), Then does a sigma clip to remove any features in order to fit the
-    background level and shape, the fit is a linear function. Once the
-    background has been removed it will equal to zero all negative values. It
-    will perform a new sigma clipping but this time to determinate the
-    background amplitude. Finally it finds all the peaks above the background
-    level and pick the `nfind` largest ones.
+def identify_targets(ccd,
+                     fit_model,
+                     background_threshold,
+                     nfind=3,
+                     plots=False):
+    identify = IdentifySpectroscopicTargets()
 
-    Args:
-        ccd (CCDData) a :class:`~astropy.nddata.CCDData` instance.
-        nfind (int): Maximum number of targets to be returned.
-        plots (bool): To show debugging plots.
+    identified_targets = identify(ccd=ccd,
+                                  nfind=nfind,
+                                  background_threshold=background_threshold,
+                                  model_name=fit_model,
+                                  plots=plots)
 
-    Returns:
-        profile_model (object): an astropy.modeling.Model instance, it could be
-          a Gaussian1D or a list of  Gaussian1D. Each of them represent a
-          point source spectrum found. In the past a `CompoundModel` was
-          returned but the processing of those was slightly more complicated
-          than a list of Gaussian1Ds.
-
-    """
-    # TODO (simon): This method is a bit too crowded or not straightforward
-    # TODO (simon): therefore some refactoring might be needed.
-    assert isinstance(ccd, CCDData)
-    assert ccd.header['OBSTYPE'] == 'OBJECT'
-    slit_size = re.sub('[a-zA-Z"]', '', ccd.header['SLIT'])
-    serial_binning = int(ccd.header['CCDSUM'].split()[0])
-    # order will be used for finding the peaks later but also as an initial
-    # estimate for stddev of gaussian
-    order = int(round(float(slit_size) / (0.15 * serial_binning)))
-
-    if plots:  # pragma: no cover
-        z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
-        z2 = np.median(ccd.data) + np.std(ccd.data)
-        fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
-
-        mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
-
-        ax.set_title(ccd.header['GSP_FNAM'])
-        ax.imshow(ccd.data, clim=(z1, z2), cmap='gray')
-        ax.set_xlabel('Dispersion Axis (x)')
-        ax.set_ylabel('Spatial Axis (y)')
-        fig.tight_layout()
-        plt.show()
-
-    median_profile = np.median(ccd.data, axis=1)
-
-    # Fitting Background
-
-    # Before doing the fitting we will do a sigma clipping in order to
-    # remove any feature.
-    clipped_profile = sigma_clip(median_profile, sigma=2, iters=5)
-
-    linear_model = models.Linear1D(slope=0,
-                                   intercept=np.median(median_profile))
-
-    linear_fitter = fitting.LinearLSQFitter()
-
-    # the fitters do not support masked arrays so we need to have a new
-    # array without the masked (clipped) elements.
-    new_profile = clipped_profile[~clipped_profile.mask]
-
-    # also the indexes are different
-    new_x_axis = [i for i in range(len(clipped_profile))
-                  if not clipped_profile.mask[i]]
-
-    fitted_background = linear_fitter(linear_model, new_x_axis, new_profile)
-
-    if plots:  # pragma: no cover
-        fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
-
-        mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
-
-        ax.set_title('Background Fitting Model Defined')
-        ax.plot(median_profile, color='k', label='Median profile')
-        ax.plot(linear_model(range(ccd.data.shape[0])),
-                color='r',
-                label='Background Linear Model')
-        ax.set_xlabel("Spatial Axis (Pixels)")
-        ax.set_ylabel("Median Intensity")
-        ax.legend(loc='best')
-        plt.tight_layout()
-        plt.show()
-
-        fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
-
-        mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
-
-        ax.set_title('Background Fitted Model')
-        ax.plot(median_profile, color='k', label='Median profile')
-        ax.plot(fitted_background(range(ccd.data.shape[0])),
-                color='r',
-                label='Fitted Background Linear Model')
-        ax.set_xlabel("Spatial Axis (Pixels)")
-        ax.set_ylabel("Median Intensity")
-        ax.legend(loc='best')
-        plt.tight_layout()
-        plt.show()
-
-    # Removing Background
-    # Remove the background and set negative values to zero
-
-    # build an array of the same dimensions of the profile
-    background_array = fitted_background(range(len(median_profile)))
-
-    background_subtracted = median_profile - background_array
-
-    # set negative values to zero
-    background_subtracted[background_subtracted < 0] = 0
-
-    final_profile = background_subtracted.copy()
-
-    # sigma clip and then get some features of the noise.
-    clipped_final_profile = sigma_clip(final_profile, sigma=3, iters=3)
-
-    # define the propper x-axis
-    new_x_axis = [i for i in range(len(clipped_final_profile)) if
-                  not clipped_final_profile.mask[i]]
-
-    clipped_final_profile = clipped_final_profile[
-        ~clipped_final_profile.mask]
-
-    background_level = np.abs(np.max(clipped_final_profile) -
-                              np.min(clipped_final_profile))
-
-    if plots:  # pragma: no cover
-        plt.ioff()
-        plt.close()
-
-        fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
-
-        mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
-
-        ax.set_title('Median Along Dispersion Axis (spatial)')
-        ax.plot(background_subtracted, label='Background Subtracted Data')
-        ax.plot(new_x_axis,
-                clipped_final_profile,
-                color='r',
-                label='Sigma Clipped Data')
-
-        ax.axhline(background_level, color='m', label='Min-Max Difference')
-        ax.set_xlabel("Spatial Axis (Pixels)")
-        ax.set_ylabel("Median Intensity")
-        plt.legend(loc='best')
-        plt.tight_layout()
-        if plt.isinteractive():
-            plt.draw()
-            plt.pause(5)
-        else:
-            plt.show()
-
-    # Identify targets
-    # Now that the profile is flat it should be easier to identify targets.
-
-    # apply median filter
-    final_profile = signal.medfilt(final_profile, kernel_size=1)
-
-    filtered_profile = np.where(np.abs(
-        final_profile > final_profile.min() + 0.03 * final_profile.max()),
-        final_profile,
-        None)
-
-    _upper_limit = final_profile.min() + 0.03 * final_profile.max()
-    # print(_upper_limit)
-    # print(np.median(final_profile))
-
-    # replace the None elements to zero.
-    none_to_zero_prof = [0 if it is None else it for it in filtered_profile]
-
-    # convert the list to array
-    filtered_profile = np.array(none_to_zero_prof)
-
-    order *= 2
-
-    # find the peaks
-    peaks = signal.argrelmax(filtered_profile, axis=0, order=order)[0]
-
-    # find profile values for peaks found
-    values = [final_profile[i] for i in peaks]
-
-    # sort values and reverse the order so that larger values are first
-    sorted_values = np.sort(values)[::-1]
-
-    # pick nfind top values
-    n_top_values = sorted_values[:nfind]
-    # print(n_top_values)
-
-    # retrieve the original index (real location) of the peaks
-    selected_peaks = []
-    for val in n_top_values:
-        # TODO (simon): replace the 3 below by a parameter in a conf file.
-        # discard peaks smaller than twice the level of background
-        if val > 3 * background_level:
-            index = np.where(values == val)[0]
-            #     print(index[0])
-            selected_peaks.append(peaks[index[0]])
-        else:
-            log.debug('Discarding peak: {:.3f}'.format(val))
-
-    if plots:  # pragma: no cover
-        plt.ioff()
-
-        fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
-
-        mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
-
-        ax.plot(final_profile, label='Background subtracted profile')
-        ax.axhline(_upper_limit, color='g', label='Upper limit')
-        for peak in selected_peaks:
-            ax.axvline(peak, color='r', label='Peak location')
-        ax.set_xlabel("Spatial Axis (Pixels)")
-        ax.set_ylabel("Background subtracted median intensity")
-        ax.legend(loc='best')
-        plt.tight_layout()
-        plt.show()
-
-    # build the model to return
-    fitter = fitting.LevMarLSQFitter()
-    best_stddev = None
-
-    profile_model = []
-    for peak in selected_peaks:
-        peak_value = median_profile[peak]
-        gaussian = models.Gaussian1D(amplitude=peak_value,
-                                     mean=peak,
-                                     stddev=order).rename(
-            'Gaussian_{:d}'.format(peak))
-        # print('Gaussian ', gaussian)
-        # fixes mean and amplitude already found, just finding stddev
-        gaussian.mean.fixed = True
-        gaussian.amplitude.fixed = True
-        fitted_gaussian = fitter(gaussian,
-                                 range(len(median_profile)),
-                                 median_profile)
-
-        # after being fitted, unfix the parameters and now fix stddev
-        fitted_gaussian.mean.fixed = False
-        fitted_gaussian.amplitude.fixed = False
-        fitted_gaussian.stddev.fixed = True
-
-        # manually forcing the use of the best stddev if possitive
-        # this disables the pipeline for extended sources
-        if best_stddev is None:
-            best_stddev = fitted_gaussian.stddev.value
-        elif best_stddev < fitted_gaussian.stddev.value:
-            fitted_gaussian.stddev.value = best_stddev
-        else:
-            best_stddev = fitted_gaussian.stddev.value
-        if best_stddev < 0:
-            best_stddev = None
-
-        # print(fitted_gaussian.stddev.value)
-        # plt.plot(median_profile, color='b')
-        # plt.plot(fitted_gaussian(range(len(median_profile))), color='r')
-        # plt.show()
-
-        # this ensures the profile returned are valid
-        if (fitted_gaussian.stddev.value > 0) and \
-                (fitted_gaussian.stddev.value < 4 * order):
-            profile_model.append(fitted_gaussian)
-        else:
-            log.error("Discarding target with stddev: {:.3f}".format(
-                fitted_gaussian.stddev.value))
-
-    if plots:  # pragma: no cover
-        fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
-
-        mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
-
-        ax.plot(median_profile, color='b', label='Median Profile')
-        for profile in profile_model:
-
-            ax.plot(profile(range(len(median_profile))),
-                    color='r',
-                    label="Fitted profile(s)")
-
-        ax.set_xlabel("Spatial Axis (Pixels)")
-        ax.set_ylabel("Median Intensity")
-        ax.legend(loc='best')
-        plt.tight_layout()
-        plt.show()
-
-    if profile_model == []:
-        log.error("Impossible to identify targets.")
-        return profile_model
-    else:
-        return profile_model
+    return identified_targets
 
 
 def image_overscan(ccd, overscan_region, add_keyword=False):
@@ -2118,8 +2245,14 @@ def trace(ccd,
     sampling_axis = range(0, dispersion_length, sampling_step)
     sample_values = []
 
-    model_stddev = model.stddev.value
-    model_mean = model.mean.value
+    if model.__class__.name == 'Gaussian1D':
+        model_stddev = model.stddev.value
+        model_mean = model.mean.value
+    elif model.__class__.name == 'Moffat1D':
+        model_stddev = model.gamma.value
+        model_mean = model.x_0.value
+    else:
+        raise NotImplementedError
 
     sample_center = float(model_mean)
     lower_limit = None
@@ -3300,3 +3433,576 @@ class SpectroscopicMode(object):
             else:
                 return (angle['camtarg'].to_string(index=False),
                         angle['grttarg'].to_string(index=False))
+
+
+class IdentifySpectroscopicTargets(object):
+
+    def __init__(self):
+        self.nfind = 1
+        self.plots = False
+        self.background_threshold = 3
+        self.profile_model = []
+        self.model_name = None
+        self.ccd = None
+        self.slit_size = None
+        self.serial_binning = None
+        self.order = None
+        self.file_name = None
+        self.background_model = None
+        self.background_level = None
+        self.spatial_profile = None
+        self.all_peaks = None
+        self.selected_peaks = None
+
+    def __call__(self,
+                 ccd,
+                 nfind=3,
+                 background_threshold=3,
+                 model_name='gaussian',
+                 plots=False):
+        assert isinstance(ccd, CCDData)
+        assert ccd.header['OBSTYPE'] == 'OBJECT'
+        self.file_name = ccd.header['GSP_FNAM']
+
+        log.info('Searching spectroscopic targets in file: {:s}'
+                 ''.format(self.file_name))
+
+        self.ccd = ccd
+        self.nfind = nfind
+        self.plots = plots
+        self.model_name = model_name
+        self.background_threshold = background_threshold
+
+        self.slit_size = re.sub('[a-zA-Z"]', '', self.ccd.header['SLIT'])
+        log.debug('Slit size: {:s}'.format(self.slit_size))
+        self.serial_binning = int(self.ccd.header['CCDSUM'].split()[0])
+        log.debug('Serial binning: {:d}'.format(self.serial_binning))
+
+        self.order = int(round(float(self.slit_size) / (0.15 * self.serial_binning)))
+
+
+        if self.plots:  # pragma: no cover
+            z1 = np.mean(self.ccd.data) - 0.5 * np.std(self.ccd.data)
+            z2 = np.median(self.ccd.data) + np.std(self.ccd.data)
+
+            plt.switch_backend('Qt5Agg')
+            fig, ax = plt.subplots()
+            fig.canvas.set_window_title(self.file_name)
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+
+            ax.set_title(self.file_name)
+            ax.imshow(ccd.data, clim=(z1, z2), cmap='gray')
+            ax.set_xlabel('Dispersion Axis (x)')
+            ax.set_ylabel('Spatial Axis (y)')
+            fig.tight_layout()
+            plt.show()
+
+        self.spatial_profile = np.median(ccd.data, axis=1)
+
+        # assert all([self.spatial_profile, self.file_name])
+
+        self.fit_background()
+
+        self.subtract_background()
+
+        self.get_peaks()
+
+        self.filter_peaks()
+
+        self.fit_model()
+
+        if self.profile_model == []:
+            log.error("Impossible to identify targets.")
+        else:
+            log.info('Identified {:d} target{:s}'.format(
+                len(self.profile_model),
+                ['s' if len(self.profile_model) > 1 else ''][0]))
+
+        return self.profile_model
+
+    def fit_background(self, spatial_profile=None, file_name=None, plots=False):
+        """
+
+        Args:
+            spatial_profile :
+            file_name (String):
+            plots:
+
+        Returns:
+
+        """
+        if spatial_profile is None and self.spatial_profile is not None:
+            spatial_profile = self.spatial_profile
+        else:
+            raise NotImplementedError
+        if file_name is None and self.file_name is not None:
+            file_name = self.file_name
+        else:
+            raise NotImplementedError
+
+        log.info('Fitting Linear1D model to spatial profile to detect '
+                 'background shape')
+
+        clipped_profile = sigma_clip(spatial_profile, sigma=2, iters=5)
+
+        linear_model = models.Linear1D(slope=0,
+                                       intercept=np.median(spatial_profile))
+
+        linear_fitter = fitting.LinearLSQFitter()
+
+        # the fitters do not support masked arrays so we need to have a new
+        # array without the masked (clipped) elements.
+        new_profile = clipped_profile[~clipped_profile.mask]
+
+        # also the indexes are different
+        new_x_axis = np.array([i for i in range(len(clipped_profile))
+                               if not clipped_profile.mask[i]])
+
+        self.background_model = linear_fitter(linear_model, new_x_axis, new_profile)
+
+        if plots or self.plots:  # pragma: no cover
+            fig, ax = plt.subplots()
+            fig.canvas.set_window_title(file_name)
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+
+            ax.set_title('Background Fitting Model Defined')
+            ax.plot(spatial_profile, color='k', label='Median profile')
+            ax.plot(linear_model(range(len(spatial_profile))),
+                    color='r',
+                    label='Background Linear Model')
+            ax.set_xlabel("Spatial Axis (Pixels)")
+            ax.set_ylabel("Median Intensity")
+            ax.legend(loc='best')
+            plt.tight_layout()
+            plt.show()
+
+            fig, ax = plt.subplots()
+            fig.canvas.set_window_title(file_name)
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+
+            ax.set_title('Background Fitted Model')
+            ax.plot(spatial_profile, color='k', label='Median profile')
+            ax.plot(self.background_model(range(len(spatial_profile))),
+                    color='r',
+                    label='Fitted Background Linear Model')
+            ax.set_xlabel("Spatial Axis (Pixels)")
+            ax.set_ylabel("Median Intensity")
+            ax.legend(loc='best')
+            plt.tight_layout()
+            plt.show()
+
+        return self.background_model
+
+    def subtract_background(self, spatial_profile=None, background_model=None,
+                                     file_name=None, plots=False):
+        """
+
+        Args:
+            spatial_profile:
+            background_model:
+            file_name:
+            plots:
+
+        Returns:
+
+        """
+
+        if not all([spatial_profile, background_model, file_name]):
+            if self.spatial_profile is not None:
+                spatial_profile = self.spatial_profile
+            if self.background_model is not None:
+                background_model = self.background_model
+            if self.file_name is None:
+                file_name = ''
+            else:
+                file_name = self.file_name
+
+        log.info('Subtracting background shape and level spatial profile for '
+                 'better target identification')
+
+        background_array = background_model(range(len(spatial_profile)))
+
+        background_subtracted = spatial_profile - background_array
+
+        background_subtracted[background_subtracted < 0] = 0
+
+        self.spatial_profile = background_subtracted.copy()
+
+        clipped_final_profile = sigma_clip(self.spatial_profile, sigma=3, iters=3)
+
+        new_x_axis = [i for i in range(len(clipped_final_profile)) if
+                      not clipped_final_profile.mask[i]]
+
+        clipped_final_profile = clipped_final_profile[
+            ~clipped_final_profile.mask]
+
+        self.background_level = np.abs(np.max(clipped_final_profile) -
+                                       np.min(clipped_final_profile))
+        log.debug('New background level after subtraction was found to be '
+                  '{:.2f}'.format(self.background_level))
+
+        if plots or self.plots:  # pragma: no cover
+            plt.ioff()
+            plt.close()
+
+            fig, ax = plt.subplots()
+            fig.canvas.set_window_title(file_name)
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+
+            ax.set_title('Median Along Dispersion Axis (spatial)')
+            ax.plot(background_subtracted, label='Background Subtracted Data')
+            ax.plot(new_x_axis,
+                    clipped_final_profile,
+                    color='r',
+                    label='Sigma Clipped Data')
+
+            ax.axhline(self.background_level, color='m', label='Min-Max Difference')
+            ax.set_xlabel("Spatial Axis (Pixels)")
+            ax.set_ylabel("Median Intensity")
+            plt.legend(loc='best')
+            plt.tight_layout()
+            if plt.isinteractive():
+                plt.draw()
+                plt.pause(5)
+            else:
+                plt.show()
+
+        return self.spatial_profile, self.background_level
+
+    def get_peaks(self, spatial_profile=None, order=None, file_name=None, plots=False):
+        """
+
+        Args:
+            spatial_profile: Background subtracted profile
+            order:
+            file_name:
+            plots:
+
+        Returns:
+
+        """
+
+        if not all([spatial_profile, order, file_name]):
+            if self.spatial_profile is not None:
+                spatial_profile = self.spatial_profile
+            if self.order is not None:
+                order = self.order
+            if self.file_name is None:
+                file_name = ''
+            else:
+                file_name = self.file_name
+
+        log.info("Finding all peaks in spatial profile")
+
+        spatial_profile = signal.medfilt(spatial_profile, kernel_size=1)
+        _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
+
+        filtered_profile = np.where(np.abs(
+            spatial_profile > spatial_profile.min() + 0.03 * spatial_profile.max()),
+            spatial_profile,
+            None)
+
+        none_to_zero_prof = [0 if it is None else it for it in filtered_profile]
+
+        filtered_profile = np.array(none_to_zero_prof)
+
+        # order *= 2
+        self.all_peaks = signal.argrelmax(filtered_profile,
+                                          axis=0,
+                                          order=order)[0]
+        log.debug("Found {:d} peaks".format(len(self.all_peaks)))
+
+        if plots or self.plots:  # pragma: no cover
+            plt.ioff()
+
+            fig, ax = plt.subplots()
+            fig.canvas.set_window_title(file_name)
+
+            ax.set_title('All detected Peaks')
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+            for peak in self.all_peaks:
+                ax.axvline(peak, color='r', alpha=0.7)
+            ax.plot(spatial_profile, label='Background subtracted profile')
+            ax.axhline(_upper_limit, color='g', label='Peak Detection Threshold')
+            ax.plot([], color='r', label='Peak location')
+
+            ax.set_xlabel("Spatial Axis (Pixels)")
+            ax.set_ylabel("Background subtracted median intensity")
+            ax.legend(loc='best')
+            plt.tight_layout()
+            plt.show()
+
+        return self.all_peaks
+
+    def filter_peaks(self,
+                              spatial_profile=None,
+                              detected_peaks=None,
+                              background_level=None,
+                              nfind=None,
+                              background_threshold=None,
+                              file_name=None,
+                              plots=False):
+        """
+
+        Args:
+            spatial_profile:
+            detected_peaks:
+            background_level:
+            nfind:
+            background_threshold:
+            file_name:
+            plots:
+
+        Returns:
+
+        """
+        if not all([spatial_profile,
+                    detected_peaks,
+                    background_level,
+                    nfind,
+                    background_threshold,
+                    file_name]):
+
+            if self.spatial_profile is not None:
+                spatial_profile = self.spatial_profile
+            if self.all_peaks is not None:
+                detected_peaks = self.all_peaks
+            if self.background_level is not None:
+                background_level = self.background_level
+            if self.nfind is not None:
+                nfind = self.nfind
+            if self.background_threshold is not None:
+                background_threshold = self.background_threshold
+            if self.file_name is None:
+                file_name = ''
+            else:
+                file_name = self.file_name
+        else:
+            raise NotImplementedError
+
+        log.info("Selecting the {:d} most intense peaks out of {:d} found"
+                 "".format(nfind, len(detected_peaks)))
+
+        peak_data_values = [spatial_profile[i] for i in detected_peaks]
+
+        sorted_values = np.sort(peak_data_values)[::-1]
+
+        _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
+
+        n_strongest_values = sorted_values[:nfind]
+
+        self.selected_peaks = []
+        log.info("Validating peaks by setting threshold {:d} times the "
+                 "background level {:.2f}".format(background_threshold,
+                                                  background_level))
+        log.debug('Intensity threshold set to: {:.2f}'
+                  ''.format(background_threshold * background_level))
+        for peak_value in n_strongest_values:
+            index = np.where(peak_data_values == peak_value)[0]
+            if peak_value > background_threshold * background_level:
+                self.selected_peaks.append(detected_peaks[index[0]])
+                log.info(
+                    'Selecting peak: Centered: {:.1f} Intensity {:.3f}'.format(
+                        self.selected_peaks[-1], peak_value))
+            else:
+                log.debug('Discarding peak: Center {:.1f} Intensity {:.3f} '
+                          'Reason: Below intensity threshold ({:.2f})'
+                          ''.format(detected_peaks[index[0]],
+                                    peak_value,
+                                    background_threshold * background_level))
+
+        if plots or self.plots:  # pragma: no cover
+            plt.ioff()
+
+            fig, ax = plt.subplots()
+            fig.canvas.set_window_title(file_name)
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+
+            ax.plot(spatial_profile, label='Background subtracted profile')
+            ax.axhline(_upper_limit, color='g', label='Upper limit for peak detection')
+            ax.axhline(background_threshold * background_level,
+                       color='m',
+                       label="Intensity Threshold")
+            for peak in self.selected_peaks:
+                ax.axvline(peak, color='r', label='Peak location')
+            ax.set_xlabel("Spatial Axis (Pixels)")
+            ax.set_ylabel("Background subtracted median intensity")
+            ax.legend(loc='best')
+            plt.tight_layout()
+            plt.show()
+
+        return self.selected_peaks
+
+    def fit_model(self,
+                  spatial_profile=None,
+                  selected_peaks=None,
+                  order=None,
+                  model_name=None,
+                  file_name=None,
+                  plots=False):
+        if not all([spatial_profile,
+                    selected_peaks,
+                    order,
+                    model_name,
+                    file_name]):
+
+            if self.spatial_profile is not None:
+                spatial_profile = self.spatial_profile
+            if self.all_peaks is not None:
+                selected_peaks = self.selected_peaks
+            if self.order is not None:
+                order = self.order
+            if self.model_name is not None:
+                model_name = self.model_name
+            if self.file_name is None:
+                file_name = ''
+            else:
+                file_name = self.file_name
+        else:
+            raise NotImplementedError
+
+        fitter = fitting.LevMarLSQFitter()
+
+        if model_name == 'gaussian':
+            self.profile_model = self._fit_gaussian(
+                fitter=fitter,
+                spatial_profile=spatial_profile,
+                selected_peaks=selected_peaks,
+                order=order,
+                file_name=file_name,
+                plots=plots or self.plots)
+            return self.profile_model
+
+        if model_name == 'moffat':
+            self.profile_model = self._fit_moffat(
+                fitter=fitter,
+                spatial_profile=spatial_profile,
+                selected_peaks=selected_peaks,
+                order=order,
+                file_name=file_name,
+                plots=plots or self.plots)
+            return self.profile_model
+
+    @staticmethod
+    def _fit_gaussian(fitter,
+                      spatial_profile,
+                      selected_peaks,
+                      order,
+                      file_name,
+                      plots):
+        log.info("Fitting 'Gaussian1D' to spatial profile of targets.")
+        profile_model = []
+        for peak in selected_peaks:
+            peak_value = spatial_profile[peak]
+            gaussian = models.Gaussian1D(amplitude=peak_value,
+                                         mean=peak,
+                                         stddev=order).rename(
+                'Gaussian_{:}'.format(peak))
+
+            fitted_gaussian = fitter(gaussian,
+                                     range(len(spatial_profile)),
+                                     spatial_profile)
+
+            # this ensures the profile returned are valid
+            if (fitted_gaussian.stddev.value > 0) and \
+                    (fitted_gaussian.stddev.value < 4 * order):
+                profile_model.append(fitted_gaussian)
+                log.info(
+                    "Recording target centered at: {:.2f}, stddev: {:.2f}"
+                    "".format(fitted_gaussian.mean.value,
+                              fitted_gaussian.stddev.value))
+            else:
+                log.error("Discarding target with stddev: {:.3f}".format(
+                    fitted_gaussian.stddev.value))
+
+        if plots:  # pragma: no cover
+            fig, ax = plt.subplots()
+            fig.canvas.set_window_title(file_name)
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+            ax.set_title('Successfully fitted profiles')
+
+            ax.plot(spatial_profile, color='k', label='Median Profile')
+            for profile in profile_model:
+                print(profile_model)
+                ax.plot(profile(range(len(spatial_profile))),
+                        label=profile.name)
+
+            ax.set_xlabel("Spatial Axis (Pixels)")
+            ax.set_ylabel("Median Intensity")
+            ax.legend(loc='best')
+            plt.tight_layout()
+            plt.show()
+
+        return profile_model
+
+    @staticmethod
+    def _fit_moffat(fitter,
+                    spatial_profile,
+                    selected_peaks,
+                    order,
+                    file_name,
+                    plots):
+        log.info("Fitting 'Moffat1D' to spatial profile of targets.")
+        profile_model = []
+        for peak in selected_peaks:
+            peak_value = spatial_profile[peak]
+            moffat = models.Moffat1D(amplitude=peak_value,
+                                       x_0=peak,
+                                       gamma=order).rename(
+                'Moffat_{:}'.format(peak))
+
+            fitted_moffat = fitter(moffat,
+                                     range(len(spatial_profile)),
+                                     spatial_profile)
+
+            # this ensures the profile returned are valid
+            if (fitted_moffat.fwhm > 0) and \
+                    (fitted_moffat.fwhm < 4 * order):
+                profile_model.append(fitted_moffat)
+                log.info(
+                    "Recording target centered at: {:.2f}, gamma: {:.2f}"
+                    "".format(fitted_moffat.x_0.value,
+                              fitted_moffat.gamma.value))
+            else:
+                log.error("Discarding target centered at: {:.3f}".format(
+                    fitted_moffat.x_0.value))
+                if fitted_moffat.fwhm < 0:
+                    log.error("Moffat model FWHM is negative")
+                else:
+                    log.error("Moffat model FWHM too large: {:.3f}"
+                              "".format(fitted_moffat.fwhm))
+
+        if plots:  # pragma: no cover
+            fig, ax = plt.subplots()
+            fig.canvas.set_window_title(file_name)
+
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+            ax.set_title('Successfully fitted profiles')
+
+            ax.plot(spatial_profile, color='k', label='Median Profile')
+            for profile in profile_model:
+                ax.plot(profile(range(len(spatial_profile))),
+                        label=profile.name)
+
+            ax.set_xlabel("Spatial Axis (Pixels)")
+            ax.set_ylabel("Median Intensity")
+            ax.legend(loc='best')
+            plt.tight_layout()
+            plt.show()
+
+        return profile_model

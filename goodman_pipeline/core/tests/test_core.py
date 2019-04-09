@@ -779,13 +779,16 @@ class SpectroscopicModeTest(TestCase):
         self.assertIsNone(grt_targ)
 
 
-
 class TargetsTest(TestCase):
 
     def setUp(self):
         self.ccd = CCDData(data=np.ones((800, 2000)),
                            meta=fits.Header(),
                            unit='adu')
+
+        self.ccd.header.set('GSP_FNAM',
+                            value='fake-name.fits',
+                            comment='Fake file name')
 
         self.profile_1 = models.Gaussian1D(amplitude=200,
                                            mean=100,
@@ -803,7 +806,7 @@ class TargetsTest(TestCase):
         del self.profile_1
         del self.profile_2
 
-    def test_identify_targets(self):
+    def test_identify_targets_moffat(self):
         self.ccd.header.set('OBSTYPE',
                             value='OBJECT',
                             comment='Fake values')
@@ -813,7 +816,30 @@ class TargetsTest(TestCase):
         self.ccd.header.set('CCDSUM',
                             value='1 1',
                             comment='Fake values')
-        targets = identify_targets(ccd=self.ccd, nfind=2, plots=False)
+        targets = identify_targets(ccd=self.ccd,
+                                   fit_model='moffat',
+                                   background_threshold=3,
+                                   nfind=2,
+                                   plots=False)
+        self.assertEqual(len(targets), 2)
+        for target in targets:
+            self.assertIsInstance(target, Model)
+
+    def test_identify_targets_gaussian(self):
+        self.ccd.header.set('OBSTYPE',
+                            value='OBJECT',
+                            comment='Fake values')
+        self.ccd.header.set('SLIT',
+                            value='1.03" long slit',
+                            comment='Fake slit')
+        self.ccd.header.set('CCDSUM',
+                            value='1 1',
+                            comment='Fake values')
+        targets = identify_targets(ccd=self.ccd,
+                                   fit_model='gaussian',
+                                   background_threshold=3,
+                                   nfind=2,
+                                   plots=False)
         self.assertEqual(len(targets), 2)
         for target in targets:
             self.assertIsInstance(target, Model)
@@ -829,6 +855,7 @@ class TargetsTest(TestCase):
         self.assertEqual(test_trace.c0.value, self.profile_1.mean.value)
         self.assertAlmostEqual(test_trace.c1.value, 0.)
         self.assertAlmostEqual(test_trace.c2.value, 0.)
+
 
     def test_trace_targets(self):
         targets = [self.profile_1, self.profile_2]
