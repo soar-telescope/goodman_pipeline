@@ -870,6 +870,7 @@ class TargetsTest(TestCase):
 
         profile_sum = self.profile_1 + self.profile_2
         self.ccd2 = self.ccd.copy()
+        self.no_targets_ccd = self.ccd.copy()
         for i in range(self.ccd.data.shape[1]):
             self.ccd.data[:, i] *= profile_sum(range(self.ccd.data.shape[0]))
             self.ccd2.data[:, i] *= self.profile_3(
@@ -921,6 +922,23 @@ class TargetsTest(TestCase):
         for target in targets:
             self.assertIsInstance(target, Model)
 
+    def test_identify_targets_empty_output(self):
+        self.no_targets_ccd.header.set('OBSTYPE',
+                                       value='OBJECT',
+                                       comment='Fake values')
+        self.no_targets_ccd.header.set('SLIT',
+                                       value='1.03" long slit',
+                                       comment='Fake slit')
+        self.no_targets_ccd.header.set('CCDSUM',
+                                       value='1 1',
+                                       comment='Fake values')
+        targets = identify_targets(ccd=self.no_targets_ccd,
+                                   fit_model='gaussian',
+                                   background_threshold=3,
+                                   nfind=2,
+                                   plots=False)
+        self.assertEqual(len(targets), 0)
+
     def test_trace_gaussian(self):
         trace_model = models.Polynomial1D(degree=2)
         fitter = fitting.LevMarLSQFitter()
@@ -955,7 +973,6 @@ class TargetsTest(TestCase):
                           trace_model,
                           fitter,
                           5)
-
 
     def test_trace_targets(self):
         targets = [self.profile_1, self.profile_2]
