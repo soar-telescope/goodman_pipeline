@@ -709,11 +709,18 @@ def extraction(ccd,
     assert isinstance(ccd, CCDData)
     assert isinstance(target_trace, Model)
 
+    if spatial_profile.__class__.name == 'Gaussian1D':
+        target_stddev = spatial_profile.stddev.value
+    elif spatial_profile.__class__.name == 'Moffat1D':
+        target_stddev = spatial_profile.gamma.value
+    else:
+        raise NotImplementedError
+
     if extraction_name == 'fractional':
         extracted, background, bkg_info = extract_fractional_pixel(
             ccd=ccd,
             target_trace=target_trace,
-            target_stddev=spatial_profile.stddev.value,
+            target_stddev=target_stddev,
             extraction_width=2)
 
         background_1, background_2 = bkg_info
@@ -2233,8 +2240,14 @@ def trace(ccd,
     sampling_axis = range(0, dispersion_length, sampling_step)
     sample_values = []
 
-    model_stddev = model.stddev.value
-    model_mean = model.mean.value
+    if model.__class__.name == 'Gaussian1D':
+        model_stddev = model.stddev.value
+        model_mean = model.mean.value
+    elif model.__class__.name == 'Moffat1D':
+        model_stddev = model.gamma.value
+        model_mean = model.x_0.value
+    else:
+        raise NotImplementedError
 
     sample_center = float(model_mean)
     lower_limit = None
@@ -3712,12 +3725,12 @@ class IdentifySpectroscopicTargets(object):
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
-
-            ax.plot(spatial_profile, label='Background subtracted profile')
-            ax.axhline(_upper_limit, color='g', label='Detection Threshold')
-            ax.plot([], color='r', label='Peak location')
             for peak in self.all_peaks:
-                ax.axvline(peak, color='r')
+                ax.axvline(peak, color='r', alpha=0.7)
+            ax.plot(spatial_profile, label='Background subtracted profile')
+            ax.axhline(_upper_limit, color='g', label='Peak Detection Threshold')
+            ax.plot([], color='r', label='Peak location')
+
             ax.set_xlabel("Spatial Axis (Pixels)")
             ax.set_ylabel("Background subtracted median intensity")
             ax.legend(loc='best')
@@ -3813,7 +3826,10 @@ class IdentifySpectroscopicTargets(object):
             mng.window.showMaximized()
 
             ax.plot(spatial_profile, label='Background subtracted profile')
-            ax.axhline(_upper_limit, color='g', label='Upper limit')
+            ax.axhline(_upper_limit, color='g', label='Upper limit for peak detection')
+            ax.axhline(background_threshold * background_level,
+                       color='m',
+                       label="Intensity Threshold")
             for peak in self.selected_peaks:
                 ax.axvline(peak, color='r', label='Peak location')
             ax.set_xlabel("Spatial Axis (Pixels)")
@@ -3914,11 +3930,11 @@ class IdentifySpectroscopicTargets(object):
             mng.window.showMaximized()
             ax.set_title('Successfully fitted profiles')
 
-            ax.plot(spatial_profile, color='b', label='Median Profile')
+            ax.plot(spatial_profile, color='k', label='Median Profile')
             for profile in profile_model:
+                print(profile_model)
                 ax.plot(profile(range(len(spatial_profile))),
-                        color='r',
-                        label="Fitted profile(s)")
+                        label=profile.name)
 
             ax.set_xlabel("Spatial Axis (Pixels)")
             ax.set_ylabel("Median Intensity")
@@ -3949,16 +3965,21 @@ class IdentifySpectroscopicTargets(object):
                                      spatial_profile)
 
             # this ensures the profile returned are valid
-            if (fitted_moffat.gamma.value > 0) and \
-                    (fitted_moffat.gamma.value < 4 * order):
+            if (fitted_moffat.fwhm > 0) and \
+                    (fitted_moffat.fwhm < 4 * order):
                 profile_model.append(fitted_moffat)
                 log.info(
                     "Recording target centered at: {:.2f}, gamma: {:.2f}"
                     "".format(fitted_moffat.x_0.value,
                               fitted_moffat.gamma.value))
             else:
-                log.error("Discarding target with gamma: {:.3f}".format(
-                    fitted_moffat.stddev.value))
+                log.error("Discarding target centered at: {:.3f}".format(
+                    fitted_moffat.x_0.value))
+                if fitted_moffat.fwhm < 0:
+                    log.error("Moffat model FWHM is negative")
+                else:
+                    log.error("Moffat model FWHM too large: {:.3f}"
+                              "".format(fitted_moffat.fwhm))
 
         if plots:  # pragma: no cover
             fig, ax = plt.subplots()
@@ -3968,11 +3989,10 @@ class IdentifySpectroscopicTargets(object):
             mng.window.showMaximized()
             ax.set_title('Successfully fitted profiles')
 
-            ax.plot(spatial_profile, color='b', label='Median Profile')
+            ax.plot(spatial_profile, color='k', label='Median Profile')
             for profile in profile_model:
                 ax.plot(profile(range(len(spatial_profile))),
-                        color='r',
-                        label="Fitted profile(s)")
+                        label=profile.name)
 
             ax.set_xlabel("Spatial Axis (Pixels)")
             ax.set_ylabel("Median Intensity")

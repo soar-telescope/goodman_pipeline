@@ -383,6 +383,11 @@ class MainApp(object):
                     # if len(trace_list) > 0:
                     extracted_target_and_lamps = []
                     for single_trace, single_profile, trace_info in trace_list:
+                        if single_profile.__class__.name == 'Gaussian1D':
+                            single_profile_center = single_profile.mean.value
+                        elif single_profile.__class__.name == 'Moffat1D':
+                            single_profile_center = single_profile.x_0.value
+
                         if len(trace_list) > 1:
                             target_number = trace_list.index(
                                 [single_trace,
@@ -440,7 +445,7 @@ class MainApp(object):
 
                                 fig.canvas.set_window_title(
                                     'Extracted Data: Target Center ~ '
-                                    '{:.2f}'.format(single_profile.mean.value))
+                                    '{:.2f}'.format(single_profile_center))
 
                                 manager = plt.get_current_fig_manager()
 
@@ -453,7 +458,7 @@ class MainApp(object):
                                     "{:s} Extraction centered near "
                                     "{:.2f} \n File: {:s}".format(
                                         extracted.header['OBJECT'],
-                                        single_profile.mean.value,
+                                        single_profile_center,
                                         extracted.header['GSP_FNAM'])
                                 )
                                 if all_lamps:
