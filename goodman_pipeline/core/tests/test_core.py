@@ -32,6 +32,7 @@ from ..core import (astroscrappy_lacosmic,
                     add_wcs_keys,
                     call_cosmic_rejection,
                     classify_spectroscopic_data,
+                    combine_data,
                     convert_time,
                     dcr_cosmicray_rejection,
                     extraction,
@@ -93,6 +94,51 @@ def test_lacosmic_cosmicray_rejection():
 
 def test_classify_spectroscopic_data():
     pass
+
+
+class AddWCSKeywordsTest(TestCase):
+
+    def setUp(self):
+        self.test_ccd = CCDData(data=np.ones((100, 100)),
+                                meta=fits.Header(),
+                                unit='adu')
+
+    def test_add_wcs_keys(self):
+        wcs_keys = ['BANDID1',
+                    'APNUM1',
+                    'WCSDIM',
+                    'CTYPE1',
+                    'CRVAL1',
+                    'CRPIX1',
+                    'CDELT1',
+                    'CD1_1',
+                    'LTM1_1',
+                    'WAT0_001',
+                    'WAT1_001',
+                    'DC-FLAG',
+                    'DCLOG1']
+
+
+
+        self.test_ccd = add_wcs_keys(ccd=self.test_ccd)
+        for key in wcs_keys:
+            self.assertIn(key, self.test_ccd.header)
+
+    @skip
+    def test_add_wcs_keys_error(self):
+        wcs_keys = ['BANDID1',
+                    'APNUM1',
+                    'WCSDIM',
+                    'CTYPE1',
+                    'CRVAL1',
+                    'CRPIX1',
+                    'CDELT1',
+                    'CD1_1',
+                    'LTM1_1',
+                    'WAT0_001',
+                    'WAT1_001',
+                    'DC-FLAG',
+                    'DCLOG1']
 
 
 class InterpolationTest(TestCase):
@@ -242,49 +288,6 @@ class CentralWavelength(TestCase):
                                places=2)
 
 
-class AddWCSKeywordsTest(TestCase):
-
-    def setUp(self):
-        self.test_ccd = CCDData(data=np.ones((100, 100)),
-                                meta=fits.Header(),
-                                unit='adu')
-
-    def test_add_wcs_keys(self):
-        wcs_keys = ['BANDID1',
-                    'APNUM1',
-                    'WCSDIM',
-                    'CTYPE1',
-                    'CRVAL1',
-                    'CRPIX1',
-                    'CDELT1',
-                    'CD1_1',
-                    'LTM1_1',
-                    'WAT0_001',
-                    'WAT1_001',
-                    'DC-FLAG',
-                    'DCLOG1']
-
-
-
-        self.test_ccd = add_wcs_keys(ccd=self.test_ccd)
-        for key in wcs_keys:
-            self.assertIn(key, self.test_ccd.header)
-
-    @skip
-    def test_add_wcs_keys_error(self):
-        wcs_keys = ['BANDID1',
-                    'APNUM1',
-                    'WCSDIM',
-                    'CTYPE1',
-                    'CRVAL1',
-                    'CRPIX1',
-                    'CDELT1',
-                    'CD1_1',
-                    'LTM1_1',
-                    'WAT0_001',
-                    'WAT1_001',
-                    'DC-FLAG',
-                    'DCLOG1']
 
 
 class CosmicRayRejectionTest(TestCase):
@@ -435,6 +438,70 @@ class CosmicRayRejectionTest(TestCase):
         for _file in files_to_delete:
             if os.path.isfile(_file):
                 os.unlink(_file)
+
+
+class CombineDataTest(TestCase):
+
+    def setUp(self):
+        self.ccd1 = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd1.header.set('OBJECT', value='TestObject')
+        self.ccd1.header.set('GRATING', value='Grating')
+        self.ccd1.header.set('SLIT', value='1.05SlitSize')
+
+        self.ccd2 = self.ccd1.copy()
+        self.ccd2.data *= 2
+        self.ccd3 = self.ccd1.copy()
+        self.ccd3.data *= 5
+        self.ccd1.header.set('GSP_FNAM', value='image_1.fits')
+        self.ccd2.header.set('GSP_FNAM', value='image_2.fits')
+        self.ccd3.header.set('GSP_FNAM', value='image_3.fits')
+        self.image_list = [self.ccd1, self.ccd2, self.ccd3]
+        self.dest_path = os.getcwd()
+        self.prefix = 'testing_'
+        self.output_name = 'combine_data.fits'
+
+    def tearDown(self):
+        using_output_name_file_name = os.path.join(
+            self.dest_path,
+            self.output_name)
+        if os.path.isfile(using_output_name_file_name):
+            os.unlink(using_output_name_file_name)
+
+        not_using_output_name_file_name_list = os.listdir(self.dest_path)
+        if not_using_output_name_file_name_list:
+            for _file in not_using_output_name_file_name_list:
+                if '{:s}combined'.format(self.prefix) in _file:
+                    os.unlink(_file)
+
+    def test_combine_data_median_prefix_ignored(self):
+        combined = combine_data(
+            image_list=self.image_list,
+            dest_path=self.dest_path,
+            prefix=self.prefix,
+            output_name=self.output_name,
+            method='median',
+            save=True)
+
+        np.testing.assert_array_equal(combined.data, np.ones((100, 100)) * 1.5)
+        self.assertEqual(len(combined.header['GSP_IC*']), 3)
+        self.assertTrue(self.prefix not in combined.header['GSP_FNAM'])
+
+    def test_combine_data_median_prefix_used(self):
+        combined = combine_data(
+            image_list=self.image_list,
+            dest_path=self.dest_path,
+            prefix=self.prefix,
+            method='median',
+            save=True)
+
+        np.testing.assert_array_equal(combined.data, np.ones((100, 100)) * 1.5)
+        self.assertEqual(len(combined.header['GSP_IC*']), 3)
+        self.assertTrue(self.prefix in combined.header['GSP_FNAM'])
+
+
+
 
 
 class TimeConversionTest(TestCase):
