@@ -864,14 +864,24 @@ class TargetsTest(TestCase):
                                            mean=600,
                                            stddev=10).rename('Profile_2')
 
+        self.profile_3 = models.Moffat1D(amplitude=200,
+                                         x_0=600,
+                                         gamma=3).rename('Profile_3')
+
         profile_sum = self.profile_1 + self.profile_2
+        self.ccd2 = self.ccd.copy()
         for i in range(self.ccd.data.shape[1]):
             self.ccd.data[:, i] *= profile_sum(range(self.ccd.data.shape[0]))
+            self.ccd2.data[:, i] *= self.profile_3(
+                range(self.ccd2.data.shape[0]))
+
+
 
     def tearDown(self):
         del self.ccd
         del self.profile_1
         del self.profile_2
+        del self.profile_3
 
     def test_identify_targets_moffat(self):
         self.ccd.header.set('OBSTYPE',
@@ -911,7 +921,7 @@ class TargetsTest(TestCase):
         for target in targets:
             self.assertIsInstance(target, Model)
 
-    def test_trace(self):
+    def test_trace_gaussian(self):
         trace_model = models.Polynomial1D(degree=2)
         fitter = fitting.LevMarLSQFitter()
         test_trace, trace_rms = trace(ccd=self.ccd,
@@ -922,6 +932,29 @@ class TargetsTest(TestCase):
         self.assertEqual(test_trace.c0.value, self.profile_1.mean.value)
         self.assertAlmostEqual(test_trace.c1.value, 0.)
         self.assertAlmostEqual(test_trace.c2.value, 0.)
+
+    def test_trace_moffat(self):
+        trace_model = models.Polynomial1D(degree=2)
+        fitter = fitting.LevMarLSQFitter()
+        test_trace, trace_rms = trace(ccd=self.ccd2,
+                                      model=self.profile_3,
+                                      trace_model=trace_model,
+                                      model_fitter=fitter,
+                                      sampling_step=5)
+        self.assertEqual(test_trace.c0.value, self.profile_3.x_0.value)
+        self.assertAlmostEqual(test_trace.c1.value, 0.)
+        self.assertAlmostEqual(test_trace.c2.value, 0.)
+
+    def test_trace_not_implemented(self):
+        trace_model = models.Polynomial1D(degree=2)
+        fitter = fitting.LevMarLSQFitter()
+        self.assertRaises(NotImplementedError,
+                          trace,
+                          self.ccd2,
+                          models.BlackBody1D(),
+                          trace_model,
+                          fitter,
+                          5)
 
 
     def test_trace_targets(self):
