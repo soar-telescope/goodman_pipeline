@@ -24,7 +24,3 @@ class TestVersionChecker(unittest.TestCase):
             self.assertFalse(check_version.am_i_updated('v0.0.0'))
         except ConnectionRefusedError:
             pass
-
-
-if __name__ == '__main__':
-    unittest.main()
