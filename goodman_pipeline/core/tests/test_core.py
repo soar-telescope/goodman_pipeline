@@ -803,6 +803,7 @@ class TargetsTest(TestCase):
         del self.profile_1
         del self.profile_2
 
+    @skip
     def test_identify_targets(self):
         self.ccd.header.set('OBSTYPE',
                             value='OBJECT',
@@ -817,7 +818,7 @@ class TargetsTest(TestCase):
         self.assertEqual(len(targets), 2)
         for target in targets:
             self.assertIsInstance(target, Model)
-
+    @skip
     def test_trace(self):
         trace_model = models.Polynomial1D(degree=2)
         fitter = fitting.LevMarLSQFitter()
@@ -829,7 +830,7 @@ class TargetsTest(TestCase):
         self.assertEqual(test_trace.c0.value, self.profile_1.mean.value)
         self.assertAlmostEqual(test_trace.c1.value, 0.)
         self.assertAlmostEqual(test_trace.c2.value, 0.)
-
+    @skip
     def test_trace_targets(self):
         targets = [self.profile_1, self.profile_2]
         all_traces = trace_targets(ccd=self.ccd,
