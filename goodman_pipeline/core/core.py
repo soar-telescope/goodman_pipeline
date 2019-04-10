@@ -1002,10 +1002,11 @@ def get_best_flat(flat_name, path):
     log.debug('Flat base name {:s}'.format(flat_name))
     log.debug('Matching master flats found: {:d}'.format(len(flat_list)))
     if len(flat_list) > 0:
-        if len(flat_list) == 1:
-            master_flat_name = flat_list[0]
-        else:
-            master_flat_name = flat_list[0]
+        master_flat_name = flat_list[0]
+        # if len(flat_list) == 1:
+        #     master_flat_name = flat_list[0]
+        # else:
+        #     master_flat_name = flat_list[0]
         # elif any('dome' in flat for flat in flat_list):
         #     master_flat_name =
 
@@ -1301,6 +1302,9 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
                                       'area only.')
         else:
             log.warning('Unrecognized trim type')
+            ccd.header['GSP_TRIM'] = (trim_section,
+                                      'Image trimmed by unreckognized method: '
+                                      '{:s}'.format(trim_type))
     else:
         log.info("{:s} trim section is not "
                  "defined.".format(trim_type.capitalize()))
@@ -2248,7 +2252,7 @@ class NightDataContainer(object):
         """For imaging use"""
         self.bias = None
         self.day_flats = None
-        # self.dome_flats = None
+        self.dome_flats = None
         self.sky_flats = None
         self.data_groups = None
 
@@ -2304,10 +2308,10 @@ class NightDataContainer(object):
             group_info += self._get_group_repr(self.bias)
             group_info += "Day FLATs Group:\n"
             group_info += self._get_group_repr(self.day_flats)
-            # group_info += "Dome FLATs Group:\n"
-            # group_info += self._get_group_repr(self.dome_flats)
-            # group_info += "Sky FLATs Group:\n"
-            # group_info += self._get_group_repr(self.sky_flats)
+            group_info += "Dome FLATs Group:\n"
+            group_info += self._get_group_repr(self.dome_flats)
+            group_info += "Sky FLATs Group:\n"
+            group_info += self._get_group_repr(self.sky_flats)
             if self.technique == 'Spectroscopy':
 
                 group_info += "COMP Group:\n"
@@ -2504,19 +2508,19 @@ class NightDataContainer(object):
         self.roi = roi
 
 
-class NoMatchFound(Exception):
+class NoMatchFound(Exception):  # pragma: no cover
     """Exception for when no match is found."""
     def __init__(self):
         Exception.__init__(self, 'Did not find a match')
 
 
-class NoTargetException(Exception):
+class NoTargetException(Exception):  # pragma: no cover
     """Exception to be raised when no target is identified"""
     def __init__(self):
         Exception.__init__(self, 'No targets identified.')
 
 
-class NotEnoughLinesDetected(Exception):
+class NotEnoughLinesDetected(Exception):  # pragma: no cover
     """Exception for when there are no lines detected."""
     def __init__(self):
         Exception.__init__(self, 'Not enough lines detected.')

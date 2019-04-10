@@ -38,6 +38,7 @@ from ..core import (astroscrappy_lacosmic,
                     extraction,
                     extract_fractional_pixel,
                     extract_optimal,
+                    fix_keywords,
                     fractional_sum,
                     get_best_flat,
                     get_central_wavelength,
@@ -615,6 +616,22 @@ class ExtractionTest(TestCase):
                           spatial_profile=self.target_profile,
                           extraction_name='optimal')
 
+class FixKeywordsTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.full_path = os.path.join(os.getcwd(), 'sample_file.fits')
+        self.ccd.write(self.full_path)
+
+    def tearDown(self):
+        if os.path.isfile(self.full_path):
+            os.unlink(self.full_path)
+
+    def test_fix_keywords(self):
+        # not really testing anything here
+        fix_keywords(path=os.getcwd(), pattern="*.fits")
 
 class SlitTrimTest(TestCase):
     # TODO (simon): discuss with Bruno
@@ -636,12 +653,19 @@ class SlitTrimTest(TestCase):
         # make a flat-like structure
         self.fake_image.data[self.slit_low_limit:self.slit_high_limit, :] = 100
 
-    def test_get_slit_trim_section(self):
+    def test_get_slit_trim_section__slit_within_data(self):
 
         slit_trim = get_slit_trim_section(master_flat=self.fake_image)
         # print(fake_image.data[:,5])
         # print(slit_trim)
         self.assertEqual(slit_trim, self.reference_slit_trim)
+
+    def test_get_slit_trim_section__slit_full_data(self):
+        self.fake_image.data[:, :] = 100
+
+        slit_trim = get_slit_trim_section(master_flat=self.fake_image)
+        # print(fake_image.data[:,5])
+        self.assertEqual(slit_trim, '[1:100,1:100]')
 
     def test_image_trim_slit(self):
         # # define
@@ -670,11 +694,18 @@ class RaDecConversion(TestCase):
         self.reference_ra = 287.479275
         self.reference_dec = -68.3005281
 
-    def test_ra_dec_to_deg(self):
+    def test_ra_dec_to_deg_negative_dec(self):
         radeg, decdeg = ra_dec_to_deg(right_ascension=self.ra,
                                       declination=self.dec)
         self.assertAlmostEqual(radeg, self.reference_ra)
         self.assertAlmostEqual(decdeg, self.reference_dec)
+
+    def test_ra_dec_to_deg_positive_dec(self):
+        self.dec = '68:18:01.901'
+        radeg, decdeg = ra_dec_to_deg(right_ascension=self.ra,
+                                      declination=self.dec)
+        self.assertAlmostEqual(radeg, self.reference_ra)
+        self.assertAlmostEqual(decdeg, -1 * self.reference_dec)
 
 
 class ReferenceDataTest(TestCase):
@@ -1033,6 +1064,9 @@ class FitsFileIOAndOps(TestCase):
         self.assertTrue(os.path.isfile(self.full_path))
 
     def test_read_fits(self):
+        self.fake_image.header.remove('GSP_PNAM')
+        self.fake_image.write(self.full_path, overwrite=True)
+
         self.recovered_fake_image = read_fits(self.full_path)
         self.assertIsInstance(self.recovered_fake_image, CCDData)
 
@@ -1067,6 +1101,22 @@ class FitsFileIOAndOps(TestCase):
 
         self.assertEqual(self.fake_image.data.shape, (100, 50))
         self.assertEqual(self.fake_image.header['GSP_TRIM'], trim_section)
+
+    def test_image_trim_invalid_type(self):
+        self.assertEqual(self.fake_image.data.shape, (100, 100))
+        trim_section = '[1:50,:]'
+        self.fake_image = image_trim(ccd=self.fake_image,
+                                     trim_section=trim_section,
+                                     trim_type='invalid_type')
+        self.assertEqual(self.fake_image.data.shape, (100, 50))
+        self.assertEqual(self.fake_image.header['GSP_TRIM'], trim_section)
+
+    def test_image_trim_trim_section_none(self):
+        self.assertEqual(self.fake_image.data.shape, (100, 100))
+        self.fake_image = image_trim(ccd=self.fake_image,
+                                     trim_section=None,
+                                     trim_type='trimsec')
+        self.assertEqual(self.fake_image.data.shape, (100, 100))
 
     def test_save_extracted_target_zero(self):
         self.fake_image.header.set('GSP_FNAM', value=self.file_name)
@@ -1158,6 +1208,10 @@ class NightDataContainerTests(TestCase):
         self.container.add_bias(bias_group=self.sample_df_2)
         self.container.add_day_flats(day_flats=self.sample_df_1)
         self.container.add_data_group(data_group=self.sample_df_2)
+
+        #
+        self.container.dome_flats = [self.sample_df_1]
+        self.container.sky_flats = [self.sample_df_2]
 
         self.container.gain = 1
         self.container.rdnoise = 1
