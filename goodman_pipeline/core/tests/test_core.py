@@ -1112,9 +1112,32 @@ class NightDataContainerTests(TestCase):
                                             instrument='Red',
                                             technique='Spectroscopy')
 
-    @skip
-    def test___repr___method(self):
-        pass
+    def test___repr___method_empty(self):
+        result = self.container.__repr__()
+        self.assertEqual(result, 'Empty Data Container')
+
+    def test___repr___method_not_empty(self):
+        self.container.is_empty = False
+        result = self.container.__repr__()
+        print(result)
+
+        self.assertTrue('Full Path: {:s}'.format(os.getcwd()) in result)
+        self.assertTrue('Instrument: Red' in result)
+        self.assertTrue('Technique: Spectroscopy' in result)
+        self.assertTrue('Is Empty: False' in result)
+
+        _expected_content = ['Data Grouping Information',
+                             'BIAS Group:',
+                             'Group is Empty',
+                             'Day FLATs Group:',
+                             'Dome FLATs Group:',
+                             'Sky FLATs Group:',
+                             'COMP Group:',
+                             'OBJECT Group',
+                             'OBJECT + COMP Group:']
+
+        for _line in _expected_content:
+            self.assertTrue(_line in result)
 
     @skip
     def test__get_group_repr(self):
@@ -1144,17 +1167,33 @@ class NightDataContainerTests(TestCase):
     def test_add_spec_group(self):
         pass
 
-    @skip
     def test_set_sun_times(self):
-        pass
+        _sun_set = '2019-01-01T18:00:00'
+        _sun_rise = '2019-01-01T06:00:00'
+        self.container.set_sun_times(sun_set=_sun_set, sun_rise=_sun_rise)
 
-    @skip
+        self.assertEqual(self.container.sun_set_time, _sun_set)
+        self.assertEqual(self.container.sun_rise_time, _sun_rise)
+
     def test_set_twilight_times(self):
-        pass
+        _evening = '2019-01-01T18:00:00'
+        _morning = '2019-01-01T06:00:00'
 
-    @skip
+        self.container.set_twilight_times(evening=_evening, morning=_morning)
+
+        self.assertEqual(self.container.evening_twilight, _evening)
+        self.assertEqual(self.container.morning_twilight, _morning)
+
     def test_set_readout(self):
-        pass
+        _gain = 1.48
+        _rdnoise = 3.89
+        _roi = 'Spectroscopic 2x2'
+
+        self.container.set_readout(gain=_gain, rdnoise=_rdnoise, roi=_roi)
+
+        self.assertEqual(self.container.gain, _gain)
+        self.assertEqual(self.container.rdnoise, _rdnoise)
+        self.assertEqual(self.container.roi, _roi)
 
 
 class SaturationValuesTest(TestCase):
