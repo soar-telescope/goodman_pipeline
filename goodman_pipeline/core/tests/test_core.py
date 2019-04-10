@@ -1112,6 +1112,14 @@ class NightDataContainerTests(TestCase):
                                             instrument='Red',
                                             technique='Spectroscopy')
 
+        columns = ['file', 'obstype']
+        sample_data_1 = [['file1.fits', 'OBJECT']]
+        sample_data_2 = [['file1.fits', 'OBJECT'],
+                         ['file2.fits', 'OBJECT']]
+
+        self.sample_df_1 = pandas.DataFrame(sample_data_1, columns=columns)
+        self.sample_df_2 = pandas.DataFrame(sample_data_2, columns=columns)
+
     def test___repr___method_empty(self):
         result = self.container.__repr__()
         self.assertEqual(result, 'Empty Data Container')
@@ -1119,7 +1127,6 @@ class NightDataContainerTests(TestCase):
     def test___repr___method_not_empty(self):
         self.container.is_empty = False
         result = self.container.__repr__()
-        print(result)
 
         self.assertTrue('Full Path: {:s}'.format(os.getcwd()) in result)
         self.assertTrue('Instrument: Red' in result)
@@ -1143,29 +1150,57 @@ class NightDataContainerTests(TestCase):
     def test__get_group_repr(self):
         pass
 
-    @skip
+    def test_add_bias_imaging_insufficient_bias(self):
+        self.container.technique = 'Imaging'
+        self.container.add_bias(bias_group=self.sample_df_1)
+        self.assertTrue(self.container.bias is None)
+        self.assertTrue(self.container.is_empty)
+
+    def test_add_bias_spectroscopy_insufficient_bias(self):
+        self.container.add_bias(bias_group=self.sample_df_1)
+        self.assertTrue(self.container.bias is None)
+        self.assertTrue(self.container.is_empty)
+
     def test_add_bias(self):
-        pass
+        self.container.add_bias(bias_group=self.sample_df_2)
+        self.container.add_bias(bias_group=self.sample_df_2)
+        self.assertFalse(self.container.bias is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_day_flats(self):
-        pass
+        self.container.add_day_flats(day_flats=self.sample_df_1)
+        self.assertIsInstance(self.container.day_flats[0], pandas.DataFrame)
+        self.container.add_day_flats(day_flats=self.sample_df_2)
+        self.assertFalse(self.container.day_flats is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_data_group(self):
-        pass
+        self.container.add_data_group(data_group=self.sample_df_1)
+        self.assertIsInstance(self.container.data_groups[0], pandas.DataFrame)
+        self.container.add_data_group(data_group=self.sample_df_2)
+        self.assertFalse(self.container.data_groups is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_comp_group(self):
-        pass
+        self.container.add_comp_group(comp_group=self.sample_df_1)
+        self.assertIsInstance(self.container.comp_groups[0], pandas.DataFrame)
+        self.container.add_comp_group(comp_group=self.sample_df_2)
+        self.assertFalse(self.container.comp_groups is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_object_group(self):
-        pass
+        self.container.add_object_group(object_group=self.sample_df_1)
+        self.assertIsInstance(self.container.object_groups[0], pandas.DataFrame)
+        self.container.add_object_group(object_group=self.sample_df_2)
+        self.assertFalse(self.container.object_groups is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_spec_group(self):
-        pass
+        self.container.add_spec_group(spec_group=self.sample_df_1)
+        self.assertIsInstance(self.container.spec_groups[0], pandas.DataFrame)
+        self.container.add_spec_group(spec_group=self.sample_df_2)
+        self.assertFalse(self.container.spec_groups is None)
+        self.assertFalse(self.container.is_empty)
 
     def test_set_sun_times(self):
         _sun_set = '2019-01-01T18:00:00'

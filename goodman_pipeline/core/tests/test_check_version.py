@@ -20,6 +20,7 @@ class TestVersionChecker(unittest.TestCase):
             pass
 
     def test_get_last_no_token(self):
+        print(os.environ['GITHUB_ACCESS_TOKEN'])
         try:
             del os.environ['GITHUB_ACCESS_TOKEN']
             v = check_version.get_last()
