@@ -1867,7 +1867,7 @@ def trace(ccd,
         try:
             sample_peak = np.argmax(sample_median)
             # print(sample_peak + lower_limit)
-        except ValueError:
+        except ValueError:  # pragma: no cover
             # plt.plot(model(range(spatial_length)))
             # plt.plot(ccd.data[:,point])
             # plt.show()
@@ -2248,7 +2248,7 @@ class NightDataContainer(object):
         """For imaging use"""
         self.bias = None
         self.day_flats = None
-        self.dome_flats = None
+        # self.dome_flats = None
         self.sky_flats = None
         self.data_groups = None
 
@@ -2304,10 +2304,10 @@ class NightDataContainer(object):
             group_info += self._get_group_repr(self.bias)
             group_info += "Day FLATs Group:\n"
             group_info += self._get_group_repr(self.day_flats)
-            group_info += "Dome FLATs Group:\n"
-            group_info += self._get_group_repr(self.dome_flats)
-            group_info += "Sky FLATs Group:\n"
-            group_info += self._get_group_repr(self.sky_flats)
+            # group_info += "Dome FLATs Group:\n"
+            # group_info += self._get_group_repr(self.dome_flats)
+            # group_info += "Sky FLATs Group:\n"
+            # group_info += self._get_group_repr(self.sky_flats)
             if self.technique == 'Spectroscopy':
 
                 group_info += "COMP Group:\n"

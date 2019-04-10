@@ -83,11 +83,6 @@ from ..core import (astroscrappy_lacosmic,
 def test_spectroscopic_mode():
     pass
 
-
-def test_search_comp_group():
-    pass
-
-
 def test_lacosmic_cosmicray_rejection():
     pass
 
@@ -785,6 +780,15 @@ class RecordTraceInformationTest(TestCase):
         self.assertEqual(ccd.header['GSP_TORD'], 2)
 
 
+class SearchCompGroupTest(TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_search_comp_group(self):
+        pass
+
+
 class SpectroscopicModeTest(TestCase):
 
     def setUp(self):
@@ -1126,12 +1130,15 @@ class NightDataContainerTests(TestCase):
 
     def test___repr___method_not_empty(self):
         self.container.is_empty = False
+        self.container.gain = 1
+        self.container.rdnoise = 1
+        self.container.roi = 'roi'
         result = self.container.__repr__()
 
-        self.assertTrue('Full Path: {:s}'.format(os.getcwd()) in result)
-        self.assertTrue('Instrument: Red' in result)
-        self.assertTrue('Technique: Spectroscopy' in result)
-        self.assertTrue('Is Empty: False' in result)
+        self.assertIn('Full Path: {:s}'.format(os.getcwd()), result)
+        self.assertIn('Instrument: Red', result)
+        self.assertIn('Technique: Spectroscopy', result)
+        self.assertIn('Is Empty: False', result)
 
         _expected_content = ['Data Grouping Information',
                              'BIAS Group:',
@@ -1144,7 +1151,21 @@ class NightDataContainerTests(TestCase):
                              'OBJECT + COMP Group:']
 
         for _line in _expected_content:
-            self.assertTrue(_line in result)
+            self.assertIn(_line, result)
+
+    def test___repr___method_imaging_not_empty(self):
+        self.container.technique = 'Imaging'
+        self.container.add_bias(bias_group=self.sample_df_2)
+        self.container.add_day_flats(day_flats=self.sample_df_1)
+        self.container.add_data_group(data_group=self.sample_df_2)
+
+        self.container.gain = 1
+        self.container.rdnoise = 1
+        self.container.roi = 'roi'
+        result = self.container.__repr__()
+
+        self.assertNotIn('Group is Empty', result)
+
 
     @skip
     def test__get_group_repr(self):
