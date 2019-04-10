@@ -51,6 +51,10 @@ class TestWCS(TestCase):
         with self.assertRaises(NotImplementedError):
             self.wcs.binning = 2
 
+    def test_binning_property_setter_invalid_input(self):
+        with self.assertRaises(NotImplementedError):
+            self.wcs.binning = 0
+
     def test_pm_fitter_undefined_model_and_fitter(self):
         pixel = list(range(100))
         angstrom = list(range(100))
@@ -60,6 +64,18 @@ class TestWCS(TestCase):
                                self.wcs._fitter,
                                pixel, angstrom)
         # self.wcs._fitter(physical=pixel, wavelength=angstrom)
+
+    def test_pm_fitter_not_enough_points(self):
+        pixel = [1,2]
+        angstrom = [8000, 8001]
+
+        self.wcs.model_name = 'chebyshev'
+        self.wcs.degree = 3
+        self.wcs._model_constructor()
+
+        result = self.wcs._fitter(physical=pixel, wavelength=angstrom)
+        self.assertIsNone(result)
+
 
     def test_pm_set_math_model__none(self):
         self.wcs.wcs_dict['dtype'] = -1
