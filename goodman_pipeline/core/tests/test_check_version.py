@@ -1,6 +1,7 @@
 
 __author__ = 'Bruno Quint'
 
+import os
 import unittest
 
 from goodman_pipeline.core import check_version
@@ -12,6 +13,15 @@ class TestVersionChecker(unittest.TestCase):
 
     def test_get_last(self):
         try:
+            v = check_version.get_last()
+            self.assertRegex(v, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
+            # self.assertEqual(v, __version__)
+        except ConnectionRefusedError:
+            pass
+
+    def test_get_last_no_token(self):
+        try:
+            del os.environ['GITHUB_ACCESS_TOKEN']
             v = check_version.get_last()
             self.assertRegex(v, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
             # self.assertEqual(v, __version__)
