@@ -28,7 +28,7 @@ def get_last(url=LATEST_URL):
 
     Parameters
     ----------
-        url (str, optinal) : the URL that is used to retrieve the information
+        url (str, optional) : the URL that is used to retrieve the information
 
     Returns
     -------
@@ -37,7 +37,7 @@ def get_last(url=LATEST_URL):
 
     response = requests.get(url)
 
-    if response.status_code != 200:
+    if response.status_code != 200:  # pragma: no cover
         raise ConnectionRefusedError('Number of tests reached maximum for now.')
 
     tag_name = response.json()['tag_name'].replace('v', '')

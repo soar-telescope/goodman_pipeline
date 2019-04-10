@@ -38,6 +38,7 @@ from ..core import (astroscrappy_lacosmic,
                     extraction,
                     extract_fractional_pixel,
                     extract_optimal,
+                    fix_keywords,
                     fractional_sum,
                     get_best_flat,
                     get_central_wavelength,
@@ -82,11 +83,6 @@ from ..core import (astroscrappy_lacosmic,
 
 def test_spectroscopic_mode():
     pass
-
-
-def test_search_comp_group():
-    pass
-
 
 def test_lacosmic_cosmicray_rejection():
     pass
@@ -620,6 +616,22 @@ class ExtractionTest(TestCase):
                           spatial_profile=self.target_profile,
                           extraction_name='optimal')
 
+class FixKeywordsTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.full_path = os.path.join(os.getcwd(), 'sample_file.fits')
+        self.ccd.write(self.full_path)
+
+    def tearDown(self):
+        if os.path.isfile(self.full_path):
+            os.unlink(self.full_path)
+
+    def test_fix_keywords(self):
+        # not really testing anything here
+        fix_keywords(path=os.getcwd(), pattern="*.fits")
 
 class SlitTrimTest(TestCase):
     # TODO (simon): discuss with Bruno
@@ -641,12 +653,19 @@ class SlitTrimTest(TestCase):
         # make a flat-like structure
         self.fake_image.data[self.slit_low_limit:self.slit_high_limit, :] = 100
 
-    def test_get_slit_trim_section(self):
+    def test_get_slit_trim_section__slit_within_data(self):
 
         slit_trim = get_slit_trim_section(master_flat=self.fake_image)
         # print(fake_image.data[:,5])
         # print(slit_trim)
         self.assertEqual(slit_trim, self.reference_slit_trim)
+
+    def test_get_slit_trim_section__slit_full_data(self):
+        self.fake_image.data[:, :] = 100
+
+        slit_trim = get_slit_trim_section(master_flat=self.fake_image)
+        # print(fake_image.data[:,5])
+        self.assertEqual(slit_trim, '[1:100,1:100]')
 
     def test_image_trim_slit(self):
         # # define
@@ -675,11 +694,18 @@ class RaDecConversion(TestCase):
         self.reference_ra = 287.479275
         self.reference_dec = -68.3005281
 
-    def test_ra_dec_to_deg(self):
+    def test_ra_dec_to_deg_negative_dec(self):
         radeg, decdeg = ra_dec_to_deg(right_ascension=self.ra,
                                       declination=self.dec)
         self.assertAlmostEqual(radeg, self.reference_ra)
         self.assertAlmostEqual(decdeg, self.reference_dec)
+
+    def test_ra_dec_to_deg_positive_dec(self):
+        self.dec = '68:18:01.901'
+        radeg, decdeg = ra_dec_to_deg(right_ascension=self.ra,
+                                      declination=self.dec)
+        self.assertAlmostEqual(radeg, self.reference_ra)
+        self.assertAlmostEqual(decdeg, -1 * self.reference_dec)
 
 
 class ReferenceDataTest(TestCase):
@@ -783,6 +809,15 @@ class RecordTraceInformationTest(TestCase):
         self.assertTrue(all([key in new_keys for key in self.all_keywords]))
         self.assertEqual(ccd.header['GSP_TMOD'], 'Polinomial1D')
         self.assertEqual(ccd.header['GSP_TORD'], 2)
+
+
+class SearchCompGroupTest(TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_search_comp_group(self):
+        pass
 
 
 class SpectroscopicModeTest(TestCase):
@@ -1029,6 +1064,9 @@ class FitsFileIOAndOps(TestCase):
         self.assertTrue(os.path.isfile(self.full_path))
 
     def test_read_fits(self):
+        self.fake_image.header.remove('GSP_PNAM')
+        self.fake_image.write(self.full_path, overwrite=True)
+
         self.recovered_fake_image = read_fits(self.full_path)
         self.assertIsInstance(self.recovered_fake_image, CCDData)
 
@@ -1063,6 +1101,22 @@ class FitsFileIOAndOps(TestCase):
 
         self.assertEqual(self.fake_image.data.shape, (100, 50))
         self.assertEqual(self.fake_image.header['GSP_TRIM'], trim_section)
+
+    def test_image_trim_invalid_type(self):
+        self.assertEqual(self.fake_image.data.shape, (100, 100))
+        trim_section = '[1:50,:]'
+        self.fake_image = image_trim(ccd=self.fake_image,
+                                     trim_section=trim_section,
+                                     trim_type='invalid_type')
+        self.assertEqual(self.fake_image.data.shape, (100, 50))
+        self.assertEqual(self.fake_image.header['GSP_TRIM'], trim_section)
+
+    def test_image_trim_trim_section_none(self):
+        self.assertEqual(self.fake_image.data.shape, (100, 100))
+        self.fake_image = image_trim(ccd=self.fake_image,
+                                     trim_section=None,
+                                     trim_type='trimsec')
+        self.assertEqual(self.fake_image.data.shape, (100, 100))
 
     def test_save_extracted_target_zero(self):
         self.fake_image.header.set('GSP_FNAM', value=self.file_name)
@@ -1112,49 +1166,144 @@ class NightDataContainerTests(TestCase):
                                             instrument='Red',
                                             technique='Spectroscopy')
 
-    @skip
-    def test___repr___method(self):
-        pass
+        columns = ['file', 'obstype']
+        sample_data_1 = [['file1.fits', 'OBJECT']]
+        sample_data_2 = [['file1.fits', 'OBJECT'],
+                         ['file2.fits', 'OBJECT']]
+
+        self.sample_df_1 = pandas.DataFrame(sample_data_1, columns=columns)
+        self.sample_df_2 = pandas.DataFrame(sample_data_2, columns=columns)
+
+    def test___repr___method_empty(self):
+        result = self.container.__repr__()
+        self.assertEqual(result, 'Empty Data Container')
+
+    def test___repr___method_not_empty(self):
+        self.container.is_empty = False
+        self.container.gain = 1
+        self.container.rdnoise = 1
+        self.container.roi = 'roi'
+        result = self.container.__repr__()
+
+        self.assertIn('Full Path: {:s}'.format(os.getcwd()), result)
+        self.assertIn('Instrument: Red', result)
+        self.assertIn('Technique: Spectroscopy', result)
+        self.assertIn('Is Empty: False', result)
+
+        _expected_content = ['Data Grouping Information',
+                             'BIAS Group:',
+                             'Group is Empty',
+                             'Day FLATs Group:',
+                             'Dome FLATs Group:',
+                             'Sky FLATs Group:',
+                             'COMP Group:',
+                             'OBJECT Group',
+                             'OBJECT + COMP Group:']
+
+        for _line in _expected_content:
+            self.assertIn(_line, result)
+
+    def test___repr___method_imaging_not_empty(self):
+        self.container.technique = 'Imaging'
+        self.container.add_bias(bias_group=self.sample_df_2)
+        self.container.add_day_flats(day_flats=self.sample_df_1)
+        self.container.add_data_group(data_group=self.sample_df_2)
+
+        #
+        self.container.dome_flats = [self.sample_df_1]
+        self.container.sky_flats = [self.sample_df_2]
+
+        self.container.gain = 1
+        self.container.rdnoise = 1
+        self.container.roi = 'roi'
+        result = self.container.__repr__()
+
+        self.assertNotIn('Group is Empty', result)
+
 
     @skip
     def test__get_group_repr(self):
         pass
 
-    @skip
+    def test_add_bias_imaging_insufficient_bias(self):
+        self.container.technique = 'Imaging'
+        self.container.add_bias(bias_group=self.sample_df_1)
+        self.assertTrue(self.container.bias is None)
+        self.assertTrue(self.container.is_empty)
+
+    def test_add_bias_spectroscopy_insufficient_bias(self):
+        self.container.add_bias(bias_group=self.sample_df_1)
+        self.assertTrue(self.container.bias is None)
+        self.assertTrue(self.container.is_empty)
+
     def test_add_bias(self):
-        pass
+        self.container.add_bias(bias_group=self.sample_df_2)
+        self.container.add_bias(bias_group=self.sample_df_2)
+        self.assertFalse(self.container.bias is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_day_flats(self):
-        pass
+        self.container.add_day_flats(day_flats=self.sample_df_1)
+        self.assertIsInstance(self.container.day_flats[0], pandas.DataFrame)
+        self.container.add_day_flats(day_flats=self.sample_df_2)
+        self.assertFalse(self.container.day_flats is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_data_group(self):
-        pass
+        self.container.add_data_group(data_group=self.sample_df_1)
+        self.assertIsInstance(self.container.data_groups[0], pandas.DataFrame)
+        self.container.add_data_group(data_group=self.sample_df_2)
+        self.assertFalse(self.container.data_groups is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_comp_group(self):
-        pass
+        self.container.add_comp_group(comp_group=self.sample_df_1)
+        self.assertIsInstance(self.container.comp_groups[0], pandas.DataFrame)
+        self.container.add_comp_group(comp_group=self.sample_df_2)
+        self.assertFalse(self.container.comp_groups is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_object_group(self):
-        pass
+        self.container.add_object_group(object_group=self.sample_df_1)
+        self.assertIsInstance(self.container.object_groups[0], pandas.DataFrame)
+        self.container.add_object_group(object_group=self.sample_df_2)
+        self.assertFalse(self.container.object_groups is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_add_spec_group(self):
-        pass
+        self.container.add_spec_group(spec_group=self.sample_df_1)
+        self.assertIsInstance(self.container.spec_groups[0], pandas.DataFrame)
+        self.container.add_spec_group(spec_group=self.sample_df_2)
+        self.assertFalse(self.container.spec_groups is None)
+        self.assertFalse(self.container.is_empty)
 
-    @skip
     def test_set_sun_times(self):
-        pass
+        _sun_set = '2019-01-01T18:00:00'
+        _sun_rise = '2019-01-01T06:00:00'
+        self.container.set_sun_times(sun_set=_sun_set, sun_rise=_sun_rise)
 
-    @skip
+        self.assertEqual(self.container.sun_set_time, _sun_set)
+        self.assertEqual(self.container.sun_rise_time, _sun_rise)
+
     def test_set_twilight_times(self):
-        pass
+        _evening = '2019-01-01T18:00:00'
+        _morning = '2019-01-01T06:00:00'
 
-    @skip
+        self.container.set_twilight_times(evening=_evening, morning=_morning)
+
+        self.assertEqual(self.container.evening_twilight, _evening)
+        self.assertEqual(self.container.morning_twilight, _morning)
+
     def test_set_readout(self):
-        pass
+        _gain = 1.48
+        _rdnoise = 3.89
+        _roi = 'Spectroscopic 2x2'
+
+        self.container.set_readout(gain=_gain, rdnoise=_rdnoise, roi=_roi)
+
+        self.assertEqual(self.container.gain, _gain)
+        self.assertEqual(self.container.rdnoise, _rdnoise)
+        self.assertEqual(self.container.roi, _roi)
 
 
 class SaturationValuesTest(TestCase):

@@ -1002,10 +1002,11 @@ def get_best_flat(flat_name, path):
     log.debug('Flat base name {:s}'.format(flat_name))
     log.debug('Matching master flats found: {:d}'.format(len(flat_list)))
     if len(flat_list) > 0:
-        if len(flat_list) == 1:
-            master_flat_name = flat_list[0]
-        else:
-            master_flat_name = flat_list[0]
+        master_flat_name = flat_list[0]
+        # if len(flat_list) == 1:
+        #     master_flat_name = flat_list[0]
+        # else:
+        #     master_flat_name = flat_list[0]
         # elif any('dome' in flat for flat in flat_list):
         #     master_flat_name =
 
@@ -1301,6 +1302,9 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
                                       'area only.')
         else:
             log.warning('Unrecognized trim type')
+            ccd.header['GSP_TRIM'] = (trim_section,
+                                      'Image trimmed by unreckognized method: '
+                                      '{:s}'.format(trim_type))
     else:
         log.info("{:s} trim section is not "
                  "defined.".format(trim_type.capitalize()))
@@ -1867,7 +1871,7 @@ def trace(ccd,
         try:
             sample_peak = np.argmax(sample_median)
             # print(sample_peak + lower_limit)
-        except ValueError:
+        except ValueError:  # pragma: no cover
             # plt.plot(model(range(spatial_length)))
             # plt.plot(ccd.data[:,point])
             # plt.show()
@@ -2504,19 +2508,19 @@ class NightDataContainer(object):
         self.roi = roi
 
 
-class NoMatchFound(Exception):
+class NoMatchFound(Exception):  # pragma: no cover
     """Exception for when no match is found."""
     def __init__(self):
         Exception.__init__(self, 'Did not find a match')
 
 
-class NoTargetException(Exception):
+class NoTargetException(Exception):  # pragma: no cover
     """Exception to be raised when no target is identified"""
     def __init__(self):
         Exception.__init__(self, 'No targets identified.')
 
 
-class NotEnoughLinesDetected(Exception):
+class NotEnoughLinesDetected(Exception):  # pragma: no cover
     """Exception for when there are no lines detected."""
     def __init__(self):
         Exception.__init__(self, 'Not enough lines detected.')
