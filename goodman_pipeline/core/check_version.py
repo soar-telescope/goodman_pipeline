@@ -37,7 +37,7 @@ def get_last(url=LATEST_URL):
 
     response = requests.get(url)
 
-    if response.status_code != 200: # pragma: no cover
+    if response.status_code != 200:  # pragma: no cover
         raise ConnectionRefusedError('Number of tests reached maximum for now.')
 
     tag_name = response.json()['tag_name'].replace('v', '')
