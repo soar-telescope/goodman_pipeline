@@ -11,6 +11,7 @@ import collections
 import numpy as np
 import os
 import pandas
+import random
 import re
 import shutil
 import logging
@@ -1036,6 +1037,13 @@ class TargetsTest(TestCase):
             self.ccd.data[:, i] *= profile_sum(range(self.ccd.data.shape[0]))
             self.ccd2.data[:, i] *= self.profile_3(
                 range(self.ccd2.data.shape[0]))
+            # this add noise to test the removal of masked values
+            # self.ccd.data[
+            #     random.randrange(self.ccd.data.shape[0]),
+            #     random.randrange(self.ccd.data.shape[1])] *= 300
+            # self.ccd2.data[
+            #     random.randrange(self.ccd2.data.shape[0]),
+            #     random.randrange(self.ccd2.data.shape[1])] *= 300
 
 
 
