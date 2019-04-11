@@ -267,7 +267,7 @@ class ClassifySpectroscopicData(TestCase):
     def setUp(self):
         self.path = os.path.join(
             os.getcwd(),
-            'data/test_data/test_classify_spectroscopic');
+            'goodman_pipeline/data/test_data/test_classify_spectroscopic');
         if not os.path.isdir(self.path):
             os.mkdir(self.path)
 
@@ -678,13 +678,33 @@ class ExtractionTest(TestCase):
                           self.target_profile,
                           'optimal')
 
-    def test_extraction(self):
+    def test_extraction_gaussian(self):
         extracted = extraction(ccd=self.fake_image,
                                target_trace=self.target_trace,
                                spatial_profile=self.target_profile,
                                extraction_name='fractional')
         self.assertIsInstance(extracted, CCDData)
         np.testing.assert_array_almost_equal(extracted, self.reference_result)
+
+    def test_extraction_moffat(self):
+        spatial_profile_moffat = models.Moffat1D(amplitude=self.target_profile.amplitude.value,
+                                                 x_0=self.target_profile.mean.value,
+                                                 gamma=self.target_profile.stddev.value)
+        extracted = extraction(ccd=self.fake_image,
+                               target_trace=self.target_trace,
+                               spatial_profile=spatial_profile_moffat,
+                               extraction_name='fractional')
+        self.assertIsInstance(extracted, CCDData)
+        np.testing.assert_array_almost_equal(extracted, self.reference_result)
+
+    def test_extraction_not_implemented_model(self):
+        spatial_profile = models.BlackBody1D()
+        self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
+                          target_trace=self.target_trace,
+                          spatial_profile=spatial_profile,
+                          extraction_name='fractional')
+
+
 
     def test_extraction_exception(self):
         self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
