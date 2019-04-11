@@ -11,7 +11,9 @@ import collections
 import numpy as np
 import os
 import pandas
+import random
 import re
+import shutil
 import logging
 
 logging.disable(logging.CRITICAL)
@@ -86,11 +88,6 @@ def test_spectroscopic_mode():
 
 def test_lacosmic_cosmicray_rejection():
     pass
-
-
-def test_classify_spectroscopic_data():
-    pass
-
 
 class AddWCSKeywordsTest(TestCase):
 
@@ -264,6 +261,86 @@ class MasterFlatTest(TestCase):
                                    delta=0.001)
             self.assertEqual(normalized_flat.header['GSP_NORM'], method)
             self.assertIn('norm_', normalized_flat_name)
+
+
+class ClassifySpectroscopicData(TestCase):
+
+    def setUp(self):
+        self.path = os.path.join(
+            os.getcwd(),
+            'goodman_pipeline/data/test_data/test_classify_spectroscopic');
+        if not os.path.isdir(self.path):
+            os.mkdir(self.path)
+
+    def tearDown(self):
+        if os.path.isdir(self.path):
+            shutil.rmtree(self.path)
+
+    def create_fake_spectroscopic_data(self):
+        if os.path.isdir(self.path):
+            card_values = [
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:24.285', 'obsdec': '-39:12:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:26:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:27:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:28:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:22:34.285', 'obsdec': '-39:23:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:26:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:27:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:28:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'}]
+            for i in range(len(card_values)):
+                ccd = CCDData(data=np.ones((3, 3)),
+                              meta=fits.Header(),
+                              unit='adu')
+
+                ccd.header.set('DATE', value='2019-03-22', comment='nc')
+                ccd.header.set('SLIT', value='1.0" long slit', comment='nc')
+                ccd.header.set('DATE-OBS', value='2019-03-22T09:59:33.654', comment='nc')
+                ccd.header.set('OBSTYPE', value=card_values[i]['obstype'], comment='nc')
+                ccd.header.set('OBJECT', value=card_values[i]['object'], comment='nc')
+                ccd.header.set('EXPTIME', value='10', comment='nc')
+                ccd.header.set('OBSRA', value=card_values[i]['obsra'], comment='nc')
+                ccd.header.set('OBSDEC', value=card_values[i]['obsdec'], comment='nc')
+                ccd.header.set('GRATING', value='SYZY_400', comment='nc')
+                ccd.header.set('CAM_TARG', value='16.1', comment='nc')
+                ccd.header.set('GRT_TARG', value='7.5', comment='nc')
+                ccd.header.set('FILTER', value='<NO FILTER>', comment='nc')
+                ccd.header.set('FILTER2', value='GG455', comment='nc')
+                ccd.header.set('GAIN', value='1.48', comment='nc')
+                ccd.header.set('RDNOISE', value='3.89', comment='nc')
+
+                ccd.write(os.path.join(self.path, 'test_file_{:03d}.fits'.format(i)))
+
+
+    def test_classify_spectroscopic_data__no_data(self):
+        self.assertRaises(SystemExit, classify_spectroscopic_data, self.path, '*fits')
+
+    def test_classify_spectroscopic_data(self):
+        self.create_fake_spectroscopic_data()
+        result = classify_spectroscopic_data(path=self.path, search_pattern='test_file')
+        self.assertIsInstance(result, NightDataContainer)
+        self.assertFalse(result.is_empty)
 
 
 class CentralWavelength(TestCase):
@@ -602,13 +679,33 @@ class ExtractionTest(TestCase):
                           self.target_profile,
                           'optimal')
 
-    def test_extraction(self):
+    def test_extraction_gaussian(self):
         extracted = extraction(ccd=self.fake_image,
                                target_trace=self.target_trace,
                                spatial_profile=self.target_profile,
                                extraction_name='fractional')
         self.assertIsInstance(extracted, CCDData)
         np.testing.assert_array_almost_equal(extracted, self.reference_result)
+
+    def test_extraction_moffat(self):
+        spatial_profile_moffat = models.Moffat1D(amplitude=self.target_profile.amplitude.value,
+                                                 x_0=self.target_profile.mean.value,
+                                                 gamma=self.target_profile.stddev.value)
+        extracted = extraction(ccd=self.fake_image,
+                               target_trace=self.target_trace,
+                               spatial_profile=spatial_profile_moffat,
+                               extraction_name='fractional')
+        self.assertIsInstance(extracted, CCDData)
+        np.testing.assert_array_almost_equal(extracted, self.reference_result)
+
+    def test_extraction_not_implemented_model(self):
+        spatial_profile = models.BlackBody1D()
+        self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
+                          target_trace=self.target_trace,
+                          spatial_profile=spatial_profile,
+                          extraction_name='fractional')
+
+
 
     def test_extraction_exception(self):
         self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
@@ -814,10 +911,40 @@ class RecordTraceInformationTest(TestCase):
 class SearchCompGroupTest(TestCase):
 
     def setUp(self):
-        pass
+        columns = ['object',
+                   'grating',
+                   'cam_targ',
+                   'grt_targ',
+                   'filter',
+                   'filter2']
+        self.object_group = pandas.DataFrame(
+            data=[['NGC2070', 'SYZY_400', 16.1, 7.5, '<NO FILTER>', 'GG455']],
+            columns=columns)
+        self.object_group_no_match = pandas.DataFrame(
+            data=[['NGC2070', 'SYZY_600', 16.1, 7.5, '<NO FILTER>', 'GG455']],
+            columns=columns)
+        self.comp_groups = [
+            pandas.DataFrame(data=[['HgArNe', 'SYZY_400',16.1, 7.5, '<NO FILTER>', 'GG455']], columns=columns),
+            pandas.DataFrame(data=[['CuArNe', 'SYZY_400',11.6, 5.8, '<NO FILTER>', 'GG455']], columns=columns)]
+
+        self.reference_data = ReferenceData(
+            reference_dir=os.path.join(os.getcwd(),
+                                       'goodman_pipeline/data/ref_comp'))
 
     def test_search_comp_group(self):
-        pass
+        result = search_comp_group(
+            object_group=self.object_group,
+            comp_groups=self.comp_groups,
+            reference_data=self.reference_data)
+        self.assertIsInstance(result, pandas.DataFrame)
+        self.assertFalse(result.empty)
+
+    def test_search_comp_group_no_match(self):
+        with self.assertRaises(NoMatchFound):
+            search_comp_group(
+                object_group=self.object_group_no_match,
+                comp_groups=self.comp_groups,
+                reference_data=self.reference_data)
 
 
 class SpectroscopicModeTest(TestCase):
@@ -910,6 +1037,13 @@ class TargetsTest(TestCase):
             self.ccd.data[:, i] *= profile_sum(range(self.ccd.data.shape[0]))
             self.ccd2.data[:, i] *= self.profile_3(
                 range(self.ccd2.data.shape[0]))
+            # this add noise to test the removal of masked values
+            # self.ccd.data[
+            #     random.randrange(self.ccd.data.shape[0]),
+            #     random.randrange(self.ccd.data.shape[1])] *= 300
+            # self.ccd2.data[
+            #     random.randrange(self.ccd2.data.shape[0]),
+            #     random.randrange(self.ccd2.data.shape[1])] *= 300
 
 
 

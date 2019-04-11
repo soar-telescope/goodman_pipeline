@@ -12,28 +12,30 @@ from distutils.version import LooseVersion
 
 logger = logging.getLogger(__name__)
 
-try:
-    ACCESS_TOKEN = os.environ['GITHUB_ACCESS_TOKEN']
-    LATEST_URL = \
-        'https://api.github.com/repos/soar-telescope/goodman/releases/latest' \
-        '?access_token={:s}'.format(ACCESS_TOKEN)
-except KeyError:
-    LATEST_URL = \
-        'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
+
+def get_github_api_url(token_env_name):
+    try:
+        ACCESS_TOKEN = os.environ[token_env_name]
+        return 'https://api.github.com/repos/soar-telescope/goodman/releases/latest' \
+               '?access_token={:s}'.format(ACCESS_TOKEN)
+    except KeyError:
+        return 'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
 
 
-def get_last(url=LATEST_URL):
+def get_last(github_api_token='GITHUB_ACCESS_TOKEN'):
     """
     Returns the version of the last release on GitHub.
 
     Parameters
     ----------
-        url (str, optional) : the URL that is used to retrieve the information
+        github_api_token (str, optional) : Name of the environment variable holding the github
+        access token for the API
 
     Returns
     -------
         version (LooseVersion) : the last version of the pipeline.
     """
+    url = get_github_api_url(github_api_token)
 
     response = requests.get(url)
 

@@ -21,8 +21,7 @@ class TestVersionChecker(unittest.TestCase):
 
     def test_get_last_no_token(self):
         try:
-            del os.environ['GITHUB_ACCESS_TOKEN']
-            v = check_version.get_last()
+            v = check_version.get_last(github_api_token='NONEXISTANTVAR')
             self.assertRegex(v, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
             # self.assertEqual(v, __version__)
         except ConnectionRefusedError:  # pragma: no cover
