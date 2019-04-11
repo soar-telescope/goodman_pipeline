@@ -107,19 +107,19 @@ class TestWCS(TestWCSBase):
         self.assertEqual(len(result), 2)
         self.assertIsInstance(self.wcs.get_model(), Model)
 
-    @skip
     def test_read__log_linear(self):
         test_file = os.path.join(self.data_path,
                                  'log-linear_fits_solution.fits')
         self.assertTrue(os.path.isfile(test_file))
 
         ccd = CCDData.read(test_file, unit='adu')
-
-        result = self.wcs.read(ccd=ccd)
-
-        self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 2)
-        self.assertIsInstance(self.wcs.get_model(), Model)
+        #
+        # result = self.wcs.read(ccd=ccd)
+        #
+        # self.assertIsInstance(result, list)
+        # self.assertEqual(len(result), 2)
+        # self.assertIsInstance(self.wcs.get_model(), Model)
+        self.assertRaises(NotImplementedError, self.wcs.read, ccd)
 
     def test_read__non_linear_chebyshev(self):
         test_file = os.path.join(self.data_path,
@@ -227,16 +227,6 @@ class TestWCS(TestWCSBase):
         self.wcs.model = models.Chebyshev1D(degree=3)
         self.assertIsInstance(self.wcs.get_model(), Model)
 
-    # @skip
-    # def test_pm_fitter(self):
-    #     self.fail()
-    #
-    #
-    # @skip
-    # def test_pm_set_math_model(self):
-    #     self.fail()
-    #
-
     def test_pm_none(self):
         # test_file = os.path.join(self.data_path,
         #                          'non-linear_fits_solution_cheb.fits')
@@ -250,28 +240,3 @@ class TestWCS(TestWCSBase):
         #
         # dtype = -1
         self.assertRaises(NotImplementedError, self.wcs._none)
-
-    @skip
-    def test_pm_linear_solution(self):
-        self.fail()
-
-    @skip
-    def test_pm_log_linear(self):
-        self.fail()
-
-    @skip
-    def test_pm_chebyshev(self):
-        self.fail()
-
-    @skip
-    def test_pm_non_linear_legendre(self):
-        self.fail()
-
-    @skip
-    def test_pm_non_linear_lspline(self):
-        self.fail()
-
-    @skip
-    def test_pm_non_linear_cspline(self):
-        self.fail()
-
