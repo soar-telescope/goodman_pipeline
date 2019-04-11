@@ -58,7 +58,7 @@ class DataClassifier(object):
         try:
             ifc = ImageFileCollection(self.raw_path)
 
-        except VerifyError as error:
+        except VerifyError as error:  # pragma: no cover
             self.log.error("Raised VerifyError: {:}".format(error))
             self.log.critical("Some keywords are not FITS compliant. Trying "
                               "to fix the headers.")
