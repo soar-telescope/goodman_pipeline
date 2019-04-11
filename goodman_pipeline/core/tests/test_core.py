@@ -12,6 +12,7 @@ import numpy as np
 import os
 import pandas
 import re
+import shutil
 import logging
 
 logging.disable(logging.CRITICAL)
@@ -86,11 +87,6 @@ def test_spectroscopic_mode():
 
 def test_lacosmic_cosmicray_rejection():
     pass
-
-
-def test_classify_spectroscopic_data():
-    pass
-
 
 class AddWCSKeywordsTest(TestCase):
 
@@ -264,6 +260,86 @@ class MasterFlatTest(TestCase):
                                    delta=0.001)
             self.assertEqual(normalized_flat.header['GSP_NORM'], method)
             self.assertIn('norm_', normalized_flat_name)
+
+
+class ClassifySpectroscopicData(TestCase):
+
+    def setUp(self):
+        self.path = os.path.join(
+            os.getcwd(),
+            'data/test_data/test_classify_spectroscopic');
+        if not os.path.isdir(self.path):
+            os.mkdir(self.path)
+
+    def tearDown(self):
+        if os.path.isdir(self.path):
+            shutil.rmtree(self.path)
+
+    def create_fake_spectroscopic_data(self):
+        if os.path.isdir(self.path):
+            card_values = [
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:24.285', 'obsdec': '-39:12:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:26:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:27:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:28:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:22:34.285', 'obsdec': '-39:23:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:26:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:27:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:28:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'}]
+            for i in range(len(card_values)):
+                ccd = CCDData(data=np.ones((3, 3)),
+                              meta=fits.Header(),
+                              unit='adu')
+
+                ccd.header.set('DATE', value='2019-03-22', comment='nc')
+                ccd.header.set('SLIT', value='1.0" long slit', comment='nc')
+                ccd.header.set('DATE-OBS', value='2019-03-22T09:59:33.654', comment='nc')
+                ccd.header.set('OBSTYPE', value=card_values[i]['obstype'], comment='nc')
+                ccd.header.set('OBJECT', value=card_values[i]['object'], comment='nc')
+                ccd.header.set('EXPTIME', value='10', comment='nc')
+                ccd.header.set('OBSRA', value=card_values[i]['obsra'], comment='nc')
+                ccd.header.set('OBSDEC', value=card_values[i]['obsdec'], comment='nc')
+                ccd.header.set('GRATING', value='SYZY_400', comment='nc')
+                ccd.header.set('CAM_TARG', value='16.1', comment='nc')
+                ccd.header.set('GRT_TARG', value='7.5', comment='nc')
+                ccd.header.set('FILTER', value='<NO FILTER>', comment='nc')
+                ccd.header.set('FILTER2', value='GG455', comment='nc')
+                ccd.header.set('GAIN', value='1.48', comment='nc')
+                ccd.header.set('RDNOISE', value='3.89', comment='nc')
+
+                ccd.write(os.path.join(self.path, 'test_file_{:03d}.fits'.format(i)))
+
+
+    def test_classify_spectroscopic_data__no_data(self):
+        self.assertRaises(SystemExit, classify_spectroscopic_data, self.path, '*fits')
+
+    def test_classify_spectroscopic_data(self):
+        self.create_fake_spectroscopic_data()
+        result = classify_spectroscopic_data(path=self.path, search_pattern='test_file')
+        self.assertIsInstance(result, NightDataContainer)
+        self.assertFalse(result.is_empty)
 
 
 class CentralWavelength(TestCase):
