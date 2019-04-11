@@ -147,10 +147,22 @@ class DataClassifierTests(TestCase):
         self.assertEqual('Red', self.data_classifier.instrument)
         self.assertEqual('Spectroscopy', self.data_classifier.technique)
 
+    def test_data_classifier_all_imaging(self):
+
+        for _file in os.listdir(self.raw_path):
+            raw_path_full = os.path.join(self.raw_path, _file)
+            recovered_ccd = CCDData.read(raw_path_full, unit='adu')
+            # recovered_ccd.header['INSTCONF'] = 'Blue'
+            recovered_ccd.header['WAVMODE'] = 'Imaging'
+
+            recovered_ccd.write(raw_path_full, overwrite=True)
+
+        self.data_classifier(raw_path=self.raw_path)
+        self.assertEqual('Imaging', self.data_classifier.technique)
+
     def test_data_classifier_mixed_technique(self):
         sample_file = os.listdir(self.raw_path)[0]
         raw_path_full = os.path.join(self.raw_path, sample_file)
-        print(sample_file)
         recovered_ccd = CCDData.read(raw_path_full, unit='adu')
         # recovered_ccd.header['INSTCONF'] = 'Blue'
         recovered_ccd.header['WAVMODE'] = 'Imaging'

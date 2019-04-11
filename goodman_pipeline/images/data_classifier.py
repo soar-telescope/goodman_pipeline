@@ -88,9 +88,9 @@ class DataClassifier(object):
         self._get_obs_technique()
         if self.technique is not None:
             self.log.info('Observing Technique: {:s}'.format(self.technique))
-        else:
-            self.log.critical("Unable to determine observing technique used.")
-            sys.exit()
+        # else:
+        #     self.log.critical("Unable to determine observing technique used.")
+        #     sys.exit()
 
         if self.instrument is not None and self.technique is not None:
 
@@ -122,8 +122,8 @@ class DataClassifier(object):
         elif len(instconf) == 1:
             self.instrument = instconf[0]
             self.log.debug("Detected {:s} camera.".format(self.instrument))
-        else:
-            self.log.error("Impossible to determine which camera was used.")
+        # else:
+        #     self.log.error("Impossible to determine which camera was used.")
 
     def _get_obs_technique(self):
         """Identify if the data is Imaging or Spectroscopy
