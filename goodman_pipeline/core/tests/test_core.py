@@ -910,10 +910,40 @@ class RecordTraceInformationTest(TestCase):
 class SearchCompGroupTest(TestCase):
 
     def setUp(self):
-        pass
+        columns = ['object',
+                   'grating',
+                   'cam_targ',
+                   'grt_targ',
+                   'filter',
+                   'filter2']
+        self.object_group = pandas.DataFrame(
+            data=[['NGC2070', 'SYZY_400', 16.1, 7.5, '<NO FILTER>', 'GG455']],
+            columns=columns)
+        self.object_group_no_match = pandas.DataFrame(
+            data=[['NGC2070', 'SYZY_600', 16.1, 7.5, '<NO FILTER>', 'GG455']],
+            columns=columns)
+        self.comp_groups = [
+            pandas.DataFrame(data=[['HgArNe', 'SYZY_400',16.1, 7.5, '<NO FILTER>', 'GG455']], columns=columns),
+            pandas.DataFrame(data=[['CuArNe', 'SYZY_400',11.6, 5.8, '<NO FILTER>', 'GG455']], columns=columns)]
+
+        self.reference_data = ReferenceData(
+            reference_dir=os.path.join(os.getcwd(),
+                                       'goodman_pipeline/data/ref_comp'))
 
     def test_search_comp_group(self):
-        pass
+        result = search_comp_group(
+            object_group=self.object_group,
+            comp_groups=self.comp_groups,
+            reference_data=self.reference_data)
+        self.assertIsInstance(result, pandas.DataFrame)
+        self.assertFalse(result.empty)
+
+    def test_search_comp_group_no_match(self):
+        with self.assertRaises(NoMatchFound):
+            search_comp_group(
+                object_group=self.object_group_no_match,
+                comp_groups=self.comp_groups,
+                reference_data=self.reference_data)
 
 
 class SpectroscopicModeTest(TestCase):
