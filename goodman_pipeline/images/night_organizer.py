@@ -179,7 +179,7 @@ class NightOrganizer(object):
         # all the elements are None
         # print(data_container_list)
         if len(data_container_list) == 0:
-            return [None],
+            return [None]
         elif not all(data_container_list):
             self.log.warning("It is possible that there is no valid data.")
             return [None]
