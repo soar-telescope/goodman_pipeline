@@ -22,6 +22,7 @@ import pandas
 import scipy
 from astroplan import Observer
 from astropy import units as u
+from astropy.io import fits
 from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
@@ -2628,7 +2629,7 @@ class ReferenceData(object):
         else:
             raise NotImplementedError
 
-    def lamp_exists(self, object_name, grating, grt_targ, cam_targ):
+    def lamp_exists(self, header):
         """Checks whether a matching lamp exist or not
 
         Args:
@@ -2645,11 +2646,14 @@ class ReferenceData(object):
 
         """
         filtered_collection = self.ref_lamp_collection[
-            (self.ref_lamp_collection['object'] == object_name) &
-            (self.ref_lamp_collection['grating'] == grating) &
-            (self.ref_lamp_collection['grt_targ'] == grt_targ) &
-            (self.ref_lamp_collection['cam_targ'] == cam_targ)
-            ]
+            (self.ref_lamp_collection['lamp_hga'] == header['LAMP_HGA']) &
+            (self.ref_lamp_collection['lamp_ne'] ==  header['LAMP_NE']) &
+            (self.ref_lamp_collection['lamp_ar'] ==  header['LAMP_AR']) &
+            (self.ref_lamp_collection['lamp_cu'] ==  header['LAMP_CU']) &
+            (self.ref_lamp_collection['lamp_fe'] ==  header['LAMP_FE']) &
+            (self.ref_lamp_collection['grating'] ==  header['GRATING']) &
+            (self.ref_lamp_collection['grt_targ'] == header['GRT_TARG']) &
+            (self.ref_lamp_collection['cam_targ'] == header['CAM_TARG'])]
 
         if filtered_collection.empty:
             return False
@@ -2669,25 +2673,41 @@ class ReferenceData(object):
         Returns:
 
         """
-        lamps = comp_group.groupby(['object',
-                                    'grating',
+        lamps = comp_group.groupby(['grating',
                                     'grt_targ',
-                                    'cam_targ']).size().reset_index(
+                                    'cam_targ',
+                                    'lamp_hga',
+                                    'lamp_ne',
+                                    'lamp_ar',
+                                    'lamp_fe',
+                                    'lamp_cu']).size().reset_index(
         ).rename(columns={0: 'count'})
 
         # for the way the input is created this should run only once but the
         # for loop has been left in case this happens.
         for i in lamps.index:
-            if self.lamp_exists(
-                    object_name=lamps.iloc[i]['object'],
-                    grating=lamps.iloc[i]['grating'],
-                    grt_targ=lamps.iloc[i]['grt_targ'],
-                    cam_targ=lamps.iloc[i]['cam_targ']):
+            pseudo_header = fits.Header()
+
+            # pseudo_header.set('OBJECT', value=lamps.iloc[i]['object'])
+            pseudo_header.set('GRATING', value=lamps.iloc[i]['grating'])
+            pseudo_header.set('GRT_TARG', value=lamps.iloc[i]['grt_targ'])
+            pseudo_header.set('CAM_TARG', value=lamps.iloc[i]['cam_targ'])
+            pseudo_header.set('LAMP_HGA', value=lamps.iloc[i]['lamp_hga'])
+            pseudo_header.set('LAMP_NE', value=lamps.iloc[i]['lamp_ne'])
+            pseudo_header.set('LAMP_AR', value=lamps.iloc[i]['lamp_ar'])
+            pseudo_header.set('LAMP_FE', value=lamps.iloc[i]['lamp_fe'])
+            pseudo_header.set('LAMP_CU', value=lamps.iloc[i]['lamp_cu'])
+
+            if self.lamp_exists(header=pseudo_header):
                 new_group = comp_group[
-                    (comp_group['object'] == lamps.iloc[i]['object']) &
                     (comp_group['grating'] == lamps.iloc[i]['grating']) &
                     (comp_group['grt_targ'] == lamps.iloc[i]['grt_targ']) &
-                    (comp_group['cam_targ'] == lamps.iloc[i]['cam_targ'])]
+                    (comp_group['cam_targ'] == lamps.iloc[i]['cam_targ']) &
+                    (comp_group['lamp_hga'] == lamps.iloc[i]['lamp_hga']) &
+                    (comp_group['lamp_ne'] == lamps.iloc[i]['lamp_ne']) &
+                    (comp_group['lamp_ar'] == lamps.iloc[i]['lamp_ar']) &
+                    (comp_group['lamp_fe'] == lamps.iloc[i]['lamp_fe']) &
+                    (comp_group['lamp_cu'] == lamps.iloc[i]['lamp_cu'])]
                 # print(new_group.file)
                 return new_group
             else:

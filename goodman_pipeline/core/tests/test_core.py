@@ -822,16 +822,83 @@ class ReferenceDataTest(TestCase):
         self.ccd = CCDData(data=np.ones((800, 2000)),
                            meta=fits.Header(),
                            unit='adu')
+        self.ccd.header.set('GRATING', value='SYZY_400')
+        self.ccd.header.set('GRT_TARG', value=7.5)
+        self.ccd.header.set('CAM_TARG', value=16.1)
 
-        self.columns = ['object', 'grating', 'grt_targ', 'cam_targ']
+        self.columns = ['object',
+                        'grating',
+                        'grt_targ',
+                        'cam_targ',
+                        'lamp_hga',
+                        'lamp_ne',
+                        'lamp_ar',
+                        'lamp_fe',
+                        'lamp_cu',]
 
-        self.data_exist = [['HgArNe', 'SYZY_400', 7.5, 16.1],
-                           ['HgAr', 'SYZY_400', 7.5, 16.1]]
+        self.data_exist = [
+            ['HgArNe',
+             'SYZY_400',
+             7.5,
+             16.1,
+             'TRUE',
+             'TRUE',
+             'FALSE',
+             'FALSE',
+             'FALSE'],
+            ['HgAr',
+             'SYZY_400',
+             7.5,
+             16.1,
+             'TRUE',
+             'FALSE',
+             'FALSE',
+             'FALSE',
+             'FALSE']]
 
-        self.data_does_not_exist = [['HgArNe', 'SYZY_800', 7.5, 16.1],
-                                    ['HgAr', 'SYZY_800', 7.5, 16.1]]
+        self.data_does_not_exist = [
+            ['HgArNe',
+             'SYZY_800',
+             7.5,
+             16.1,
+             'TRUE',
+             'TRUE',
+             'FALSE',
+             'FALSE',
+             'FALSE'],
+            ['HgAr',
+             'SYZY_800',
+             7.5,
+             16.1,
+             'TRUE',
+             'FALSE',
+             'FALSE',
+             'FALSE',
+             'FALSE']]
 
-    def test_get_reference_lamp_exist(self):
+    def test_get_reference_lamp_exist_with_lamps_status_key(self):
+        self.ccd.header.set('LAMP_HGA', value='TRUE')
+        self.ccd.header.set('LAMP_NE', value='TRUE')
+        self.ccd.header.set('LAMP_AR', value='FALSE')
+        self.ccd.header.set('LAMP_FE', value='FALSE')
+        self.ccd.header.set('LAMP_CU', value='FALSE')
+        self.ccd.header.set('LAMP_QUA', value='FALSE')
+        self.ccd.header.set('LAMP_QPE', value=0)
+        self.ccd.header.set('LAMP_BUL', value='FALSE')
+        self.ccd.header.set('LAMP_DOM', value='FALSE')
+        self.ccd.header.set('LAMP_DPE', value=0)
+
+
+        self.ccd.header.set('WAVMODE', value='400 m2')
+
+        ref_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
+
+        self.assertIsInstance(ref_lamp, CCDData)
+        self.assertEqual(ref_lamp.header['LAMP_HGA'], self.ccd.header['LAMP_HGA'])
+        self.assertEqual(ref_lamp.header['LAMP_NE'], self.ccd.header['LAMP_NE'])
+        self.assertEqual(ref_lamp.header['WAVMODE'], self.ccd.header['WAVMODE'])
+
+    def test_get_reference_lamp_exist_with_object_key(self):
         self.ccd.header.set('OBJECT', value='HgArNe')
         self.ccd.header.set('WAVMODE', value='400 m2')
 
@@ -850,15 +917,22 @@ class ReferenceDataTest(TestCase):
                           self.ccd.header)
 
     def test_lamp_exist(self):
-        self.assertTrue(self.rd.lamp_exists(object_name='HgArNe',
-                                            grating='SYZY_400',
-                                            grt_targ=7.5,
-                                            cam_targ=16.1))
+        self.ccd.header.set('LAMP_HGA', value='TRUE')
+        self.ccd.header.set('LAMP_NE', value='TRUE')
+        self.ccd.header.set('LAMP_AR', value='FALSE')
+        self.ccd.header.set('LAMP_FE', value='FALSE')
+        self.ccd.header.set('LAMP_CU', value='FALSE')
+        self.ccd.header.set('LAMP_QUA', value='FALSE')
+        self.ccd.header.set('LAMP_QPE', value=0)
+        self.ccd.header.set('LAMP_BUL', value='FALSE')
+        self.ccd.header.set('LAMP_DOM', value='FALSE')
+        self.ccd.header.set('LAMP_DPE', value=0)
+        self.ccd.header.set('WAVMODE', value='400 m2')
+        self.assertTrue(self.rd.lamp_exists(header=self.ccd.header))
 
-        self.assertFalse(self.rd.lamp_exists(object_name='HgArCu',
-                                             grating='SYZY_400',
-                                             grt_targ=7.5,
-                                             cam_targ=16.1))
+        # HgArNeCu is impossible
+        self.ccd.header.set('LAMP_CU', value='TRUE')
+        self.assertFalse(self.rd.lamp_exists(header=self.ccd.header))
 
     def test_check_comp_group__lamp_exists(self):
         comp_group = pandas.DataFrame(self.data_exist,
