@@ -720,7 +720,7 @@ def extraction(ccd,
         extracted, background, bkg_info = extract_fractional_pixel(
             ccd=ccd,
             target_trace=target_trace,
-            target_stddev=target_fwhm,
+            target_fwhm=target_fwhm,
             extraction_width=2)
 
         background_1, background_2 = bkg_info
@@ -743,7 +743,7 @@ def extraction(ccd,
         raise NotImplementedError
 
 
-def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
+def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
                              background_spacing=3):
     """Performs an spectrum extraction using fractional pixels.
 
@@ -752,10 +752,10 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
         contains a 2D spectrum.
         target_trace (object):  Instance of astropy.modeling.models.Model that
           defines the trace of the target on the image (ccd).
-        target_stddev (float): Standard deviation value for the spatial profile
+        target_fwhm (float): FWHM value for the spatial profile
           fitted to the target.
         extraction_width (int): Width of the extraction area as a function of
-          `target_stddev`. For instance if `extraction_with` is set to 1 the
+          `target_fwhm`. For instance if `extraction_with` is set to 1 the
           function extract 0.5 to each side from the center of the traced
           target.
         background_spacing (float): Number of `target_stddev` to separate the
@@ -788,8 +788,8 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     for i in disp_axis:
 
         # this defines the extraction limit for every column
-        low_limit = trace_points[i] - 0.5 * extraction_width * target_stddev
-        high_limit = trace_points[i] + 0.5 * extraction_width * target_stddev
+        low_limit = trace_points[i] - 0.5 * extraction_width * target_fwhm
+        high_limit = trace_points[i] + 0.5 * extraction_width * target_fwhm
         # print(trace_points[i], extraction_width, target_stddev)
 
         # low_limits_list.append(low_limit)
@@ -832,12 +832,12 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
 
             # define pixel values for background subtraction
             # low_background_zone
-            high_1 = low_limit - background_spacing * target_stddev
+            high_1 = low_limit - background_spacing * target_fwhm
             low_1 = high_1 - background_width
             # print(low_1,high_1)
 
             # High background zone
-            low_2 = high_limit + background_spacing * target_stddev
+            low_2 = high_limit + background_spacing * target_fwhm
             high_2 = low_2 + background_width
             # print(low_1, ' to ', high_1, ':', low_2, ' to ', high_2,)
 
