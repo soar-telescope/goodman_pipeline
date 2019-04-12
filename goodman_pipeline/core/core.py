@@ -710,9 +710,9 @@ def extraction(ccd,
     assert isinstance(target_trace, Model)
 
     if spatial_profile.__class__.name == 'Gaussian1D':
-        target_stddev = spatial_profile.stddev.value
+        target_fwhm = spatial_profile.fwhm
     elif spatial_profile.__class__.name == 'Moffat1D':
-        target_stddev = spatial_profile.gamma.value
+        target_fwhm = spatial_profile.fwhm
     else:
         raise NotImplementedError
 
@@ -720,7 +720,7 @@ def extraction(ccd,
         extracted, background, bkg_info = extract_fractional_pixel(
             ccd=ccd,
             target_trace=target_trace,
-            target_stddev=target_stddev,
+            target_stddev=target_fwhm,
             extraction_width=2)
 
         background_1, background_2 = bkg_info
@@ -839,7 +839,7 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
             # High background zone
             low_2 = high_limit + background_spacing * target_stddev
             high_2 = low_2 + background_width
-            # print(low_1,'-',high_1,':',low_2,'-',high_2,)
+            # print(low_1, ' to ', high_1, ':', low_2, ' to ', high_2,)
 
             # validate background subtraction zones
             background_1 = None
@@ -1801,7 +1801,7 @@ def trace(ccd,
           trace_model,
           model_fitter,
           sampling_step,
-          nsigmas=2,
+          nfwhm=1,
           plots=False):
     """Find the trace of a spectrum
 
@@ -1826,7 +1826,7 @@ def trace(ccd,
         model_fitter (Fitter): An astropy.modeling.fitting.Fitter instance. Will
           fit the sampled points to construct the trace model
         sampling_step (int): Step for sampling the spectrum.
-        nsigmas (int): Number of stddev to each side of the mean to be used for
+        nfwhm (int): Number of fwhm to each side of the mean to be used for
           searching the trace.
         plots (bool): Toggles debugging plot
 
@@ -1845,25 +1845,30 @@ def trace(ccd,
     sample_values = []
 
     if model.__class__.name == 'Gaussian1D':
-        model_stddev = model.stddev.value
+        model_fwhm = model.fwhm
         model_mean = model.mean.value
     elif model.__class__.name == 'Moffat1D':
-        model_stddev = model.gamma.value
+        model_fwhm = model.fwhm
         model_mean = model.x_0.value
     else:
         raise NotImplementedError
 
     sample_center = float(model_mean)
+    lower_limit_list = []
+    upper_limit_list = []
     lower_limit = None
     upper_limit = None
 
     for point in sampling_axis:
 
-        lower_limit = np.max([0, int(sample_center - nsigmas * model_stddev)])
-        upper_limit = np.min([int(sample_center + nsigmas * model_stddev),
+        lower_limit = np.max([0, int(sample_center - nfwhm * model_fwhm)])
+        upper_limit = np.min([int(sample_center + nfwhm * model_fwhm),
                               spatial_length])
 
-        # print(sample_center, nsigmas, model_stddev, lower_limit, upper_limit)
+        lower_limit_list.append(lower_limit)
+        upper_limit_list.append(upper_limit)
+
+        # print(sample_center, nsigmas, model_fwhm, lower_limit, upper_limit)
 
         sample = ccd.data[lower_limit:upper_limit, point:point + sampling_step]
         sample_median = np.median(sample, axis=1)
@@ -1875,8 +1880,8 @@ def trace(ccd,
             # plt.plot(model(range(spatial_length)))
             # plt.plot(ccd.data[:,point])
             # plt.show()
-            print('Nsigmas ', nsigmas)
-            print('Model Stddev ', model_stddev)
+            print('Nfwhm ', nfwhm)
+            print('Model Stddev ', model_fwhm)
             print('sample_center ', sample_center)
             print('sample ', sample)
             print('sample_median ', sample_median)
@@ -1890,12 +1895,14 @@ def trace(ccd,
         sample_values.append(sample_peak + lower_limit)
 
         if np.abs(sample_peak + lower_limit - model_mean)\
-                < nsigmas * model_stddev:
+                < nfwhm * model_fwhm:
 
             sample_center = int(sample_peak + lower_limit)
 
         else:
             sample_center = float(model_mean)
+
+    trace_model.c2.fixed = True
 
     fitted_trace = model_fitter(trace_model, sampling_axis, sample_values)
 
@@ -1925,6 +1932,8 @@ def trace(ccd,
                 sample_values.append(_sample_values[i])
 
         log.debug("Re-fitting the trace for a better trace.")
+
+        trace_model.c2.fixed = False
 
         fitted_trace = model_fitter(trace_model, sampling_axis, sample_values)
 
@@ -1976,11 +1985,19 @@ def trace(ccd,
                 alpha=0.4,
                 label='Sampling points')
 
-        ax.axhspan(lower_limit,
-                   upper_limit,
-                   alpha=0.4,
-                   color='g',
-                   label='Approximate extraction window')
+        sampling_axis_limits = range(0, dispersion_length, sampling_step)
+
+        low_span = fitted_trace(sampling_axis_limits) - (fitted_trace(sampling_axis_limits) - np.mean(lower_limit_list))
+        up_span = fitted_trace(sampling_axis_limits) + (np.mean(upper_limit_list) - fitted_trace(sampling_axis_limits))
+
+        ax.fill_between(sampling_axis_limits,
+                        low_span,
+                        up_span,
+                        where=up_span > low_span,
+                        facecolor='g',
+                        interpolate=True,
+                        alpha=0.3,
+                        label='Aproximate extraction window')
         ax.plot(fitted_trace(range(dispersion_length)),
                 color='r',
                 linestyle='--',
@@ -1997,7 +2014,7 @@ def trace(ccd,
     return fitted_trace, trace_info
 
 
-def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
+def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nfwhm=5,
                   plots=False):
     """Find the trace of the target's spectrum on the image
 
@@ -2019,7 +2036,8 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
         sampling_step (int): Frequency of sampling in pixels
         pol_deg (int): Polynomial degree for fitting the trace
         plots (bool): If True will show plots (debugging)
-        nsigmas (int): Number of sigmas to search for a target. default 10.
+        nfwhm (int): Number of fwhm from spatial profile center to search for
+        a target. default 10.
 
     Returns:
         all_traces (list): List that contains traces that are
@@ -2048,7 +2066,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
                                          trace_model=trace_model,
                                          model_fitter=model_fitter,
                                          sampling_step=sampling_step,
-                                         nsigmas=nsigmas,
+                                         nfwhm=nfwhm,
                                          plots=plots)
         # print(single_trace)
         # print(trace_rms)
@@ -3096,6 +3114,8 @@ class IdentifySpectroscopicTargets(object):
         log.debug('Serial binning: {:d}'.format(self.serial_binning))
 
         self.order = int(round(float(self.slit_size) / (0.15 * self.serial_binning)))
+        print("ORDER")
+        print(self.order)
 
 
         if self.plots:  # pragma: no cover
@@ -3587,18 +3607,21 @@ class IdentifySpectroscopicTargets(object):
                                      spatial_profile)
 
             # this ensures the profile returned are valid
-            if (fitted_moffat.fwhm > 0) and \
+            if (fitted_moffat.fwhm > 0.5 * order) and \
                     (fitted_moffat.fwhm < 4 * order):
                 profile_model.append(fitted_moffat)
                 log.info(
-                    "Recording target centered at: {:.2f}, gamma: {:.2f}"
+                    "Recording target centered at: {:.2f}, fwhm: {:.2f}"
                     "".format(fitted_moffat.x_0.value,
-                              fitted_moffat.gamma.value))
+                              fitted_moffat.fwhm))
             else:
                 log.error("Discarding target centered at: {:.3f}".format(
                     fitted_moffat.x_0.value))
                 if fitted_moffat.fwhm < 0:
                     log.error("Moffat model FWHM is negative")
+                elif 0 <= fitted_moffat.fwhm < 0.5 * order:
+                    log.error("Moffat model FWHM is too small: {:.3f}, most "
+                              "likely is an artifact".format(fitted_moffat.fwhm))
                 else:
                     log.error("Moffat model FWHM too large: {:.3f}"
                               "".format(fitted_moffat.fwhm))

@@ -1149,7 +1149,7 @@ class TargetsTest(TestCase):
                                    target_list=targets,
                                    sampling_step=5,
                                    pol_deg=2,
-                                   nsigmas=2,
+                                   nfwhm=2,
                                    plots=False)
         for new_trace, profile, trace_info in all_traces:
             self.assertEqual(new_trace.c0.value, profile.mean.value)
