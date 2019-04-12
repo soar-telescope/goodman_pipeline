@@ -2556,6 +2556,17 @@ class ReferenceData(object):
         self.lines_pixel = None
         self.lines_angstrom = None
         self._ccd = None
+        self.lamp_status_keywords = [
+            'LAMP_HGA',
+            'LAMP_NE',
+            'LAMP_AR',
+            'LAMP_FE',
+            'LAMP_CU',
+            'LAMP_QUA',
+            'LAMP_QPE',
+            'LAMP_BUL',
+            'LAMP_DOM',
+            'LAMP_DPE']
 
     def get_reference_lamp(self, header):
         """Finds a suitable template lamp from the catalog
@@ -2568,14 +2579,21 @@ class ReferenceData(object):
             full path to best matching reference lamp.
 
         """
-        filtered_collection = self.ref_lamp_collection[
-            # TODO (simon): User input for OBJECT keyword can differ from
-            # TODO Reference Library
-            (self.ref_lamp_collection['object'] == header['object']) &
-            # TODO (simon): Wavemode can be custom (GRT_TARG, CAM_TARG, GRATING)
-            (self.ref_lamp_collection['wavmode'] == header['wavmode'])]
 
-        # print(filtered_collection)
+        if all([keyword in [hkey for hkey in header.keys()] for keyword in self.lamp_status_keywords]):
+            filtered_collection = self.ref_lamp_collection[(
+                (self.ref_lamp_collection['lamp_hga'] == header['LAMP_HGA']) &
+                (self.ref_lamp_collection['lamp_ne'] == header['LAMP_NE']) &
+                (self.ref_lamp_collection['lamp_ar'] == header['LAMP_AR']) &
+                (self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) &
+                (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
+                (self.ref_lamp_collection['wavmode'] == header['wavmode']))]
+        else:
+            filtered_collection = self.ref_lamp_collection[
+                (self.ref_lamp_collection['object'] == header['object']) &
+                # TODO (simon): Wavemode can be custom (GRT_TARG, CAM_TARG, GRATING)
+                (self.ref_lamp_collection['wavmode'] == header['wavmode'])]
+
         if filtered_collection.empty:
             raise NotImplementedError("It was not possible to find any lamps "
                                       "that match")
