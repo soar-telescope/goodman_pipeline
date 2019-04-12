@@ -624,25 +624,33 @@ class ExtractionTest(TestCase):
         # Calculate how far the background is from the the center.
         self.distance = 1
 
-        self.target_profile = models.Gaussian1D(amplitude=1,
-                                                mean=50.3,
-                                                stddev=self.stddev)
+        self.target_profile_gaussian = models.Gaussian1D(amplitude=1,
+                                                         mean=50.3,
+                                                         stddev=self.stddev)
 
-        self.reference_result = np.ones(100) * self.stddev * self.n_stddev
+        self.target_profile_moffat = models.Moffat1D(amplitude=1,
+                                                     x_0=50.3,
+                                                     gamma=self.stddev)
+
+        self.reference_result_gaussian = np.ones(
+            100) * self.target_profile_gaussian.fwhm * self.n_stddev
+
+        self.reference_result_moffat = np.ones(
+            100) * self.target_profile_moffat.fwhm * self.n_stddev
 
     def test_fractional_extraction(self):
         # Perform extraction
         extracted_array, background, info = extract_fractional_pixel(
             ccd=self.fake_image,
             target_trace=self.target_trace,
-            target_stddev=self.stddev,
+            target_fwhm=self.target_profile_gaussian.fwhm,
             extraction_width=self.n_stddev,
             background_spacing=self.distance)
         # assert isinstance(fake_image, CCDData)
         self.assertIsInstance(extracted_array, CCDData)
 
         np.testing.assert_array_almost_equal(extracted_array,
-                                             self.reference_result)
+                                             self.reference_result_gaussian)
 
     def test_fractional_extraction_obstype_object(self):
         self.fake_image.header.set('OBSTYPE', value='OBJECT')
@@ -650,7 +658,7 @@ class ExtractionTest(TestCase):
         extracted_array, background, info = extract_fractional_pixel(
             ccd=self.fake_image,
             target_trace=self.target_trace,
-            target_stddev=self.stddev,
+            target_fwhm=self.stddev,
             extraction_width=self.n_stddev,
             background_spacing=self.distance)
         # assert isinstance(fake_image, CCDData)
@@ -676,27 +684,27 @@ class ExtractionTest(TestCase):
                           extraction,
                           self.fake_image,
                           self.target_trace,
-                          self.target_profile,
+                          self.target_profile_gaussian,
                           'optimal')
 
     def test_extraction_gaussian(self):
         extracted = extraction(ccd=self.fake_image,
                                target_trace=self.target_trace,
-                               spatial_profile=self.target_profile,
+                               spatial_profile=self.target_profile_gaussian,
                                extraction_name='fractional')
         self.assertIsInstance(extracted, CCDData)
-        np.testing.assert_array_almost_equal(extracted, self.reference_result)
+        np.testing.assert_array_almost_equal(extracted, self.reference_result_gaussian)
 
     def test_extraction_moffat(self):
-        spatial_profile_moffat = models.Moffat1D(amplitude=self.target_profile.amplitude.value,
-                                                 x_0=self.target_profile.mean.value,
-                                                 gamma=self.target_profile.stddev.value)
+        spatial_profile_moffat = models.Moffat1D(amplitude=self.target_profile_gaussian.amplitude.value,
+                                                 x_0=self.target_profile_gaussian.mean.value,
+                                                 gamma=self.target_profile_gaussian.stddev.value)
         extracted = extraction(ccd=self.fake_image,
                                target_trace=self.target_trace,
                                spatial_profile=spatial_profile_moffat,
                                extraction_name='fractional')
         self.assertIsInstance(extracted, CCDData)
-        np.testing.assert_array_almost_equal(extracted, self.reference_result)
+        np.testing.assert_array_almost_equal(extracted, self.reference_result_moffat)
 
     def test_extraction_not_implemented_model(self):
         spatial_profile = models.BlackBody1D()
@@ -710,7 +718,7 @@ class ExtractionTest(TestCase):
     def test_extraction_exception(self):
         self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
                           target_trace=self.target_trace,
-                          spatial_profile=self.target_profile,
+                          spatial_profile=self.target_profile_gaussian,
                           extraction_name='optimal')
 
 class FixKeywordsTest(TestCase):
