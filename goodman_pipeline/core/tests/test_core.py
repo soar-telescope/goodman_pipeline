@@ -935,6 +935,7 @@ class ReferenceDataTest(TestCase):
         self.assertFalse(self.rd.lamp_exists(header=self.ccd.header))
 
     def test_check_comp_group__lamp_exists(self):
+
         comp_group = pandas.DataFrame(self.data_exist,
                                       columns=self.columns)
 
@@ -998,16 +999,65 @@ class SearchCompGroupTest(TestCase):
                    'cam_targ',
                    'grt_targ',
                    'filter',
-                   'filter2']
+                   'filter2',
+                   'lamp_hga',
+                   'lamp_ne',
+                   'lamp_ar',
+                   'lamp_fe',
+                   'lamp_cu']
+
         self.object_group = pandas.DataFrame(
-            data=[['NGC2070', 'SYZY_400', 16.1, 7.5, '<NO FILTER>', 'GG455']],
+            data=[['NGC2070',
+                   'SYZY_400',
+                   16.1,
+                   7.5,
+                   '<NO FILTER>',
+                   'GG455',
+                   'TRUE',
+                   'FALSE',
+                   'FALSE',
+                   'FALSE',
+                   'FALSE'
+                   ]],
             columns=columns)
         self.object_group_no_match = pandas.DataFrame(
-            data=[['NGC2070', 'SYZY_600', 16.1, 7.5, '<NO FILTER>', 'GG455']],
+            data=[['NGC2070',
+                   'SYZY_600',
+                   16.1,
+                   7.5,
+                   '<NO FILTER>',
+                   'GG455',
+                   'TRUE',
+                   'FALSE',
+                   'FALSE',
+                   'FALSE',
+                    'FALSE']],
             columns=columns)
         self.comp_groups = [
-            pandas.DataFrame(data=[['HgArNe', 'SYZY_400',16.1, 7.5, '<NO FILTER>', 'GG455']], columns=columns),
-            pandas.DataFrame(data=[['CuArNe', 'SYZY_400',11.6, 5.8, '<NO FILTER>', 'GG455']], columns=columns)]
+            pandas.DataFrame(
+                data=[['HgArNe',
+                       'SYZY_400',
+                       16.1,
+                       7.5,
+                       '<NO FILTER>',
+                       'GG455',
+                       'TRUE',
+                       'FALSE',
+                       'FALSE',
+                       'FALSE',
+                       'FALSE']], columns=columns),
+            pandas.DataFrame(
+                data=[['CuArNe',
+                       'SYZY_400',
+                       11.6,
+                       5.8,
+                       '<NO FILTER>',
+                       'GG455',
+                       'TRUE',
+                       'FALSE',
+                       'FALSE',
+                       'FALSE',
+                       'FALSE']], columns=columns)]
 
         self.reference_data = ReferenceData(
             reference_dir=os.path.join(os.getcwd(),
