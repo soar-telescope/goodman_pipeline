@@ -624,25 +624,33 @@ class ExtractionTest(TestCase):
         # Calculate how far the background is from the the center.
         self.distance = 1
 
-        self.target_profile = models.Gaussian1D(amplitude=1,
-                                                mean=50.3,
-                                                stddev=self.stddev)
+        self.target_profile_gaussian = models.Gaussian1D(amplitude=1,
+                                                         mean=50.3,
+                                                         stddev=self.stddev)
 
-        self.reference_result = np.ones(100) * self.stddev * self.n_stddev
+        self.target_profile_moffat = models.Moffat1D(amplitude=1,
+                                                     x_0=50.3,
+                                                     gamma=self.stddev)
+
+        self.reference_result_gaussian = np.ones(
+            100) * self.target_profile_gaussian.fwhm * self.n_stddev
+
+        self.reference_result_moffat = np.ones(
+            100) * self.target_profile_moffat.fwhm * self.n_stddev
 
     def test_fractional_extraction(self):
         # Perform extraction
         extracted_array, background, info = extract_fractional_pixel(
             ccd=self.fake_image,
             target_trace=self.target_trace,
-            target_stddev=self.stddev,
+            target_fwhm=self.target_profile_gaussian.fwhm,
             extraction_width=self.n_stddev,
             background_spacing=self.distance)
         # assert isinstance(fake_image, CCDData)
         self.assertIsInstance(extracted_array, CCDData)
 
         np.testing.assert_array_almost_equal(extracted_array,
-                                             self.reference_result)
+                                             self.reference_result_gaussian)
 
     def test_fractional_extraction_obstype_object(self):
         self.fake_image.header.set('OBSTYPE', value='OBJECT')
@@ -650,7 +658,7 @@ class ExtractionTest(TestCase):
         extracted_array, background, info = extract_fractional_pixel(
             ccd=self.fake_image,
             target_trace=self.target_trace,
-            target_stddev=self.stddev,
+            target_fwhm=self.stddev,
             extraction_width=self.n_stddev,
             background_spacing=self.distance)
         # assert isinstance(fake_image, CCDData)
@@ -676,27 +684,27 @@ class ExtractionTest(TestCase):
                           extraction,
                           self.fake_image,
                           self.target_trace,
-                          self.target_profile,
+                          self.target_profile_gaussian,
                           'optimal')
 
     def test_extraction_gaussian(self):
         extracted = extraction(ccd=self.fake_image,
                                target_trace=self.target_trace,
-                               spatial_profile=self.target_profile,
+                               spatial_profile=self.target_profile_gaussian,
                                extraction_name='fractional')
         self.assertIsInstance(extracted, CCDData)
-        np.testing.assert_array_almost_equal(extracted, self.reference_result)
+        np.testing.assert_array_almost_equal(extracted, self.reference_result_gaussian)
 
     def test_extraction_moffat(self):
-        spatial_profile_moffat = models.Moffat1D(amplitude=self.target_profile.amplitude.value,
-                                                 x_0=self.target_profile.mean.value,
-                                                 gamma=self.target_profile.stddev.value)
+        spatial_profile_moffat = models.Moffat1D(amplitude=self.target_profile_gaussian.amplitude.value,
+                                                 x_0=self.target_profile_gaussian.mean.value,
+                                                 gamma=self.target_profile_gaussian.stddev.value)
         extracted = extraction(ccd=self.fake_image,
                                target_trace=self.target_trace,
                                spatial_profile=spatial_profile_moffat,
                                extraction_name='fractional')
         self.assertIsInstance(extracted, CCDData)
-        np.testing.assert_array_almost_equal(extracted, self.reference_result)
+        np.testing.assert_array_almost_equal(extracted, self.reference_result_moffat)
 
     def test_extraction_not_implemented_model(self):
         spatial_profile = models.BlackBody1D()
@@ -710,7 +718,7 @@ class ExtractionTest(TestCase):
     def test_extraction_exception(self):
         self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
                           target_trace=self.target_trace,
-                          spatial_profile=self.target_profile,
+                          spatial_profile=self.target_profile_gaussian,
                           extraction_name='optimal')
 
 class FixKeywordsTest(TestCase):
@@ -814,16 +822,83 @@ class ReferenceDataTest(TestCase):
         self.ccd = CCDData(data=np.ones((800, 2000)),
                            meta=fits.Header(),
                            unit='adu')
+        self.ccd.header.set('GRATING', value='SYZY_400')
+        self.ccd.header.set('GRT_TARG', value=7.5)
+        self.ccd.header.set('CAM_TARG', value=16.1)
 
-        self.columns = ['object', 'grating', 'grt_targ', 'cam_targ']
+        self.columns = ['object',
+                        'grating',
+                        'grt_targ',
+                        'cam_targ',
+                        'lamp_hga',
+                        'lamp_ne',
+                        'lamp_ar',
+                        'lamp_fe',
+                        'lamp_cu',]
 
-        self.data_exist = [['HgArNe', 'SYZY_400', 7.5, 16.1],
-                           ['HgAr', 'SYZY_400', 7.5, 16.1]]
+        self.data_exist = [
+            ['HgArNe',
+             'SYZY_400',
+             7.5,
+             16.1,
+             'TRUE',
+             'TRUE',
+             'FALSE',
+             'FALSE',
+             'FALSE'],
+            ['HgAr',
+             'SYZY_400',
+             7.5,
+             16.1,
+             'TRUE',
+             'FALSE',
+             'FALSE',
+             'FALSE',
+             'FALSE']]
 
-        self.data_does_not_exist = [['HgArNe', 'SYZY_800', 7.5, 16.1],
-                                    ['HgAr', 'SYZY_800', 7.5, 16.1]]
+        self.data_does_not_exist = [
+            ['HgArNe',
+             'SYZY_800',
+             7.5,
+             16.1,
+             'TRUE',
+             'TRUE',
+             'FALSE',
+             'FALSE',
+             'FALSE'],
+            ['HgAr',
+             'SYZY_800',
+             7.5,
+             16.1,
+             'TRUE',
+             'FALSE',
+             'FALSE',
+             'FALSE',
+             'FALSE']]
 
-    def test_get_reference_lamp_exist(self):
+    def test_get_reference_lamp_exist_with_lamps_status_key(self):
+        self.ccd.header.set('LAMP_HGA', value='TRUE')
+        self.ccd.header.set('LAMP_NE', value='TRUE')
+        self.ccd.header.set('LAMP_AR', value='FALSE')
+        self.ccd.header.set('LAMP_FE', value='FALSE')
+        self.ccd.header.set('LAMP_CU', value='FALSE')
+        self.ccd.header.set('LAMP_QUA', value='FALSE')
+        self.ccd.header.set('LAMP_QPE', value=0)
+        self.ccd.header.set('LAMP_BUL', value='FALSE')
+        self.ccd.header.set('LAMP_DOM', value='FALSE')
+        self.ccd.header.set('LAMP_DPE', value=0)
+
+
+        self.ccd.header.set('WAVMODE', value='400 m2')
+
+        ref_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
+
+        self.assertIsInstance(ref_lamp, CCDData)
+        self.assertEqual(ref_lamp.header['LAMP_HGA'], self.ccd.header['LAMP_HGA'])
+        self.assertEqual(ref_lamp.header['LAMP_NE'], self.ccd.header['LAMP_NE'])
+        self.assertEqual(ref_lamp.header['WAVMODE'], self.ccd.header['WAVMODE'])
+
+    def test_get_reference_lamp_exist_with_object_key(self):
         self.ccd.header.set('OBJECT', value='HgArNe')
         self.ccd.header.set('WAVMODE', value='400 m2')
 
@@ -842,17 +917,25 @@ class ReferenceDataTest(TestCase):
                           self.ccd.header)
 
     def test_lamp_exist(self):
-        self.assertTrue(self.rd.lamp_exists(object_name='HgArNe',
-                                            grating='SYZY_400',
-                                            grt_targ=7.5,
-                                            cam_targ=16.1))
+        self.ccd.header.set('LAMP_HGA', value='TRUE')
+        self.ccd.header.set('LAMP_NE', value='TRUE')
+        self.ccd.header.set('LAMP_AR', value='FALSE')
+        self.ccd.header.set('LAMP_FE', value='FALSE')
+        self.ccd.header.set('LAMP_CU', value='FALSE')
+        self.ccd.header.set('LAMP_QUA', value='FALSE')
+        self.ccd.header.set('LAMP_QPE', value=0)
+        self.ccd.header.set('LAMP_BUL', value='FALSE')
+        self.ccd.header.set('LAMP_DOM', value='FALSE')
+        self.ccd.header.set('LAMP_DPE', value=0)
+        self.ccd.header.set('WAVMODE', value='400 m2')
+        self.assertTrue(self.rd.lamp_exists(header=self.ccd.header))
 
-        self.assertFalse(self.rd.lamp_exists(object_name='HgArCu',
-                                             grating='SYZY_400',
-                                             grt_targ=7.5,
-                                             cam_targ=16.1))
+        # HgArNeCu is impossible
+        self.ccd.header.set('LAMP_CU', value='TRUE')
+        self.assertFalse(self.rd.lamp_exists(header=self.ccd.header))
 
     def test_check_comp_group__lamp_exists(self):
+
         comp_group = pandas.DataFrame(self.data_exist,
                                       columns=self.columns)
 
@@ -916,16 +999,65 @@ class SearchCompGroupTest(TestCase):
                    'cam_targ',
                    'grt_targ',
                    'filter',
-                   'filter2']
+                   'filter2',
+                   'lamp_hga',
+                   'lamp_ne',
+                   'lamp_ar',
+                   'lamp_fe',
+                   'lamp_cu']
+
         self.object_group = pandas.DataFrame(
-            data=[['NGC2070', 'SYZY_400', 16.1, 7.5, '<NO FILTER>', 'GG455']],
+            data=[['NGC2070',
+                   'SYZY_400',
+                   16.1,
+                   7.5,
+                   '<NO FILTER>',
+                   'GG455',
+                   'TRUE',
+                   'FALSE',
+                   'FALSE',
+                   'FALSE',
+                   'FALSE'
+                   ]],
             columns=columns)
         self.object_group_no_match = pandas.DataFrame(
-            data=[['NGC2070', 'SYZY_600', 16.1, 7.5, '<NO FILTER>', 'GG455']],
+            data=[['NGC2070',
+                   'SYZY_600',
+                   16.1,
+                   7.5,
+                   '<NO FILTER>',
+                   'GG455',
+                   'TRUE',
+                   'FALSE',
+                   'FALSE',
+                   'FALSE',
+                    'FALSE']],
             columns=columns)
         self.comp_groups = [
-            pandas.DataFrame(data=[['HgArNe', 'SYZY_400',16.1, 7.5, '<NO FILTER>', 'GG455']], columns=columns),
-            pandas.DataFrame(data=[['CuArNe', 'SYZY_400',11.6, 5.8, '<NO FILTER>', 'GG455']], columns=columns)]
+            pandas.DataFrame(
+                data=[['HgArNe',
+                       'SYZY_400',
+                       16.1,
+                       7.5,
+                       '<NO FILTER>',
+                       'GG455',
+                       'TRUE',
+                       'FALSE',
+                       'FALSE',
+                       'FALSE',
+                       'FALSE']], columns=columns),
+            pandas.DataFrame(
+                data=[['CuArNe',
+                       'SYZY_400',
+                       11.6,
+                       5.8,
+                       '<NO FILTER>',
+                       'GG455',
+                       'TRUE',
+                       'FALSE',
+                       'FALSE',
+                       'FALSE',
+                       'FALSE']], columns=columns)]
 
         self.reference_data = ReferenceData(
             reference_dir=os.path.join(os.getcwd(),
@@ -1149,7 +1281,7 @@ class TargetsTest(TestCase):
                                    target_list=targets,
                                    sampling_step=5,
                                    pol_deg=2,
-                                   nsigmas=2,
+                                   nfwhm=2,
                                    plots=False)
         for new_trace, profile, trace_info in all_traces:
             self.assertEqual(new_trace.c0.value, profile.mean.value)

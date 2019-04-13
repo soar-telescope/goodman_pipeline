@@ -22,6 +22,7 @@ import pandas
 import scipy
 from astroplan import Observer
 from astropy import units as u
+from astropy.io import fits
 from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
@@ -710,9 +711,9 @@ def extraction(ccd,
     assert isinstance(target_trace, Model)
 
     if spatial_profile.__class__.name == 'Gaussian1D':
-        target_stddev = spatial_profile.stddev.value
+        target_fwhm = spatial_profile.fwhm
     elif spatial_profile.__class__.name == 'Moffat1D':
-        target_stddev = spatial_profile.gamma.value
+        target_fwhm = spatial_profile.fwhm
     else:
         raise NotImplementedError
 
@@ -720,7 +721,7 @@ def extraction(ccd,
         extracted, background, bkg_info = extract_fractional_pixel(
             ccd=ccd,
             target_trace=target_trace,
-            target_stddev=target_stddev,
+            target_fwhm=target_fwhm,
             extraction_width=2)
 
         background_1, background_2 = bkg_info
@@ -743,7 +744,7 @@ def extraction(ccd,
         raise NotImplementedError
 
 
-def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
+def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
                              background_spacing=3):
     """Performs an spectrum extraction using fractional pixels.
 
@@ -752,10 +753,10 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
         contains a 2D spectrum.
         target_trace (object):  Instance of astropy.modeling.models.Model that
           defines the trace of the target on the image (ccd).
-        target_stddev (float): Standard deviation value for the spatial profile
+        target_fwhm (float): FWHM value for the spatial profile
           fitted to the target.
         extraction_width (int): Width of the extraction area as a function of
-          `target_stddev`. For instance if `extraction_with` is set to 1 the
+          `target_fwhm`. For instance if `extraction_with` is set to 1 the
           function extract 0.5 to each side from the center of the traced
           target.
         background_spacing (float): Number of `target_stddev` to separate the
@@ -788,8 +789,8 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
     for i in disp_axis:
 
         # this defines the extraction limit for every column
-        low_limit = trace_points[i] - 0.5 * extraction_width * target_stddev
-        high_limit = trace_points[i] + 0.5 * extraction_width * target_stddev
+        low_limit = trace_points[i] - 0.5 * extraction_width * target_fwhm
+        high_limit = trace_points[i] + 0.5 * extraction_width * target_fwhm
         # print(trace_points[i], extraction_width, target_stddev)
 
         # low_limits_list.append(low_limit)
@@ -832,14 +833,14 @@ def extract_fractional_pixel(ccd, target_trace, target_stddev, extraction_width,
 
             # define pixel values for background subtraction
             # low_background_zone
-            high_1 = low_limit - background_spacing * target_stddev
+            high_1 = low_limit - background_spacing * target_fwhm
             low_1 = high_1 - background_width
             # print(low_1,high_1)
 
             # High background zone
-            low_2 = high_limit + background_spacing * target_stddev
+            low_2 = high_limit + background_spacing * target_fwhm
             high_2 = low_2 + background_width
-            # print(low_1,'-',high_1,':',low_2,'-',high_2,)
+            # print(low_1, ' to ', high_1, ':', low_2, ' to ', high_2,)
 
             # validate background subtraction zones
             background_1 = None
@@ -1801,7 +1802,7 @@ def trace(ccd,
           trace_model,
           model_fitter,
           sampling_step,
-          nsigmas=2,
+          nfwhm=1,
           plots=False):
     """Find the trace of a spectrum
 
@@ -1826,7 +1827,7 @@ def trace(ccd,
         model_fitter (Fitter): An astropy.modeling.fitting.Fitter instance. Will
           fit the sampled points to construct the trace model
         sampling_step (int): Step for sampling the spectrum.
-        nsigmas (int): Number of stddev to each side of the mean to be used for
+        nfwhm (int): Number of fwhm to each side of the mean to be used for
           searching the trace.
         plots (bool): Toggles debugging plot
 
@@ -1845,25 +1846,30 @@ def trace(ccd,
     sample_values = []
 
     if model.__class__.name == 'Gaussian1D':
-        model_stddev = model.stddev.value
+        model_fwhm = model.fwhm
         model_mean = model.mean.value
     elif model.__class__.name == 'Moffat1D':
-        model_stddev = model.gamma.value
+        model_fwhm = model.fwhm
         model_mean = model.x_0.value
     else:
         raise NotImplementedError
 
     sample_center = float(model_mean)
+    lower_limit_list = []
+    upper_limit_list = []
     lower_limit = None
     upper_limit = None
 
     for point in sampling_axis:
 
-        lower_limit = np.max([0, int(sample_center - nsigmas * model_stddev)])
-        upper_limit = np.min([int(sample_center + nsigmas * model_stddev),
+        lower_limit = np.max([0, int(sample_center - nfwhm * model_fwhm)])
+        upper_limit = np.min([int(sample_center + nfwhm * model_fwhm),
                               spatial_length])
 
-        # print(sample_center, nsigmas, model_stddev, lower_limit, upper_limit)
+        lower_limit_list.append(lower_limit)
+        upper_limit_list.append(upper_limit)
+
+        # print(sample_center, nsigmas, model_fwhm, lower_limit, upper_limit)
 
         sample = ccd.data[lower_limit:upper_limit, point:point + sampling_step]
         sample_median = np.median(sample, axis=1)
@@ -1875,8 +1881,8 @@ def trace(ccd,
             # plt.plot(model(range(spatial_length)))
             # plt.plot(ccd.data[:,point])
             # plt.show()
-            print('Nsigmas ', nsigmas)
-            print('Model Stddev ', model_stddev)
+            print('Nfwhm ', nfwhm)
+            print('Model Stddev ', model_fwhm)
             print('sample_center ', sample_center)
             print('sample ', sample)
             print('sample_median ', sample_median)
@@ -1890,12 +1896,14 @@ def trace(ccd,
         sample_values.append(sample_peak + lower_limit)
 
         if np.abs(sample_peak + lower_limit - model_mean)\
-                < nsigmas * model_stddev:
+                < nfwhm * model_fwhm:
 
             sample_center = int(sample_peak + lower_limit)
 
         else:
             sample_center = float(model_mean)
+
+    trace_model.c2.fixed = True
 
     fitted_trace = model_fitter(trace_model, sampling_axis, sample_values)
 
@@ -1925,6 +1933,8 @@ def trace(ccd,
                 sample_values.append(_sample_values[i])
 
         log.debug("Re-fitting the trace for a better trace.")
+
+        trace_model.c2.fixed = False
 
         fitted_trace = model_fitter(trace_model, sampling_axis, sample_values)
 
@@ -1976,11 +1986,19 @@ def trace(ccd,
                 alpha=0.4,
                 label='Sampling points')
 
-        ax.axhspan(lower_limit,
-                   upper_limit,
-                   alpha=0.4,
-                   color='g',
-                   label='Approximate extraction window')
+        sampling_axis_limits = range(0, dispersion_length, sampling_step)
+
+        low_span = fitted_trace(sampling_axis_limits) - (fitted_trace(sampling_axis_limits) - np.mean(lower_limit_list))
+        up_span = fitted_trace(sampling_axis_limits) + (np.mean(upper_limit_list) - fitted_trace(sampling_axis_limits))
+
+        ax.fill_between(sampling_axis_limits,
+                        low_span,
+                        up_span,
+                        where=up_span > low_span,
+                        facecolor='g',
+                        interpolate=True,
+                        alpha=0.3,
+                        label='Aproximate extraction window')
         ax.plot(fitted_trace(range(dispersion_length)),
                 color='r',
                 linestyle='--',
@@ -1997,7 +2015,7 @@ def trace(ccd,
     return fitted_trace, trace_info
 
 
-def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
+def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nfwhm=5,
                   plots=False):
     """Find the trace of the target's spectrum on the image
 
@@ -2019,7 +2037,8 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
         sampling_step (int): Frequency of sampling in pixels
         pol_deg (int): Polynomial degree for fitting the trace
         plots (bool): If True will show plots (debugging)
-        nsigmas (int): Number of sigmas to search for a target. default 10.
+        nfwhm (int): Number of fwhm from spatial profile center to search for
+        a target. default 10.
 
     Returns:
         all_traces (list): List that contains traces that are
@@ -2048,7 +2067,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nsigmas=10,
                                          trace_model=trace_model,
                                          model_fitter=model_fitter,
                                          sampling_step=sampling_step,
-                                         nsigmas=nsigmas,
+                                         nfwhm=nfwhm,
                                          plots=plots)
         # print(single_trace)
         # print(trace_rms)
@@ -2610,7 +2629,7 @@ class ReferenceData(object):
         else:
             raise NotImplementedError
 
-    def lamp_exists(self, object_name, grating, grt_targ, cam_targ):
+    def lamp_exists(self, header):
         """Checks whether a matching lamp exist or not
 
         Args:
@@ -2627,11 +2646,14 @@ class ReferenceData(object):
 
         """
         filtered_collection = self.ref_lamp_collection[
-            (self.ref_lamp_collection['object'] == object_name) &
-            (self.ref_lamp_collection['grating'] == grating) &
-            (self.ref_lamp_collection['grt_targ'] == grt_targ) &
-            (self.ref_lamp_collection['cam_targ'] == cam_targ)
-            ]
+            (self.ref_lamp_collection['lamp_hga'] == header['LAMP_HGA']) &
+            (self.ref_lamp_collection['lamp_ne'] ==  header['LAMP_NE']) &
+            (self.ref_lamp_collection['lamp_ar'] ==  header['LAMP_AR']) &
+            (self.ref_lamp_collection['lamp_cu'] ==  header['LAMP_CU']) &
+            (self.ref_lamp_collection['lamp_fe'] ==  header['LAMP_FE']) &
+            (self.ref_lamp_collection['grating'] ==  header['GRATING']) &
+            (self.ref_lamp_collection['grt_targ'] == header['GRT_TARG']) &
+            (self.ref_lamp_collection['cam_targ'] == header['CAM_TARG'])]
 
         if filtered_collection.empty:
             return False
@@ -2651,25 +2673,41 @@ class ReferenceData(object):
         Returns:
 
         """
-        lamps = comp_group.groupby(['object',
-                                    'grating',
+        lamps = comp_group.groupby(['grating',
                                     'grt_targ',
-                                    'cam_targ']).size().reset_index(
+                                    'cam_targ',
+                                    'lamp_hga',
+                                    'lamp_ne',
+                                    'lamp_ar',
+                                    'lamp_fe',
+                                    'lamp_cu']).size().reset_index(
         ).rename(columns={0: 'count'})
 
         # for the way the input is created this should run only once but the
         # for loop has been left in case this happens.
         for i in lamps.index:
-            if self.lamp_exists(
-                    object_name=lamps.iloc[i]['object'],
-                    grating=lamps.iloc[i]['grating'],
-                    grt_targ=lamps.iloc[i]['grt_targ'],
-                    cam_targ=lamps.iloc[i]['cam_targ']):
+            pseudo_header = fits.Header()
+
+            # pseudo_header.set('OBJECT', value=lamps.iloc[i]['object'])
+            pseudo_header.set('GRATING', value=lamps.iloc[i]['grating'])
+            pseudo_header.set('GRT_TARG', value=lamps.iloc[i]['grt_targ'])
+            pseudo_header.set('CAM_TARG', value=lamps.iloc[i]['cam_targ'])
+            pseudo_header.set('LAMP_HGA', value=lamps.iloc[i]['lamp_hga'])
+            pseudo_header.set('LAMP_NE', value=lamps.iloc[i]['lamp_ne'])
+            pseudo_header.set('LAMP_AR', value=lamps.iloc[i]['lamp_ar'])
+            pseudo_header.set('LAMP_FE', value=lamps.iloc[i]['lamp_fe'])
+            pseudo_header.set('LAMP_CU', value=lamps.iloc[i]['lamp_cu'])
+
+            if self.lamp_exists(header=pseudo_header):
                 new_group = comp_group[
-                    (comp_group['object'] == lamps.iloc[i]['object']) &
                     (comp_group['grating'] == lamps.iloc[i]['grating']) &
                     (comp_group['grt_targ'] == lamps.iloc[i]['grt_targ']) &
-                    (comp_group['cam_targ'] == lamps.iloc[i]['cam_targ'])]
+                    (comp_group['cam_targ'] == lamps.iloc[i]['cam_targ']) &
+                    (comp_group['lamp_hga'] == lamps.iloc[i]['lamp_hga']) &
+                    (comp_group['lamp_ne'] == lamps.iloc[i]['lamp_ne']) &
+                    (comp_group['lamp_ar'] == lamps.iloc[i]['lamp_ar']) &
+                    (comp_group['lamp_fe'] == lamps.iloc[i]['lamp_fe']) &
+                    (comp_group['lamp_cu'] == lamps.iloc[i]['lamp_cu'])]
                 # print(new_group.file)
                 return new_group
             else:
@@ -3096,6 +3134,8 @@ class IdentifySpectroscopicTargets(object):
         log.debug('Serial binning: {:d}'.format(self.serial_binning))
 
         self.order = int(round(float(self.slit_size) / (0.15 * self.serial_binning)))
+        print("ORDER")
+        print(self.order)
 
 
         if self.plots:  # pragma: no cover
@@ -3587,18 +3627,21 @@ class IdentifySpectroscopicTargets(object):
                                      spatial_profile)
 
             # this ensures the profile returned are valid
-            if (fitted_moffat.fwhm > 0) and \
+            if (fitted_moffat.fwhm > 0.5 * order) and \
                     (fitted_moffat.fwhm < 4 * order):
                 profile_model.append(fitted_moffat)
                 log.info(
-                    "Recording target centered at: {:.2f}, gamma: {:.2f}"
+                    "Recording target centered at: {:.2f}, fwhm: {:.2f}"
                     "".format(fitted_moffat.x_0.value,
-                              fitted_moffat.gamma.value))
+                              fitted_moffat.fwhm))
             else:
                 log.error("Discarding target centered at: {:.3f}".format(
                     fitted_moffat.x_0.value))
                 if fitted_moffat.fwhm < 0:
                     log.error("Moffat model FWHM is negative")
+                elif 0 <= fitted_moffat.fwhm < 0.5 * order:
+                    log.error("Moffat model FWHM is too small: {:.3f}, most "
+                              "likely is an artifact".format(fitted_moffat.fwhm))
                 else:
                     log.error("Moffat model FWHM too large: {:.3f}"
                               "".format(fitted_moffat.fwhm))
