@@ -10,5 +10,6 @@ python:
     install:
         - requirements: docs/requirements.txt
         - method: pip
+          path: .
           extra-requirements:
               - docs
