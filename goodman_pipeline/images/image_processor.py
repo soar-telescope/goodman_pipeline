@@ -135,7 +135,7 @@ class ImageProcessor(object):
         if saturated_percent >= float(self.args.saturation_threshold):
             self.log.warning("The current image has more than {:.2f} percent "
                              "of pixels above saturation level".format(
-                self.args.saturation_threshold))
+                float(self.args.saturation_threshold)))
             return True
         else:
             return False
