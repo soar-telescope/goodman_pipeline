@@ -8,6 +8,7 @@ astroplan
 matplotlib
 scipy
 astropy
+pyqt5
 sphinx
 sphinxcontrib.napoleon
 sphinx_rtd_theme
