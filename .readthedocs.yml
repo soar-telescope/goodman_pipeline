@@ -11,7 +11,7 @@ python:
         - method: pip
           path: .
         - method: setuptools
-          path: goodman_pipeline
+          path: .
 
 conda:
     environment: environment.yml
