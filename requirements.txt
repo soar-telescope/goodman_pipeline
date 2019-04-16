@@ -9,6 +9,6 @@ pyqt5
 matplotlib
 scipy
 astropy
-sphinx
+sphinx=2.0.1
 sphinxcontrib.napoleon
 sphinx_rtd_theme
