@@ -8,6 +8,10 @@ formats: all
 python:
     version: 3.5
     install:
-        - requirements: requirements.txt
         - method: pip
           path: .
+        - method: setuptools
+          path: goodman_pipeline
+
+conda:
+    environment: environment.yml
