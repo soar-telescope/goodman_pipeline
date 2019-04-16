@@ -7,6 +7,11 @@ formats: all
 
 python:
     version: 3.5
-    setup_py_install: true
-    extra_requirements:
-        - docs
+    install:
+        - method: pip
+          path: .
+        - method: setuptools
+          path: .
+
+conda:
+    environment: environment.yml
