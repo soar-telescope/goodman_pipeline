@@ -2679,7 +2679,6 @@ class ReferenceData(object):
         Returns:
 
         """
-        print(comp_group.to_string())
         lamps = comp_group.groupby(['grating',
                                     'grt_targ',
                                     'cam_targ',
