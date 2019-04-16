@@ -1,0 +1,4 @@
+recommonmark
+sphinx
+sphinxcontrib.napoleon
+sphinx_rtd_theme
