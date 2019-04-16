@@ -15,12 +15,12 @@ from ..data_classifier import DataClassifier
 class DataClassifierTests(TestCase):
 
     def setUp(self):
-        self.raw_path = os.path.join(
+        self.folder = os.path.join(
             os.getcwd(),
             'goodman_pipeline/data/test_data/classify-data')
 
-        if not os.path.isdir(self.raw_path):
-            os.mkdir(self.raw_path)
+        if not os.path.isdir(self.folder):
+            os.mkdir(self.folder)
 
         self.create_fake_spectroscopic_data()
 
@@ -28,7 +28,7 @@ class DataClassifierTests(TestCase):
 
 
     def create_fake_spectroscopic_data(self):
-        if os.path.isdir(self.raw_path):
+        if os.path.isdir(self.folder):
             card_values = [
                 {'obstype': 'OBJECT', 'object': 'NGC2070',
                  'obsra': '16:23:24.285', 'obsdec': '-39:12:53.954'},
@@ -119,63 +119,63 @@ class DataClassifierTests(TestCase):
                 ccd.header.set('INSTCONF', value='Red', comment='nc')
                 ccd.header.set('WAVMODE', value='Spectroscopy', comment='nc')
 
-                ccd.write(os.path.join(self.raw_path,
+                ccd.write(os.path.join(self.folder,
                                        'test_file_{:03d}.fits'.format(i)))
 
 
 
     def tearDown(self):
-        if os.path.isdir(self.raw_path):
-            shutil.rmtree(self.raw_path)
+        if os.path.isdir(self.folder):
+            shutil.rmtree(self.folder)
 
     def test___repr__undefined(self):
         with self.assertRaises(TypeError):
             self.data_classifier.__repr__()
 
     def test___repr__(self):
-        self.data_classifier(raw_path=self.raw_path)
+        self.data_classifier(folder=self.folder)
         result = self.data_classifier.__repr__()
-        self.assertIn('Raw Path: {:s}'.format(self.raw_path), result)
+        self.assertIn('Raw Path: {:s}'.format(self.folder), result)
         self.assertIn('Instrument: Red Camera', result)
         self.assertIn('Observing Technique: Spectroscopy', result)
 
     def test_data_classifier_expected_usage(self):
 
         assert isinstance(self.data_classifier, DataClassifier)
-        self.data_classifier(raw_path=self.raw_path)
+        self.data_classifier(folder=self.folder)
 
         self.assertEqual('Red', self.data_classifier.instrument)
         self.assertEqual('Spectroscopy', self.data_classifier.technique)
 
     def test_data_classifier_all_imaging(self):
 
-        for _file in os.listdir(self.raw_path):
-            raw_path_full = os.path.join(self.raw_path, _file)
+        for _file in os.listdir(self.folder):
+            raw_path_full = os.path.join(self.folder, _file)
             recovered_ccd = CCDData.read(raw_path_full, unit='adu')
             # recovered_ccd.header['INSTCONF'] = 'Blue'
             recovered_ccd.header['WAVMODE'] = 'Imaging'
 
             recovered_ccd.write(raw_path_full, overwrite=True)
 
-        self.data_classifier(raw_path=self.raw_path)
+        self.data_classifier(folder=self.folder)
         self.assertEqual('Imaging', self.data_classifier.technique)
 
     def test_data_classifier_mixed_technique(self):
-        sample_file = os.listdir(self.raw_path)[0]
-        raw_path_full = os.path.join(self.raw_path, sample_file)
+        sample_file = os.listdir(self.folder)[0]
+        raw_path_full = os.path.join(self.folder, sample_file)
         recovered_ccd = CCDData.read(raw_path_full, unit='adu')
         # recovered_ccd.header['INSTCONF'] = 'Blue'
         recovered_ccd.header['WAVMODE'] = 'Imaging'
 
         recovered_ccd.write(raw_path_full, overwrite=True)
 
-        self.data_classifier(raw_path=self.raw_path)
+        self.data_classifier(folder=self.folder)
 
         self.assertEqual('Spectroscopy', self.data_classifier.technique)
 
     def test_data_classifier_mixed_instconf(self):
-        sample_file = os.listdir(self.raw_path)[0]
-        raw_path_full = os.path.join(self.raw_path, sample_file)
+        sample_file = os.listdir(self.folder)[0]
+        raw_path_full = os.path.join(self.folder, sample_file)
         recovered_ccd = CCDData.read(raw_path_full, unit='adu')
         recovered_ccd.header['INSTCONF'] = 'Blue'
         # recovered_ccd.header['WAVMODE'] = 'Imaging'
@@ -183,5 +183,5 @@ class DataClassifierTests(TestCase):
 
 
         with self.assertRaises(SystemExit):
-            self.data_classifier(raw_path=self.raw_path)
+            self.data_classifier(folder=self.folder)
 

@@ -113,16 +113,17 @@ def get_args(arguments=None):
                              "remove the input file and the cosmic rays file. "
                              "For 'lacosmic' it saves the mask to a fits file.")
 
-    parser.add_argument('--raw-path',
+    parser.add_argument('--folder',
                         action='store',
-                        metavar='<raw_path>',
+                        dest='folder',
+                        metavar='<folder>',
                         default='./',
                         type=str,
                         help="Path to raw data.")
 
-    parser.add_argument('--red-path',
+    parser.add_argument('--save-to',
                         action='store',
-                        metavar='<red_path>',
+                        metavar='<save_to>',
                         type=str,
                         default='./RED',
                         help="Path to reduced data.")
@@ -169,7 +170,7 @@ class MainApp(object):
     def __call__(self, args=None):
         """Call method for MainApp
 
-        From the arguments this method finds the raw_path attribute and checks
+        From the arguments this method finds the folder attribute and checks
         its contents for the existence of files containing the '.fits' string.
         If there is none it will assume every item is a different data directory
         and they will be treated independently. If there are '.fits' files the
@@ -198,7 +199,7 @@ class MainApp(object):
         try:
             self.log.debug('Calling data_classifier '
                            'Instance of DataClassifier')
-            self.data_classifier(raw_path=self.args.raw_path)
+            self.data_classifier(folder=self.args.folder)
         except AttributeError as error:
 
             if 'instconf' in error.args[0]:
@@ -222,7 +223,7 @@ class MainApp(object):
 
             self.log.error(error)
             self.log.error('Empty or Invalid data directory:'
-                           '{:s}'.format(self.args.raw_path))
+                           '{:s}'.format(self.args.folder))
 
         # print(self.data_classifier.nights_dict)
         for night in self.data_classifier.nights_dict:
@@ -266,54 +267,54 @@ class MainApp(object):
         """
         self.log.debug("Starting argument checks.")
         # check if raw folder exist
-        if os.path.isdir(self.args.raw_path):
-            self.args.raw_path = os.path.abspath(self.args.raw_path)
+        if os.path.isdir(self.args.folder):
+            self.args.folder = os.path.abspath(self.args.folder)
             self.log.debug("Raw data folder \"{:s}\" exists."
-                           "".format(os.path.abspath(self.args.raw_path)))
+                           "".format(os.path.abspath(self.args.folder)))
         else:
             log.critical("Raw data folder \"{:s}\" doesn't "
-                         "exist".format(self.args.raw_path))
+                         "exist".format(self.args.folder))
             return False
 
-        raw_folder_content = glob.glob(os.path.join(self.args.raw_path,
+        raw_folder_content = glob.glob(os.path.join(self.args.folder,
                                                     '*fits'))
 
         if any(['.fits' in _item for _item in raw_folder_content]):
             self.log.info("Found {:d} fits files in {:s}."
                           "".format(len(raw_folder_content),
-                                    self.args.raw_path))
+                                    self.args.folder))
         else:
             self.log.critical("Raw data folder \"{:s}\" does not contain any "
-                              "'*.fits' files.".format(self.args.raw_path))
+                              "'*.fits' files.".format(self.args.folder))
             return False
 
         # check start
-        if self.args.red_path == './RED':
+        if self.args.save_to == './RED':
 
             self.log.info('No special reduced data path defined. '
                           'Proceeding with defaults.')
 
-            if self.args.raw_path not in self.args.red_path:
-                self.args.red_path = os.path.join(self.args.raw_path, 'RED')
+            if self.args.folder not in self.args.save_to:
+                self.args.save_to = os.path.join(self.args.folder, 'RED')
                 self.log.debug("Folder for reduced data defined to: {:s}"
-                               "".format(self.args.red_path))
+                               "".format(self.args.save_to))
 
-        if os.path.isdir(self.args.red_path):
+        if os.path.isdir(self.args.save_to):
             try:
-                _directory_content = os.listdir(self.args.red_path)
+                _directory_content = os.listdir(self.args.save_to)
             except PermissionError as error:
                 self.log.debug(error)
                 self.log.critical("Unable to read on directory {:s}"
-                                  "".format(self.args.red_path))
+                                  "".format(self.args.save_to))
                 sys.exit()
 
             if _directory_content != []:
                 self.log.warning('Folder for reduced data is not empty')
                 if self.args.auto_clean:
                     self.log.info("--auto-clean is set")
-                    for _file in os.listdir(self.args.red_path):
+                    for _file in os.listdir(self.args.save_to):
                         try:
-                            _to_delete = os.path.join(self.args.red_path, _file)
+                            _to_delete = os.path.join(self.args.save_to, _file)
 
                             os.unlink(_to_delete)
 
@@ -326,18 +327,18 @@ class MainApp(object):
                                              '{:s}'.format(_file))
 
                             try:
-                                shutil.rmtree(os.path.join(self.args.red_path,
+                                shutil.rmtree(os.path.join(self.args.save_to,
                                                            _file))
                             except PermissionError as error:
                                 self.log.debug(error)
                                 self.log.critical("Unable to delete files on "
                                                   "directory {:s}"
-                                                  "".format(self.args.red_path))
+                                                  "".format(self.args.save_to))
                                 self.log.info("Please check permissions")
                                 return False
 
                     self.log.info('Cleaned Reduced data directory:'
-                                  ' {:s}'.format(self.args.red_path))
+                                  ' {:s}'.format(self.args.save_to))
                 else:
                     self.log.error('Please define another folder using '
                                    '--red-path or or use --auto-clean to '
@@ -345,15 +346,15 @@ class MainApp(object):
                     return False
             else:
                 self.log.info("Folder for reduced data is empty (good).")
-                self.args.red_path = os.path.abspath(self.args.red_path)
-                self.log.debug(os.path.abspath(self.args.red_path))
+                self.args.save_to = os.path.abspath(self.args.save_to)
+                self.log.debug(os.path.abspath(self.args.save_to))
         else:
             try:
                 self.log.warning("Reduction folder doesn't exist.")
-                os.mkdir(os.path.abspath(self.args.red_path))
+                os.mkdir(os.path.abspath(self.args.save_to))
                 self.log.info('Created directory for reduced data.')
                 self.log.info("New directory: {:s}".format(
-                    os.path.abspath(self.args.red_path)))
+                    os.path.abspath(self.args.save_to)))
             except OSError as error:
                 self.log.error(error)
                 # check ends

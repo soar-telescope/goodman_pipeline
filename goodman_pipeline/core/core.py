@@ -2124,6 +2124,7 @@ def write_fits(ccd,
 
     """
     assert isinstance(ccd, CCDData)
+    print(full_path)
     assert os.path.isdir(os.path.dirname(full_path))
 
     # Original File Name

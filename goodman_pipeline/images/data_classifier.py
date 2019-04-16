@@ -26,7 +26,7 @@ class DataClassifier(object):
 
         """
         self.log = logging.getLogger(__name__)
-        self.raw_path = None
+        self.folder = None
         self.nights_dict = None
         self.instrument = None
         self.image_collection = None
@@ -37,33 +37,33 @@ class DataClassifier(object):
         """String representation of the information contained."""
         return str("Raw Path: {:s}\n"
                    "Instrument: {:s} Camera\n"
-                   "Observing Technique: {:s}".format(self.raw_path,
+                   "Observing Technique: {:s}".format(self.folder,
                                                       self.instrument,
                                                       self.technique))
 
-    def __call__(self, raw_path):
+    def __call__(self, folder):
         """Call method for the DataClassifier class
 
         This method call specific method that define all the attributes of the
         class. The intention is to define the instrument and technique in use.
 
         Args:
-            raw_path (str): Full Path to raw data
+            folder (str): Full Path to raw data
 
         """
-        self.raw_path = raw_path
+        self.folder = folder
 
         # define the ImageFileCollection instance right away.
 
         try:
-            ifc = ImageFileCollection(self.raw_path)
+            ifc = ImageFileCollection(self.folder)
 
         except VerifyError as error:  # pragma: no cover
             self.log.error("Raised VerifyError: {:}".format(error))
             self.log.critical("Some keywords are not FITS compliant. Trying "
                               "to fix the headers.")
 
-            fix_keywords(path=self.raw_path)
+            fix_keywords(path=self.folder)
 
             self.log.info("Headers have been fixed, please rerun the pipeline!")
             sys.exit()
@@ -74,7 +74,7 @@ class DataClassifier(object):
             self.image_collection.obstype != 'BIAS']
 
         self.nights_dict = {}
-        self.log.debug('Raw path: {:s}'.format(self.raw_path))
+        self.log.debug('Raw path: {:s}'.format(self.folder))
 
         self._get_instrument()
         if self.instrument is not None:
@@ -95,14 +95,14 @@ class DataClassifier(object):
         if self.instrument is not None and self.technique is not None:
 
             # folder name is used as key for the dictionary
-            night = os.path.basename(self.raw_path)
+            night = os.path.basename(self.folder)
 
-            self.nights_dict[night] = {'full_path': self.raw_path,
+            self.nights_dict[night] = {'full_path': self.folder,
                                        'instrument': self.instrument,
                                        'technique': self.technique}
         else:
             self.log.error('Failed to determine Instrument or Technique '
-                           'for the night: {:s}'.format(self.raw_path))
+                           'for the night: {:s}'.format(self.folder))
 
     def _get_instrument(self):
         """Identify Goodman's Camera

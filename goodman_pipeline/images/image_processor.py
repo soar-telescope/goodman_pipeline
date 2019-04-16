@@ -170,7 +170,7 @@ class ImageProcessor(object):
             if group is not None:
                 # print(self.bias[0])
                 image_list = group[0]['file'].tolist()
-                sample_image = os.path.join(self.args.raw_path,
+                sample_image = os.path.join(self.args.folder,
                                             random.choice(image_list))
                 ccd = read_fits(sample_image, technique=technique)
 
@@ -241,7 +241,7 @@ class ImageProcessor(object):
             if group is not None:
                 # 'group' is a list
                 image_list = group[0]['file'].tolist()
-                sample_image = os.path.join(self.args.raw_path,
+                sample_image = os.path.join(self.args.folder,
                                             random.choice(image_list))
                 self.log.debug('Overscan Sample File ' + sample_image)
                 ccd = CCDData.read(sample_image, unit=u.adu)
@@ -327,7 +327,7 @@ class ImageProcessor(object):
 
         """
         bias_file_list = bias_group.file.tolist()
-        default_bias_name = os.path.join(self.args.red_path, 'master_bias.fits')
+        default_bias_name = os.path.join(self.args.save_to, 'master_bias.fits')
         search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
         n_bias = len(glob.glob(search_bias_name))
         if n_bias > 0:
@@ -342,7 +342,7 @@ class ImageProcessor(object):
         master_bias_list = []
         self.log.info('Creating master bias')
         for image_file in bias_file_list:
-            image_full_path = os.path.join(self.args.raw_path, image_file)
+            image_full_path = os.path.join(self.args.folder, image_file)
             ccd = read_fits(image_full_path, technique=self.technique)
             self.log.debug('Loading bias image: ' + image_full_path)
             if self.technique == 'Spectroscopy':
@@ -403,7 +403,7 @@ class ImageProcessor(object):
         self.log.info('Creating Master Flat')
         for flat_file in flat_file_list:
             # print(f_file)
-            image_full_path = os.path.join(self.args.raw_path, flat_file)
+            image_full_path = os.path.join(self.args.folder, flat_file)
             ccd = read_fits(image_full_path, technique=self.technique)
             self.log.debug('Loading flat image: ' + image_full_path)
             if master_flat_name is None:
@@ -505,7 +505,7 @@ class ImageProcessor(object):
             files.
 
         """
-        master_flat_name = os.path.join(self.args.red_path, 'master_flat')
+        master_flat_name = os.path.join(self.args.save_to, 'master_flat')
         sunset = datetime.datetime.strptime(self.sun_set,
                                             "%Y-%m-%dT%H:%M:%S.%f")
 
@@ -635,7 +635,7 @@ class ImageProcessor(object):
                 random_image = random.choice(object_list)
 
                 # define random image full path
-                random_image_full = os.path.join(self.args.raw_path,
+                random_image_full = os.path.join(self.args.folder,
                                                  random_image)
 
                 # read the random chosen file
@@ -651,7 +651,7 @@ class ImageProcessor(object):
                     # load the best flat based on the name previously defined
                     master_flat, master_flat_name = \
                         get_best_flat(flat_name=master_flat_name,
-                                      path=self.args.red_path)
+                                      path=self.args.save_to)
                     if (master_flat is None) and (master_flat_name is None):
                         self.log.critical('Failed to obtain master flat')
 
@@ -688,7 +688,7 @@ class ImageProcessor(object):
                 self.out_prefix = ''
 
                 # define image full path
-                image_full_path = os.path.join(self.args.raw_path,
+                image_full_path = os.path.join(self.args.folder,
                                                science_image)
 
                 # load image
@@ -699,7 +699,7 @@ class ImageProcessor(object):
                 self.out_prefix += 'o_'
 
                 if save_all:
-                    full_path = os.path.join(self.args.red_path,
+                    full_path = os.path.join(self.args.save_to,
                                              self.out_prefix + science_image)
 
                     # ccd.write(full_path, clobber=True)
@@ -721,7 +721,7 @@ class ImageProcessor(object):
 
                     if save_all:
                         full_path = os.path.join(
-                            self.args.red_path,
+                            self.args.save_to,
                             self.out_prefix + science_image)
 
                         # ccd.write(full_path, clobber=True)
@@ -736,7 +736,7 @@ class ImageProcessor(object):
 
                     if save_all:
                         full_path = os.path.join(
-                            self.args.red_path,
+                            self.args.save_to,
                             self.out_prefix + science_image)
 
                         # ccd.write(full_path, clobber=True)
@@ -757,7 +757,7 @@ class ImageProcessor(object):
 
                     if save_all:
                         full_path = os.path.join(
-                            self.args.red_path,
+                            self.args.save_to,
                             self.out_prefix + science_image)
 
                         # ccd.write(full_path, clobber=True)
@@ -796,7 +796,7 @@ class ImageProcessor(object):
 
                     if save_all:
                         full_path = os.path.join(
-                            self.args.red_path,
+                            self.args.save_to,
                             self.out_prefix + science_image)
 
                         # ccd.write(full_path, clobber=True)
@@ -806,7 +806,7 @@ class ImageProcessor(object):
                     ccd=ccd,
                     image_name=science_image,
                     out_prefix=self.out_prefix,
-                    red_path=self.args.red_path,
+                    save_to=self.args.save_to,
                     dcr_par=self.args.dcr_par_dir,
                     keep_files=self.args.keep_cosmic_files,
                     method=self.args.clean_cosmic,
@@ -840,7 +840,7 @@ class ImageProcessor(object):
                     print(object_group, len(all_object_image))
 
                     combine_data(all_object_image,
-                                 dest_path=self.args.red_path,
+                                 dest_path=self.args.save_to,
                                  prefix=self.out_prefix,
                                  save=True)
                 elif len(all_object_image) == 1:
@@ -856,7 +856,7 @@ class ImageProcessor(object):
                     # comp_group = object_comp_group[
                     #     object_comp_group.obstype == "COMP"]
                     combine_data(all_comp_image,
-                                 dest_path=self.args.red_path,
+                                 dest_path=self.args.save_to,
                                  prefix=self.out_prefix,
                                  save=True)
                 else:
@@ -885,7 +885,7 @@ class ImageProcessor(object):
         """
         # pick a random image in order to get a header
         random_image = random.choice(imaging_group.file.tolist())
-        path_random_image = os.path.join(self.args.raw_path, random_image)
+        path_random_image = os.path.join(self.args.folder, random_image)
         sample_file = CCDData.read(path_random_image, unit=u.adu)
 
         master_flat_name = self.name_master_flats(header=sample_file.header,
@@ -896,7 +896,7 @@ class ImageProcessor(object):
 
         master_flat, master_flat_name = get_best_flat(
             flat_name=master_flat_name,
-            path=self.args.red_path)
+            path=self.args.save_to)
 
         if master_flat is not None:
             for image_file in imaging_group.file.tolist():
@@ -904,7 +904,7 @@ class ImageProcessor(object):
                 # start with an empty prefix
                 self.out_prefix = ''
 
-                image_full_path = os.path.join(self.args.raw_path, image_file)
+                image_full_path = os.path.join(self.args.folder, image_file)
                 ccd = read_fits(image_full_path, technique=self.technique)
 
                 # Trim image
@@ -938,14 +938,14 @@ class ImageProcessor(object):
                 if self.args.clean_cosmic:
                     ccd = astroscrappy_lacosmic(
                         ccd=ccd,
-                        red_path=self.args.red_path,
+                        save_to=self.args.save_to,
                         save_mask=self.args.keep_cosmic_files)
 
                     self.out_prefix = 'c' + self.out_prefix
                 else:
                     print('Clean Cosmic ' + str(self.args.clean_cosmic))
 
-                final_name = os.path.join(self.args.red_path,
+                final_name = os.path.join(self.args.save_to,
                                           self.out_prefix + image_file)
                 # ccd.write(final_name, clobber=True)
                 write_fits(ccd=ccd, full_path=final_name)
