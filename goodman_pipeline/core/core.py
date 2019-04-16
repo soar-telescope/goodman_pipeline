@@ -370,7 +370,13 @@ def classify_spectroscopic_data(path, search_pattern):
                 'filter',
                 'filter2',
                 'gain',
-                'rdnoise']
+                'rdnoise',
+                'lamp_hga',
+                'lamp_ne',
+                'lamp_ar',
+                'lamp_fe',
+                'lamp_cu'
+                ]
 
     ifc = ImageFileCollection(path, keywords=keywords, filenames=file_list)
 
@@ -2673,6 +2679,7 @@ class ReferenceData(object):
         Returns:
 
         """
+        print(comp_group.to_string())
         lamps = comp_group.groupby(['grating',
                                     'grt_targ',
                                     'cam_targ',
