@@ -1,3 +1,4 @@
+pymongo
 astroscrappy
 recommonmark
 numpy

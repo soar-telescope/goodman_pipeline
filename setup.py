@@ -132,6 +132,7 @@ setup(
     packages=['goodman_pipeline',
               'goodman_pipeline.core',
               'goodman_pipeline.images',
+              'goodman_pipeline.reduce',
               'goodman_pipeline.spectroscopy',
               'goodman_pipeline.wcs', ],
 
@@ -145,7 +146,8 @@ setup(
                                        'data/test_data/master_flat/*',
                                        'data/test_data/wcs_data/*']},
 
-    scripts=['goodman_pipeline/scripts/redccd',
+    scripts=['goodman_pipeline/scripts/reduce',
+             'goodman_pipeline/scripts/redccd',
              'goodman_pipeline/scripts/redspec', ],
 
    )
