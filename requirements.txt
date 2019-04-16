@@ -5,6 +5,7 @@ pandas
 ccdproc
 coveralls
 astroplan
+qt5
 pyqt5
 matplotlib
 scipy
