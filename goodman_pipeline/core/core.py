@@ -370,7 +370,13 @@ def classify_spectroscopic_data(path, search_pattern):
                 'filter',
                 'filter2',
                 'gain',
-                'rdnoise']
+                'rdnoise',
+                'lamp_hga',
+                'lamp_ne',
+                'lamp_ar',
+                'lamp_fe',
+                'lamp_cu'
+                ]
 
     ifc = ImageFileCollection(path, keywords=keywords, filenames=file_list)
 
@@ -3134,9 +3140,6 @@ class IdentifySpectroscopicTargets(object):
         log.debug('Serial binning: {:d}'.format(self.serial_binning))
 
         self.order = int(round(float(self.slit_size) / (0.15 * self.serial_binning)))
-        print("ORDER")
-        print(self.order)
-
 
         if self.plots:  # pragma: no cover
             z1 = np.mean(self.ccd.data) - 0.5 * np.std(self.ccd.data)
