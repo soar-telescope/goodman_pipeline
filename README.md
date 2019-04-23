@@ -3,6 +3,7 @@
 [![Build Status](https://travis-ci.org/soar-telescope/goodman_pipeline.svg?branch=master)](https://travis-ci.org/soar-telescope/goodman_pipeline)
 [![Coverage Status](https://coveralls.io/repos/github/soar-telescope/goodman_pipeline/badge.svg?branch=master)](https://coveralls.io/github/soar-telescope/goodman_pipeline?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/goodman/badge/?version=latest)](http://goodman.readthedocs.io/en/latest/?badge=latest)
+[![pypi](https://img.shields.io/pypi/v/goodman_pipeline.svg?style=flat)](https://pypi.org/project/goodman-pipeline/)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
 ## Overview
