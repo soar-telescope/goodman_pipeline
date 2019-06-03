@@ -32,6 +32,12 @@ def create_version_py(packagename, version, source_dir='.'):
     with open(version_py, 'w') as f:
         f.write(version_str)
 
+
+# read content from README.md
+with open(os.path.join(here, 'README.md')) as f:
+    long_description = f.read()
+
+
 # Get configuration information from setup.cfg
 try:
     from ConfigParser import ConfigParser
@@ -52,7 +58,9 @@ LICENSE = metadata['license']
 
 DESCRIPTION = metadata['description']
 
-LONG_DESCRIPTION = metadata['long_description']
+LONG_DESCRIPTION = long_description
+
+LONG_DESCRIPTION_CONTENT_TYPE = 'text/markdown'
 
 AUTHOR = metadata['author']
 
@@ -76,6 +84,8 @@ setup(
     description=DESCRIPTION,
 
     long_description=LONG_DESCRIPTION,
+
+    long_description_content_type=LONG_DESCRIPTION_CONTENT_TYPE,
 
     # The project's main homepage.
     url='https://github.com/soar-telescope/goodman_pipeline',
