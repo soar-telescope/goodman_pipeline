@@ -65,6 +65,8 @@ AUTHOR = metadata['author']
 
 AUTHOR_EMAIL = metadata['author_email']
 
+INSTALL_REQUIRES = metadata['install_requires'].split()
+
 # freezes version information in version.py
 create_version_py(PACKAGENAME, VERSION)
 
@@ -147,6 +149,8 @@ setup(
                                        'data/dcr-source/dcr/*',
                                        'data/test_data/master_flat/*',
                                        'data/test_data/wcs_data/*']},
+
+    install_requires=INSTALL_REQUIRES,
 
     scripts=['goodman_pipeline/scripts/redccd',
              'goodman_pipeline/scripts/redspec', ],
