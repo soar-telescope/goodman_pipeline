@@ -12,9 +12,13 @@ import argparse
 import glob
 import logging
 import matplotlib
-matplotlib.use('Qt5Agg')
 
 log = logging.getLogger(__name__)
+
+try:
+    matplotlib.use('Qt5Agg')
+except ImportError as error:
+    log.warning(error)
 
 __version__ = __import__('goodman_pipeline').__version__
 
