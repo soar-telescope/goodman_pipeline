@@ -7,3 +7,5 @@ __pycache__/*
 .ipynb_checkpoints/*
 files.txt
 docs/_build/*
+goodman_pipeline/data/dcr-source/dcr
+goodman_pipeline/data/dcr-source/*.o
