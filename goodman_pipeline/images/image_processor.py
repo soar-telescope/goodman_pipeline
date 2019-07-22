@@ -26,6 +26,8 @@ from ..core import (astroscrappy_lacosmic,
 
 from ..core import SaturationValues, SpectroscopicMode
 
+log = logging.getLogger(__name__)
+
 
 class ImageProcessor(object):
     """Image processing class
@@ -66,7 +68,7 @@ class ImageProcessor(object):
         self.trim_section = self.define_trim_section(
             technique=self.technique)
         self.overscan_region = self.get_overscan_region()
-        self.saturation_values = SaturationValues()
+
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
         self.master_bias_name = None
@@ -107,7 +109,8 @@ class ImageProcessor(object):
                             self.log.info('Processing Imaging Science Data')
                             self.process_imaging_science(sub_group)
 
-    def _is_file_saturated(self, ccd):
+    @staticmethod
+    def _is_file_saturated(ccd, threshold):
         """Detects a saturated image
 
         It counts the number of pixels above the saturation level, then finds
@@ -117,26 +120,28 @@ class ImageProcessor(object):
 
         Args:
             ccd (CCDData): Image to be tested for saturation
+            threshold (float): Percentage of saturated pixels allowed. Default 1.
 
         Returns:
             True for saturated and False for non-saturated
 
         """
 
+        saturation_values = SaturationValues()
+
         pixels_above_saturation = np.count_nonzero(
             ccd.data[np.where(
-                ccd.data > self.saturation_values.get_saturation_value(
+                ccd.data > saturation_values.get_saturation_value(
                     ccd=ccd))])
 
         total_pixels = np.count_nonzero(ccd.data)
 
         saturated_percent = (pixels_above_saturation * 100.) / total_pixels
 
-        if saturated_percent >= float(self.args.saturation_threshold):
-            self.log.warning(
+        if saturated_percent >= float(threshold):
+            log.warning(
                 "The current image has more than {:.2f} percent "
-                "of pixels above saturation level".format(
-                float(self.args.saturation_threshold)))
+                "of pixels above saturation level".format(float(threshold)))
             return True
         else:
             return False
@@ -443,7 +448,8 @@ class ImageProcessor(object):
             else:
                 self.log.error('Unknown observation technique: ' +
                                self.technique)
-            if self._is_file_saturated(ccd=ccd):
+            if self._is_file_saturated(ccd=ccd,
+                                       threshold=self.args.saturation_threshold):
                 self.log.warning('Removing saturated image {:s}. '
                                  'Use --saturation to change saturation '
                                  'level'.format(flat_file))

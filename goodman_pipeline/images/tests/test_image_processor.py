@@ -33,12 +33,16 @@ class ImageProcessorTest(TestCase):
 
     def test_file_is_saturated(self):
         self.ccd.data[:10, :10] = self.half_full_well + 1
-        self.assertTrue(self.image_processor._is_file_saturated(ccd=self.ccd))
+        self.assertTrue(self.image_processor._is_file_saturated(
+            ccd=self.ccd,
+            threshold=1))
 
     def test_file_is_not_saturated(self):
         self.ccd.data[:10, :10] = self.half_full_well + 1
         self.ccd.data[0, 0] = 1
-        self.assertFalse(self.image_processor._is_file_saturated(ccd=self.ccd))
+        self.assertFalse(self.image_processor._is_file_saturated(
+            ccd=self.ccd,
+            threshold=1))
 
 
 
