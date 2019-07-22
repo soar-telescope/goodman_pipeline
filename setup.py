@@ -14,7 +14,6 @@ import os
 # Always prefer setuptools over distutils
 from setuptools import setup, find_packages
 
-from sphinx.setup_command import BuildDoc
 # To use a consistent encoding
 from codecs import open
 
@@ -66,12 +65,10 @@ AUTHOR = metadata['author']
 
 AUTHOR_EMAIL = metadata['author_email']
 
+INSTALL_REQUIRES = metadata['install_requires'].split()
+
 # freezes version information in version.py
 create_version_py(PACKAGENAME, VERSION)
-
-
-cmdclassd = {'build_sphinx': BuildDoc,
-             'build_docs': BuildDoc}
 
 setup(
     name=metadata['package_name'],
@@ -94,9 +91,7 @@ setup(
     author=u'Simon Torres R., '
            u'Bruno Quint, '
            u'Cesar Briceño, '
-           u'David Sanmartin, '
-           ,
-    cmdclass=cmdclassd,
+           u'David Sanmartin, ',
 
     author_email='storres@ctio.noao.edu, bquint@ctio.noao.edu, '
                  'cbriceno@ctio.noao.edu',
@@ -154,6 +149,8 @@ setup(
                                        'data/dcr-source/dcr/*',
                                        'data/test_data/master_flat/*',
                                        'data/test_data/wcs_data/*']},
+
+    install_requires=INSTALL_REQUIRES,
 
     scripts=['goodman_pipeline/scripts/redccd',
              'goodman_pipeline/scripts/redspec', ],
