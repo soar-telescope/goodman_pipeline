@@ -67,7 +67,7 @@ class ImageProcessor(object):
         self.queue = None
         self.trim_section = self.define_trim_section(
             technique=self.technique)
-        self.overscan_region = self.get_overscan_region()
+        self.overscan_region = None
 
         self.spec_mode = SpectroscopicMode()
         self.master_bias = None
@@ -89,6 +89,14 @@ class ImageProcessor(object):
                       self.data_groups,
                       self.spec_groups]:
             if group is not None:
+                image_list = group[0]['file'].tolist()
+                sample_image = os.path.join(self.args.raw_path,
+                                            random.choice(image_list))
+
+                self.overscan_region = self.get_overscan_region(
+                    sample_image=sample_image,
+                    technique=self.technique)
+
                 for sub_group in group:
                     group_obstype = sub_group.obstype.unique()
 
@@ -216,7 +224,8 @@ class ImageProcessor(object):
                 self.log.info('Trim Section: %s', trim_section)
                 return trim_section
 
-    def get_overscan_region(self):
+    @staticmethod
+    def get_overscan_region(sample_image, technique):
         """Get the right overscan region for spectroscopy
 
         It works for the following ROI:
@@ -232,6 +241,11 @@ class ImageProcessor(object):
             The regions are 1-based i.e. different to Python convention.
             For Imaging there is no overscan region.
 
+        Args:
+              sample_image (str): Full path to randomly chosen image.
+              technique (str): Observing technique, either `Spectroscopy` or
+              `Imaging`
+
 
         Returns:
             overscan_region (str) Region for overscan in the format
@@ -239,86 +253,78 @@ class ImageProcessor(object):
                point of the overscan region.
 
         """
-        for group in [self.bias,
-                      self.day_flats,
-                      self.dome_flats,
-                      self.sky_flats,
-                      self.data_groups]:
-            if group is not None:
-                # 'group' is a list
-                image_list = group[0]['file'].tolist()
-                sample_image = os.path.join(self.args.raw_path,
-                                            random.choice(image_list))
-                self.log.debug('Overscan Sample File ' + sample_image)
-                ccd = CCDData.read(sample_image, unit=u.adu)
 
-                # Image height - spatial direction
-                spatial_length, dispersion_length = ccd.data.shape
+        assert os.path.isabs(os.path.dirname(sample_image))
+        assert os.path.isfile(sample_image)
 
-                # Image width - spectral direction
-                # w = ccd.data.shape[1]
+        log.debug('Overscan Sample File ' + sample_image)
+        ccd = CCDData.read(sample_image, unit=u.adu)
 
-                # Take the binnings
-                serial_binning, parallel_binning = \
-                    [int(x) for x in ccd.header['CCDSUM'].split()]
+        # Image height - spatial direction
+        spatial_length, dispersion_length = ccd.data.shape
 
-                if self.technique == 'Spectroscopy':
-                    self.log.info('Overscan regions has been tested for ROI '
-                                  'Spectroscopic 1x1, 2x2 and 3x3')
+        # Image width - spectral direction
+        # w = ccd.data.shape[1]
 
-                    # define l r b and t to avoid local variable might be
-                    # defined before assignment warning
-                    low_lim_spectral,\
-                        high_lim_spectral,\
-                        low_lim_spatial,\
-                        high_lim_spatial = [None] * 4
-                    if self.instrument == 'Red':
-                        # for red camera it is necessary to eliminate the first
-                        # rows/columns (depends on the point of view) because
-                        # they come with an abnormal high signal. Usually the
-                        # first 5 pixels. In order to find the corresponding
-                        # value for the subsequent binning divide by the
-                        # binning size.
-                        # The numbers 6 and 49 where obtained from visual
-                        # inspection
+        # Take the binnings
+        serial_binning, parallel_binning = \
+            [int(x) for x in ccd.header['CCDSUM'].split()]
 
-                        # left
-                        low_lim_spectral = int(np.ceil(6. / serial_binning))
-                        # right
-                        high_lim_spectral = int(49. / serial_binning)
-                        # bottom
-                        low_lim_spatial = 1
-                        # top
-                        high_lim_spatial = spatial_length
-                    elif self.instrument == 'Blue':
-                        # 16 is the length of the overscan region with no
-                        # binning.
+        if technique == 'Spectroscopy':
+            log.info('Overscan regions has been tested for ROI '
+                          'Spectroscopic 1x1, 2x2 and 3x3')
 
-                        # left
-                        low_lim_spectral = 1
-                        # right
-                        high_lim_spectral = int(16. / serial_binning)
-                        # bottom
-                        low_lim_spatial = 1
-                        # top
-                        high_lim_spatial = spatial_length
+            # define l r b and t to avoid local variable might be
+            # defined before assignment warning
+            low_lim_spectral,\
+                high_lim_spectral,\
+                low_lim_spatial,\
+                high_lim_spatial = [None] * 4
+            if ccd.header['INSTCONF'] == 'Red':
+                # for red camera it is necessary to eliminate the first
+                # rows/columns (depends on the point of view) because
+                # they come with an abnormal high signal. Usually the
+                # first 5 pixels. In order to find the corresponding
+                # value for the subsequent binning divide by the
+                # binning size.
+                # The numbers 6 and 49 where obtained from visual
+                # inspection
 
-                    overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(
-                        low_lim_spectral,
-                        high_lim_spectral,
-                        low_lim_spatial,
-                        high_lim_spatial)
+                # left
+                low_lim_spectral = int(np.ceil(6. / serial_binning))
+                # right
+                high_lim_spectral = int(49. / serial_binning)
+                # bottom
+                low_lim_spatial = 1
+                # top
+                high_lim_spatial = spatial_length
+            elif ccd.header['INSTCONF'] == 'Blue':
+                # 16 is the length of the overscan region with no
+                # binning.
 
-                elif self.technique == 'Imaging':
-                    self.log.warning("Imaging mode doesn't have overscan "
-                                     "region. Use bias instead.")
-                    if self.bias is None:
-                        self.log.warning('Bias are needed for Imaging mode')
-                    overscan_region = None
-                else:
-                    overscan_region = None
-                self.log.info('Overscan Region: %s', overscan_region)
-                return overscan_region
+                # left
+                low_lim_spectral = 1
+                # right
+                high_lim_spectral = int(16. / serial_binning)
+                # bottom
+                low_lim_spatial = 1
+                # top
+                high_lim_spatial = spatial_length
+
+            overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(
+                low_lim_spectral,
+                high_lim_spectral,
+                low_lim_spatial,
+                high_lim_spatial)
+
+        elif technique == 'Imaging':
+            log.warning("Imaging mode doesn't have overscan "
+                        "region. Use bias instead.")
+            overscan_region = None
+        else:
+            overscan_region = None
+        log.info('Overscan Region: %s', overscan_region)
+        return overscan_region
 
     def create_master_bias(self, bias_group):
         """Create Master Bias
