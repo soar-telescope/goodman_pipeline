@@ -65,8 +65,7 @@ class ImageProcessor(object):
         self.evening_twilight = data_container.evening_twilight
         self.pixel_scale = 0.15 * u.arcsec
         self.queue = None
-        self.trim_section = self.define_trim_section(
-            technique=self.technique)
+        self.trim_section = None
         self.overscan_region = None
 
         self.spec_mode = SpectroscopicMode()
@@ -92,6 +91,10 @@ class ImageProcessor(object):
                 image_list = group[0]['file'].tolist()
                 sample_image = os.path.join(self.args.raw_path,
                                             random.choice(image_list))
+
+                self.trim_section = self.define_trim_section(
+                    sample_image=sample_image,
+                    technique=self.technique)
 
                 self.overscan_region = self.get_overscan_region(
                     sample_image=sample_image,
@@ -154,7 +157,8 @@ class ImageProcessor(object):
         else:
             return False
 
-    def define_trim_section(self, technique=None):
+    @staticmethod
+    def define_trim_section(sample_image, technique):
         """Get the initial trim section
 
         The initial trim section is usually defined in the header with the
@@ -163,6 +167,7 @@ class ImageProcessor(object):
         binning and so on.
 
         Args:
+            sample_image (str): Full path to sample image.
             technique (str): The name of the technique, the options are:
                 Imaging or Spectroscopy.
 
@@ -171,58 +176,51 @@ class ImageProcessor(object):
 
         """
 
-        assert technique is not None
+        assert os.path.isabs(os.path.dirname(sample_image))
+        assert os.path.isfile(sample_image)
+
         trim_section = None
         # TODO (simon): Consider binning and possibly ROIs for trim section
-        self.log.warning('Determining trim section. Assuming you have only one '
-                         'kind of data in this folder')
-        for group in [self.bias,
-                      self.day_flats,
-                      self.dome_flats,
-                      self.sky_flats,
-                      self.data_groups]:
-            if group is not None:
-                # print(self.bias[0])
-                image_list = group[0]['file'].tolist()
-                sample_image = os.path.join(self.args.raw_path,
-                                            random.choice(image_list))
-                ccd = read_fits(sample_image, technique=technique)
+        log.warning('Determining trim section. Assuming you have only one '
+                    'kind of data in this folder')
 
-                # serial binning - dispersion binning
-                # parallel binngin - spatial binning
-                spatial_length, dispersion_length = ccd.data.shape
-                serial_binning, \
-                    parallel_binning = [int(x) for x
-                                        in ccd.header['CCDSUM'].split()]
+        ccd = read_fits(sample_image, technique=technique)
 
-                # Trim section is valid for Blue and Red Camera Binning 1x1 and
-                # Spectroscopic ROI
-                if technique == 'Spectroscopy':
+        # serial binning - dispersion binning
+        # parallel binning - spatial binning
+        spatial_length, dispersion_length = ccd.data.shape
+        serial_binning, \
+            parallel_binning = [int(x) for x
+                                in ccd.header['CCDSUM'].split()]
 
-                    # left
-                    low_lim_spectral = int(np.ceil(51. / serial_binning))
+        # Trim section is valid for Blue and Red Camera Binning 1x1 and
+        # Spectroscopic ROI
+        if technique == 'Spectroscopy':
 
-                    # right
-                    high_lim_spectral = int(4110 / serial_binning)
+            # left
+            low_lim_spectral = int(np.ceil(51. / serial_binning))
 
-                    # bottom
-                    low_lim_spatial = 2
+            # right
+            high_lim_spectral = int(4110 / serial_binning)
 
-                    #top
-                    # t = int(1896 / parallel_binning)
-                    # TODO (simon): Need testing
-                    # trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
-                    trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(
-                        low_lim_spectral,
-                        high_lim_spectral,
-                        low_lim_spatial,
-                        spatial_length)
+            # bottom
+            low_lim_spatial = 2
 
-                elif technique == 'Imaging':
-                    trim_section = ccd.header['TRIMSEC']
+            #top
+            # t = int(1896 / parallel_binning)
+            # TODO (simon): Need testing
+            # trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
+            trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(
+                low_lim_spectral,
+                high_lim_spectral,
+                low_lim_spatial,
+                spatial_length)
 
-                self.log.info('Trim Section: %s', trim_section)
-                return trim_section
+        elif technique == 'Imaging':
+            trim_section = ccd.header['TRIMSEC']
+
+        log.info('Trim Section: %s', trim_section)
+        return trim_section
 
     @staticmethod
     def get_overscan_region(sample_image, technique):
