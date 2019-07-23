@@ -29,6 +29,15 @@ from ..core import SaturationValues, SpectroscopicMode
 log = logging.getLogger(__name__)
 
 
+def validate_ccd_region(ccd_region, regexp='^\[\d*:\d*,\d*:\d*\]$'):
+    compiled_reg_exp = re.compile(regexp)
+    if not compiled_reg_exp.match(ccd_region):
+        raise SyntaxError("ccd regions must be defined in the format "
+                          "'[x1:x2,y1:y2]'")
+    else:
+        return True
+
+
 class ImageProcessor(object):
     """Image processing class
 
