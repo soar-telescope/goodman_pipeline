@@ -117,7 +117,16 @@ class ImageProcessor(object):
                             not self.args.ignore_bias:
 
                         self.log.debug('Creating Master Bias')
-                        self.create_master_bias(sub_group)
+                        bias_files = sub_group.file.tolist()
+                        self.master_bias, self.master_bias_name = \
+                            self.create_master_bias(
+                                bias_files=bias_files,
+                                raw_data=self.args.raw_path,
+                                reduced_data=self.args.red_path,
+                                technique=self.technique,
+                                overscan_region=self.overscan_region,
+                                trim_section=self.trim_section)
+
                     elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
                         self.log.debug('Create Master FLATS')
                         self.create_master_flats(sub_group)
@@ -333,7 +342,13 @@ class ImageProcessor(object):
         log.info('Overscan Region: %s', overscan_region)
         return overscan_region
 
-    def create_master_bias(self, bias_group):
+    @staticmethod
+    def create_master_bias(bias_files,
+                           raw_data,
+                           reduced_data,
+                           technique,
+                           overscan_region,
+                           trim_section):
         """Create Master Bias
 
         Given a :class:`~pandas.DataFrame` object that contains a list of compatible bias.
@@ -341,59 +356,75 @@ class ImageProcessor(object):
         and 3-sigma clipping.
 
         Args:
-            bias_group (object): :class:`~pandas.DataFrame` instance that contains a list
-                of bias images compatible with each other.
+            bias_files (list): List of all bias files to be combined. They have
+            to be compatible with each other as no check is done in this method.
+            raw_data (str): Full path to raw data location.
+            reduced_data (str): Full path to were reduced data will reside.
+            technique (str): Name of observing technique. Imaging or
+            Spectroscopy.
+            overscan_region (str): Defines the area to be used to estimate the
+            overscan region for overscan correction. Should be in the format.
+            `[x1:x2.,y1:y2]`.
+            trim_section (str): Defines the area to be used after trimming
+            unusable selected parts (edges). In the format `[x1:x2.,y1:y2]`.
 
         """
-        bias_file_list = bias_group.file.tolist()
-        default_bias_name = os.path.join(self.args.red_path, 'master_bias.fits')
+        assert isinstance(bias_files, list)
+
+        try:
+            validate_ccd_region(ccd_region=overscan_region)
+            validate_ccd_region(ccd_region=trim_section)
+        except SyntaxError as error:
+            raise SyntaxError(error)
+
+        default_bias_name = os.path.join(reduced_data, 'master_bias.fits')
         search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
         n_bias = len(glob.glob(search_bias_name))
         if n_bias > 0:
-            self.master_bias_name = re.sub('.fits',
+            master_bias_name = re.sub('.fits',
                                            '_{:d}.fits'.format(n_bias + 1),
                                            default_bias_name)
 
-            self.log.info('New name for master bias: ' + self.master_bias_name)
+            log.info('New name for master bias: ' + master_bias_name)
         else:
-            self.master_bias_name = default_bias_name
+            master_bias_name = default_bias_name
 
         master_bias_list = []
-        self.log.info('Creating master bias')
-        for image_file in bias_file_list:
-            image_full_path = os.path.join(self.args.raw_path, image_file)
-            ccd = read_fits(image_full_path, technique=self.technique)
-            self.log.debug('Loading bias image: ' + image_full_path)
-            if self.technique == 'Spectroscopy':
-                self.log.debug(
-                    'Overscan Region: {:s}'.format(str(self.overscan_region)))
+        log.info('Creating master bias')
+        for image_file in bias_files:
+            image_full_path = os.path.join(raw_data, image_file)
+            ccd = read_fits(image_full_path, technique=technique)
+            log.debug('Loading bias image: ' + image_full_path)
+            if technique == 'Spectroscopy':
+                log.debug(
+                    'Overscan Region: {:s}'.format(str(overscan_region)))
                 ccd = image_overscan(ccd=ccd,
-                                     overscan_region=self.overscan_region)
+                                     overscan_region=overscan_region)
             ccd = image_trim(ccd,
-                             trim_section=self.trim_section,
+                             trim_section=trim_section,
                              trim_type='trimsec')
             master_bias_list.append(ccd)
 
         # combine bias for spectroscopy
-        self.master_bias = ccdproc.combine(master_bias_list,
-                                           method='median',
-                                           sigma_clip=True,
-                                           sigma_clip_low_thresh=3.0,
-                                           sigma_clip_high_thresh=3.0,
-                                           add_keyword=False)
+        master_bias = ccdproc.combine(master_bias_list,
+                                      method='median',
+                                      sigma_clip=True,
+                                      sigma_clip_low_thresh=3.0,
+                                      sigma_clip_high_thresh=3.0,
+                                      add_keyword=False)
 
         # add name of images used to create master bias
-        for n in range(len(bias_file_list)):
-            self.master_bias.header['GSP_IC{:02d}'.format(n + 1)] = (
-                bias_file_list[n],
+        for n in range(len(bias_files)):
+            master_bias.header['GSP_IC{:02d}'.format(n + 1)] = (
+                bias_files[n],
                 'Image used to create master bias')
 
-        write_fits(ccd=self.master_bias,
-                   full_path=self.master_bias_name,
+        write_fits(ccd=master_bias,
+                   full_path=master_bias_name,
                    combined=True)
 
-        self.log.info('Created master bias: ' + self.master_bias_name)
-        return self.master_bias, self.master_bias_name
+        log.info('Created master bias: ' + master_bias_name)
+        return master_bias, master_bias_name
 
     def create_master_flats(self, flat_group, target_name=''):
         """Creates master flats
