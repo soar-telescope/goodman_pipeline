@@ -12,6 +12,7 @@ import re
 import os
 
 from astropy import units as u
+from astropy.io import fits
 from ccdproc import CCDData
 from ..core import (astroscrappy_lacosmic,
                     call_cosmic_rejection,
@@ -30,6 +31,7 @@ log = logging.getLogger(__name__)
 
 spectroscopic_mode = SpectroscopicMode()
 
+
 def validate_ccd_region(ccd_region, regexp='^\[\d*:\d*,\d*:\d*\]$'):
     compiled_reg_exp = re.compile(regexp)
     if not compiled_reg_exp.match(ccd_region):
@@ -37,6 +39,43 @@ def validate_ccd_region(ccd_region, regexp='^\[\d*:\d*,\d*:\d*\]$'):
                           "'[x1:x2,y1:y2]'")
     else:
         return True
+
+
+def is_file_saturated(ccd, threshold):
+    """Detects a saturated image
+
+    It counts the number of pixels above the saturation level, then finds
+    which percentage they represents and if it is above the threshold it
+    will return True. The percentage threshold can be set using the command
+    line argument ``--saturation``.
+
+    Args:
+        ccd (CCDData): Image to be tested for saturation
+        threshold (float): Percentage of saturated pixels allowed. Default 1.
+
+    Returns:
+        True for saturated and False for non-saturated
+
+    """
+
+    saturation_values = SaturationValues()
+
+    pixels_above_saturation = np.count_nonzero(
+        ccd.data[np.where(
+            ccd.data > saturation_values.get_saturation_value(
+                ccd=ccd))])
+
+    total_pixels = np.count_nonzero(ccd.data)
+
+    saturated_percent = (pixels_above_saturation * 100.) / total_pixels
+
+    if saturated_percent >= float(threshold):
+        log.warning(
+            "The current image has more than {:.2f} percent "
+            "of pixels above saturation level".format(float(threshold)))
+        return True
+    else:
+        return False
 
 
 class ImageProcessor(object):
@@ -128,7 +167,28 @@ class ImageProcessor(object):
 
                     elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
                         self.log.debug('Create Master FLATS')
-                        self.create_master_flats(sub_group)
+                        flat_files = sub_group.file.tolist()
+                        sample_header = fits.getheader(os.path.join(
+                            self.args.raw_path, flat_files[0]))
+                        master_flat_name = self.name_master_flats(
+                            header=sample_header,
+                            technique=self.technique,
+                            reduced_data=self.args.red_path,
+                            sun_set=self.sun_set,
+                            sun_rise=self.sun_rise,
+                            evening_twilight=self.evening_twilight,
+                            morning_twilight=self.morning_twilight)
+
+                        self.create_master_flats(
+                            flat_files=flat_files,
+                            raw_data=self.args.raw_path,
+                            reduced_data=self.args.red_path,
+                            technique=self.technique,
+                            overscan_region=self.overscan_region,
+                            trim_section=self.trim_section,
+                            master_bias_name=self.master_bias_name,
+                            new_master_flat_name=master_flat_name,
+                            saturation=self.args.saturation_threshold)
                     else:
                         self.log.debug('Process Data Group')
                         if self.technique == 'Spectroscopy':
@@ -136,43 +196,6 @@ class ImageProcessor(object):
                         else:
                             self.log.info('Processing Imaging Science Data')
                             self.process_imaging_science(sub_group)
-
-    @staticmethod
-    def _is_file_saturated(ccd, threshold):
-        """Detects a saturated image
-
-        It counts the number of pixels above the saturation level, then finds
-        which percentage they represents and if it is above the threshold it
-        will return True. The percentage threshold can be set using the command
-        line argument ``--saturation``.
-
-        Args:
-            ccd (CCDData): Image to be tested for saturation
-            threshold (float): Percentage of saturated pixels allowed. Default 1.
-
-        Returns:
-            True for saturated and False for non-saturated
-
-        """
-
-        saturation_values = SaturationValues()
-
-        pixels_above_saturation = np.count_nonzero(
-            ccd.data[np.where(
-                ccd.data > saturation_values.get_saturation_value(
-                    ccd=ccd))])
-
-        total_pixels = np.count_nonzero(ccd.data)
-
-        saturated_percent = (pixels_above_saturation * 100.) / total_pixels
-
-        if saturated_percent >= float(threshold):
-            log.warning(
-                "The current image has more than {:.2f} percent "
-                "of pixels above saturation level".format(float(threshold)))
-            return True
-        else:
-            return False
 
     @staticmethod
     def define_trim_section(sample_image, technique):
@@ -425,7 +448,16 @@ class ImageProcessor(object):
         log.info('Created master bias: ' + master_bias_name)
         return master_bias, master_bias_name
 
-    def create_master_flats(self, flat_group, target_name=''):
+    @staticmethod
+    def create_master_flats(flat_files,
+                            raw_data,
+                            reduced_data,
+                            technique,
+                            overscan_region,
+                            trim_section,
+                            master_bias_name,
+                            new_master_flat_name,
+                            saturation):
         """Creates master flats
 
         Using a list of compatible flat images it combines them using median and
@@ -433,10 +465,15 @@ class ImageProcessor(object):
         each image.
 
         Args:
-            flat_group (DataFrame): :class:`~pandas.DataFrame` instance.
-              Contains a list of compatible flat images
-            target_name (str): Science target name. This is used in some science
-                case uses only.
+            flat_files (list):
+            raw_data (str):
+            reduced_data (str):
+            technique (str):
+            overscan_region (str):
+            trim_section (str):
+            master_bias_name (str):
+            new_master_flat_name (str):
+            saturation (int):
 
 
         Returns:
@@ -444,63 +481,63 @@ class ImageProcessor(object):
             the master flat was stored.
 
         """
-
-        flat_file_list = flat_group.file.tolist()
         cleaned_flat_list = []
         master_flat_list = []
-        master_flat_name = None
-        self.log.info('Creating Master Flat')
-        for flat_file in flat_file_list:
+
+        if os.path.isabs(os.path.dirname(new_master_flat_name)):
+            master_flat_name = new_master_flat_name
+        else:
+            master_flat_name = os.path.join(
+                reduced_data, os.path.basename(new_master_flat_name))
+
+        if os.path.isabs(os.path.dirname(master_bias_name)) and \
+                os.path.exists(master_bias_name):
+            master_bias = read_fits(master_bias_name, technique=technique)
+        else:
+            master_bias_name = os.path.join(reduced_data,
+                                            os.path.basename(master_bias_name))
+            master_bias = read_fits(master_bias_name, technique=technique)
+
+        log.info('Creating Master Flat')
+        for flat_file in flat_files:
             # print(f_file)
-            image_full_path = os.path.join(self.args.raw_path, flat_file)
-            ccd = read_fits(image_full_path, technique=self.technique)
-            self.log.debug('Loading flat image: ' + image_full_path)
-            if master_flat_name is None:
+            image_full_path = os.path.join(raw_data, flat_file)
+            ccd = read_fits(image_full_path, technique=technique)
+            log.debug('Loading flat image: ' + image_full_path)
 
-                master_flat_name = self.name_master_flats(
-                    header=ccd.header,
-                    technique=self.technique,
-                    reduced_data=self.args.red_path,
-                    sun_set=self.sun_set,
-                    sun_rise=self.sun_rise,
-                    evening_twilight=self.evening_twilight,
-                    morning_twilight=self.morning_twilight,
-                    target_name=target_name)
-
-            if self.technique == 'Spectroscopy':
-                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
+            if technique == 'Spectroscopy':
+                ccd = image_overscan(ccd, overscan_region=overscan_region)
 
                 ccd = image_trim(ccd=ccd,
-                                 trim_section=self.trim_section,
+                                 trim_section=trim_section,
                                  trim_type='trimsec')
 
                 ccd = ccdproc.subtract_bias(ccd,
-                                            self.master_bias,
+                                            master_bias,
                                             add_keyword=False)
                 ccd.header['GSP_BIAS'] = (
-                    os.path.basename(self.master_bias_name),
+                    os.path.basename(master_bias_name),
                     'Master bias image')
 
-            elif self.technique == 'Imaging':
+            elif technique == 'Imaging':
                 ccd = image_trim(ccd=ccd,
-                                 trim_section=self.trim_section,
+                                 trim_section=trim_section,
                                  trim_type='trimsec')
 
                 ccd = ccdproc.subtract_bias(ccd,
-                                            self.master_bias,
+                                            master_bias,
                                             add_keyword=False)
 
                 ccd.header['GSP_BIAS'] = (
-                    os.path.basename(self.master_bias_name),
+                    os.path.basename(master_bias_name),
                     'Master bias image')
             else:
-                self.log.error('Unknown observation technique: ' +
-                               self.technique)
-            if self._is_file_saturated(ccd=ccd,
-                                       threshold=self.args.saturation_threshold):
-                self.log.warning('Removing saturated image {:s}. '
-                                 'Use --saturation to change saturation '
-                                 'level'.format(flat_file))
+                log.error('Unknown observation technique: ' + technique)
+            if is_file_saturated(ccd=ccd,
+                                 threshold=saturation):
+                log.warning('Removing saturated image {:s}. '
+                            'Use --saturation to change saturation '
+                            'level'.format(flat_file))
                 continue
             else:
                 cleaned_flat_list.append(flat_file)
@@ -524,12 +561,12 @@ class ImageProcessor(object):
                        full_path=master_flat_name,
                        combined=True)
 
-            self.log.info('Created Master Flat: ' + master_flat_name)
+            log.info('Created Master Flat: ' + master_flat_name)
             return master_flat, master_flat_name
             # print(master_flat_name)
         else:
-            self.log.error('Empty flat list. Check that they do not exceed the '
-                           'saturation limit.')
+            log.error('Empty flat list. Check that they do not exceed the '
+                      'saturation limit.')
             return None, None
 
     @staticmethod
@@ -690,9 +727,19 @@ class ImageProcessor(object):
             if 'FLAT' in obstype and not self.args.ignore_flats:
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']
 
+                flat_files = flat_sub_group.file.tolist()
+
                 master_flat, master_flat_name = \
-                    self.create_master_flats(flat_group=flat_sub_group,
-                                             target_name=target_name)
+                    self.create_master_flats(
+                            flat_files=flat_files,
+                            raw_data=self.args.raw_path,
+                            reduced_data=self.args.red_path,
+                            technique=self.technique,
+                            overscan_region=self.overscan_region,
+                            trim_section=self.trim_section,
+                            master_bias_name=self.master_bias_name,
+                            new_master_flat_name=master_flat_name,
+                            saturation=self.args.saturation_threshold)
             elif self.args.ignore_flats:
                 self.log.warning('Ignoring creation of Master Flat by request.')
                 master_flat = None
@@ -944,7 +991,17 @@ class ImageProcessor(object):
             self.log.warning('Only flats found in this group')
             flat_sub_group = science_group[science_group.obstype == 'FLAT']
             # TODO (simon): Find out if these variables are useful or not
-            self.create_master_flats(flat_group=flat_sub_group)
+            flat_files = flat_sub_group.file.tolist()
+            self.create_master_flats(
+                            flat_files=flat_files,
+                            raw_data=self.args.raw_path,
+                            reduced_data=self.args.red_path,
+                            technique=self.technique,
+                            overscan_region=self.overscan_region,
+                            trim_section=self.trim_section,
+                            master_bias_name=self.master_bias_name,
+                            new_master_flat_name=master_flat_name,
+                            saturation=self.args.saturation_threshold)
         else:
             self.log.error('There is no valid datatype in this group')
 
