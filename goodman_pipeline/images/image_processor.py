@@ -28,6 +28,7 @@ from ..core import SaturationValues, SpectroscopicMode
 
 log = logging.getLogger(__name__)
 
+spectroscopic_mode = SpectroscopicMode()
 
 def validate_ccd_region(ccd_region, regexp='^\[\d*:\d*,\d*:\d*\]$'):
     compiled_reg_exp = re.compile(regexp)
@@ -76,8 +77,6 @@ class ImageProcessor(object):
         self.queue = None
         self.trim_section = None
         self.overscan_region = None
-
-        self.spec_mode = SpectroscopicMode()
         self.master_bias = None
         self.master_bias_name = None
         self.out_prefix = None
@@ -460,7 +459,12 @@ class ImageProcessor(object):
 
                 master_flat_name = self.name_master_flats(
                     header=ccd.header,
-                    group=flat_group,
+                    technique=self.technique,
+                    reduced_data=self.args.red_path,
+                    sun_set=self.sun_set,
+                    sun_rise=self.sun_rise,
+                    evening_twilight=self.evening_twilight,
+                    morning_twilight=self.morning_twilight,
                     target_name=target_name)
 
             if self.technique == 'Spectroscopy':
@@ -528,7 +532,16 @@ class ImageProcessor(object):
                            'saturation limit.')
             return None, None
 
-    def name_master_flats(self, header, group, target_name='', get=False):
+    @staticmethod
+    def name_master_flats(header,
+                          technique,
+                          reduced_data,
+                          sun_set,
+                          sun_rise,
+                          evening_twilight,
+                          morning_twilight,
+                          target_name='',
+                          get=False):
         """Defines the name of a master flat or what master flat is compatible
         with a given data
 
@@ -536,16 +549,22 @@ class ImageProcessor(object):
         keywords that are unique to a given instrument configuration therefore
         they are used to discriminate compatibility.
         
-        It can be used to define a master flat when creating it or find a base
-        name to match existing master flat files thus finding a compatible one
-        for a given non-flat image.
+        It can be used to define a master flat's name when creating it or find
+        a base name to match existing master flat files thus finding a
+        compatible one for a given non-flat image.
 
         Args:
             header (object): Fits header. Instance of
-                astropy.io.fits.header.Header
-            group (object): :class:`~pandas.DataFrame` instance. Contains filenames as
-                well as other important keywords that are defined in
-                ccd.night_organizer.NightOrganizer.keywords
+            :class:`~astropy.io.fits.header.Header`
+            technique (str): Observing technique, either Spectroscopy or
+            Imaging.
+            reduced_data (str): Full path to reduced data directory
+            sun_set (str): Sunset time formatted as "%Y-%m-%dT%H:%M:%S.%f"
+            sun_rise (str): Sunrise time formatted as "%Y-%m-%dT%H:%M:%S.%f"
+            evening_twilight (str): End of evening twilight formatted as
+            "%Y-%m-%dT%H:%M:%S.%f"
+            morning_twilight (str): Start of morning twilight in the format
+            "%Y-%m-%dT%H:%M:%S.%f"
             target_name (str): Optional science target name to be added to the
                 master flat name.
             get (bool): This option is used when trying to find a suitable 
@@ -556,17 +575,17 @@ class ImageProcessor(object):
             files.
 
         """
-        master_flat_name = os.path.join(self.args.red_path, 'master_flat')
-        sunset = datetime.datetime.strptime(self.sun_set,
+        master_flat_name = os.path.join(reduced_data, 'master_flat')
+        sunset = datetime.datetime.strptime(sun_set,
                                             "%Y-%m-%dT%H:%M:%S.%f")
 
-        sunrise = datetime.datetime.strptime(self.sun_rise,
+        sunrise = datetime.datetime.strptime(sun_rise,
                                              "%Y-%m-%dT%H:%M:%S.%f")
 
-        afternoon_twilight = datetime.datetime.strptime(self.evening_twilight,
+        afternoon_twilight = datetime.datetime.strptime(evening_twilight,
                                                         "%Y-%m-%dT%H:%M:%S.%f")
 
-        morning_twilight = datetime.datetime.strptime(self.morning_twilight,
+        morning_twilight = datetime.datetime.strptime(morning_twilight,
                                                       "%Y-%m-%dT%H:%M:%S.%f")
 
         date_obs = datetime.datetime.strptime(header['DATE-OBS'],
@@ -589,23 +608,23 @@ class ImageProcessor(object):
         else:
             dome_sky = '*'
 
-        if self.technique == 'Spectroscopy':
-            if group.grating.unique()[0] != '<NO GRATING>':
+        if technique == 'Spectroscopy':
+            if header['GRATING'] != '<NO GRATING>':
                 flat_grating = '_' + re.sub('[A-Za-z_-]',
                                             '',
-                                            group.grating.unique()[0])
+                                            header['GRATING'])
 
                 # self.spec_mode is an instance of SpectroscopicMode
-                wavmode = self.spec_mode(header=header)
+                wavmode = spectroscopic_mode(header=header)
             else:
                 flat_grating = '_no_grating'
                 wavmode = ''
 
             flat_slit = re.sub('[A-Za-z" ]',
                                '',
-                               group.slit.unique()[0])
+                               header['SLIT'])
 
-            filter2 = group['filter2'].unique()[0]
+            filter2 = header['FILTER2']
             if filter2 == '<NO FILTER>':
                 filter2 = ''
             else:
@@ -620,8 +639,8 @@ class ImageProcessor(object):
                 + dome_sky\
                 + '.fits'
 
-        elif self.technique == 'Imaging':
-            flat_filter = re.sub('-', '_', group['filter'].unique()[0])
+        elif technique == 'Imaging':
+            flat_filter = re.sub('-', '_', header['FILTER'])
             master_flat_name += '_' + flat_filter + dome_sky + '.fits'
         # print(master_flat_name)
         return master_flat_name
@@ -696,7 +715,12 @@ class ImageProcessor(object):
                     # define the master flat name
                     master_flat_name = self.name_master_flats(
                         header=ccd.header,
-                        group=object_comp_group,
+                        technique=self.technique,
+                        reduced_data=self.args.red_path,
+                        sun_set=self.sun_set,
+                        sun_rise=self.sun_rise,
+                        evening_twilight=self.evening_twilight,
+                        morning_twilight=self.morning_twilight,
                         get=True)
 
                     # load the best flat based on the name previously defined
@@ -939,9 +963,15 @@ class ImageProcessor(object):
         path_random_image = os.path.join(self.args.raw_path, random_image)
         sample_file = CCDData.read(path_random_image, unit=u.adu)
 
-        master_flat_name = self.name_master_flats(header=sample_file.header,
-                                                  group=imaging_group,
-                                                  get=True)
+        master_flat_name = self.name_master_flats(
+            header=sample_file.header,
+            technique=self.technique,
+            reduced_data=self.args.red_path,
+            sun_set=self.sun_set,
+            sun_rise=self.sun_rise,
+            evening_twilight=self.evening_twilight,
+            morning_twilight=self.morning_twilight,
+            get=True)
 
         self.log.debug('Got {:s} for master flat name'.format(master_flat_name))
 
