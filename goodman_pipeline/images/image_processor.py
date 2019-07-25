@@ -465,20 +465,31 @@ class ImageProcessor(object):
         each image.
 
         Args:
-            flat_files (list):
-            raw_data (str):
-            reduced_data (str):
-            technique (str):
-            overscan_region (str):
-            trim_section (str):
-            master_bias_name (str):
-            new_master_flat_name (str):
-            saturation (int):
+            flat_files (list): List of files previously filtered, there is no
+            compatibility check in this function and is assumed the files are
+            combinables.
+            raw_data (str): Full path to raw data.
+            reduced_data (str): Full path to reduced data. Where reduced data
+            should be stored.
+            technique (str): Observing technique. Imaging or Spectroscopy.
+            overscan_region (str): Defines the area to be used to estimate the
+            overscan region for overscan correction. Should be in the format.
+            `[x1:x2.,y1:y2]`.
+            trim_section (str):Defines the area to be used after trimming
+            unusable selected parts (edges). In the format `[x1:x2.,y1:y2]`.
+            master_bias_name (str): Master bias name, can be full path or not.
+            If it is a relative path, the path will be ignored and will define
+            the full path as `raw_path` + `basename`.
+            new_master_flat_name (str): Name of the file to save new master
+            flat. Can be absolute path or not.
+            saturation (int): Saturation threshold, defines the percentage of
+            pixels above saturation level allowed for flat field images.
 
 
         Returns:
-            The master flat :class:`~astropy.nddata.CCDData` instance and the name of under which
-            the master flat was stored.
+            The master flat :class:`~astropy.nddata.CCDData` instance and the
+            name of under which the master flat was stored. If it can't build
+            the master flat it will return None, None.
 
         """
         cleaned_flat_list = []
@@ -728,6 +739,16 @@ class ImageProcessor(object):
                 flat_sub_group = science_group[science_group.obstype == 'FLAT']
 
                 flat_files = flat_sub_group.file.tolist()
+                sample_header = fits.getheader(os.path.join(
+                    self.args.raw_path, flat_files[0]))
+                master_flat_name = self.name_master_flats(
+                    header=sample_header,
+                    technique=self.technique,
+                    reduced_data=self.args.red_path,
+                    sun_set=self.sun_set,
+                    sun_rise=self.sun_rise,
+                    evening_twilight=self.evening_twilight,
+                    morning_twilight=self.morning_twilight)
 
                 master_flat, master_flat_name = \
                     self.create_master_flats(
