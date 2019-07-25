@@ -5,7 +5,7 @@ from unittest import TestCase, skip
 
 from ccdproc import CCDData
 from ...core import NightDataContainer
-from ..image_processor import ImageProcessor, is_file_saturated
+from ..image_processor import ImageProcessor
 from ..goodman_ccd import get_args
 
 import numpy as np
@@ -30,36 +30,6 @@ class ImageProcessorTest(TestCase):
         self.ccd.header.set('RDNOISE', value=3.89)
 
         self.half_full_well = 69257
-
-    def test_file_is_saturated(self):
-        self.ccd.data[:10, :10] = self.half_full_well + 1
-        self.assertTrue(is_file_saturated(ccd=self.ccd, threshold=1))
-
-    def test_file_is_not_saturated(self):
-        self.ccd.data[:10, :10] = self.half_full_well + 1
-        self.ccd.data[0, 0] = 1
-        self.assertFalse(is_file_saturated(ccd=self.ccd, threshold=1))
-
-
-
-def test_define_trim_section():
-    pass
-
-
-def test_get_overscan_region():
-    pass
-
-
-def test_create_master_bias():
-    pass
-
-
-def test_create_master_flats():
-    pass
-
-
-def test_name_master_flats():
-    pass
 
 
 def test_process_spectroscopy_science():

@@ -36,7 +36,10 @@ from ..core import (astroscrappy_lacosmic,
                     classify_spectroscopic_data,
                     combine_data,
                     convert_time,
+                    create_master_bias,
+                    create_master_flats,
                     dcr_cosmicray_rejection,
+                    define_trim_section,
                     extraction,
                     extract_fractional_pixel,
                     extract_optimal,
@@ -44,12 +47,15 @@ from ..core import (astroscrappy_lacosmic,
                     fractional_sum,
                     get_best_flat,
                     get_central_wavelength,
+                    get_overscan_region,
                     get_slit_trim_section,
                     get_twilight_time,
                     identify_targets,
                     image_overscan,
                     image_trim,
                     interpolate,
+                    is_file_saturated,
+                    name_master_flats,
                     normalize_master_flat,
                     ra_dec_to_deg,
                     read_fits,
@@ -59,6 +65,7 @@ from ..core import (astroscrappy_lacosmic,
                     setup_logging,
                     trace,
                     trace_targets,
+                    validate_ccd_region,
                     write_fits)
 
 # class ExceptionHandling(TestCase):
@@ -1595,3 +1602,45 @@ class SaturationValuesTest(TestCase):
         result = self.saturation_values.get_saturation_value(ccd=self.ccd)
         self.assertIsNone(result)
         self.assertIsNone(self.saturation_values.saturation_value)
+
+
+def test_define_trim_section():
+    pass
+
+
+def test_get_overscan_region():
+    pass
+
+
+def test_create_master_bias():
+    pass
+
+
+def test_create_master_flats():
+    pass
+
+
+def test_name_master_flats():
+    pass
+
+
+class IsFileSaturatedTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd.header.set('INSTCONF', value='Red')
+        self.ccd.header.set('GAIN', value=1.48)
+        self.ccd.header.set('RDNOISE', value=3.89)
+
+        self.half_full_well = 69257
+
+    def test_file_is_saturated(self):
+        self.ccd.data[:10, :10] = self.half_full_well + 1
+        self.assertTrue(is_file_saturated(ccd=self.ccd, threshold=1))
+
+    def test_file_is_not_saturated(self):
+        self.ccd.data[:10, :10] = self.half_full_well + 1
+        self.ccd.data[0, 0] = 1
+        self.assertFalse(is_file_saturated(ccd=self.ccd, threshold=1))

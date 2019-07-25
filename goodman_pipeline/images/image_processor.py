@@ -17,10 +17,15 @@ from ccdproc import CCDData
 from ..core import (astroscrappy_lacosmic,
                     call_cosmic_rejection,
                     combine_data,
+                    create_master_bias,
+                    create_master_flats,
+                    define_trim_section,
                     get_best_flat,
                     get_slit_trim_section,
+                    get_overscan_region,
                     image_overscan,
                     image_trim,
+                    name_master_flats,
                     normalize_master_flat,
                     read_fits,
                     write_fits)
@@ -28,54 +33,6 @@ from ..core import (astroscrappy_lacosmic,
 from ..core import SaturationValues, SpectroscopicMode
 
 log = logging.getLogger(__name__)
-
-spectroscopic_mode = SpectroscopicMode()
-
-
-def validate_ccd_region(ccd_region, regexp='^\[\d*:\d*,\d*:\d*\]$'):
-    compiled_reg_exp = re.compile(regexp)
-    if not compiled_reg_exp.match(ccd_region):
-        raise SyntaxError("ccd regions must be defined in the format "
-                          "'[x1:x2,y1:y2]'")
-    else:
-        return True
-
-
-def is_file_saturated(ccd, threshold):
-    """Detects a saturated image
-
-    It counts the number of pixels above the saturation level, then finds
-    which percentage they represents and if it is above the threshold it
-    will return True. The percentage threshold can be set using the command
-    line argument ``--saturation``.
-
-    Args:
-        ccd (CCDData): Image to be tested for saturation
-        threshold (float): Percentage of saturated pixels allowed. Default 1.
-
-    Returns:
-        True for saturated and False for non-saturated
-
-    """
-
-    saturation_values = SaturationValues()
-
-    pixels_above_saturation = np.count_nonzero(
-        ccd.data[np.where(
-            ccd.data > saturation_values.get_saturation_value(
-                ccd=ccd))])
-
-    total_pixels = np.count_nonzero(ccd.data)
-
-    saturated_percent = (pixels_above_saturation * 100.) / total_pixels
-
-    if saturated_percent >= float(threshold):
-        log.warning(
-            "The current image has more than {:.2f} percent "
-            "of pixels above saturation level".format(float(threshold)))
-        return True
-    else:
-        return False
 
 
 class ImageProcessor(object):
@@ -139,11 +96,11 @@ class ImageProcessor(object):
                 sample_image = os.path.join(self.args.raw_path,
                                             random.choice(image_list))
 
-                self.trim_section = self.define_trim_section(
+                self.trim_section = define_trim_section(
                     sample_image=sample_image,
                     technique=self.technique)
 
-                self.overscan_region = self.get_overscan_region(
+                self.overscan_region = get_overscan_region(
                     sample_image=sample_image,
                     technique=self.technique)
 
@@ -157,7 +114,7 @@ class ImageProcessor(object):
                         self.log.debug('Creating Master Bias')
                         bias_files = sub_group.file.tolist()
                         self.master_bias, self.master_bias_name = \
-                            self.create_master_bias(
+                            create_master_bias(
                                 bias_files=bias_files,
                                 raw_data=self.args.raw_path,
                                 reduced_data=self.args.red_path,
@@ -170,7 +127,7 @@ class ImageProcessor(object):
                         flat_files = sub_group.file.tolist()
                         sample_header = fits.getheader(os.path.join(
                             self.args.raw_path, flat_files[0]))
-                        master_flat_name = self.name_master_flats(
+                        master_flat_name = name_master_flats(
                             header=sample_header,
                             technique=self.technique,
                             reduced_data=self.args.red_path,
@@ -179,7 +136,7 @@ class ImageProcessor(object):
                             evening_twilight=self.evening_twilight,
                             morning_twilight=self.morning_twilight)
 
-                        self.create_master_flats(
+                        create_master_flats(
                             flat_files=flat_files,
                             raw_data=self.args.raw_path,
                             reduced_data=self.args.red_path,
@@ -196,502 +153,6 @@ class ImageProcessor(object):
                         else:
                             self.log.info('Processing Imaging Science Data')
                             self.process_imaging_science(sub_group)
-
-    @staticmethod
-    def define_trim_section(sample_image, technique):
-        """Get the initial trim section
-
-        The initial trim section is usually defined in the header with the
-        keyword ``TRIMSEC`` but in the case of Goodman HTS this does not work well.
-        In particular for spectroscopy where is more likely to have combined
-        binning and so on.
-
-        Args:
-            sample_image (str): Full path to sample image.
-            technique (str): The name of the technique, the options are:
-                Imaging or Spectroscopy.
-
-        Returns:
-            The trim section in the format ``[x1:x2, y1:y2]``
-
-        """
-
-        assert os.path.isabs(os.path.dirname(sample_image))
-        assert os.path.isfile(sample_image)
-
-        trim_section = None
-        # TODO (simon): Consider binning and possibly ROIs for trim section
-        log.warning('Determining trim section. Assuming you have only one '
-                    'kind of data in this folder')
-
-        ccd = read_fits(sample_image, technique=technique)
-
-        # serial binning - dispersion binning
-        # parallel binning - spatial binning
-        spatial_length, dispersion_length = ccd.data.shape
-        serial_binning, \
-            parallel_binning = [int(x) for x
-                                in ccd.header['CCDSUM'].split()]
-
-        # Trim section is valid for Blue and Red Camera Binning 1x1 and
-        # Spectroscopic ROI
-        if technique == 'Spectroscopy':
-
-            # left
-            low_lim_spectral = int(np.ceil(51. / serial_binning))
-
-            # right
-            high_lim_spectral = int(4110 / serial_binning)
-
-            # bottom
-            low_lim_spatial = 2
-
-            #top
-            # t = int(1896 / parallel_binning)
-            # TODO (simon): Need testing
-            # trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(l, r, b, t)
-            trim_section = '[{:d}:{:d},{:d}:{:d}]'.format(
-                low_lim_spectral,
-                high_lim_spectral,
-                low_lim_spatial,
-                spatial_length)
-
-        elif technique == 'Imaging':
-            trim_section = ccd.header['TRIMSEC']
-
-        log.info('Trim Section: %s', trim_section)
-        return trim_section
-
-    @staticmethod
-    def get_overscan_region(sample_image, technique):
-        """Get the right overscan region for spectroscopy
-
-        It works for the following ROI:
-            Spectroscopic 1x1
-            Spectroscopic 2x2
-            Spectroscopic 3x3
-
-        The limits where measured on a Spectroscopic 1x1 image and then divided
-        by the binning size. This was checked
-        that it actually works as expected.
-
-        Notes:
-            The regions are 1-based i.e. different to Python convention.
-            For Imaging there is no overscan region.
-
-        Args:
-              sample_image (str): Full path to randomly chosen image.
-              technique (str): Observing technique, either `Spectroscopy` or
-              `Imaging`
-
-
-        Returns:
-            overscan_region (str) Region for overscan in the format
-              '[min:max,:]' where min is the starting point and max is the end
-               point of the overscan region.
-
-        """
-
-        assert os.path.isabs(os.path.dirname(sample_image))
-        assert os.path.isfile(sample_image)
-
-        log.debug('Overscan Sample File ' + sample_image)
-        ccd = CCDData.read(sample_image, unit=u.adu)
-
-        # Image height - spatial direction
-        spatial_length, dispersion_length = ccd.data.shape
-
-        # Image width - spectral direction
-        # w = ccd.data.shape[1]
-
-        # Take the binnings
-        serial_binning, parallel_binning = \
-            [int(x) for x in ccd.header['CCDSUM'].split()]
-
-        if technique == 'Spectroscopy':
-            log.info('Overscan regions has been tested for ROI '
-                          'Spectroscopic 1x1, 2x2 and 3x3')
-
-            # define l r b and t to avoid local variable might be
-            # defined before assignment warning
-            low_lim_spectral,\
-                high_lim_spectral,\
-                low_lim_spatial,\
-                high_lim_spatial = [None] * 4
-            if ccd.header['INSTCONF'] == 'Red':
-                # for red camera it is necessary to eliminate the first
-                # rows/columns (depends on the point of view) because
-                # they come with an abnormal high signal. Usually the
-                # first 5 pixels. In order to find the corresponding
-                # value for the subsequent binning divide by the
-                # binning size.
-                # The numbers 6 and 49 where obtained from visual
-                # inspection
-
-                # left
-                low_lim_spectral = int(np.ceil(6. / serial_binning))
-                # right
-                high_lim_spectral = int(49. / serial_binning)
-                # bottom
-                low_lim_spatial = 1
-                # top
-                high_lim_spatial = spatial_length
-            elif ccd.header['INSTCONF'] == 'Blue':
-                # 16 is the length of the overscan region with no
-                # binning.
-
-                # left
-                low_lim_spectral = 1
-                # right
-                high_lim_spectral = int(16. / serial_binning)
-                # bottom
-                low_lim_spatial = 1
-                # top
-                high_lim_spatial = spatial_length
-
-            overscan_region = '[{:d}:{:d},{:d}:{:d}]'.format(
-                low_lim_spectral,
-                high_lim_spectral,
-                low_lim_spatial,
-                high_lim_spatial)
-
-        elif technique == 'Imaging':
-            log.warning("Imaging mode doesn't have overscan "
-                        "region. Use bias instead.")
-            overscan_region = None
-        else:
-            overscan_region = None
-        log.info('Overscan Region: %s', overscan_region)
-        return overscan_region
-
-    @staticmethod
-    def create_master_bias(bias_files,
-                           raw_data,
-                           reduced_data,
-                           technique,
-                           overscan_region,
-                           trim_section):
-        """Create Master Bias
-
-        Given a :class:`~pandas.DataFrame` object that contains a list of compatible bias.
-        This function creates the master flat using ccdproc.combine using median
-        and 3-sigma clipping.
-
-        Args:
-            bias_files (list): List of all bias files to be combined. They have
-            to be compatible with each other as no check is done in this method.
-            raw_data (str): Full path to raw data location.
-            reduced_data (str): Full path to were reduced data will reside.
-            technique (str): Name of observing technique. Imaging or
-            Spectroscopy.
-            overscan_region (str): Defines the area to be used to estimate the
-            overscan region for overscan correction. Should be in the format.
-            `[x1:x2.,y1:y2]`.
-            trim_section (str): Defines the area to be used after trimming
-            unusable selected parts (edges). In the format `[x1:x2.,y1:y2]`.
-
-        """
-        assert isinstance(bias_files, list)
-
-        try:
-            validate_ccd_region(ccd_region=overscan_region)
-            validate_ccd_region(ccd_region=trim_section)
-        except SyntaxError as error:
-            raise SyntaxError(error)
-
-        default_bias_name = os.path.join(reduced_data, 'master_bias.fits')
-        search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
-        n_bias = len(glob.glob(search_bias_name))
-        if n_bias > 0:
-            master_bias_name = re.sub('.fits',
-                                           '_{:d}.fits'.format(n_bias + 1),
-                                           default_bias_name)
-
-            log.info('New name for master bias: ' + master_bias_name)
-        else:
-            master_bias_name = default_bias_name
-
-        master_bias_list = []
-        log.info('Creating master bias')
-        for image_file in bias_files:
-            image_full_path = os.path.join(raw_data, image_file)
-            ccd = read_fits(image_full_path, technique=technique)
-            log.debug('Loading bias image: ' + image_full_path)
-            if technique == 'Spectroscopy':
-                log.debug(
-                    'Overscan Region: {:s}'.format(str(overscan_region)))
-                ccd = image_overscan(ccd=ccd,
-                                     overscan_region=overscan_region)
-            ccd = image_trim(ccd,
-                             trim_section=trim_section,
-                             trim_type='trimsec')
-            master_bias_list.append(ccd)
-
-        # combine bias for spectroscopy
-        master_bias = ccdproc.combine(master_bias_list,
-                                      method='median',
-                                      sigma_clip=True,
-                                      sigma_clip_low_thresh=3.0,
-                                      sigma_clip_high_thresh=3.0,
-                                      add_keyword=False)
-
-        # add name of images used to create master bias
-        for n in range(len(bias_files)):
-            master_bias.header['GSP_IC{:02d}'.format(n + 1)] = (
-                bias_files[n],
-                'Image used to create master bias')
-
-        write_fits(ccd=master_bias,
-                   full_path=master_bias_name,
-                   combined=True)
-
-        log.info('Created master bias: ' + master_bias_name)
-        return master_bias, master_bias_name
-
-    @staticmethod
-    def create_master_flats(flat_files,
-                            raw_data,
-                            reduced_data,
-                            technique,
-                            overscan_region,
-                            trim_section,
-                            master_bias_name,
-                            new_master_flat_name,
-                            saturation):
-        """Creates master flats
-
-        Using a list of compatible flat images it combines them using median and
-        1-sigma clipping. Also it apply all previous standard calibrations to
-        each image.
-
-        Args:
-            flat_files (list): List of files previously filtered, there is no
-            compatibility check in this function and is assumed the files are
-            combinables.
-            raw_data (str): Full path to raw data.
-            reduced_data (str): Full path to reduced data. Where reduced data
-            should be stored.
-            technique (str): Observing technique. Imaging or Spectroscopy.
-            overscan_region (str): Defines the area to be used to estimate the
-            overscan region for overscan correction. Should be in the format.
-            `[x1:x2.,y1:y2]`.
-            trim_section (str):Defines the area to be used after trimming
-            unusable selected parts (edges). In the format `[x1:x2.,y1:y2]`.
-            master_bias_name (str): Master bias name, can be full path or not.
-            If it is a relative path, the path will be ignored and will define
-            the full path as `raw_path` + `basename`.
-            new_master_flat_name (str): Name of the file to save new master
-            flat. Can be absolute path or not.
-            saturation (int): Saturation threshold, defines the percentage of
-            pixels above saturation level allowed for flat field images.
-
-
-        Returns:
-            The master flat :class:`~astropy.nddata.CCDData` instance and the
-            name of under which the master flat was stored. If it can't build
-            the master flat it will return None, None.
-
-        """
-        cleaned_flat_list = []
-        master_flat_list = []
-
-        if os.path.isabs(os.path.dirname(new_master_flat_name)):
-            master_flat_name = new_master_flat_name
-        else:
-            master_flat_name = os.path.join(
-                reduced_data, os.path.basename(new_master_flat_name))
-
-        if os.path.isabs(os.path.dirname(master_bias_name)) and \
-                os.path.exists(master_bias_name):
-            master_bias = read_fits(master_bias_name, technique=technique)
-        else:
-            master_bias_name = os.path.join(reduced_data,
-                                            os.path.basename(master_bias_name))
-            master_bias = read_fits(master_bias_name, technique=technique)
-
-        log.info('Creating Master Flat')
-        for flat_file in flat_files:
-            # print(f_file)
-            image_full_path = os.path.join(raw_data, flat_file)
-            ccd = read_fits(image_full_path, technique=technique)
-            log.debug('Loading flat image: ' + image_full_path)
-
-            if technique == 'Spectroscopy':
-                ccd = image_overscan(ccd, overscan_region=overscan_region)
-
-                ccd = image_trim(ccd=ccd,
-                                 trim_section=trim_section,
-                                 trim_type='trimsec')
-
-                ccd = ccdproc.subtract_bias(ccd,
-                                            master_bias,
-                                            add_keyword=False)
-                ccd.header['GSP_BIAS'] = (
-                    os.path.basename(master_bias_name),
-                    'Master bias image')
-
-            elif technique == 'Imaging':
-                ccd = image_trim(ccd=ccd,
-                                 trim_section=trim_section,
-                                 trim_type='trimsec')
-
-                ccd = ccdproc.subtract_bias(ccd,
-                                            master_bias,
-                                            add_keyword=False)
-
-                ccd.header['GSP_BIAS'] = (
-                    os.path.basename(master_bias_name),
-                    'Master bias image')
-            else:
-                log.error('Unknown observation technique: ' + technique)
-            if is_file_saturated(ccd=ccd,
-                                 threshold=saturation):
-                log.warning('Removing saturated image {:s}. '
-                            'Use --saturation to change saturation '
-                            'level'.format(flat_file))
-                continue
-            else:
-                cleaned_flat_list.append(flat_file)
-                master_flat_list.append(ccd)
-
-        if master_flat_list != []:
-            master_flat = ccdproc.combine(master_flat_list,
-                                          method='median',
-                                          sigma_clip=True,
-                                          sigma_clip_low_thresh=1.0,
-                                          sigma_clip_high_thresh=1.0,
-                                          add_keyword=False)
-
-            # add name of images used to create master bias
-            for n in range(len(cleaned_flat_list)):
-                master_flat.header['GSP_IC{:02d}'.format(n + 1)] = (
-                    cleaned_flat_list[n],
-                    'Image used to create master flat')
-
-            write_fits(ccd=master_flat,
-                       full_path=master_flat_name,
-                       combined=True)
-
-            log.info('Created Master Flat: ' + master_flat_name)
-            return master_flat, master_flat_name
-            # print(master_flat_name)
-        else:
-            log.error('Empty flat list. Check that they do not exceed the '
-                      'saturation limit.')
-            return None, None
-
-    @staticmethod
-    def name_master_flats(header,
-                          technique,
-                          reduced_data,
-                          sun_set,
-                          sun_rise,
-                          evening_twilight,
-                          morning_twilight,
-                          target_name='',
-                          get=False):
-        """Defines the name of a master flat or what master flat is compatible
-        with a given data
-
-        Given the header of a flat image this method will look for certain
-        keywords that are unique to a given instrument configuration therefore
-        they are used to discriminate compatibility.
-        
-        It can be used to define a master flat's name when creating it or find
-        a base name to match existing master flat files thus finding a
-        compatible one for a given non-flat image.
-
-        Args:
-            header (object): Fits header. Instance of
-            :class:`~astropy.io.fits.header.Header`
-            technique (str): Observing technique, either Spectroscopy or
-            Imaging.
-            reduced_data (str): Full path to reduced data directory
-            sun_set (str): Sunset time formatted as "%Y-%m-%dT%H:%M:%S.%f"
-            sun_rise (str): Sunrise time formatted as "%Y-%m-%dT%H:%M:%S.%f"
-            evening_twilight (str): End of evening twilight formatted as
-            "%Y-%m-%dT%H:%M:%S.%f"
-            morning_twilight (str): Start of morning twilight in the format
-            "%Y-%m-%dT%H:%M:%S.%f"
-            target_name (str): Optional science target name to be added to the
-                master flat name.
-            get (bool): This option is used when trying to find a suitable 
-                master flat for a given data.
-
-        Returns:
-            A master flat name, or basename to find a match among existing
-            files.
-
-        """
-        master_flat_name = os.path.join(reduced_data, 'master_flat')
-        sunset = datetime.datetime.strptime(sun_set,
-                                            "%Y-%m-%dT%H:%M:%S.%f")
-
-        sunrise = datetime.datetime.strptime(sun_rise,
-                                             "%Y-%m-%dT%H:%M:%S.%f")
-
-        afternoon_twilight = datetime.datetime.strptime(evening_twilight,
-                                                        "%Y-%m-%dT%H:%M:%S.%f")
-
-        morning_twilight = datetime.datetime.strptime(morning_twilight,
-                                                      "%Y-%m-%dT%H:%M:%S.%f")
-
-        date_obs = datetime.datetime.strptime(header['DATE-OBS'],
-                                              "%Y-%m-%dT%H:%M:%S.%f")
-        # print(sunset, date_obs, evening_twilight)
-        # print(' ')
-        if target_name != '':
-            target_name = '_' + target_name
-        if not get:
-            # TODO (simon): There must be a pythonic way to do this
-            if (date_obs < sunset) or (date_obs > sunrise):
-                dome_sky = '_dome'
-            elif (sunset < date_obs < afternoon_twilight) or\
-                    (morning_twilight < date_obs < sunrise):
-                dome_sky = '_sky'
-            elif afternoon_twilight < date_obs < morning_twilight:
-                dome_sky = '_night'
-            else:
-                dome_sky = '_other'
-        else:
-            dome_sky = '*'
-
-        if technique == 'Spectroscopy':
-            if header['GRATING'] != '<NO GRATING>':
-                flat_grating = '_' + re.sub('[A-Za-z_-]',
-                                            '',
-                                            header['GRATING'])
-
-                # self.spec_mode is an instance of SpectroscopicMode
-                wavmode = spectroscopic_mode(header=header)
-            else:
-                flat_grating = '_no_grating'
-                wavmode = ''
-
-            flat_slit = re.sub('[A-Za-z" ]',
-                               '',
-                               header['SLIT'])
-
-            filter2 = header['FILTER2']
-            if filter2 == '<NO FILTER>':
-                filter2 = ''
-            else:
-                filter2 = '_' + filter2
-
-            master_flat_name += target_name\
-                + flat_grating\
-                + wavmode\
-                + filter2\
-                + '_'\
-                + flat_slit\
-                + dome_sky\
-                + '.fits'
-
-        elif technique == 'Imaging':
-            flat_filter = re.sub('-', '_', header['FILTER'])
-            master_flat_name += '_' + flat_filter + dome_sky + '.fits'
-        # print(master_flat_name)
-        return master_flat_name
 
     def process_spectroscopy_science(self, science_group, save_all=False):
         """Process Spectroscopy science images.
@@ -741,7 +202,7 @@ class ImageProcessor(object):
                 flat_files = flat_sub_group.file.tolist()
                 sample_header = fits.getheader(os.path.join(
                     self.args.raw_path, flat_files[0]))
-                master_flat_name = self.name_master_flats(
+                master_flat_name = name_master_flats(
                     header=sample_header,
                     technique=self.technique,
                     reduced_data=self.args.red_path,
@@ -751,7 +212,7 @@ class ImageProcessor(object):
                     morning_twilight=self.morning_twilight)
 
                 master_flat, master_flat_name = \
-                    self.create_master_flats(
+                    create_master_flats(
                             flat_files=flat_files,
                             raw_data=self.args.raw_path,
                             reduced_data=self.args.red_path,
@@ -781,7 +242,7 @@ class ImageProcessor(object):
 
                 if not self.args.ignore_flats:
                     # define the master flat name
-                    master_flat_name = self.name_master_flats(
+                    master_flat_name = name_master_flats(
                         header=ccd.header,
                         technique=self.technique,
                         reduced_data=self.args.red_path,
@@ -1013,7 +474,19 @@ class ImageProcessor(object):
             flat_sub_group = science_group[science_group.obstype == 'FLAT']
             # TODO (simon): Find out if these variables are useful or not
             flat_files = flat_sub_group.file.tolist()
-            self.create_master_flats(
+
+            sample_header = fits.getheader(os.path.join(self.args.raw_path,
+                                                        flat_files[0]))
+            master_flat_name = name_master_flats(
+                header=sample_header,
+                technique=self.technique,
+                reduced_data=self.args.red_path,
+                sun_set=self.sun_set,
+                sun_rise=self.sun_rise,
+                evening_twilight=self.evening_twilight,
+                morning_twilight=self.morning_twilight)
+
+            create_master_flats(
                             flat_files=flat_files,
                             raw_data=self.args.raw_path,
                             reduced_data=self.args.red_path,
@@ -1041,7 +514,7 @@ class ImageProcessor(object):
         path_random_image = os.path.join(self.args.raw_path, random_image)
         sample_file = CCDData.read(path_random_image, unit=u.adu)
 
-        master_flat_name = self.name_master_flats(
+        master_flat_name = name_master_flats(
             header=sample_file.header,
             technique=self.technique,
             reduced_data=self.args.red_path,
