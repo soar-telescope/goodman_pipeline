@@ -52,7 +52,6 @@ class ImageProcessor(object):
             night and the data itself.
         """
         # TODO (simon): Check how inheritance could be used here.
-        self.log = logging.getLogger(__name__)
         self.args = args
         self.instrument = data_container.instrument
         self.technique = data_container.technique
@@ -111,7 +110,7 @@ class ImageProcessor(object):
                         group_obstype[0] == 'BIAS' and \
                             not self.args.ignore_bias:
 
-                        self.log.debug('Creating Master Bias')
+                        log.debug('Creating Master Bias')
                         bias_files = sub_group.file.tolist()
                         self.master_bias, self.master_bias_name = \
                             create_master_bias(
@@ -123,7 +122,7 @@ class ImageProcessor(object):
                                 trim_section=self.trim_section)
 
                     elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
-                        self.log.debug('Create Master FLATS')
+                        log.debug('Create Master FLATS')
                         flat_files = sub_group.file.tolist()
                         sample_header = fits.getheader(os.path.join(
                             self.args.raw_path, flat_files[0]))
@@ -147,11 +146,11 @@ class ImageProcessor(object):
                             new_master_flat_name=master_flat_name,
                             saturation=self.args.saturation_threshold)
                     else:
-                        self.log.debug('Process Data Group')
+                        log.debug('Process Data Group')
                         if self.technique == 'Spectroscopy':
                             self.process_spectroscopy_science(sub_group)
                         else:
-                            self.log.info('Processing Imaging Science Data')
+                            log.info('Processing Imaging Science Data')
                             self.process_imaging_science(sub_group)
 
     def process_spectroscopy_science(self, science_group, save_all=False):
@@ -189,11 +188,11 @@ class ImageProcessor(object):
                 target_name = science_group.object[science_group.obstype ==
                                                    'OBJECT'].unique()[0]
 
-                self.log.info('Processing Science Target: '
+                log.info('Processing Science Target: '
                               '{:s}'.format(target_name))
             else:
                 # TODO (simon): This does not make any sense
-                self.log.info('Processing Comparison Lamp: '
+                log.info('Processing Comparison Lamp: '
                               '{:s}'.format(target_name))
 
             if 'FLAT' in obstype and not self.args.ignore_flats:
@@ -223,11 +222,11 @@ class ImageProcessor(object):
                             new_master_flat_name=master_flat_name,
                             saturation=self.args.saturation_threshold)
             elif self.args.ignore_flats:
-                self.log.warning('Ignoring creation of Master Flat by request.')
+                log.warning('Ignoring creation of Master Flat by request.')
                 master_flat = None
                 master_flat_name = None
             else:
-                self.log.info('Attempting to find a suitable Master Flat')
+                log.info('Attempting to find a suitable Master Flat')
                 object_list = object_comp_group.file.tolist()
 
                 # grab a random image from the list
@@ -257,16 +256,16 @@ class ImageProcessor(object):
                         get_best_flat(flat_name=master_flat_name,
                                       path=self.args.red_path)
                     if (master_flat is None) and (master_flat_name is None):
-                        self.log.critical('Failed to obtain master flat')
+                        log.critical('Failed to obtain master flat')
 
             if master_flat is not None and not self.args.ignore_flats:
-                self.log.debug('Attempting to find slit trim section')
+                log.debug('Attempting to find slit trim section')
                 slit_trim = get_slit_trim_section(master_flat=master_flat)
             elif self.args.ignore_flats:
-                self.log.warning('Slit Trimming will be skipped, '
+                log.warning('Slit Trimming will be skipped, '
                                  '--ignore-flats is activated')
             else:
-                self.log.info("Master flat inexistent, can't find slit trim "
+                log.info("Master flat inexistent, can't find slit trim "
                               "section")
             if slit_trim is not None:
 
@@ -367,14 +366,14 @@ class ImageProcessor(object):
                         # ccd.write(full_path, clobber=True)
                         write_fits(ccd=ccd, full_path=full_path)
                 else:
-                    self.log.warning('Ignoring bias correction by request.')
+                    log.warning('Ignoring bias correction by request.')
 
                 # Do flat correction
                 if master_flat is None or master_flat_name is None:
-                    self.log.warning('The file {:s} will not be '
+                    log.warning('The file {:s} will not be '
                                      'flatfielded'.format(science_image))
                 elif self.args.ignore_flats:
-                    self.log.warning('Ignoring flatfielding by request.')
+                    log.warning('Ignoring flatfielding by request.')
                 else:
                     if norm_master_flat is None:
 
@@ -420,22 +419,22 @@ class ImageProcessor(object):
 
                 if ccd is not None:
                     if ccd.header['OBSTYPE'] == 'OBJECT':
-                        self.log.debug("Appending OBJECT image for combination")
+                        log.debug("Appending OBJECT image for combination")
                         all_object_image.append(ccd)
                     elif ccd.header['OBSTYPE'] == 'COMP':
-                        self.log.debug("Appending COMP image for combination")
+                        log.debug("Appending COMP image for combination")
                         all_comp_image.append(ccd)
                     else:
-                        self.log.error("Unknown OBSTYPE = {:s}"
+                        log.error("Unknown OBSTYPE = {:s}"
                                        "".format(ccd.header['OBSTYPE']))
                 else:
-                    self.log.warning("Cosmic ray rejection returned a None.")
+                    log.warning("Cosmic ray rejection returned a None.")
 
             if self.args.combine:
-                self.log.warning("Combination of data is experimental.")
+                log.warning("Combination of data is experimental.")
                 if len(all_object_image) > 1:
                     print(len(all_object_image))
-                    self.log.info("Combining {:d} OBJECT images"
+                    log.info("Combining {:d} OBJECT images"
                                   "".format(len(all_object_image)))
 
                     object_group = object_comp_group[
@@ -452,10 +451,10 @@ class ImageProcessor(object):
                     pass
 
                 else:
-                    self.log.error("No OBJECT images to combine")
+                    log.error("No OBJECT images to combine")
 
                 if len(all_comp_image) > 1:
-                    self.log.info("Combining {:d} COMP images"
+                    log.info("Combining {:d} COMP images"
                                   "".format(len(all_comp_image)))
                     # comp_group = object_comp_group[
                     #     object_comp_group.obstype == "COMP"]
@@ -464,13 +463,13 @@ class ImageProcessor(object):
                                  prefix=self.out_prefix,
                                  save=True)
                 else:
-                    self.log.error("No COMP images to combine")
+                    log.error("No COMP images to combine")
             else:
-                self.log.debug("Combine is disabled (default)")
+                log.debug("Combine is disabled (default)")
 
         elif 'FLAT' in obstype:
             self.queue.append(science_group)
-            self.log.warning('Only flats found in this group')
+            log.warning('Only flats found in this group')
             flat_sub_group = science_group[science_group.obstype == 'FLAT']
             # TODO (simon): Find out if these variables are useful or not
             flat_files = flat_sub_group.file.tolist()
@@ -497,7 +496,7 @@ class ImageProcessor(object):
                             new_master_flat_name=master_flat_name,
                             saturation=self.args.saturation_threshold)
         else:
-            self.log.error('There is no valid datatype in this group')
+            log.error('There is no valid datatype in this group')
 
     def process_imaging_science(self, imaging_group):
         """Does image reduction for science imaging data.
@@ -524,7 +523,7 @@ class ImageProcessor(object):
             morning_twilight=self.morning_twilight,
             get=True)
 
-        self.log.debug('Got {:s} for master flat name'.format(master_flat_name))
+        log.debug('Got {:s} for master flat name'.format(master_flat_name))
 
         master_flat, master_flat_name = get_best_flat(
             flat_name=master_flat_name,
@@ -581,9 +580,9 @@ class ImageProcessor(object):
                                           self.out_prefix + image_file)
                 # ccd.write(final_name, clobber=True)
                 write_fits(ccd=ccd, full_path=final_name)
-                self.log.info('Created science file: {:s}'.format(final_name))
+                log.info('Created science file: {:s}'.format(final_name))
         else:
-            self.log.error('Can not process data without a master flat')
+            log.error('Can not process data without a master flat')
 
 
 if __name__ == '__main__':
