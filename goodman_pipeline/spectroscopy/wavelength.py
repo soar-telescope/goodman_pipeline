@@ -366,7 +366,8 @@ class WavelengthCalibration(object):
         except NotImplementedError:
 
             self.log.warning('This configuration is not supported in '
-                             'automatic mode.')
+                             'automatic mode or there is a typo in the '
+                             'keywords.')
 
             # TODO (simon): Evaluate if send this to interactive mode
             return None
