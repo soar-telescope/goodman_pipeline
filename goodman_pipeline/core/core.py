@@ -3134,7 +3134,7 @@ class IdentifySpectroscopicTargets(object):
         self.model_name = model_name
         self.background_threshold = background_threshold
 
-        self.slit_size = re.sub('[a-zA-Z"]', '', self.ccd.header['SLIT'])
+        self.slit_size = re.sub('[a-zA-Z"_*]', '', self.ccd.header['SLIT'])
         log.debug('Slit size: {:s}'.format(self.slit_size))
         self.serial_binning = int(self.ccd.header['CCDSUM'].split()[0])
         log.debug('Serial binning: {:d}'.format(self.serial_binning))

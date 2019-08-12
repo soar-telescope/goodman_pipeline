@@ -796,7 +796,7 @@ class WavelengthCalibration(object):
         filtered_data = np.array(none_to_zero)
 
         _upper_limit = no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()
-        slit_size = np.float(re.sub('[a-zA-Z" ]', '', lamp_header['slit']))
+        slit_size = np.float(re.sub('[a-zA-Z"_*]', '', lamp_header['slit']))
 
         serial_binning, parallel_binning = [
             int(x) for x in lamp_header['CCDSUM'].split()]
