@@ -1753,7 +1753,7 @@ def setup_logging():
     log_filename = 'goodman_log.txt'
 
     if '--debug' in sys.argv:
-        log_format = '[%(asctime)s][%(levelname).1s]: %(message)s ' \
+        log_format = '[%(asctime)s][%(levelname)8s]: %(message)s ' \
                      '[%(module)s.%(funcName)s:%(lineno)d]'
         logging_level = logging.DEBUG
     else:
@@ -2597,7 +2597,7 @@ class ReferenceData(object):
         """Finds a suitable template lamp from the catalog
 
         Args:
-            header (Header): FITS header of image we are looking a a reference
+            header (Header): FITS header of image we are looking a reference
                 lamp.
 
         Returns:
@@ -2606,6 +2606,7 @@ class ReferenceData(object):
         """
 
         if all([keyword in [hkey for hkey in header.keys()] for keyword in self.lamp_status_keywords]):
+            self.log.info("Searching matching reference lamp")
             filtered_collection = self.ref_lamp_collection[(
                 (self.ref_lamp_collection['lamp_hga'] == header['LAMP_HGA']) &
                 (self.ref_lamp_collection['lamp_ne'] == header['LAMP_NE']) &
@@ -2613,11 +2614,30 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) &
                 (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
                 (self.ref_lamp_collection['wavmode'] == header['wavmode']))]
+            if filtered_collection.empty:
+                self.log.error("Unable to find a match for: "
+                               "LAMP_HGA = {}, "
+                               "LAMP_NE = {}, "
+                               "LAMP_AR = {}, "
+                               "LAMP_FE = {}, "
+                               "LAMP_CU = {}, "
+                               "WAVMODE = {} ".format(header['LAMP_HGA'],
+                                                      header['LAMP_NE'],
+                                                      header['LAMP_AR'],
+                                                      header['LAMP_FE'],
+                                                      header['LAMP_CU'],
+                                                      header['WAVMODE']))
         else:
             filtered_collection = self.ref_lamp_collection[
                 (self.ref_lamp_collection['object'] == header['object']) &
                 # TODO (simon): Wavemode can be custom (GRT_TARG, CAM_TARG, GRATING)
                 (self.ref_lamp_collection['wavmode'] == header['wavmode'])]
+            if filtered_collection.empty:
+                self.log.error("Unable to find matching "
+                               "reference lamp for: "
+                               "OBJECT = {}, "
+                               "WAVMODE = {}".format(header['OBJECT'],
+                                                     header['WAVMODE']))
 
         if filtered_collection.empty:
             raise NotImplementedError("It was not possible to find any lamps "
@@ -3134,7 +3154,7 @@ class IdentifySpectroscopicTargets(object):
         self.model_name = model_name
         self.background_threshold = background_threshold
 
-        self.slit_size = re.sub('[a-zA-Z"]', '', self.ccd.header['SLIT'])
+        self.slit_size = re.sub('[a-zA-Z"_*]', '', self.ccd.header['SLIT'])
         log.debug('Slit size: {:s}'.format(self.slit_size))
         self.serial_binning = int(self.ccd.header['CCDSUM'].split()[0])
         log.debug('Serial binning: {:d}'.format(self.serial_binning))
