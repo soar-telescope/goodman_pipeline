@@ -31,36 +31,6 @@ class ImageProcessorTest(TestCase):
 
         self.half_full_well = 69257
 
-    def test_file_is_saturated(self):
-        self.ccd.data[:10, :10] = self.half_full_well + 1
-        self.assertTrue(self.image_processor._is_file_saturated(ccd=self.ccd))
-
-    def test_file_is_not_saturated(self):
-        self.ccd.data[:10, :10] = self.half_full_well + 1
-        self.ccd.data[0, 0] = 1
-        self.assertFalse(self.image_processor._is_file_saturated(ccd=self.ccd))
-
-
-
-def test_define_trim_section():
-    pass
-
-
-def test_get_overscan_region():
-    pass
-
-
-def test_create_master_bias():
-    pass
-
-
-def test_create_master_flats():
-    pass
-
-
-def test_name_master_flats():
-    pass
-
 
 def test_process_spectroscopy_science():
     pass
