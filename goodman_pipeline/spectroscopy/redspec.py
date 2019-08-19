@@ -391,7 +391,7 @@ class MainApp(object):
                         ccd=ccd,
                         fit_model=target_fit_model,
                         background_threshold=background_threshold,
-                        nfind=3,
+                        nfind=self.args.max_n_targets,
                         plots=self.args.debug_with_plots)
 
                     # trace
