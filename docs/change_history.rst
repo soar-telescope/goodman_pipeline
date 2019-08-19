@@ -6,7 +6,11 @@ Change History
 V1.3.0 Unreleased
 ^^^^^^^^^^^^^^^^^
 
-- Updated keyword values of
+- Bugs Fixed:
+
+  + `--max-targets` was not being used, missed connection in `MainApp`.
+
+- Updated keyword values of all reference lamps in the library according to [#292]
 
 
 .. _v1.2.1:
