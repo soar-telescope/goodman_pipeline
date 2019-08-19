@@ -3892,7 +3892,11 @@ class IdentifySpectroscopicTargets(object):
 
         return self.spatial_profile, self.background_level
 
-    def get_peaks(self, spatial_profile=None, order=None, file_name=None, plots=False):
+    def get_peaks(self,
+                  spatial_profile=None,
+                  order=None,
+                  file_name=None,
+                  plots=False):
         """
 
         Args:
@@ -3960,13 +3964,13 @@ class IdentifySpectroscopicTargets(object):
         return self.all_peaks
 
     def filter_peaks(self,
-                              spatial_profile=None,
-                              detected_peaks=None,
-                              background_level=None,
-                              nfind=None,
-                              background_threshold=None,
-                              file_name=None,
-                              plots=False):
+                     spatial_profile=None,
+                     detected_peaks=None,
+                     background_level=None,
+                     nfind=None,
+                     background_threshold=None,
+                     file_name=None,
+                     plots=False):
         """
 
         Args:
@@ -4152,7 +4156,7 @@ class IdentifySpectroscopicTargets(object):
 
             ax.plot(spatial_profile, color='k', label='Median Profile')
             for profile in profile_model:
-                print(profile_model)
+                # print(profile_model)
                 ax.plot(profile(range(len(spatial_profile))),
                         label=profile.name)
 
