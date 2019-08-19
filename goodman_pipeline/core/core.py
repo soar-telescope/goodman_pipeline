@@ -376,7 +376,8 @@ def create_master_flats(flat_files,
                         trim_section,
                         master_bias_name,
                         new_master_flat_name,
-                        saturation):
+                        saturation,
+                        ignore_bias=False):
     """Creates master flats
 
     Using a list of compatible flat images it combines them using median and
@@ -403,6 +404,7 @@ def create_master_flats(flat_files,
         flat. Can be absolute path or not.
         saturation (int): Saturation threshold, defines the percentage of
         pixels above saturation level allowed for flat field images.
+        ignore_bias (bool): Flag to create master bias without master bias.
 
 
     Returns:
@@ -420,13 +422,14 @@ def create_master_flats(flat_files,
         master_flat_name = os.path.join(
             reduced_data, os.path.basename(new_master_flat_name))
 
-    if os.path.isabs(os.path.dirname(master_bias_name)) and \
-            os.path.exists(master_bias_name):
-        master_bias = read_fits(master_bias_name, technique=technique)
-    else:
-        master_bias_name = os.path.join(reduced_data,
-                                        os.path.basename(master_bias_name))
-        master_bias = read_fits(master_bias_name, technique=technique)
+    if not ignore_bias:
+        if os.path.isabs(os.path.dirname(master_bias_name)) and \
+                os.path.exists(master_bias_name):
+            master_bias = read_fits(master_bias_name, technique=technique)
+        else:
+            master_bias_name = os.path.join(reduced_data,
+                                            os.path.basename(master_bias_name))
+            master_bias = read_fits(master_bias_name, technique=technique)
 
     log.info('Creating Master Flat')
     for flat_file in flat_files:
@@ -438,10 +441,11 @@ def create_master_flats(flat_files,
         if technique == 'Spectroscopy':
             ccd = image_overscan(ccd, overscan_region=overscan_region)
 
-            ccd = image_trim(ccd=ccd,
-                             trim_section=trim_section,
-                             trim_type='trimsec')
+        ccd = image_trim(ccd=ccd,
+                         trim_section=trim_section,
+                         trim_type='trimsec')
 
+        if not ignore_bias:
             ccd = ccdproc.subtract_bias(ccd,
                                         master_bias,
                                         add_keyword=False)
@@ -449,18 +453,6 @@ def create_master_flats(flat_files,
                 os.path.basename(master_bias_name),
                 'Master bias image')
 
-        elif technique == 'Imaging':
-            ccd = image_trim(ccd=ccd,
-                             trim_section=trim_section,
-                             trim_type='trimsec')
-
-            ccd = ccdproc.subtract_bias(ccd,
-                                        master_bias,
-                                        add_keyword=False)
-
-            ccd.header['GSP_BIAS'] = (
-                os.path.basename(master_bias_name),
-                'Master bias image')
         else:
             log.error('Unknown observation technique: ' + technique)
         if is_file_saturated(ccd=ccd,

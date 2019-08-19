@@ -66,7 +66,7 @@ Common Steps
    Make sure there is a green tag that says Latest release. For instance, for
    the version ``v1.1.2`` the file is called.
 
-   ``goodman_pipeline-1.1.2.tar.gz``
+   ``goodman_pipeline-1.2.1.tar.gz``
 
 
 4. Extract the file (you can't copy and paste this line)
@@ -133,5 +133,6 @@ The |pipeline full name| Can also be installed using pip, but it does not instal
 ``dcr``, so if you are updating your goodman pipeline only you can use:
 
   ``pip install goodman-pipeline``
+
 
 .. include:: _shortcuts.rst

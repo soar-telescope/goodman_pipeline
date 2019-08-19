@@ -144,7 +144,8 @@ class ImageProcessor(object):
                             trim_section=self.trim_section,
                             master_bias_name=self.master_bias_name,
                             new_master_flat_name=master_flat_name,
-                            saturation=self.args.saturation_threshold)
+                            saturation=self.args.saturation_threshold,
+                            ignore_bias=self.args.ignore_bias)
                     else:
                         log.debug('Process Data Group')
                         if self.technique == 'Spectroscopy':
@@ -220,7 +221,8 @@ class ImageProcessor(object):
                             trim_section=self.trim_section,
                             master_bias_name=self.master_bias_name,
                             new_master_flat_name=master_flat_name,
-                            saturation=self.args.saturation_threshold)
+                            saturation=self.args.saturation_threshold,
+                            ignore_bias=self.args.ignore_bias)
             elif self.args.ignore_flats:
                 log.warning('Ignoring creation of Master Flat by request.')
                 master_flat = None
