@@ -95,7 +95,6 @@ class NightOrganizer(object):
             _imaging_file = self.file_collection[
                 self.file_collection.wavmode == 'Imaging']
             if not _imaging_file.empty:
-                print(_imaging_file)
                 self.log.warning("Ignoring all Imaging data. Assuming they are "
                                  "not science exposures.")
                 self.log.info("If any of the files listed below is a science "
