@@ -14,4 +14,19 @@ The pipeline does not modify the original files unless there are problems with
 fits compliance, is never a bad idea to keep copies of your original data in
 a safe place.
 
+Updating Keywords
+^^^^^^^^^^^^^^^^^
+Since version :ref:`1.3.0 <v1.3.0>` if your data is older than **August 6, 2019**, you will
+need to change the following keywords.
 
+- ``SLIT``: Replace whitespaces with underscore, remove " and all letters are
+  uppercase. For instance ``0.45" long slit`` becomes ``0.45_LONG_SLIT``.
+- ``GRATING``: Grating's `lines/mm` goes first and then the manufacturer. For instance.
+  ``SYZY_400`` becomes ``400_SYZY``.
+- ``WAVMODE``: Replace whitespace with underscore and all letters are capitalized.
+  For instance. ``400 m1`` becomes ``400_M1``.
+
+.. note::
+
+  General rules are: Underscore is the only accepted separator. All letter must
+  be upper case. Remove any character that need escaping.
