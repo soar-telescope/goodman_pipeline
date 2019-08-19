@@ -685,10 +685,10 @@ class WavelengthCalibration(object):
 
         """
         cyaxis2 = new_array
-        if float(re.sub('[A-Za-z" ]', '', self.lamp.header['SLIT'])) > 3:
+        if float(re.sub('[A-Za-z_ ]', '', self.lamp.header['SLIT'])) > 3:
 
             box_width = float(
-                re.sub('[A-Za-z" ]',
+                re.sub('[A-Za-z_ ]',
                        '',
                        self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
 
@@ -701,7 +701,7 @@ class WavelengthCalibration(object):
 
         else:
             kernel_stddev = float(
-                re.sub('[A-Za-z" ]',
+                re.sub('[A-Za-z_ ]',
                        '',
                        self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
 
