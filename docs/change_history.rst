@@ -3,10 +3,24 @@ Change History
 
 .. _v1.2.1:
 
-V1.2.1 Unreleased
+V1.2.1 19-08-2019
 ^^^^^^^^^^^^^^^^^
 
-- Install instructions updated
+- Bugs fixed
+
+  + Bias process was not fully ignored when `--ignore-bias` was used [#289].
+  + `pandas` version was not specified in `environment.yml` [#288, #290]
+  + Target extraction failed for low signal targets because background subtraction
+    was being ignored at the step of actually identifying targets.
+- Install instructions updated [#290]
+- Moved static methods from `ImageProcessor` to `core`.
+- Added function to validate ccd regions using regular expressions.
+- Using lamps keywords to select reference lamps.
+- Replaced `target_stddev` by `target_fwhm` in function `extract` and `extract_fractional`.
+- Replaced `nsigmas` by `nfwhm` everywhere.
+- Added argument `--background-threshold` with default value `3`.
+- Added argument `--fit-targets-with` with options `moffat` and `gaussian`.
+
 
 .. _v1.2.0:
 
