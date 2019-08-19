@@ -92,13 +92,18 @@ class NightOrganizer(object):
         # if technique is Spectroscopy, ignore all data that has
         # WAVMODE = Imaging because assumes they are acquisition images
         if self.technique == 'Spectroscopy':
-            self.log.warning("Ignoring all Imaging data. Assuming they are "
-                             "not science exposures")
-
             _imaging_file = self.file_collection[
                 self.file_collection.wavmode == 'Imaging']
-            for _file in _imaging_file['file']:
-                self.log.info("Discarding image: {:s}".format(_file))
+            if not _imaging_file.empty:
+                print(_imaging_file)
+                self.log.warning("Ignoring all Imaging data. Assuming they are "
+                                 "not science exposures.")
+                self.log.info("If any of the files listed below is a science "
+                              "file, please process it/them in a separate "
+                              "folder.")
+
+                for _file in _imaging_file['file']:
+                    self.log.info("Discarding image: {:s}".format(_file))
 
             self.file_collection = self.file_collection[
                 self.file_collection.wavmode != 'Imaging'].reset_index(drop=True)
@@ -166,7 +171,7 @@ class NightOrganizer(object):
                 self.imaging_night()
 
             if self.data_container.is_empty:
-                self.log.warning("The following files will be discarded:")
+                self.log.warning("The following files will not be processed:")
                 for _file in sub_collection['file'].tolist():
                     self.log.warning("{:s}".format(_file))
                 self.log.debug('data_container is empty')
