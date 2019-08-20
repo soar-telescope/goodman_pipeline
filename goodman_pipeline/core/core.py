@@ -1604,6 +1604,23 @@ def identify_targets(ccd,
                      background_threshold,
                      nfind=3,
                      plots=False):
+    """Identify Spectroscopic Targets
+
+    Wrapper to the class `IdentifySpectroscopicTargets`.
+
+    Args:
+        ccd (CCDData): Image containing spectra
+        fit_model (str): Name of the model to be fitted `moffat` or `gaussian`.
+        background_threshold (int): Number of background levels for target
+        discrimination.
+        nfind (int): Maximum number of targets passing the background threshold
+        to be returned, they are order from most intense peak to least intense.
+        plots (bool): Flat for plotting results.
+
+    Returns:
+        identified_targets (list): List of models successfully fitted.
+
+    """
     identify = IdentifySpectroscopicTargets()
 
     identified_targets = identify(ccd=ccd,
