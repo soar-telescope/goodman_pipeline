@@ -29,9 +29,10 @@ from scipy import signal
 
 from ..wcs.wcs import WCS
 
-from ..core import (bin_reference_data, write_fits)
+from ..core import (bin_reference_data, cross_correlation, write_fits)
 from ..core import (ReferenceData)
 
+log = logging.getLogger(__name__)
 
 SHOW_PLOTS = False
 
@@ -398,8 +399,13 @@ class WavelengthCalibration(object):
         self.log.debug('Length / NLines {:.3f}'.format(
             len(self.lamp.data) / float(len(lamp_lines_pixel))))
 
-        global_cross_corr = self._cross_correlation(reference_lamp_ccd.data,
-                                                    self.lamp.data)
+        slit_size = float(re.sub('[A-Za-z_ ]', '', self.lamp.header['SLIT']))
+
+        global_cross_corr = cross_correlation(
+            reference=reference_lamp_ccd.data,
+            new_array=self.lamp.data,
+            slit_size=slit_size,
+            serial_binning=self.serial_binning)
 
         half_width = np.max(
             [int((len(self.lamp.data) / float(len(lamp_lines_pixel)))),
@@ -423,7 +429,13 @@ class WavelengthCalibration(object):
             # ref_wavele = reference_lamp_wav_axis[xmin:xmax]
             lamp_sample = self.lamp.data[xmin:xmax]
 
-            correlation_value = self._cross_correlation(ref_sample, lamp_sample)
+            slit_size = float(re.sub('[A-Za-z_ ]', '', self.lamp.header['SLIT']))
+
+            correlation_value = cross_correlation(
+                reference=ref_sample,
+                new_array=lamp_sample,
+                slit_size=slit_size,
+                serial_binning=self.serial_binning)
 
             self.log.debug('Cross correlation value '
                            '{:s} vs {:s}'.format(str(global_cross_corr),
@@ -647,64 +659,7 @@ class WavelengthCalibration(object):
             # else:
             #     plt.close('all')
 
-    def _cross_correlation(self, reference, new_array, mode='full', plot=False):
-        """Do cross correlation of two arrays
 
-        Args:
-            reference (array): Reference array.
-            new_array (array): Array to be matched.
-            mode (str): Correlation mode for `scipy.signal.correlate`.
-            plot (bool): Switch debugging plots on or off.
-
-        Returns:
-            correlation_value (int): Shift value in pixels.
-
-        """
-        cyaxis2 = new_array
-        if float(re.sub('[A-Za-z_ ]', '', self.lamp.header['SLIT'])) > 3:
-
-            box_width = float(
-                re.sub('[A-Za-z_ ]',
-                       '',
-                       self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
-
-            self.log.debug('BOX WIDTH: {:f}'.format(box_width))
-            box_kernel = Box1DKernel(width=box_width)
-            max_before = np.max(reference)
-            cyaxis1 = convolve(reference, box_kernel)
-            max_after = np.max(cyaxis1)
-            cyaxis1 *= max_before / max_after
-
-        else:
-            kernel_stddev = float(
-                re.sub('[A-Za-z_ ]',
-                       '',
-                       self.lamp.header['SLIT'])) / (0.15 * self.serial_binning)
-
-            gaussian_kernel = Gaussian1DKernel(stddev=kernel_stddev)
-            cyaxis1 = convolve(reference, gaussian_kernel)
-            cyaxis2 = convolve(new_array, gaussian_kernel)
-
-        ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
-
-        max_index = np.argmax(ccorr)
-
-        x_ccorr = np.linspace(-int(len(ccorr) / 2.),
-                              int(len(ccorr) / 2.),
-                              len(ccorr))
-
-        correlation_value = x_ccorr[max_index]
-        if plot:
-            plt.ion()
-            plt.title('Cross Correlation')
-            plt.xlabel('Lag Value')
-            plt.ylabel('Correlation Value')
-            plt.plot(x_ccorr, ccorr)
-            plt.draw()
-            plt.pause(2)
-            plt.clf()
-            plt.ioff()
-        return correlation_value
 
     def _evaluate_solution(self, clipped_differences):
         """Calculates Root Mean Square Error for the wavelength solution.

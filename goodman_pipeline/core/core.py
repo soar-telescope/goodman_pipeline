@@ -23,6 +23,7 @@ import scipy
 from astroplan import Observer
 from astropy import units as u
 from astropy.io import fits
+from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
@@ -522,6 +523,75 @@ def create_master_flats(flat_files,
         log.error('Empty flat list. Check that they do not exceed the '
                   'saturation limit.')
         return None, None
+
+
+def cross_correlation(reference,
+                      new_array,
+                      slit_size,
+                      serial_binning,
+                      mode='full',
+                      plot=False):
+    """Do cross correlation of two 1D spectra
+
+    It convolves the reference lamp depending on the slit size of the new_array
+    that corresponds with a comparison lamp.
+    If the slit is larger than 3 arcseconds the reference lamp is convolved with
+    a `~astropy.convolution.Box1DKernel` because spectral lines look more like a
+    block than a line. And if it is smaller or equal to 3 it will
+    use a `~astropy.convolution.Gaussian1DKernel` ponderated by the binning.
+    All reference lamp are unbinned, or binning is 1x1.
+
+    Args:
+        reference (array): Reference array.
+        new_array (array): Array to be matched. A new reference lamp.
+        slit_size (float): Slit width in arcseconds
+        serial_binning (int): Binning in the spectral axis
+        mode (str): Correlation mode for `scipy.signal.correlate`.
+        plot (bool): Switch debugging plots on or off.
+
+    Returns:
+        correlation_value (int): Shift value in pixels.
+
+    """
+    cyaxis2 = new_array
+    if slit_size > 3:
+
+        box_width = slit_size / (0.15 * serial_binning)
+
+        log.debug('BOX WIDTH: {:f}'.format(box_width))
+        box_kernel = Box1DKernel(width=box_width)
+        max_before = np.max(reference)
+        cyaxis1 = convolve(reference, box_kernel)
+        max_after = np.max(cyaxis1)
+        cyaxis1 *= max_before / max_after
+
+    else:
+        kernel_stddev = slit_size / (0.15 * serial_binning)
+
+        gaussian_kernel = Gaussian1DKernel(stddev=kernel_stddev)
+        cyaxis1 = convolve(reference, gaussian_kernel)
+        cyaxis2 = convolve(new_array, gaussian_kernel)
+
+    ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+
+    max_index = np.argmax(ccorr)
+
+    x_ccorr = np.linspace(-int(len(ccorr) / 2.),
+                          int(len(ccorr) / 2.),
+                          len(ccorr))
+
+    correlation_value = x_ccorr[max_index]
+    if plot:
+        plt.ion()
+        plt.title('Cross Correlation')
+        plt.xlabel('Lag Value')
+        plt.ylabel('Correlation Value')
+        plt.plot(x_ccorr, ccorr)
+        plt.draw()
+        plt.pause(2)
+        plt.clf()
+        plt.ioff()
+    return correlation_value
 
 
 def classify_spectroscopic_data(path, search_pattern):

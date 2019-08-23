@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from unittest import TestCase, skip
 from ccdproc import CCDData
+from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.io import fits
 from astropy.modeling import Model
 from astropy.modeling import (models,
@@ -158,6 +159,40 @@ class BinningTest(TestCase):
             self.assertEqual(len(new_wavelength), len(new_intensity))
             self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
 
+
+class CrossCorrelationTest(TestCase):
+
+    @skip
+    def test__cross_correlation(self):
+        self.wc.lamp = self.ccd.copy()
+        self.wc.serial_binning = 1
+
+        x_axis = np.arange(0, 4060, 1)
+
+        reference = np.zeros(4060)
+        gaussian = models.Gaussian1D(stddev=2)
+
+        for i in sorted(np.random.choice(x_axis, 30)):
+            gaussian.mean.value = i
+            reference += gaussian(x_axis)
+
+        offset = np.random.choice(range(1, 15), 1)[0]
+
+        for slit in [1, 2, 3, 4, 5]:
+
+            new_array = np.append(reference[offset:], np.zeros(offset))
+
+            if slit > 3:
+                box_kernel = Box1DKernel(width=slit / 0.15)
+                new_array = convolve(new_array, box_kernel)
+
+            self.assertEqual(len(reference), len(new_array))
+
+            self.wc.lamp.header['SLIT'] = '{:d}.0" long slit'.format(slit)
+
+            correlation_value = self.wc._cross_correlation(reference=reference,
+                                                           new_array=new_array)
+            self.assertEqual(correlation_value, offset)
 
 class InterpolationTest(TestCase):
 
