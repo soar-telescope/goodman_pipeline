@@ -69,21 +69,6 @@ class WavelengthCalibrationTests(TestCase):
     def test_automatic_wavelength_solution(self):
         pass
 
-    def test__bin_reference_data(self):
-        wavelength = np.linspace(3000, 7000, 4000)
-        intensity = np.random.random_sample(4000)
-
-        for i in range(1, 4):
-            self.wc.serial_binning = i
-
-            new_wavelength, new_intensity = self.wc._bin_reference_data(
-                wavelength=wavelength,
-                intensity=intensity)
-
-            self.assertEqual(len(wavelength), len(intensity))
-            self.assertEqual(len(new_wavelength), len(new_intensity))
-            self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
-
     @skip
     def test__cross_correlation(self):
         self.wc.lamp = self.ccd.copy()

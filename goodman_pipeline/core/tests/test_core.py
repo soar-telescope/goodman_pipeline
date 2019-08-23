@@ -32,6 +32,7 @@ from ..core import (GenerateDcrParFile,
 # import of functions in core.py
 from ..core import (astroscrappy_lacosmic,
                     add_wcs_keys,
+                    bin_reference_data,
                     call_cosmic_rejection,
                     classify_spectroscopic_data,
                     combine_data,
@@ -139,6 +140,23 @@ class AddWCSKeywordsTest(TestCase):
                     'WAT1_001',
                     'DC-FLAG',
                     'DCLOG1']
+
+
+class BinningTest(TestCase):
+
+    def test__bin_reference_data(self):
+        wavelength = np.linspace(3000, 7000, 4000)
+        intensity = np.random.random_sample(4000)
+
+        for i in range(1, 4):
+            new_wavelength, new_intensity = bin_reference_data(
+                wavelength=wavelength,
+                intensity=intensity,
+                serial_binning=i)
+
+            self.assertEqual(len(wavelength), len(intensity))
+            self.assertEqual(len(new_wavelength), len(new_intensity))
+            self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
 
 
 class InterpolationTest(TestCase):
