@@ -309,6 +309,10 @@ def create_master_bias(bias_files,
         trim_section (str): Defines the area to be used after trimming
         unusable selected parts (edges). In the format `[x1:x2.,y1:y2]`.
 
+    Returns:
+        master_bias (object):
+        master_bias_name (str):
+
     """
     assert isinstance(bias_files, list)
 
@@ -2682,7 +2686,10 @@ def write_fits(ccd,
 
     """
     assert isinstance(ccd, CCDData)
-    assert os.path.isdir(os.path.dirname(full_path))
+    if not os.path.isdir(os.path.dirname(full_path)):
+        log.error("Directory {} does not exist. Creating it right now."
+                  "".format(os.path.dirname(full_path)))
+        os.mkdir(os.path.dirname(full_path))
 
     # Original File Name
     # This should be set only once.
