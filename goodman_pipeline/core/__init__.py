@@ -14,6 +14,7 @@ from .core import (GenerateDcrParFile,
 # import of functions in core.py
 from .core import (astroscrappy_lacosmic,
                    add_wcs_keys,
+                   bin_reference_data,
                    call_cosmic_rejection,
                    classify_spectroscopic_data,
                    combine_data,

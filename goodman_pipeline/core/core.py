@@ -141,6 +141,34 @@ def add_wcs_keys(ccd):
     return ccd
 
 
+def bin_reference_data(wavelength, intensity, serial_binning):
+    """Bins a 1D array
+
+    This method reduces the size of an unbinned array by binning.
+    The function to combine data is `numpy.mean`.
+
+    Args:
+        wavelength (array): Wavelength axis
+        intensity (array): Intensity
+        serial_binning (int): Serial Binning is the binning in the
+        dispersion axis.
+
+    Returns:
+        Binned wavelength and intensity arrays.
+
+    """
+    if serial_binning != 1:
+        b_wavelength = ccdproc.block_reduce(wavelength,
+                                            serial_binning,
+                                            np.mean)
+        b_intensity = ccdproc.block_reduce(intensity,
+                                           serial_binning,
+                                           np.mean)
+        return b_wavelength, b_intensity
+    else:
+        return wavelength, intensity
+
+
 def call_cosmic_rejection(ccd,
                           image_name,
                           out_prefix,

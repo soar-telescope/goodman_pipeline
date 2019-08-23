@@ -29,7 +29,7 @@ from scipy import signal
 
 from ..wcs.wcs import WCS
 
-from ..core import (write_fits)
+from ..core import (bin_reference_data, write_fits)
 from ..core import (ReferenceData)
 
 
@@ -377,8 +377,9 @@ class WavelengthCalibration(object):
 
         if self.serial_binning != 1:
             reference_lamp_wav_axis, reference_lamp_ccd.data = \
-                self._bin_reference_data(wavelength=reference_lamp_wav_axis,
-                                         intensity=reference_lamp_ccd.data)
+                bin_reference_data(wavelength=reference_lamp_wav_axis,
+                                   intensity=reference_lamp_ccd.data,
+                                   serial_binning=self.serial_binning)
 
             self.wcs.binning = self.serial_binning
 
@@ -645,31 +646,6 @@ class WavelengthCalibration(object):
                     # plt.close(self.i_fig)
             # else:
             #     plt.close('all')
-
-    def _bin_reference_data(self, wavelength, intensity):
-        """Bins a 1D array
-
-        This method reduces the size of an unbinned array by binning.
-        The function to combine data is `numpy.mean`.
-
-        Args:
-            wavelength (array): Wavelength axis
-            intensity (array): Intensity
-
-        Returns:
-            Binned wavelength and intensity arrays.
-
-        """
-        if self.serial_binning != 1:
-            b_wavelength = ccdproc.block_reduce(wavelength,
-                                                self.serial_binning,
-                                                np.mean)
-            b_intensity = ccdproc.block_reduce(intensity,
-                                               self.serial_binning,
-                                               np.mean)
-            return b_wavelength, b_intensity
-        else:
-            return wavelength, intensity
 
     def _cross_correlation(self, reference, new_array, mode='full', plot=False):
         """Do cross correlation of two arrays
