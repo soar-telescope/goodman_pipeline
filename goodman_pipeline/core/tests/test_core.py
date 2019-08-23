@@ -45,6 +45,7 @@ from ..core import (astroscrappy_lacosmic,
                     extraction,
                     extract_fractional_pixel,
                     extract_optimal,
+                    evaluate_wavelength_solution,
                     fix_keywords,
                     fractional_sum,
                     get_best_flat,
@@ -780,6 +781,32 @@ class ExtractionTest(TestCase):
                           target_trace=self.target_trace,
                           spatial_profile=self.target_profile_gaussian,
                           extraction_name='optimal')
+
+
+class EvaluateWavelengthSolutionTest(TestCase):
+
+    def test__evaluate_solution(self):
+        differences = np.array([0.5] * 10)
+
+        clipped_differences = np.ma.masked_array(differences,
+                                                 mask=[0,
+                                                       0,
+                                                       1,
+                                                       0,
+                                                       0,
+                                                       1,
+                                                       0,
+                                                       0,
+                                                       1,
+                                                       0])
+
+        rms_error, n_points, n_rej = evaluate_wavelength_solution(
+            clipped_differences=clipped_differences)
+
+        self.assertEqual(rms_error, 0.5)
+        self.assertEqual(n_points, 10)
+        self.assertEqual(n_rej, 3)
+
 
 class FixKeywordsTest(TestCase):
 

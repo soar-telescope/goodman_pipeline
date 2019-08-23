@@ -1297,6 +1297,36 @@ def extract_optimal():
     raise NotImplementedError
 
 
+def evaluate_wavelength_solution(clipped_differences):
+    """Calculates Root Mean Square Error for the wavelength solution.
+
+    Args:
+        clipped_differences (ndarray): Numpy masked array of differences
+          between reference line values in angstrom and the value calculated
+          using the model of the wavelength solution.
+
+    Returns:
+        Root Mean Square Error, number of points and number of points
+          rejected in the calculation of the wavelength solution.
+
+    """
+    n_points = len(clipped_differences)
+    n_rejections = np.ma.count_masked(clipped_differences)
+    square_differences = []
+
+    for i in range(len(clipped_differences)):
+        if clipped_differences[i] is not np.ma.masked:
+            square_differences.append(clipped_differences[i] ** 2)
+
+    rms_error = np.sqrt(
+        np.sum(square_differences) / len(square_differences))
+
+    log.info('Wavelength solution RMS Error : {:.3f}'.format(
+        rms_error))
+
+    return rms_error, n_points, n_rejections
+
+
 def fix_keywords(path, pattern='*.fits'):
     """Fix FITS uncompliance of some keywords
 

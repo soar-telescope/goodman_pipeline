@@ -29,7 +29,11 @@ from scipy import signal
 
 from ..wcs.wcs import WCS
 
-from ..core import (bin_reference_data, cross_correlation, write_fits)
+from ..core import (bin_reference_data,
+                    cross_correlation,
+                    evaluate_wavelength_solution,
+                    write_fits)
+
 from ..core import (ReferenceData)
 
 log = logging.getLogger(__name__)
@@ -547,7 +551,9 @@ class WavelengthCalibration(object):
                                           model_name='chebyshev',
                                           degree=self.poly_order)
 
-        self._evaluate_solution(clipped_differences=clipped_differences)
+        self.rms_error, self.n_points, self.n_rejections = \
+            evaluate_wavelength_solution(
+                clipped_differences=clipped_differences)
 
         if self.args.plot_results or self.args.debug_with_plots or \
                 self.args.save_plots:  # pragma: no cover
@@ -658,35 +664,6 @@ class WavelengthCalibration(object):
                     # plt.close(self.i_fig)
             # else:
             #     plt.close('all')
-
-
-
-    def _evaluate_solution(self, clipped_differences):
-        """Calculates Root Mean Square Error for the wavelength solution.
-
-        Args:
-            clipped_differences (ndarray): Numpy masked array of differences
-              between reference line values in angstrom and the value calculated
-              using the model of the wavelength solution.
-
-        Returns:
-            Root Mean Square Error, number of points and number of points
-              rejected in the calculation of the wavelength solution.
-
-        """
-        self.n_points = len(clipped_differences)
-        self.n_rejections = np.ma.count_masked(clipped_differences)
-        square_differences = []
-        for i in range(len(clipped_differences)):
-            if clipped_differences[i] is not np.ma.masked:
-                square_differences.append(clipped_differences[i] ** 2)
-        self.rms_error = np.sqrt(
-            np.sum(square_differences) / len(square_differences))
-
-        self.log.info('Wavelength solution RMS Error : {:.3f}'.format(
-            self.rms_error))
-
-        return self.rms_error, self.n_points, self.n_rejections
 
     def _get_lines_in_lamp(self, ccddata_lamp=None):
         """Identify peaks in a lamp spectrum
