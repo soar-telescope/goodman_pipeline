@@ -829,7 +829,7 @@ class ReferenceDataTest(TestCase):
         self.ccd = CCDData(data=np.ones((800, 2000)),
                            meta=fits.Header(),
                            unit='adu')
-        self.ccd.header.set('GRATING', value='SYZY_400')
+        self.ccd.header.set('GRATING', value='400_SYZY')
         self.ccd.header.set('GRT_TARG', value=7.5)
         self.ccd.header.set('CAM_TARG', value=16.1)
 
@@ -845,7 +845,7 @@ class ReferenceDataTest(TestCase):
 
         self.data_exist = [
             ['HgArNe',
-             'SYZY_400',
+             '400_SYZY',
              7.5,
              16.1,
              'TRUE',
@@ -854,7 +854,7 @@ class ReferenceDataTest(TestCase):
              'FALSE',
              'FALSE'],
             ['HgAr',
-             'SYZY_400',
+             '400_SYZY',
              7.5,
              16.1,
              'TRUE',
@@ -896,7 +896,7 @@ class ReferenceDataTest(TestCase):
         self.ccd.header.set('LAMP_DPE', value=0)
 
 
-        self.ccd.header.set('WAVMODE', value='400 m2')
+        self.ccd.header.set('WAVMODE', value='400_M2')
 
         ref_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
 
@@ -907,7 +907,7 @@ class ReferenceDataTest(TestCase):
 
     def test_get_reference_lamp_exist_with_object_key(self):
         self.ccd.header.set('OBJECT', value='HgArNe')
-        self.ccd.header.set('WAVMODE', value='400 m2')
+        self.ccd.header.set('WAVMODE', value='400_M2')
 
         ref_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
 
@@ -917,7 +917,7 @@ class ReferenceDataTest(TestCase):
 
     def test_get_reference_lamp_does_not_exist(self):
         self.ccd.header.set('OBJECT', value='HgArCu')
-        self.ccd.header.set('WAVMODE', value='400 m5')
+        self.ccd.header.set('WAVMODE', value='400_M5')
 
         self.assertRaises(NotImplementedError,
                           self.rd.get_reference_lamp,
@@ -934,7 +934,7 @@ class ReferenceDataTest(TestCase):
         self.ccd.header.set('LAMP_BUL', value='FALSE')
         self.ccd.header.set('LAMP_DOM', value='FALSE')
         self.ccd.header.set('LAMP_DPE', value=0)
-        self.ccd.header.set('WAVMODE', value='400 m2')
+        self.ccd.header.set('WAVMODE', value='400_M2')
         self.assertTrue(self.rd.lamp_exists(header=self.ccd.header))
 
         # HgArNeCu is impossible

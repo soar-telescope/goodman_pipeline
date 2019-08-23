@@ -309,6 +309,10 @@ def create_master_bias(bias_files,
         trim_section (str): Defines the area to be used after trimming
         unusable selected parts (edges). In the format `[x1:x2.,y1:y2]`.
 
+    Returns:
+        master_bias (object):
+        master_bias_name (str):
+
     """
     assert isinstance(bias_files, list)
 
@@ -1604,6 +1608,23 @@ def identify_targets(ccd,
                      background_threshold,
                      nfind=3,
                      plots=False):
+    """Identify Spectroscopic Targets
+
+    Wrapper to the class `IdentifySpectroscopicTargets`.
+
+    Args:
+        ccd (CCDData): Image containing spectra
+        fit_model (str): Name of the model to be fitted `moffat` or `gaussian`.
+        background_threshold (int): Number of background levels for target
+        discrimination.
+        nfind (int): Maximum number of targets passing the background threshold
+        to be returned, they are order from most intense peak to least intense.
+        plots (bool): Flat for plotting results.
+
+    Returns:
+        identified_targets (list): List of models successfully fitted.
+
+    """
     identify = IdentifySpectroscopicTargets()
 
     identified_targets = identify(ccd=ccd,
@@ -2665,7 +2686,10 @@ def write_fits(ccd,
 
     """
     assert isinstance(ccd, CCDData)
-    assert os.path.isdir(os.path.dirname(full_path))
+    if not os.path.isdir(os.path.dirname(full_path)):
+        log.error("Directory {} does not exist. Creating it right now."
+                  "".format(os.path.dirname(full_path)))
+        os.mkdir(os.path.dirname(full_path))
 
     # Original File Name
     # This should be set only once.
@@ -3892,7 +3916,11 @@ class IdentifySpectroscopicTargets(object):
 
         return self.spatial_profile, self.background_level
 
-    def get_peaks(self, spatial_profile=None, order=None, file_name=None, plots=False):
+    def get_peaks(self,
+                  spatial_profile=None,
+                  order=None,
+                  file_name=None,
+                  plots=False):
         """
 
         Args:
@@ -3960,13 +3988,13 @@ class IdentifySpectroscopicTargets(object):
         return self.all_peaks
 
     def filter_peaks(self,
-                              spatial_profile=None,
-                              detected_peaks=None,
-                              background_level=None,
-                              nfind=None,
-                              background_threshold=None,
-                              file_name=None,
-                              plots=False):
+                     spatial_profile=None,
+                     detected_peaks=None,
+                     background_level=None,
+                     nfind=None,
+                     background_threshold=None,
+                     file_name=None,
+                     plots=False):
         """
 
         Args:
@@ -4152,7 +4180,7 @@ class IdentifySpectroscopicTargets(object):
 
             ax.plot(spatial_profile, color='k', label='Median Profile')
             for profile in profile_model:
-                print(profile_model)
+                # print(profile_model)
                 ax.plot(profile(range(len(spatial_profile))),
                         label=profile.name)
 

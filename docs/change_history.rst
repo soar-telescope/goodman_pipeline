@@ -1,6 +1,18 @@
 Change History
 ##############
 
+.. _v1.3.0:
+
+V1.3.0 Unreleased
+^^^^^^^^^^^^^^^^^
+
+- Bugs Fixed:
+
+  + `--max-targets` was not being used, missed connection in `MainApp`.
+
+- Updated keyword values of all reference lamps in the library according to [#292]
+
+
 .. _v1.2.1:
 
 V1.2.1 19-08-2019
