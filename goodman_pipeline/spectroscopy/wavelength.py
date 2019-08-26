@@ -34,6 +34,7 @@ from ..core import (bin_reference_data,
                     evaluate_wavelength_solution,
                     linearize_spectrum,
                     recenter_broad_lines,
+                    recenter_lines,
                     write_fits)
 
 from ..core import (ReferenceData)
@@ -672,7 +673,7 @@ class WavelengthCalibration(object):
         """Identify peaks in a lamp spectrum
 
         Uses `scipy.signal.argrelmax` to find peaks in a spectrum i.e emission
-        lines, then it calls the _recenter_lines method that will recenter them
+        lines, then it calls the recenter_lines method that will recenter them
         using a "center of mass", because, not always the maximum value (peak)
         is the center of the line.
 
@@ -727,7 +728,7 @@ class WavelengthCalibration(object):
                 order=new_order)
         else:
             # lines_center = peaks
-            lines_center = self._recenter_lines(no_nan_lamp_data, peaks)
+            lines_center = recenter_lines(no_nan_lamp_data, peaks)
 
         if self.args.debug_with_plots:  # pragma: no cover
             # print(new_order, slit_size, )
@@ -858,120 +859,6 @@ class WavelengthCalibration(object):
         else:
             self.log.error("Wavelength Solution doesn't exist!")
             return None
-
-    def _recenter_lines(self, data, lines, plots=False):
-        """Finds the centroid of an emission line
-
-        For every line center (pixel value) it will scan left first until the
-        data stops decreasing, it assumes it is an emission line and then will
-        scan right until it stops decreasing too. Defined those limits it will
-        use the line data in between and calculate the centroid.
-
-        Notes:
-            This method is used to recenter relatively narrow lines only, there
-            is a special method for dealing with broad lines.
-
-        Args:
-            data (ndarray): numpy.ndarray instance. or the data attribute of a
-                :class:`~astropy.nddata.CCDData` instance.
-            lines (list): A line list in pixel values.
-            plots (bool): If True will plot spectral line as well as the input
-                center and the recentered value.
-
-        Returns:
-            A list containing the recentered line positions.
-
-        """
-        new_center = []
-        x_size = data.shape[0]
-        median = np.median(data)
-        for line in lines:
-            # TODO (simon): Check if this definition is valid, so far is not
-            # TODO (cont..): critical
-            left_limit = 0
-            right_limit = 1
-            condition = True
-            left_index = int(line)
-
-            while condition and left_index - 2 > 0:
-
-                if (data[left_index - 1] > data[left_index]) and \
-                        (data[left_index - 2] > data[left_index - 1]):
-
-                    condition = False
-                    left_limit = left_index
-
-                elif data[left_index] < median:
-                    condition = False
-                    left_limit = left_index
-
-                else:
-                    left_limit = left_index
-
-                left_index -= 1
-
-            # id right limit
-            condition = True
-            right_index = int(line)
-            while condition and right_index + 2 < x_size - 1:
-
-                if (data[right_index + 1] > data[right_index]) and \
-                        (data[right_index + 2] > data[right_index + 1]):
-
-                    condition = False
-                    right_limit = right_index
-
-                elif data[right_index] < median:
-                    condition = False
-                    right_limit = right_index
-
-                else:
-                    right_limit = right_index
-                right_index += 1
-            index_diff = [abs(line - left_index), abs(line - right_index)]
-
-            sub_x_axis = range(line - min(index_diff),
-                               (line + min(index_diff)) + 1)
-
-            sub_data = data[line - min(index_diff):(line + min(index_diff)) + 1]
-            centroid = np.sum(sub_x_axis * sub_data) / np.sum(sub_data)
-
-            # checks for asymmetries
-            differences = [abs(data[line] - data[left_limit]),
-                           abs(data[line] - data[right_limit])]
-
-            if max(differences) / min(differences) >= 2.:
-                if plots:  # pragma: no cover
-                    plt.axvspan(line - 1, line + 1, color='g', alpha=0.3)
-                new_center.append(line)
-            else:
-                new_center.append(centroid)
-        if plots:  # pragma: no cover
-            fig, ax = plt.subplots(1, 1)
-            fig.canvas.set_window_title('Lines Detected in Lamp')
-            ax.axhline(median, color='b')
-
-            ax.plot(self.raw_pixel_axis,
-                    data,
-                    color='k',
-                    label='Lamp Data')
-
-            for line in lines:
-
-                ax.axvline(line + 1,
-                           color='k',
-                           linestyle=':',
-                           label='First Detected Center')
-
-            for center in new_center:
-
-                ax.axvline(center,
-                           color='k',
-                           linestyle='.-',
-                           label='New Center')
-
-            plt.show()
-        return new_center
 
     def _save_science_data(self, ccd, index=None):
         """Save science data"""
