@@ -29,11 +29,8 @@ from ..wcs.wcs import WCS
 from ..core import (bin_reference_data,
                     cross_correlation,
                     evaluate_wavelength_solution,
-                    get_spectral_characteristics,
                     get_lines_in_lamp,
                     linearize_spectrum,
-                    recenter_broad_lines,
-                    recenter_lines,
                     write_fits)
 
 from ..core import (ReferenceData)
@@ -89,27 +86,18 @@ class WavelengthCalibration(object):
         self.reference_data = ReferenceData(self.args.reference_dir)
 
         # Instrument configuration and spectral characteristics
-        self.pixel_size = 15 * u.micrometer
-        # self.pixel_scale = 0.15 * u.arcsec
-        self.goodman_focal_length = 377.3 * u.mm
         self.serial_binning = None
         self.parallel_binning = None
 
         self.evaluation_comment = None
-        # self.binning = self.lamp.header[]
         self.pixel_center = []
         # this data must come parsed
         self.path = self.args.source
-        # self.science_pack = sci_pack
-        # self.sci_filename = self.science_object.file_name
-        # self.history_of_lamps_solutions = {}
-        self.reference_solution = None
 
     def __call__(self,
                  ccd,
                  comp_list,
                  object_number=None,
-                 wsolution_obj=None,
                  corr_tolerance=15):
         """Call method for the WavelengthSolution Class
 
@@ -128,8 +116,6 @@ class WavelengthCalibration(object):
             object_number (int): In case of multiple detections in a single
                 image this number will be added as a suffix before `.fits` in
                 order to allow for multiple 1D files. Default value is None.
-            wsolution_obj (object): Mathematical model of the wavelength
-                solution if exist. If it doesnt is a None
             corr_tolerance (int): `cross_corr_tolerance` stands for cross
                 correlation tolerance, in other words, how far the cross
                 correlation can be from the global cross correlation. It usually
@@ -171,10 +157,6 @@ class WavelengthCalibration(object):
                     ccd=self.lamp, plots=self.args.debug_with_plots)
                 self.serial_binning, self.parallel_binning = [
                     int(x) for x in self.lamp.header['CCDSUM'].split()]
-                self.spectral = get_spectral_characteristics(
-                    ccd=self.lamp,
-                    pixel_size=self.pixel_size,
-                    instrument_focal_length=self.goodman_focal_length)
 
                 self._automatic_wavelength_solution(
                         corr_tolerance=self.cross_corr_tolerance)
