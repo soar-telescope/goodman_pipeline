@@ -8,7 +8,7 @@ standard.
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import ccdproc
+
 import glob
 import logging
 import os
@@ -19,13 +19,10 @@ import astropy.units as u
 
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.interpolate
-from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
-from astropy.modeling import models, fitting
+
 from astropy.stats import sigma_clip
 from ccdproc import CCDData
 from matplotlib.backends.backend_pdf import PdfPages
-from scipy import signal
 
 from ..wcs.wcs import WCS
 
@@ -42,8 +39,6 @@ from ..core import (bin_reference_data,
 from ..core import (ReferenceData)
 
 log = logging.getLogger(__name__)
-
-SHOW_PLOTS = False
 
 
 class WavelengthCalibration(object):
@@ -91,53 +86,15 @@ class WavelengthCalibration(object):
         self.n_rejections = None
         self.rms_error = None
         self.cross_corr_tolerance = 5
-        # print(self.args.reference_dir)
         self.reference_data = ReferenceData(self.args.reference_dir)
-        # self.science_object = science_object
-        self.slit_offset = None
-        self.interpolation_size = 200
-        self.line_search_method = 'derivative'
+
         # Instrument configuration and spectral characteristics
         self.pixel_size = 15 * u.micrometer
-        self.pixel_scale = 0.15 * u.arcsec
+        # self.pixel_scale = 0.15 * u.arcsec
         self.goodman_focal_length = 377.3 * u.mm
-        self.grating_frequency = None
-        self.grating_angle = None
-        self.camera_angle = None
         self.serial_binning = None
         self.parallel_binning = None
 
-        self.pixel_count = None
-        self.alpha = None
-        self.beta = None
-        self.center_wavelength = None
-        self.blue_limit = None
-        self.red_limit = None
-        # Interactive wavelength finding
-        self.reference_marks_x = []
-        self.reference_marks_y = []
-        self.raw_data_marks_x = []
-        self.raw_data_marks_y = []
-        self.click_input_enabled = True
-        self.reference_bb = None
-        self.raw_data_bb = None
-        self.contextual_bb = None
-        self.i_fig = None
-        self.ax1 = None
-        self.ax2 = None
-        self.ax3 = None
-        self.ax4 = None
-        self.ax4_plots = None
-        self.ax4_com = None
-        self.ax4_rlv = None
-        self.legends = None
-        self.points_ref = None
-        self.points_raw = None
-        self.line_raw = None
-        self.ref_filling_value = 1000
-        self.raw_filling_value = 1000
-        self.events = True
-        self.first = True
         self.evaluation_comment = None
         # self.binning = self.lamp.header[]
         self.pixel_center = []
