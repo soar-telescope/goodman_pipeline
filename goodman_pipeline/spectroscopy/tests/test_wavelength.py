@@ -8,8 +8,7 @@ from astropy.io import fits
 from astropy.modeling import models, Model
 from ccdproc import CCDData
 from unittest import TestCase, skip
-from ..wavelength import (WavelengthCalibration,
-                          WavelengthSolution)
+from ..wavelength import (WavelengthCalibration)
 
 from ..redspec import get_args
 from ...core import add_wcs_keys
