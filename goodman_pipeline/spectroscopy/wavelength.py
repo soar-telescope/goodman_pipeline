@@ -32,6 +32,7 @@ from ..wcs.wcs import WCS
 from ..core import (bin_reference_data,
                     cross_correlation,
                     evaluate_wavelength_solution,
+                    get_spectral_characteristics,
                     linearize_spectrum,
                     recenter_broad_lines,
                     recenter_lines,
@@ -209,7 +210,12 @@ class WavelengthCalibration(object):
                               '{:s}'.format(self.lamp_name))
 
                 self.lines_center = self._get_lines_in_lamp()
-                self.spectral = self._get_spectral_characteristics()
+                self.serial_binning, self.parallel_binning = [
+                    int(x) for x in self.lamp.header['CCDSUM'].split()]
+                self.spectral = get_spectral_characteristics(
+                    ccd=self.lamp,
+                    pixel_size=self.pixel_size,
+                    instrument_focal_length=self.goodman_focal_length)
 
                 self._automatic_wavelength_solution(
                         corr_tolerance=self.cross_corr_tolerance)
@@ -762,85 +768,6 @@ class WavelengthCalibration(object):
             plt.show()
 
         return lines_center
-
-    def _get_spectral_characteristics(self):
-        """Calculates some Goodman's specific spectroscopic values.
-
-        From the header value for Grating, Grating Angle and Camera Angle it is
-        possible to estimate what are the wavelength values at the edges as well
-        as in the center. It was necessary to add offsets though, since the
-        formulas provided are slightly off. The values are only an estimate.
-
-        Returns:
-            spectral_characteristics (dict): Contains the following parameters:
-                center: Center Wavelength
-                blue: Blue limit in Angstrom
-                red: Red limit in Angstrom
-                alpha: Angle
-                beta: Angle
-                pix1: Pixel One
-                pix2: Pixel Two
-
-
-        """
-        # TODO (simon): find a definite solution for this, this only work
-        # TODO (simon): (a little) for one configuration
-        blue_correction_factor = -50 * u.angstrom
-        red_correction_factor = -37 * u.angstrom
-
-        self.grating_frequency = float(re.sub('[A-Za-z_-]',
-                                              '',
-                                              self.lamp.header['GRATING'])
-                                       ) / u.mm
-
-        self.grating_angle = float(self.lamp.header['GRT_ANG']) * u.deg
-        self.camera_angle = float(self.lamp.header['CAM_ANG']) * u.deg
-
-        # serial binning - dispersion binning
-        # parallel binning - spatial binning
-        self.serial_binning, self.parallel_binning = [
-            int(x) for x in self.lamp.header['CCDSUM'].split()]
-
-        self.pixel_count = len(self.lamp.data)
-        # Calculations
-        # TODO (simon): Check whether is necessary to remove the
-        # TODO (simon): self.slit_offset variable
-        self.alpha = self.grating_angle.to(u.rad)
-        self.beta = self.camera_angle.to(u.rad) - self.grating_angle.to(u.rad)
-
-        self.center_wavelength = (np.sin(self.alpha) +
-                                  np.sin(self.beta)) / self.grating_frequency
-
-        limit_angle = np.arctan(
-            self.pixel_count *
-            ((self.pixel_size * self.serial_binning) /
-             self.goodman_focal_length) / 2)
-
-        self.blue_limit = (
-            (np.sin(self.alpha) + np.sin(self.beta - limit_angle.to(u.rad))) /
-            self.grating_frequency).to(u.angstrom) + blue_correction_factor
-
-        self.red_limit = (
-            (np.sin(self.alpha) + np.sin(self.beta + limit_angle.to(u.rad))) /
-            self.grating_frequency).to(u.angstrom) + red_correction_factor
-
-        pixel_one = 0
-        pixel_two = 0
-        self.log.debug(
-            'Center Wavelength : {:.3f} Blue Limit : '
-            '{:.3f} Red Limit : {:.3f} '.format(
-                self.center_wavelength.to(u.angstrom),
-                self.blue_limit,
-                self.red_limit))
-
-        spectral_characteristics = {'center': self.center_wavelength,
-                                    'blue': self.blue_limit,
-                                    'red': self.red_limit,
-                                    'alpha': self.alpha,
-                                    'beta': self.beta,
-                                    'pix1': pixel_one,
-                                    'pix2': pixel_two}
-        return spectral_characteristics
 
     def get_wsolution(self):
         """Returns the mathematical model of the wavelength solution

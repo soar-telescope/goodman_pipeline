@@ -34,7 +34,7 @@ class WavelengthCalibrationTests(TestCase):
                            unit='adu')
         self.ccd = add_wcs_keys(ccd=self.ccd)
         self.ccd.header.set('SLIT',
-                            value='1.0" long slit',
+                            value='1.0_LONG_SLIT',
                             comment="slit [arcsec]")
 
     def test_add_wavelength_solution(self):
@@ -73,17 +73,6 @@ class WavelengthCalibrationTests(TestCase):
     def test__get_lines_in_lamp(self):
         pass
 
-    def test__get_spectral_characteristics(self):
-        self.ccd.header.set('GRATING', 'SYZY_400')
-        self.ccd.header.set('GRT_ANG', 7.5)
-        self.ccd.header.set('CAM_ANG', 16.1)
-        self.ccd.header.set('CCDSUM', '1 1')
-        self.wc.lamp = self.ccd.copy()
-
-        spec_charact = self.wc._get_spectral_characteristics()
-
-        self.assertIsInstance(spec_charact, dict)
-        self.assertEqual(len(spec_charact), 7)
 
     def test_get_wsolution(self):
         self.assertIsNone(self.wc.get_wsolution())

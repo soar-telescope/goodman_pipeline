@@ -1657,6 +1657,81 @@ def get_slit_trim_section(master_flat):
     return slit_trim_section
 
 
+def get_spectral_characteristics(ccd, pixel_size, instrument_focal_length):
+    """Calculates some Goodman's specific spectroscopic values.
+
+    From the header value for Grating, Grating Angle and Camera Angle it is
+    possible to estimate what are the wavelength values at the edges as well
+    as in the center. It was necessary to add offsets though, since the
+    formulas provided are slightly off. The values are only an estimate.
+
+    Args:
+        ccd (CCDData): Lamp `ccdproc.CCDData` instance
+        pixel_size (float): Pixel size in microns
+        instrument_focal_length (float): Instrument focal length
+
+    Returns:
+        spectral_characteristics (dict): Contains the following parameters:
+            center: Center Wavelength
+            blue: Blue limit in Angstrom
+            red: Red limit in Angstrom
+            alpha: Angle
+            beta: Angle
+            pix1: Pixel One
+            pix2: Pixel Two
+
+
+    """
+    # TODO (simon): find a definite solution for this, this only work
+    # TODO (simon): (a little) for one configuration
+    blue_correction_factor = -50 * u.angstrom
+    red_correction_factor = -37 * u.angstrom
+
+    grating_frequency = float(re.sub('[A-Za-z_-]',
+                                     '',
+                                     ccd.header['GRATING'])) / u.mm
+
+    grating_angle = float(ccd.header['GRT_ANG']) * u.deg
+    camera_angle = float(ccd.header['CAM_ANG']) * u.deg
+
+    # serial binning - dispersion binning
+    # parallel binning - spatial binning
+    serial_binning, parallel_binning = [
+        int(x) for x in ccd.header['CCDSUM'].split()]
+
+    pixel_count = len(ccd.data)
+    # Calculations
+    # TODO (simon): Check whether is necessary to remove the
+    # TODO (simon): slit_offset variable
+    alpha = grating_angle.to(u.rad)
+    beta = camera_angle.to(u.rad) - grating_angle.to(u.rad)
+
+    center_wavelength = (np.sin(alpha) + np.sin(beta)) / grating_frequency
+
+    limit_angle = np.arctan(pixel_count * ((pixel_size * serial_binning) / instrument_focal_length) / 2)
+
+    blue_limit = ((np.sin(alpha) + np.sin(beta - limit_angle.to(u.rad))) / grating_frequency).to(u.angstrom) + blue_correction_factor
+
+    red_limit = ((np.sin(alpha) + np.sin(beta + limit_angle.to(u.rad))) / grating_frequency).to(u.angstrom) + red_correction_factor
+
+    pixel_one = 0
+    pixel_two = 0
+    log.debug(
+        'Center Wavelength : {:.3f} Blue Limit : '
+        '{:.3f} Red Limit : {:.3f} '.format(center_wavelength.to(u.angstrom),
+                                            blue_limit,
+                                            red_limit))
+
+    spectral_characteristics = {'center': center_wavelength,
+                                'blue': blue_limit,
+                                'red': red_limit,
+                                'alpha': alpha,
+                                'beta': beta,
+                                'pix1': pixel_one,
+                                'pix2': pixel_two}
+    return spectral_characteristics
+
+
 def get_twilight_time(date_obs):
 
     """Get end/start time of evening/morning twilight

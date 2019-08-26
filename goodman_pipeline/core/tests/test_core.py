@@ -51,6 +51,7 @@ from ..core import (astroscrappy_lacosmic,
                     get_best_flat,
                     get_central_wavelength,
                     get_overscan_region,
+                    get_spectral_characteristics,
                     get_slit_trim_section,
                     get_twilight_time,
                     identify_targets,
@@ -236,6 +237,30 @@ class GenerateDcrFile(TestCase):
     def tearDown(self):
         if os.path.isfile(self.create._file_name):
             os.remove(self.create._file_name)
+
+
+class GetSpectralCharacteristicsTest(TestCase):
+    def setUp(self):
+        self.ccd = CCDData(data=np.random.random_sample(200),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.pixel_size = 15 * u.micrometer
+        self.goodman_focal_length = 377.3 * u.mm
+
+    def test__get_spectral_characteristics(self):
+        self.ccd.header.set('SLIT', '1.0_LONG_SLIT')
+        self.ccd.header.set('GRATING', 'SYZY_400')
+        self.ccd.header.set('GRT_ANG', 7.5)
+        self.ccd.header.set('CAM_ANG', 16.1)
+        self.ccd.header.set('CCDSUM', '1 1')
+
+        spec_charact = get_spectral_characteristics(
+            ccd=self.ccd,
+            pixel_size=self.pixel_size,
+            instrument_focal_length=self.goodman_focal_length)
+
+        self.assertIsInstance(spec_charact, dict)
+        self.assertEqual(len(spec_charact), 7)
 
 
 class MasterFlatTest(TestCase):
