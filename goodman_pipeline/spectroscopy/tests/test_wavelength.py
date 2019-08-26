@@ -51,8 +51,10 @@ class WavelengthCalibrationTests(TestCase):
                              crval1 + cdelt * npix,
                              npix)
 
-        self.ccd = self.wc.add_wavelength_solution(ccd=self.ccd,
-                                                   x_axis=x_axis)
+        self.ccd = self.wc.add_linear_wavelength_solution(
+            ccd=self.ccd,
+            x_axis=x_axis,
+            reference_lamp='non-existent.fits')
 
         self.assertEqual(self.ccd.header['CTYPE1'], 'LINEAR')
         self.assertEqual(self.ccd.header['CRVAL1'], crval1)
@@ -60,9 +62,6 @@ class WavelengthCalibrationTests(TestCase):
         self.assertAlmostEqual(self.ccd.header['CDELT1'], cdelt, places=3)
         self.assertEqual(self.ccd.header['DCLOG1'],
                          'REFSPEC1 = {:s}'.format(self.wc.calibration_lamp))
-        self.assertEqual(self.ccd.header['GSP_WRMS'], self.wc.rms_error)
-        self.assertEqual(self.ccd.header['GSP_WPOI'], self.wc.n_points)
-        self.assertEqual(self.ccd.header['GSP_WREJ'], self.wc.n_rejections)
 
     @skip
     def test_automatic_wavelength_solution(self):
