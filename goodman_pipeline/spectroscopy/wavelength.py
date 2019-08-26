@@ -33,6 +33,7 @@ from ..core import (bin_reference_data,
                     cross_correlation,
                     evaluate_wavelength_solution,
                     linearize_spectrum,
+                    recenter_broad_lines,
                     write_fits)
 
 from ..core import (ReferenceData)
@@ -720,7 +721,7 @@ class WavelengthCalibration(object):
 
         if slit_size >= 5.:
 
-            lines_center = self._recenter_broad_lines(
+            lines_center = recenter_broad_lines(
                 lamp_data=no_nan_lamp_data,
                 lines=peaks,
                 order=new_order)
@@ -971,48 +972,6 @@ class WavelengthCalibration(object):
 
             plt.show()
         return new_center
-
-    @staticmethod
-    def _recenter_broad_lines(lamp_data, lines, order):
-        """Recenter broad lines
-
-        Notes:
-            This method is used to recenter broad lines only, there is a special
-            method for dealing with narrower lines.
-
-        Args:
-            lamp_data (ndarray): numpy.ndarray instance. It contains the lamp
-                data.
-            lines (list): A line list in pixel values.
-            order (float): A rough estimate of the FWHM of the lines in pixels
-                in the data. It is calculated using the slit size divided by the
-                pixel scale multiplied by the binning.
-
-        Returns:
-            A list containing the recentered line positions.
-
-        """
-        # TODO (simon): use slit size information for a square function
-        # TODO (simon): convolution
-        new_line_centers = []
-        gaussian_kernel = Gaussian1DKernel(stddev=2.)
-        lamp_data = convolve(lamp_data, gaussian_kernel)
-        for line in lines:
-            lower_index = max(0, int(line - order))
-            upper_index = min(len(lamp_data), int(line + order))
-            lamp_sample = lamp_data[lower_index:upper_index]
-            x_axis = np.linspace(lower_index, upper_index, len(lamp_sample))
-            line_max = np.max(lamp_sample)
-
-            gaussian_model = models.Gaussian1D(amplitude=line_max,
-                                               mean=line,
-                                               stddev=order)
-
-            fit_gaussian = fitting.LevMarLSQFitter()
-            fitted_gaussian = fit_gaussian(gaussian_model, x_axis, lamp_sample)
-            new_line_centers.append(fitted_gaussian.mean.value)
-
-        return new_line_centers
 
     def _save_science_data(self, ccd, index=None):
         """Save science data"""
