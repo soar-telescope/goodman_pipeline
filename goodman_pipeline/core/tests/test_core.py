@@ -50,6 +50,7 @@ from ..core import (astroscrappy_lacosmic,
                     fractional_sum,
                     get_best_flat,
                     get_central_wavelength,
+                    get_lines_in_lamp,
                     get_overscan_region,
                     get_spectral_characteristics,
                     get_slit_trim_section,
@@ -237,6 +238,13 @@ class GenerateDcrFile(TestCase):
     def tearDown(self):
         if os.path.isfile(self.create._file_name):
             os.remove(self.create._file_name)
+
+
+class GetLinesInLampTest(TestCase):
+
+    @skip
+    def test_get_lines_in_lamp(self):
+        pass
 
 
 class GetSpectralCharacteristicsTest(TestCase):

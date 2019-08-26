@@ -69,9 +69,6 @@ class WavelengthCalibrationTests(TestCase):
     def test_automatic_wavelength_solution(self):
         pass
 
-    @skip
-    def test__get_lines_in_lamp(self):
-        pass
 
 
     def test_get_wsolution(self):

@@ -33,6 +33,7 @@ from ..core import (bin_reference_data,
                     cross_correlation,
                     evaluate_wavelength_solution,
                     get_spectral_characteristics,
+                    get_lines_in_lamp,
                     linearize_spectrum,
                     recenter_broad_lines,
                     recenter_lines,
@@ -209,7 +210,8 @@ class WavelengthCalibration(object):
                 self.log.info('Processing Comparison Lamp: '
                               '{:s}'.format(self.lamp_name))
 
-                self.lines_center = self._get_lines_in_lamp()
+                self.lines_center = get_lines_in_lamp(
+                    ccd=self.lamp, plots=self.args.debug_with_plots)
                 self.serial_binning, self.parallel_binning = [
                     int(x) for x in self.lamp.header['CCDSUM'].split()]
                 self.spectral = get_spectral_characteristics(
@@ -399,7 +401,8 @@ class WavelengthCalibration(object):
             self.wcs.binning = self.serial_binning
 
         '''detect lines in comparison lamp (not reference)'''
-        lamp_lines_pixel = self._get_lines_in_lamp()
+        lamp_lines_pixel = get_lines_in_lamp(ccd=self.lamp,
+                                             plots=self.args.debug_with_plots)
         lamp_lines_angst = self.wcs.model(lamp_lines_pixel)
 
         pixel_values = []
@@ -674,100 +677,6 @@ class WavelengthCalibration(object):
                     # plt.close(self.i_fig)
             # else:
             #     plt.close('all')
-
-    def _get_lines_in_lamp(self, ccddata_lamp=None):
-        """Identify peaks in a lamp spectrum
-
-        Uses `scipy.signal.argrelmax` to find peaks in a spectrum i.e emission
-        lines, then it calls the recenter_lines method that will recenter them
-        using a "center of mass", because, not always the maximum value (peak)
-        is the center of the line.
-
-        Returns:
-            lines_candidates (list): A common list containing pixel values at
-                approximate location of lines.
-
-        """
-
-        if ccddata_lamp is None:
-            lamp_data = self.lamp.data
-            lamp_header = self.lamp.header
-            raw_pixel_axis = self.raw_pixel_axis
-        elif isinstance(ccddata_lamp, CCDData):
-            # print(ccddata_lamp.data.shape)
-            lamp_data = ccddata_lamp.data
-            lamp_header = ccddata_lamp.header
-            raw_pixel_axis = range(len(lamp_data))
-        else:
-            self.log.error('Error receiving lamp')
-            return None
-
-        no_nan_lamp_data = np.asarray(np.nan_to_num(lamp_data))
-
-        filtered_data = np.where(
-            np.abs(no_nan_lamp_data > no_nan_lamp_data.min() +
-                   0.03 * no_nan_lamp_data.max()),
-            no_nan_lamp_data,
-            None)
-
-        # replace None to zero and convert it to an array
-        none_to_zero = [0 if it is None else it for it in filtered_data]
-        filtered_data = np.array(none_to_zero)
-
-        _upper_limit = no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()
-        slit_size = np.float(re.sub('[a-zA-Z"_*]', '', lamp_header['slit']))
-
-        serial_binning, parallel_binning = [
-            int(x) for x in lamp_header['CCDSUM'].split()]
-
-        new_order = int(round(float(slit_size) / (0.15 * serial_binning)))
-        self.log.debug('New Order:  {:d}'.format(new_order))
-
-        # print(round(new_order))
-        peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
-
-        if slit_size >= 5.:
-
-            lines_center = recenter_broad_lines(
-                lamp_data=no_nan_lamp_data,
-                lines=peaks,
-                order=new_order)
-        else:
-            # lines_center = peaks
-            lines_center = recenter_lines(no_nan_lamp_data, peaks)
-
-        if self.args.debug_with_plots:  # pragma: no cover
-            # print(new_order, slit_size, )
-            plt.close('all')
-            fig, ax = plt.subplots()
-            # ax = fig.add_subplot(111)
-            fig.canvas.set_window_title('Lines Detected')
-
-            mng = plt.get_current_fig_manager()
-            mng.window.showMaximized()
-
-            ax.set_title('Lines detected in Lamp\n'
-                         '{:s}'.format(lamp_header['OBJECT']))
-            ax.set_xlabel('Pixel Axis')
-            ax.set_ylabel('Intensity (counts)')
-
-            # Build legends without data to avoid repetitions
-            ax.plot([], color='k', label='Comparison Lamp Data')
-
-            ax.plot([], color='k', linestyle=':',
-                    label='Spectral Line Detected')
-
-            ax.axhline(_upper_limit, color='r')
-
-            for line in peaks:
-                ax.axvline(line, color='k', linestyle=':')
-
-            ax.plot(raw_pixel_axis, no_nan_lamp_data, color='k')
-            ax.legend(loc='best')
-            plt.tight_layout()
-            plt.show()
-
-        return lines_center
 
     def get_wsolution(self):
         """Returns the mathematical model of the wavelength solution
