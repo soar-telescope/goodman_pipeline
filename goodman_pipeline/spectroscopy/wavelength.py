@@ -32,6 +32,7 @@ from ..wcs.wcs import WCS
 from ..core import (bin_reference_data,
                     cross_correlation,
                     evaluate_wavelength_solution,
+                    linearize_spectrum,
                     write_fits)
 
 from ..core import (ReferenceData)
@@ -213,8 +214,9 @@ class WavelengthCalibration(object):
 
                 if self.wsolution is not None:
 
-                    linear_x_axis, self.lamp.data = self._linearize_spectrum(
-                        self.lamp.data)
+                    linear_x_axis, self.lamp.data = linearize_spectrum(
+                        self.lamp.data,
+                        wavelength_solution=self.wsolution)
 
                     self.lamp = self.wcs.write_gsp_wcs(ccd=self.lamp,
                                                        model=self.wsolution)
@@ -856,93 +858,6 @@ class WavelengthCalibration(object):
             self.log.error("Wavelength Solution doesn't exist!")
             return None
 
-    def _linearize_spectrum(self, data, plots=False):
-        """Produces a linearized version of the spectrum
-
-        Storing wavelength solutions in a FITS header is not simple at all for
-        non-linear solutions therefore is easier for the final user and for the
-        development code to have the spectrum linearized. It first finds a
-        spline representation of the data, then creates a linear wavelength axis
-        (angstrom) and finally it resamples the data from the spline
-        representation to the linear wavelength axis.
-
-        It also applies a median filter of kernel size three to smooth the
-        linearized spectrum. Sometimes the splines produce funny things when
-        the original data is too steep.
-
-        Args:
-            data (Array): The non-linear spectrum
-            plots (bool): Whether to show the plots or not
-
-        Returns:
-            linear_data (list): Contains two elements: Linear wavelength axis
-            and the smoothed linearized data itself.
-
-        """
-        # for data_point in data:
-        #     print(data_point)
-        # print('data ', data)
-        pixel_axis = range(len(data))
-        if np.nan in data:
-            print("there are nans")
-            sys.exit(0)
-
-        # print(pixel_axis)
-        if self.wsolution is not None:
-            x_axis = self.wsolution(pixel_axis)
-            try:
-                plt.imshow(data)
-                plt.show()
-            except TypeError:
-                pass
-            new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
-            tck = scipy.interpolate.splrep(x_axis, data, s=0)
-            linearized_data = scipy.interpolate.splev(new_x_axis,
-                                                      tck,
-                                                      der=0)
-
-            smoothed_linearized_data = signal.medfilt(linearized_data)
-            # print('sl ', smoothed_linearized_data)
-            if plots:  # pragma: no cover
-                fig6 = plt.figure(6)
-                plt.xlabel('Wavelength (Angstrom)')
-                plt.ylabel('Intensity (Counts)')
-                fig6.canvas.set_window_title('Linearized Data')
-
-                plt.plot(x_axis,
-                         data,
-                         color='k',
-                         label='Data')
-
-                plt.plot(new_x_axis,
-                         linearized_data,
-                         color='r',
-                         linestyle=':',
-                         label='Linearized Data')
-
-                plt.plot(new_x_axis,
-                         smoothed_linearized_data,
-                         color='m',
-                         alpha=0.5,
-                         label='Smoothed Linearized Data')
-
-                fig6.tight_layout()
-                plt.legend(loc=3)
-                plt.show()
-
-                fig7 = plt.figure(7)
-                plt.xlabel('Pixels')
-                plt.ylabel('Angstroms')
-                fig7.canvas.set_window_title('Wavelength Solution')
-                plt.plot(x_axis, color='b', label='Non linear wavelength-axis')
-                plt.plot(new_x_axis, color='r', label='Linear wavelength-axis')
-                fig7.tight_layout()
-                plt.legend(loc=3)
-                plt.show()
-
-            linear_data = [new_x_axis, smoothed_linearized_data]
-            return linear_data
-
     def _recenter_lines(self, data, lines, plots=False):
         """Finds the centroid of an emission line
 
@@ -1102,7 +1017,9 @@ class WavelengthCalibration(object):
     def _save_science_data(self, ccd, index=None):
         """Save science data"""
         ccd = ccd.copy()
-        linear_x_axis, ccd.data = self._linearize_spectrum(ccd.data)
+        linear_x_axis, ccd.data = linearize_spectrum(
+            data=ccd.data,
+            wavelength_solution=self.wsolution)
 
         ccd = self.wcs.write_gsp_wcs(ccd=ccd,
                                      model=self.wsolution)

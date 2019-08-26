@@ -635,9 +635,6 @@ class CombineDataTest(TestCase):
         self.assertTrue(self.prefix in combined.header['GSP_FNAM'])
 
 
-
-
-
 class TimeConversionTest(TestCase):
 
     def setUp(self):
