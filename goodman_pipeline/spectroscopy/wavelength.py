@@ -613,29 +613,8 @@ class WavelengthCalibration(object):
                     plt.pause(1)
                     plt.ioff()
                     plt.close()
-                    # plt.close(self.i_fig)
-            # else:
-            #     plt.close('all')
 
-    def get_wsolution(self):
-        """Returns the mathematical model of the wavelength solution
-
-        The wavelength solution is a callable mathematical function from
-        astropy.modeling.models. By obtaining this mathematical model the user
-        can use its own method to apply it to a given data.
-
-        Returns:
-            A callable mathematical function. None if the wavelength solution
-            doesn't exist.
-
-        """
-        if self.wsolution is not None:
-            return self.wsolution
-        else:
-            self.log.error("Wavelength Solution doesn't exist!")
-            return None
-
-    def _save_science_data(self, ccd, index=None):
+    def _save_science_data(self, ccd, wavelength_solution, save_to, index=None, plot_results=False, save_plots=False, debug_with_plots=False):
         """Save science data"""
         ccd = ccd.copy()
         linear_x_axis, ccd.data = linearize_spectrum(

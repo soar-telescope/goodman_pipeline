@@ -67,14 +67,3 @@ class WavelengthCalibrationTests(TestCase):
     @skip
     def test_automatic_wavelength_solution(self):
         pass
-
-
-
-    def test_get_wsolution(self):
-        self.assertIsNone(self.wc.get_wsolution())
-
-        self.wc.wsolution = models.Chebyshev1D(degree=2)
-        self.wc.wsolution.c0.value = 3977.9485
-        self.wc.wsolution.c1.value = 1.00153387
-        self.wc.wsolution.c2.value = -1.2891437
-        self.assertIsInstance(self.wc.get_wsolution(), Model)
