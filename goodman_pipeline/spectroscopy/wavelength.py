@@ -54,7 +54,7 @@ class WavelengthCalibration(object):
 
     """
 
-    def __init__(self, args):
+    def __init__(self):
         """Wavelength Calibration Class Initialization
 
         A WavelengthCalibration class is instantiated for each science target
@@ -69,7 +69,6 @@ class WavelengthCalibration(object):
             args (Namespace): Runtime arguments.
 
         """
-        self.args = args
         self.poly_order = 3
         self.wcs = WCS()
         self.wsolution = None
@@ -79,20 +78,24 @@ class WavelengthCalibration(object):
         self.n_rejections = None
         self.rms_error = None
         self.cross_corr_tolerance = 5
-        self.reference_data = ReferenceData(self.args.reference_dir)
+        self.reference_data_dir = None
+        self.reference_data = None
 
         # Instrument configuration and spectral characteristics
         self.serial_binning = None
         self.parallel_binning = None
 
-        # this data must come parsed
-        self.path = self.args.source
-
     def __call__(self,
                  ccd,
                  comp_list,
+                 save_data_to,
+                 reference_data,
                  object_number=None,
-                 corr_tolerance=15):
+                 corr_tolerance=15,
+                 output_prefix='w',
+                 plot_results=False,
+                 save_plots=False,
+                 plots=False):
         """Call method for the WavelengthSolution Class
 
         It takes extracted data and produces wavelength calibrated 1D FITS file.
@@ -124,6 +127,12 @@ class WavelengthCalibration(object):
         assert isinstance(ccd, CCDData)
         assert isinstance(comp_list, list)
 
+        if os.path.isdir(reference_data):
+            if self.reference_data_dir != reference_data:
+                self.reference_data_dir = reference_data
+                self.reference_data = ReferenceData(
+                    reference_dir=self.reference_data_dir)
+
         self.cross_corr_tolerance = corr_tolerance
         self.sci_target_file = ccd.header['GSP_FNAM']
 
@@ -148,12 +157,13 @@ class WavelengthCalibration(object):
                               '{:s}'.format(self.lamp_name))
 
                 self.lines_center = get_lines_in_lamp(
-                    ccd=self.lamp, plots=self.args.debug_with_plots)
+                    ccd=self.lamp, plots=plots)
                 self.serial_binning, self.parallel_binning = [
                     int(x) for x in self.lamp.header['CCDSUM'].split()]
 
                 self._automatic_wavelength_solution(
-                        corr_tolerance=self.cross_corr_tolerance)
+                    save_data_to=save_data_to,
+                    corr_tolerance=self.cross_corr_tolerance)
 
                 if self.wsolution is not None:
                     ccd.header.set('GSP_WRMS', value=self.rms_error)
@@ -175,6 +185,8 @@ class WavelengthCalibration(object):
                     self.wcal_lamp_file = self._save_wavelength_calibrated(
                         ccd=self.lamp,
                         original_filename=self.calibration_lamp,
+                        save_data_to=save_data_to,
+                        output_prefix=output_prefix,
                         index=object_number,
                         lamp=True)
 
@@ -182,10 +194,10 @@ class WavelengthCalibration(object):
                     reference_lamp_names.append(self.wcal_lamp_file)
                 else:
                     log.error('It was not possible to get a wavelength '
-                                   'solution from lamp '
-                                   '{:s} {:s}.'.format(
-                                       self.lamp.header['GSP_FNAM'],
-                                       self.lamp.header['OBJECT']))
+                              'solution from lamp '
+                              '{:s} {:s}.'.format(
+                               self.lamp.header['GSP_FNAM'],
+                               self.lamp.header['OBJECT']))
                     continue
 
             if len(wavelength_solutions) > 1:
@@ -201,11 +213,11 @@ class WavelengthCalibration(object):
                     self._save_science_data(
                         ccd=ccd,
                         wavelength_solution=self.wsolution,
-                        save_to=self.args.destination,
+                        save_to=save_data_to,
                         index=i + 1,
-                        plot_results=self.args.plot_results,
-                        save_plots=self.args.save_plots,
-                        debug_with_plots=self.args.debug_with_plots)
+                        plot_results=plot_results,
+                        save_plots=save_plots,
+                        plots=plots)
 
             elif len(wavelength_solutions) == 1:
                 self.wsolution = wavelength_solutions[0]
@@ -215,10 +227,10 @@ class WavelengthCalibration(object):
                 self._save_science_data(
                     ccd=ccd,
                     wavelength_solution=self.wsolution,
-                    save_to=self.args.destination,
-                    plot_results=self.args.plot_results,
-                    save_plots=self.args.save_plots,
-                    debug_with_plots=self.args.debug_with_plots)
+                    save_to=save_data_to,
+                    plot_results=plot_results,
+                    save_plots=save_plots,
+                    plots=plots)
             else:
                 log.error("No wavelength solution.")
 
@@ -268,7 +280,12 @@ class WavelengthCalibration(object):
 
         return ccd
 
-    def _automatic_wavelength_solution(self, corr_tolerance=15):
+    def _automatic_wavelength_solution(self,
+                                       save_data_to,
+                                       corr_tolerance=15,
+                                       plot_results=False,
+                                       save_plots=False,
+                                       plots=False):
         """Finds a Wavelength Solution Automatically
 
         This method uses a library of previously wavelength-calibrated
@@ -333,7 +350,7 @@ class WavelengthCalibration(object):
 
         '''detect lines in comparison lamp (not reference)'''
         lamp_lines_pixel = get_lines_in_lamp(ccd=self.lamp,
-                                             plots=self.args.debug_with_plots)
+                                             plots=plots)
         lamp_lines_angst = self.wcs.model(lamp_lines_pixel)
 
         pixel_values = []
@@ -409,7 +426,7 @@ class WavelengthCalibration(object):
                                "{:.3f}".format(correlation_value,
                                                global_cross_corr))
 
-            if False:
+            if plots:
                 # print(global_cross_corr, correlation_value)
                 plt.ion()
                 plt.title('Samples after cross correlation\n Shift {:.3f}'
@@ -499,8 +516,8 @@ class WavelengthCalibration(object):
             evaluate_wavelength_solution(
                 clipped_differences=clipped_differences)
 
-        if self.args.plot_results or self.args.debug_with_plots or \
-                self.args.save_plots:  # pragma: no cover
+        if plot_results or plots or \
+                save_plots:  # pragma: no cover
             plt.close('all')
             plt.switch_backend('Qt5Agg')
             # print(self.i_fig)
@@ -515,7 +532,7 @@ class WavelengthCalibration(object):
                 mng = plt.get_current_fig_manager()
                 mng.window.showMaximized()
 
-            if not self.args.debug_with_plots:
+            if not plots:
                 plt.ion()
                 # plt.show()
             else:
@@ -557,9 +574,9 @@ class WavelengthCalibration(object):
             self.ax1.legend(loc='best')
             self.i_fig.tight_layout()
 
-            if self.args.save_plots:
+            if save_plots:
 
-                plots_path = os.path.join(self.args.destination, 'plots')
+                plots_path = os.path.join(save_data_to, 'plots')
                 if not os.path.isdir(plots_path):
                     os.path.os.makedirs(plots_path)
                 # saves pdf files of the wavelength solution plot
@@ -568,7 +585,7 @@ class WavelengthCalibration(object):
                 out_file_name = re.sub('.fits', '', out_file_name)
 
                 file_count = len(glob.glob(
-                    os.path.join(self.args.destination,
+                    os.path.join(save_data_to,
                                  out_file_name + '*'))) + 1
 
                 out_file_name += '_RMS_{:.3f}_{:03d}.pdf'.format(self.rms_error,
@@ -585,7 +602,7 @@ class WavelengthCalibration(object):
 
                 plt.ioff()
                 plt.clf()
-            if self.args.debug_with_plots or self.args.plot_results:  # pragma: no cover
+            if plots or plot_results:  # pragma: no cover
 
                 manager = plt.get_current_fig_manager()
 
@@ -594,15 +611,15 @@ class WavelengthCalibration(object):
                 elif plt.get_backend() == u'Qt5Agg':
                     manager.window.showMaximized()
 
-                if self.args.debug_with_plots:
+                if plots:
                     plt.show()
-                elif self.args.plot_results:
+                elif plot_results:
                     plt.draw()
                     plt.pause(1)
                     plt.ioff()
                     plt.close()
 
-    def _save_science_data(self, ccd, wavelength_solution, save_to, index=None, plot_results=False, save_plots=False, debug_with_plots=False):
+    def _save_science_data(self, ccd, wavelength_solution, save_to, index=None, plot_results=False, save_plots=False, plots=False):
         """Save science data"""
         ccd = ccd.copy()
         linear_x_axis, ccd.data = linearize_spectrum(
@@ -617,15 +634,16 @@ class WavelengthCalibration(object):
         self._save_wavelength_calibrated(
             ccd=ccd,
             original_filename=ccd.header['GSP_FNAM'],
+            save_data_to=save_to,
             index=index)
 
-        if plot_results or debug_with_plots or save_plots:  # pragma: no cover
+        if plot_results or plots or save_plots:  # pragma: no cover
 
             plt.close(1)
             if plot_results:
                 plt.ion()
                 # plt.show()
-            elif debug_with_plots:
+            elif plots:
                 plt.ioff()
 
             wavelength_axis = wavelength_solution(range(ccd.data.size))
@@ -671,14 +689,14 @@ class WavelengthCalibration(object):
                 log.info('Saved plot as {:s} file '
                               'DPI=300'.format(plot_name))
 
-            if debug_with_plots or plot_results:  # pragma: no cover
+            if plots or plot_results:  # pragma: no cover
                 manager = plt.get_current_fig_manager()
                 if plt.get_backend() == u'GTK3Agg':
                     manager.window.maximize()
                 elif plt.get_backend() == u'Qt5Agg':
                     manager.window.showMaximized()
 
-                if debug_with_plots:
+                if plots:
                     plt.show()
                 elif plot_results:
                     plt.draw()
@@ -690,6 +708,8 @@ class WavelengthCalibration(object):
     def _save_wavelength_calibrated(self,
                                     ccd,
                                     original_filename,
+                                    save_data_to,
+                                    output_prefix='',
                                     index=None,
                                     lamp=False):
         if index is None:
@@ -697,8 +717,8 @@ class WavelengthCalibration(object):
         else:
             f_end = '_ws_{:d}.fits'.format(index)
 
-        new_filename = os.path.join(self.args.destination,
-                                    self.args.output_prefix +
+        new_filename = os.path.join(save_data_to,
+                                    output_prefix +
                                     original_filename.replace('.fits', f_end))
 
         if lamp:

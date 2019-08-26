@@ -26,7 +26,7 @@ class WavelengthCalibrationTests(TestCase):
                          '--max-targets', '3',
                          ]
         arguments = get_args(argument_list)
-        self.wc = WavelengthCalibration(args=arguments)
+        self.wc = WavelengthCalibration()
 
         self.ccd = CCDData(data=np.random.random_sample(200),
                            meta=fits.Header(),
