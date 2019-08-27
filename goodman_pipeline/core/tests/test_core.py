@@ -513,6 +513,74 @@ class CosmicRayRejectionTest(TestCase):
                 os.unlink(_file)
 
 
+class CreateMasterBias(TestCase):
+
+    def setUp(self):
+        self.name = ''
+        self.name_2 = ''
+        self.bias_files = ['bias_{}.fits'.format(i) for i in range(1, 12)]
+        self.raw_data = os.getcwd()
+        self.reduced_data = os.getcwd()
+
+        self.overscan_region = '[1:10,1:100]'
+        self.trim_section = '[11:90,11:90]'
+
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+
+        self.ccd.data[11:90, 10:90] += 1
+        self.ccd.header.set('CCDSUM', value='1 1')
+
+        for _file in self.bias_files:
+            self.ccd.write(os.path.join(self.reduced_data, _file))
+
+    def tearDown(self):
+        for _file in self.bias_files:
+            os.unlink(os.path.join(self.reduced_data, _file))
+
+        if self.name != '' and self.name_2 != '':
+            for _file in [self.name, self.name_2]:
+                os.unlink(_file)
+
+    def test_create_master_bias(self):
+        master, self.name = create_master_bias(
+            bias_files=self.bias_files,
+            raw_data=self.raw_data,
+            reduced_data=self.reduced_data,
+            technique='Spectroscopy',
+            overscan_region=self.overscan_region,
+            trim_section=self.trim_section)
+
+        self.assertTrue('master_bias' in self.name)
+
+        master_2, self.name_2 = create_master_bias(
+            bias_files=self.bias_files,
+            raw_data=self.raw_data,
+            reduced_data=self.reduced_data,
+            technique='Spectroscopy',
+            overscan_region=self.overscan_region,
+            trim_section=self.trim_section)
+
+        self.assertTrue('master_bias_2.fits' in self.name_2)
+
+        self.assertEqual(master.shape, master_2.shape)
+
+        self.assertTrue(all(
+            [master.header[key] in self.bias_files for key in master.header['GSP_IC*'].keys()]))
+
+    def test_create_master_bias_wrong_ccd_region_syntax(self):
+
+        self.assertRaises(SyntaxError,
+                          create_master_bias,
+                          self.bias_files,
+                          self.raw_data,
+                          self.reduced_data,
+                          'Spectroscopy',
+                          'not-a-ccd-region',
+                          'not-a-region-either')
+
+
 class CrossCorrelationTest(TestCase):
 
     @skip
