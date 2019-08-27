@@ -3726,6 +3726,7 @@ class ReferenceData(object):
         self.lines_pixel = None
         self.lines_angstrom = None
         self._ccd = None
+        self.nist = {}
         self.lamp_status_keywords = [
             'LAMP_HGA',
             'LAMP_NE',
@@ -3942,14 +3943,13 @@ class ReferenceData(object):
         """Checks that the array of lines only increases."""
         previous = None
         for line_value in lines_array:
-            # print(line_value)
             if previous is not None:
                 try:
                     assert line_value > previous
                     previous = line_value
                 except AssertionError:
-                    print("Error: Line {:f} is not larger "
-                          "than {:f}".format(line_value, previous))
+                    log.error("Error: Line {:f} is not larger "
+                              "than {:f}".format(line_value, previous))
                     return False
             else:
                 previous = line_value

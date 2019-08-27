@@ -774,6 +774,21 @@ class FitsFileIOAndOps(TestCase):
                    overwrite=False)
         self.assertTrue(os.path.isfile(self.full_path))
 
+    def test_write_fits_directory_does_not_exist(self):
+        os.unlink(self.full_path)
+
+        base_path = os.path.dirname(self.full_path)
+        self.full_path = os.path.join(base_path,
+                                      'testdir',
+                                      os.path.basename(self.full_path))
+        self.assertFalse(os.path.isdir(os.path.dirname(self.full_path)))
+        write_fits(ccd=self.fake_image,
+                   full_path=self.full_path,
+                   parent_file=self.parent_file,
+                   overwrite=True)
+        self.assertTrue(os.path.isdir(os.path.dirname(self.full_path)))
+
+
     def test_read_fits(self):
         self.fake_image.header.remove('GSP_PNAM')
         self.fake_image.write(self.full_path, overwrite=True)
@@ -868,6 +883,9 @@ class FitsFileIOAndOps(TestCase):
         for _file in files_to_remove:
             if os.path.isfile(_file):
                 os.unlink(_file)
+
+        if 'testdir' in self.full_path:
+            os.rmdir(os.path.dirname(self.full_path))
 
 
 class FixKeywordsTest(TestCase):
@@ -967,6 +985,13 @@ class GetOverscanRegionTest(TestCase):
     def test_get_overscan_region_imaging(self):
         overscan_region = get_overscan_region(sample_image=self.full_path,
                                               technique='Imaging')
+
+        self.assertIsNone(overscan_region)
+
+    def test_get_overscan_region_other_technique(self):
+
+        overscan_region = get_overscan_region(sample_image=self.full_path,
+                                              technique='AnyOther')
 
         self.assertIsNone(overscan_region)
 
@@ -1462,6 +1487,22 @@ class ReferenceDataTest(TestCase):
         self.assertIsInstance(new_group, pandas.DataFrame)
         self.assertTrue(comp_group.equals(new_group))
 
+    def test__order_validation(self):
+        should_be_true = self.rd._order_validation(range(10))
+
+        self.assertTrue(should_be_true)
+
+        should_be_false = self.rd._order_validation(range(10)[::-1])
+        self.assertFalse(should_be_false)
+
+    def test__load_nist_list(self):
+        self.assertIsInstance(self.rd.nist, dict)
+        self.assertEqual(0, len(self.rd.nist))
+
+        self.rd._load_nist_list()
+        self.assertIsInstance(self.rd.nist, dict)
+        self.assertGreater(len(self.rd.nist), 0)
+
 
 class SaturationValuesTest(TestCase):
 
@@ -1862,3 +1903,13 @@ class TimeConversionTest(TestCase):
         self.assertEqual(morning_twilight, expected_morning_twilight)
         self.assertEqual(sun_set, expected_sun_set_time)
         self.assertEqual(sun_rise, expected_sun_rise_time)
+
+
+class ValidateCcdRegionTest(TestCase):
+
+    def test_validate_ccd_region_valid(self):
+        self.assertTrue(validate_ccd_region, '[1:1,10:10]')
+
+    def test_validate_ccd_region_invalid(self):
+        self.assertRaises(SyntaxError, validate_ccd_region, "10:10:10]")
+
