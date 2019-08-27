@@ -925,6 +925,52 @@ class GetLinesInLampTest(TestCase):
         pass
 
 
+class GetOverscanRegionTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd.header.set('CCDSUM', value='1 1')
+        self.ccd.header.set('TRIMSEC', value='[10:10,10:10]')
+
+        self.full_path = os.path.join(os.getcwd(), 'testfile.fits')
+
+        self.ccd.write(self.full_path)
+
+    def tearDown(self):
+        if os.path.isfile(self.full_path):
+            os.unlink(self.full_path)
+
+    def test_get_overscan_region_spectroscopy_blue(self):
+        self.ccd.header.set('INSTCONF', 'Blue')
+        self.ccd.write(self.full_path, overwrite=True)
+
+        expected_overscan = '[1:16,1:100]'
+
+        overscan_region = get_overscan_region(sample_image=self.full_path,
+                                              technique='Spectroscopy')
+
+        self.assertEqual(expected_overscan, overscan_region)
+
+    def test_get_overscan_region_spectroscopy_red(self):
+        self.ccd.header.set('INSTCONF', 'Red')
+        self.ccd.write(self.full_path, overwrite=True)
+
+        expected_overscan = '[6:49,1:100]'
+
+        overscan_region = get_overscan_region(sample_image=self.full_path,
+                                              technique='Spectroscopy')
+
+        self.assertEqual(expected_overscan, overscan_region)
+
+    def test_get_overscan_region_imaging(self):
+        overscan_region = get_overscan_region(sample_image=self.full_path,
+                                              technique='Imaging')
+
+        self.assertIsNone(overscan_region)
+
+
 class GetSpectralCharacteristicsTest(TestCase):
     def setUp(self):
         self.ccd = CCDData(data=np.random.random_sample(200),
