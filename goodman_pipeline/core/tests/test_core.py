@@ -513,7 +513,6 @@ class CosmicRayRejectionTest(TestCase):
                 os.unlink(_file)
 
 
-
 class CrossCorrelationTest(TestCase):
 
     @skip
@@ -548,6 +547,47 @@ class CrossCorrelationTest(TestCase):
                                                            new_array=new_array)
             self.assertEqual(correlation_value, offset)
 
+
+class DefineTrimSectionTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd.header.set('CCDSUM', value='1 1')
+        self.ccd.header.set('TRIMSEC', value='[10:10,10:10]')
+
+        self.full_path = os.path.join(os.getcwd(), 'testfile.fits')
+
+        self.ccd.write(self.full_path)
+
+    def test_define_trim_section_spectroscopy(self):
+
+        expected_trim_section = '[51:4110,2:100]'
+        trim_section = define_trim_section(sample_image=self.full_path,
+                                           technique='Spectroscopy')
+        self.assertEqual(expected_trim_section, trim_section)
+
+    def test_define_trim_section_spectroscopy_2x2(self):
+        self.ccd.header.set('CCDSUM', value='2 2')
+        self.ccd.write(self.full_path, overwrite=True)
+
+        expected_trim_section = '[26:2055,2:100]'
+        trim_section = define_trim_section(sample_image=self.full_path,
+                                           technique='Spectroscopy')
+        self.assertEqual(expected_trim_section, trim_section)
+
+    def test_define_trim_section_imaging(self):
+
+        expected_trim_section = '[10:10,10:10]'
+        trim_section = define_trim_section(sample_image=self.full_path,
+                                           technique='Imaging')
+
+        self.assertEqual(expected_trim_section, trim_section)
+
+    def tearDown(self):
+        if os.path.isfile(self.full_path):
+            os.unlink(self.full_path)
 
 class EvaluateWavelengthSolutionTest(TestCase):
 
@@ -686,8 +726,6 @@ class ExtractionTest(TestCase):
                           target_trace=self.target_trace,
                           spatial_profile=spatial_profile,
                           extraction_name='fractional')
-
-
 
     def test_extraction_exception(self):
         self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
@@ -1778,29 +1816,3 @@ class TimeConversionTest(TestCase):
         self.assertEqual(morning_twilight, expected_morning_twilight)
         self.assertEqual(sun_set, expected_sun_set_time)
         self.assertEqual(sun_rise, expected_sun_rise_time)
-
-
-
-
-
-
-def test_define_trim_section():
-    pass
-
-
-def test_get_overscan_region():
-    pass
-
-
-def test_create_master_bias():
-    pass
-
-
-def test_create_master_flats():
-    pass
-
-
-def test_name_master_flats():
-    pass
-
-
