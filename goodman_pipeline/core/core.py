@@ -23,6 +23,7 @@ import scipy
 from astroplan import Observer
 from astropy import units as u
 from astropy.io import fits
+from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
@@ -139,6 +140,76 @@ def add_wcs_keys(ccd):
                    comment='')
 
     return ccd
+
+
+def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
+    """Add wavelength solution to the new FITS header
+
+    Defines FITS header keyword values that will represent the wavelength
+    solution in the header so that the image can be read in any other
+    astronomical tool. (e.g. IRAF)
+
+    Args:
+        ccd (CCDData) Instance of :class:`~astropy.nddata.CCDData`
+        x_axis (ndarray): Linearized x-axis in angstrom
+        reference_lamp (str): Name of lamp used to get wavelength solution.
+        crpix (int): reference pixel for defining wavelength solution.
+        Default 1. For most cases 1 should be fine.
+
+
+    Returns:
+        ccd (CCDData) A :class:`~astropy.nddata.CCDData` instance with
+          linear wavelength solution on it.
+
+    """
+    assert crpix > 0
+    new_crpix = crpix
+    new_crval = x_axis[new_crpix - crpix]
+    new_cdelt = x_axis[new_crpix] - x_axis[new_crpix - crpix]
+
+    ccd.header.set('BANDID1', 'spectrum - background none, weights none, '
+                              'clean no')
+    ccd.header.set('WCSDIM', 1)
+    ccd.header.set('CTYPE1', 'LINEAR  ')
+    ccd.header.set('CRVAL1', new_crval)
+    ccd.header.set('CRPIX1', new_crpix)
+    ccd.header.set('CDELT1', new_cdelt)
+    ccd.header.set('CD1_1', new_cdelt)
+    ccd.header.set('LTM1_1', 1.)
+    ccd.header.set('WAT0_001', 'system=equispec')
+    ccd.header.set('WAT1_001', 'wtype=linear label=Wavelength units=angstroms')
+    ccd.header.set('DC-FLAG', 0)
+    ccd.header.set('DCLOG1', 'REFSPEC1 = {:s}'.format(reference_lamp))
+
+    return ccd
+
+
+def bin_reference_data(wavelength, intensity, serial_binning):
+    """Bins a 1D array
+
+    This method reduces the size of an unbinned array by binning.
+    The function to combine data is `numpy.mean`.
+
+    Args:
+        wavelength (array): Wavelength axis
+        intensity (array): Intensity
+        serial_binning (int): Serial Binning is the binning in the
+        dispersion axis.
+
+    Returns:
+        Binned wavelength and intensity arrays.
+
+    """
+    if serial_binning != 1:
+        b_wavelength = ccdproc.block_reduce(wavelength,
+                                            serial_binning,
+                                            np.mean)
+        b_intensity = ccdproc.block_reduce(intensity,
+                                           serial_binning,
+                                           np.mean)
+        return b_wavelength, b_intensity
+    else:
+        return wavelength, intensity
 
 
 def call_cosmic_rejection(ccd,
@@ -494,6 +565,75 @@ def create_master_flats(flat_files,
         log.error('Empty flat list. Check that they do not exceed the '
                   'saturation limit.')
         return None, None
+
+
+def cross_correlation(reference,
+                      new_array,
+                      slit_size,
+                      serial_binning,
+                      mode='full',
+                      plot=False):
+    """Do cross correlation of two 1D spectra
+
+    It convolves the reference lamp depending on the slit size of the new_array
+    that corresponds with a comparison lamp.
+    If the slit is larger than 3 arcseconds the reference lamp is convolved with
+    a `~astropy.convolution.Box1DKernel` because spectral lines look more like a
+    block than a line. And if it is smaller or equal to 3 it will
+    use a `~astropy.convolution.Gaussian1DKernel` ponderated by the binning.
+    All reference lamp are unbinned, or binning is 1x1.
+
+    Args:
+        reference (array): Reference array.
+        new_array (array): Array to be matched. A new reference lamp.
+        slit_size (float): Slit width in arcseconds
+        serial_binning (int): Binning in the spectral axis
+        mode (str): Correlation mode for `scipy.signal.correlate`.
+        plot (bool): Switch debugging plots on or off.
+
+    Returns:
+        correlation_value (int): Shift value in pixels.
+
+    """
+    cyaxis2 = new_array
+    if slit_size > 3:
+
+        box_width = slit_size / (0.15 * serial_binning)
+
+        log.debug('BOX WIDTH: {:f}'.format(box_width))
+        box_kernel = Box1DKernel(width=box_width)
+        max_before = np.max(reference)
+        cyaxis1 = convolve(reference, box_kernel)
+        max_after = np.max(cyaxis1)
+        cyaxis1 *= max_before / max_after
+
+    else:
+        kernel_stddev = slit_size / (0.15 * serial_binning)
+
+        gaussian_kernel = Gaussian1DKernel(stddev=kernel_stddev)
+        cyaxis1 = convolve(reference, gaussian_kernel)
+        cyaxis2 = convolve(new_array, gaussian_kernel)
+
+    ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+
+    max_index = np.argmax(ccorr)
+
+    x_ccorr = np.linspace(-int(len(ccorr) / 2.),
+                          int(len(ccorr) / 2.),
+                          len(ccorr))
+
+    correlation_value = x_ccorr[max_index]
+    if plot:
+        plt.ion()
+        plt.title('Cross Correlation')
+        plt.xlabel('Lag Value')
+        plt.ylabel('Correlation Value')
+        plt.plot(x_ccorr, ccorr)
+        plt.draw()
+        plt.pause(2)
+        plt.clf()
+        plt.ioff()
+    return correlation_value
 
 
 def classify_spectroscopic_data(path, search_pattern):
@@ -1199,6 +1339,36 @@ def extract_optimal():
     raise NotImplementedError
 
 
+def evaluate_wavelength_solution(clipped_differences):
+    """Calculates Root Mean Square Error for the wavelength solution.
+
+    Args:
+        clipped_differences (ndarray): Numpy masked array of differences
+          between reference line values in angstrom and the value calculated
+          using the model of the wavelength solution.
+
+    Returns:
+        Root Mean Square Error, number of points and number of points
+          rejected in the calculation of the wavelength solution.
+
+    """
+    n_points = len(clipped_differences)
+    n_rejections = np.ma.count_masked(clipped_differences)
+    square_differences = []
+
+    for i in range(len(clipped_differences)):
+        if clipped_differences[i] is not np.ma.masked:
+            square_differences.append(clipped_differences[i] ** 2)
+
+    rms_error = np.sqrt(
+        np.sum(square_differences) / len(square_differences))
+
+    log.info('Wavelength solution RMS Error : {:.3f}'.format(
+        rms_error))
+
+    return rms_error, n_points, n_rejections
+
+
 def fix_keywords(path, pattern='*.fits'):
     """Fix FITS uncompliance of some keywords
 
@@ -1339,6 +1509,100 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
     log.debug('Found {:.3f} as central wavelength'.format(central_wavelength))
 
     return central_wavelength
+
+
+def get_lines_in_lamp(ccd, plots=False):
+    """Identify peaks in a lamp spectrum
+
+    Uses `scipy.signal.argrelmax` to find peaks in a spectrum i.e emission
+    lines, then it calls the recenter_lines method that will recenter them
+    using a "center of mass", because, not always the maximum value (peak)
+    is the center of the line.
+
+    Args:
+        ccd (CCDData): Lamp `ccdproc.CCDData` instance.
+        plots (bool): Wether to plot or not.
+
+    Returns:
+        lines_candidates (list): A common list containing pixel values at
+            approximate location of lines.
+
+    """
+    if isinstance(ccd, CCDData):
+        # print(ccddata_lamp.data.shape)
+        lamp_data = ccd.data
+        lamp_header = ccd.header
+        raw_pixel_axis = range(len(lamp_data))
+    else:
+        log.error('Error receiving lamp')
+        return None
+
+    no_nan_lamp_data = np.asarray(np.nan_to_num(lamp_data))
+
+    filtered_data = np.where(
+        np.abs(no_nan_lamp_data > no_nan_lamp_data.min() +
+               0.03 * no_nan_lamp_data.max()),
+        no_nan_lamp_data,
+        None)
+
+    # replace None to zero and convert it to an array
+    none_to_zero = [0 if it is None else it for it in filtered_data]
+    filtered_data = np.array(none_to_zero)
+
+    _upper_limit = no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()
+    slit_size = np.float(re.sub('[a-zA-Z"_*]', '', lamp_header['slit']))
+
+    serial_binning, parallel_binning = [
+        int(x) for x in lamp_header['CCDSUM'].split()]
+
+    new_order = int(round(float(slit_size) / (0.15 * serial_binning)))
+    log.debug('New Order:  {:d}'.format(new_order))
+
+    # print(round(new_order))
+    peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
+
+    if slit_size >= 5.:
+
+        lines_center = recenter_broad_lines(
+            lamp_data=no_nan_lamp_data,
+            lines=peaks,
+            order=new_order)
+    else:
+        # lines_center = peaks
+        lines_center = recenter_lines(no_nan_lamp_data, peaks)
+
+    if plots:  # pragma: no cover
+        # print(new_order, slit_size, )
+        plt.close('all')
+        fig, ax = plt.subplots()
+        # ax = fig.add_subplot(111)
+        fig.canvas.set_window_title('Lines Detected')
+
+        mng = plt.get_current_fig_manager()
+        mng.window.showMaximized()
+
+        ax.set_title('Lines detected in Lamp\n'
+                     '{:s}'.format(lamp_header['OBJECT']))
+        ax.set_xlabel('Pixel Axis')
+        ax.set_ylabel('Intensity (counts)')
+
+        # Build legends without data to avoid repetitions
+        ax.plot([], color='k', label='Comparison Lamp Data')
+
+        ax.plot([], color='k', linestyle=':',
+                label='Spectral Line Detected')
+
+        ax.axhline(_upper_limit, color='r')
+
+        for line in peaks:
+            ax.axvline(line, color='k', linestyle=':')
+
+        ax.plot(raw_pixel_axis, no_nan_lamp_data, color='k')
+        ax.legend(loc='best')
+        plt.tight_layout()
+        plt.show()
+
+    return lines_center
 
 
 def get_overscan_region(sample_image, technique):
@@ -1527,6 +1791,81 @@ def get_slit_trim_section(master_flat):
         plt.show()
 
     return slit_trim_section
+
+
+def get_spectral_characteristics(ccd, pixel_size, instrument_focal_length):
+    """Calculates some Goodman's specific spectroscopic values.
+
+    From the header value for Grating, Grating Angle and Camera Angle it is
+    possible to estimate what are the wavelength values at the edges as well
+    as in the center. It was necessary to add offsets though, since the
+    formulas provided are slightly off. The values are only an estimate.
+
+    Args:
+        ccd (CCDData): Lamp `ccdproc.CCDData` instance
+        pixel_size (float): Pixel size in microns
+        instrument_focal_length (float): Instrument focal length
+
+    Returns:
+        spectral_characteristics (dict): Contains the following parameters:
+            center: Center Wavelength
+            blue: Blue limit in Angstrom
+            red: Red limit in Angstrom
+            alpha: Angle
+            beta: Angle
+            pix1: Pixel One
+            pix2: Pixel Two
+
+
+    """
+    # TODO (simon): find a definite solution for this, this only work
+    # TODO (simon): (a little) for one configuration
+    blue_correction_factor = -50 * u.angstrom
+    red_correction_factor = -37 * u.angstrom
+
+    grating_frequency = float(re.sub('[A-Za-z_-]',
+                                     '',
+                                     ccd.header['GRATING'])) / u.mm
+
+    grating_angle = float(ccd.header['GRT_ANG']) * u.deg
+    camera_angle = float(ccd.header['CAM_ANG']) * u.deg
+
+    # serial binning - dispersion binning
+    # parallel binning - spatial binning
+    serial_binning, parallel_binning = [
+        int(x) for x in ccd.header['CCDSUM'].split()]
+
+    pixel_count = len(ccd.data)
+    # Calculations
+    # TODO (simon): Check whether is necessary to remove the
+    # TODO (simon): slit_offset variable
+    alpha = grating_angle.to(u.rad)
+    beta = camera_angle.to(u.rad) - grating_angle.to(u.rad)
+
+    center_wavelength = (np.sin(alpha) + np.sin(beta)) / grating_frequency
+
+    limit_angle = np.arctan(pixel_count * ((pixel_size * serial_binning) / instrument_focal_length) / 2)
+
+    blue_limit = ((np.sin(alpha) + np.sin(beta - limit_angle.to(u.rad))) / grating_frequency).to(u.angstrom) + blue_correction_factor
+
+    red_limit = ((np.sin(alpha) + np.sin(beta + limit_angle.to(u.rad))) / grating_frequency).to(u.angstrom) + red_correction_factor
+
+    pixel_one = 0
+    pixel_two = 0
+    log.debug(
+        'Center Wavelength : {:.3f} Blue Limit : '
+        '{:.3f} Red Limit : {:.3f} '.format(center_wavelength.to(u.angstrom),
+                                            blue_limit,
+                                            red_limit))
+
+    spectral_characteristics = {'center': center_wavelength,
+                                'blue': blue_limit,
+                                'red': red_limit,
+                                'alpha': alpha,
+                                'beta': beta,
+                                'pix1': pixel_one,
+                                'pix2': pixel_two}
+    return spectral_characteristics
 
 
 def get_twilight_time(date_obs):
@@ -1783,6 +2122,96 @@ def is_file_saturated(ccd, threshold):
         return True
     else:
         return False
+
+
+def linearize_spectrum(data, wavelength_solution, plots=False):
+    """Produces a linearized version of the spectrum
+
+    Storing wavelength solutions in a FITS header is not simple at all for
+    non-linear solutions therefore is easier for the final user and for the
+    development code to have the spectrum linearized. It first finds a
+    spline representation of the data, then creates a linear wavelength axis
+    (angstrom) and finally it resamples the data from the spline
+    representation to the linear wavelength axis.
+
+    It also applies a median filter of kernel size three to smooth the
+    linearized spectrum. Sometimes the splines produce funny things when
+    the original data is too steep.
+
+    Args:
+        data (Array): The non-linear spectrum
+        wavelength_solution (object): Mathematical model representing the
+        wavelength solution.
+        plots (bool): Whether to show the plots or not.
+
+    Returns:
+        linear_data (list): Contains two elements: Linear wavelength axis
+        and the smoothed linearized data itself.
+
+    """
+    # for data_point in data:
+    #     print(data_point)
+    # print('data ', data)
+    pixel_axis = range(len(data))
+    if np.nan in data:
+        log.error("there are nans")
+        sys.exit(0)
+
+    # print(pixel_axis)
+    if wavelength_solution is not None:
+        x_axis = wavelength_solution(pixel_axis)
+        try:
+            plt.imshow(data)
+            plt.show()
+        except TypeError:
+            pass
+        new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
+        tck = scipy.interpolate.splrep(x_axis, data, s=0)
+        linearized_data = scipy.interpolate.splev(new_x_axis,
+                                                  tck,
+                                                  der=0)
+
+        smoothed_linearized_data = signal.medfilt(linearized_data)
+        # print('sl ', smoothed_linearized_data)
+        if plots:  # pragma: no cover
+            fig6 = plt.figure(6)
+            plt.xlabel('Wavelength (Angstrom)')
+            plt.ylabel('Intensity (Counts)')
+            fig6.canvas.set_window_title('Linearized Data')
+
+            plt.plot(x_axis,
+                     data,
+                     color='k',
+                     label='Data')
+
+            plt.plot(new_x_axis,
+                     linearized_data,
+                     color='r',
+                     linestyle=':',
+                     label='Linearized Data')
+
+            plt.plot(new_x_axis,
+                     smoothed_linearized_data,
+                     color='m',
+                     alpha=0.5,
+                     label='Smoothed Linearized Data')
+
+            fig6.tight_layout()
+            plt.legend(loc=3)
+            plt.show()
+
+            fig7 = plt.figure(7)
+            plt.xlabel('Pixels')
+            plt.ylabel('Angstroms')
+            fig7.canvas.set_window_title('Wavelength Solution')
+            plt.plot(x_axis, color='b', label='Non linear wavelength-axis')
+            plt.plot(new_x_axis, color='r', label='Linear wavelength-axis')
+            fig7.tight_layout()
+            plt.legend(loc=3)
+            plt.show()
+
+        linear_data = [new_x_axis, smoothed_linearized_data]
+        return linear_data
 
 
 def name_master_flats(header,
@@ -2176,6 +2605,163 @@ def read_fits(full_path, technique='Unknown'):
     ccd.header.set('BUNIT', after='CCDSUM')
 
     return ccd
+
+
+def recenter_broad_lines(lamp_data, lines, order):
+    """Recenter broad lines
+
+    Notes:
+        This method is used to recenter broad lines only, there is a special
+        method for dealing with narrower lines.
+
+    Args:
+        lamp_data (ndarray): numpy.ndarray instance. It contains the lamp
+            data.
+        lines (list): A line list in pixel values.
+        order (float): A rough estimate of the FWHM of the lines in pixels
+            in the data. It is calculated using the slit size divided by the
+            pixel scale multiplied by the binning.
+
+    Returns:
+        A list containing the recentered line positions.
+
+    """
+    # TODO (simon): use slit size information for a square function
+    # TODO (simon): convolution
+    new_line_centers = []
+    gaussian_kernel = Gaussian1DKernel(stddev=2.)
+    lamp_data = convolve(lamp_data, gaussian_kernel)
+    for line in lines:
+        lower_index = max(0, int(line - order))
+        upper_index = min(len(lamp_data), int(line + order))
+        lamp_sample = lamp_data[lower_index:upper_index]
+        x_axis = np.linspace(lower_index, upper_index, len(lamp_sample))
+        line_max = np.max(lamp_sample)
+
+        gaussian_model = models.Gaussian1D(amplitude=line_max,
+                                           mean=line,
+                                           stddev=order)
+
+        fit_gaussian = fitting.LevMarLSQFitter()
+        fitted_gaussian = fit_gaussian(gaussian_model, x_axis, lamp_sample)
+        new_line_centers.append(fitted_gaussian.mean.value)
+
+    return new_line_centers
+
+
+def recenter_lines(data, lines, plots=False):
+    """Finds the centroid of an emission line
+
+    For every line center (pixel value) it will scan left first until the
+    data stops decreasing, it assumes it is an emission line and then will
+    scan right until it stops decreasing too. Defined those limits it will
+    use the line data in between and calculate the centroid.
+
+    Notes:
+        This method is used to recenter relatively narrow lines only, there
+        is a special method for dealing with broad lines.
+
+    Args:
+        data (ndarray): numpy.ndarray instance. or the data attribute of a
+            :class:`~astropy.nddata.CCDData` instance.
+        lines (list): A line list in pixel values.
+        plots (bool): If True will plot spectral line as well as the input
+            center and the recentered value.
+
+    Returns:
+        A list containing the recentered line positions.
+
+    """
+    new_center = []
+    x_size = data.shape[0]
+    median = np.median(data)
+    for line in lines:
+        # TODO (simon): Check if this definition is valid, so far is not
+        # TODO (cont..): critical
+        left_limit = 0
+        right_limit = 1
+        condition = True
+        left_index = int(line)
+
+        while condition and left_index - 2 > 0:
+
+            if (data[left_index - 1] > data[left_index]) and \
+                    (data[left_index - 2] > data[left_index - 1]):
+
+                condition = False
+                left_limit = left_index
+
+            elif data[left_index] < median:
+                condition = False
+                left_limit = left_index
+
+            else:
+                left_limit = left_index
+
+            left_index -= 1
+
+        # id right limit
+        condition = True
+        right_index = int(line)
+        while condition and right_index + 2 < x_size - 1:
+
+            if (data[right_index + 1] > data[right_index]) and \
+                    (data[right_index + 2] > data[right_index + 1]):
+
+                condition = False
+                right_limit = right_index
+
+            elif data[right_index] < median:
+                condition = False
+                right_limit = right_index
+
+            else:
+                right_limit = right_index
+            right_index += 1
+        index_diff = [abs(line - left_index), abs(line - right_index)]
+
+        sub_x_axis = range(line - min(index_diff),
+                           (line + min(index_diff)) + 1)
+
+        sub_data = data[line - min(index_diff):(line + min(index_diff)) + 1]
+        centroid = np.sum(sub_x_axis * sub_data) / np.sum(sub_data)
+
+        # checks for asymmetries
+        differences = [abs(data[line] - data[left_limit]),
+                       abs(data[line] - data[right_limit])]
+
+        if max(differences) / min(differences) >= 2.:
+            if plots:  # pragma: no cover
+                plt.axvspan(line - 1, line + 1, color='g', alpha=0.3)
+            new_center.append(line)
+        else:
+            new_center.append(centroid)
+    if plots:  # pragma: no cover
+        fig, ax = plt.subplots(1, 1)
+        fig.canvas.set_window_title('Lines Detected in Lamp')
+        ax.axhline(median, color='b')
+
+        ax.plot(range(len(data)),
+                data,
+                color='k',
+                label='Lamp Data')
+
+        for line in lines:
+
+            ax.axvline(line + 1,
+                       color='k',
+                       linestyle=':',
+                       label='First Detected Center')
+
+        for center in new_center:
+
+            ax.axvline(center,
+                       color='k',
+                       linestyle='.-',
+                       label='New Center')
+
+        plt.show()
+    return new_center
 
 
 def record_trace_information(ccd, trace_info):

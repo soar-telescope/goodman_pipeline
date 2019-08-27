@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from unittest import TestCase, skip
 from ccdproc import CCDData
+from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.io import fits
 from astropy.modeling import Model
 from astropy.modeling import (models,
@@ -31,7 +32,9 @@ from ..core import (GenerateDcrParFile,
 
 # import of functions in core.py
 from ..core import (astroscrappy_lacosmic,
+                    add_linear_wavelength_solution,
                     add_wcs_keys,
+                    bin_reference_data,
                     call_cosmic_rejection,
                     classify_spectroscopic_data,
                     combine_data,
@@ -43,11 +46,14 @@ from ..core import (astroscrappy_lacosmic,
                     extraction,
                     extract_fractional_pixel,
                     extract_optimal,
+                    evaluate_wavelength_solution,
                     fix_keywords,
                     fractional_sum,
                     get_best_flat,
                     get_central_wavelength,
+                    get_lines_in_lamp,
                     get_overscan_region,
+                    get_spectral_characteristics,
                     get_slit_trim_section,
                     get_twilight_time,
                     identify_targets,
@@ -96,6 +102,43 @@ def test_spectroscopic_mode():
 def test_lacosmic_cosmicray_rejection():
     pass
 
+
+class AddLinearWavelengthSolutionTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.random.random_sample(200),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd = add_wcs_keys(ccd=self.ccd)
+        self.ccd.header.set('SLIT',
+                            value='1.0_LONG_SLIT',
+                            comment="slit [arcsec]")
+
+    def test_add_wavelength_solution(self):
+
+        calibration_lamp = 'non-existent.fits'
+
+        crval1 = 3977.948
+        npix = 4060
+        cdelt = 0.9910068
+
+        x_axis = np.linspace(crval1,
+                             crval1 + cdelt * npix,
+                             npix)
+
+        self.ccd = add_linear_wavelength_solution(
+            ccd=self.ccd,
+            x_axis=x_axis,
+            reference_lamp=calibration_lamp)
+
+        self.assertEqual(self.ccd.header['CTYPE1'], 'LINEAR')
+        self.assertEqual(self.ccd.header['CRVAL1'], crval1)
+        self.assertEqual(self.ccd.header['CRPIX1'], 1)
+        self.assertAlmostEqual(self.ccd.header['CDELT1'], cdelt, places=3)
+        self.assertEqual(self.ccd.header['DCLOG1'],
+                         'REFSPEC1 = {:s}'.format(calibration_lamp))
+
+
 class AddWCSKeywordsTest(TestCase):
 
     def setUp(self):
@@ -141,6 +184,57 @@ class AddWCSKeywordsTest(TestCase):
                     'DCLOG1']
 
 
+class BinningTest(TestCase):
+
+    def test__bin_reference_data(self):
+        wavelength = np.linspace(3000, 7000, 4000)
+        intensity = np.random.random_sample(4000)
+
+        for i in range(1, 4):
+            new_wavelength, new_intensity = bin_reference_data(
+                wavelength=wavelength,
+                intensity=intensity,
+                serial_binning=i)
+
+            self.assertEqual(len(wavelength), len(intensity))
+            self.assertEqual(len(new_wavelength), len(new_intensity))
+            self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
+
+
+class CrossCorrelationTest(TestCase):
+
+    @skip
+    def test__cross_correlation(self):
+        self.wc.lamp = self.ccd.copy()
+        self.wc.serial_binning = 1
+
+        x_axis = np.arange(0, 4060, 1)
+
+        reference = np.zeros(4060)
+        gaussian = models.Gaussian1D(stddev=2)
+
+        for i in sorted(np.random.choice(x_axis, 30)):
+            gaussian.mean.value = i
+            reference += gaussian(x_axis)
+
+        offset = np.random.choice(range(1, 15), 1)[0]
+
+        for slit in [1, 2, 3, 4, 5]:
+
+            new_array = np.append(reference[offset:], np.zeros(offset))
+
+            if slit > 3:
+                box_kernel = Box1DKernel(width=slit / 0.15)
+                new_array = convolve(new_array, box_kernel)
+
+            self.assertEqual(len(reference), len(new_array))
+
+            self.wc.lamp.header['SLIT'] = '{:d}.0" long slit'.format(slit)
+
+            correlation_value = self.wc._cross_correlation(reference=reference,
+                                                           new_array=new_array)
+            self.assertEqual(correlation_value, offset)
+
 class InterpolationTest(TestCase):
 
     def test_interpolate(self):
@@ -182,6 +276,37 @@ class GenerateDcrFile(TestCase):
     def tearDown(self):
         if os.path.isfile(self.create._file_name):
             os.remove(self.create._file_name)
+
+
+class GetLinesInLampTest(TestCase):
+
+    @skip
+    def test_get_lines_in_lamp(self):
+        pass
+
+
+class GetSpectralCharacteristicsTest(TestCase):
+    def setUp(self):
+        self.ccd = CCDData(data=np.random.random_sample(200),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.pixel_size = 15 * u.micrometer
+        self.goodman_focal_length = 377.3 * u.mm
+
+    def test__get_spectral_characteristics(self):
+        self.ccd.header.set('SLIT', '1.0_LONG_SLIT')
+        self.ccd.header.set('GRATING', 'SYZY_400')
+        self.ccd.header.set('GRT_ANG', 7.5)
+        self.ccd.header.set('CAM_ANG', 16.1)
+        self.ccd.header.set('CCDSUM', '1 1')
+
+        spec_charact = get_spectral_characteristics(
+            ccd=self.ccd,
+            pixel_size=self.pixel_size,
+            instrument_focal_length=self.goodman_focal_length)
+
+        self.assertIsInstance(spec_charact, dict)
+        self.assertEqual(len(spec_charact), 7)
 
 
 class MasterFlatTest(TestCase):
@@ -581,9 +706,6 @@ class CombineDataTest(TestCase):
         self.assertTrue(self.prefix in combined.header['GSP_FNAM'])
 
 
-
-
-
 class TimeConversionTest(TestCase):
 
     def setUp(self):
@@ -727,6 +849,32 @@ class ExtractionTest(TestCase):
                           target_trace=self.target_trace,
                           spatial_profile=self.target_profile_gaussian,
                           extraction_name='optimal')
+
+
+class EvaluateWavelengthSolutionTest(TestCase):
+
+    def test__evaluate_solution(self):
+        differences = np.array([0.5] * 10)
+
+        clipped_differences = np.ma.masked_array(differences,
+                                                 mask=[0,
+                                                       0,
+                                                       1,
+                                                       0,
+                                                       0,
+                                                       1,
+                                                       0,
+                                                       0,
+                                                       1,
+                                                       0])
+
+        rms_error, n_points, n_rej = evaluate_wavelength_solution(
+            clipped_differences=clipped_differences)
+
+        self.assertEqual(rms_error, 0.5)
+        self.assertEqual(n_points, 10)
+        self.assertEqual(n_rej, 3)
+
 
 class FixKeywordsTest(TestCase):
 

@@ -307,8 +307,7 @@ class MainApp(object):
                               if groups is not None]:
             for group in sub_container:
                 # instantiate WavelengthCalibration here for each group.
-                self.wavelength_calibration = WavelengthCalibration(
-                    args=self.args)
+                self.wavelength_calibration = WavelengthCalibration()
                 # this will contain only obstype == OBJECT
                 object_group = group[group.obstype == 'OBJECT']
                 obj_groupby = object_group.groupby(['object']).size(
@@ -514,7 +513,13 @@ class MainApp(object):
                             self.wavelength_calibration(
                                 ccd=sci_target,
                                 comp_list=comp_list,
-                                object_number=object_number)
+                                save_data_to=self.args.destination,
+                                reference_data=self.args.reference_dir,
+                                object_number=object_number,
+                                output_prefix=self.args.output_prefix,
+                                plot_results=self.args.plot_results,
+                                save_plots=self.args.save_plots,
+                                plots=self.args.debug_with_plots)
 
         return True
 
