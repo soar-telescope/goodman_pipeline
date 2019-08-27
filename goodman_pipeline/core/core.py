@@ -623,7 +623,7 @@ def cross_correlation(reference,
                           len(ccorr))
 
     correlation_value = x_ccorr[max_index]
-    if plot:
+    if plot:  # pragma: no cover
         plt.ion()
         plt.title('Cross Correlation')
         plt.xlabel('Lag Value')
