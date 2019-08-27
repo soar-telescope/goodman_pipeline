@@ -24,7 +24,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from ..wcs.wcs import WCS
 
-from ..core import (bin_reference_data,
+from ..core import (add_linear_wavelength_solution,
+                    bin_reference_data,
                     cross_correlation,
                     evaluate_wavelength_solution,
                     get_lines_in_lamp,
@@ -177,7 +178,7 @@ class WavelengthCalibration(object):
                     self.lamp = self.wcs.write_gsp_wcs(ccd=self.lamp,
                                                        model=self.wsolution)
 
-                    self.lamp = self.add_linear_wavelength_solution(
+                    self.lamp = add_linear_wavelength_solution(
                         ccd=self.lamp,
                         x_axis=linear_x_axis,
                         reference_lamp=self.calibration_lamp)
@@ -236,49 +237,6 @@ class WavelengthCalibration(object):
 
         else:
             log.warning('Data should be saved anyways')
-
-    @staticmethod
-    def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
-        """Add wavelength solution to the new FITS header
-
-        Defines FITS header keyword values that will represent the wavelength
-        solution in the header so that the image can be read in any other
-        astronomical tool. (e.g. IRAF)
-
-        Args:
-            ccd (CCDData) Instance of :class:`~astropy.nddata.CCDData`
-            x_axis (ndarray): Linearized x-axis in angstrom
-            reference_lamp (str): Name of lamp used to get wavelength solution.
-            crpix (int): reference pixel for defining wavelength solution.
-            Default 1. For most cases 1 should be fine.
-
-
-        Returns:
-            ccd (CCDData) A :class:`~astropy.nddata.CCDData` instance with
-              linear wavelength solution on it.
-
-        """
-        assert crpix > 0
-        new_crpix = crpix
-        new_crval = x_axis[new_crpix - crpix]
-        new_cdelt = x_axis[new_crpix] - x_axis[new_crpix - crpix]
-
-        ccd.header.set('BANDID1', 'spectrum - background none, weights none, '
-                                  'clean no')
-
-        ccd.header.set('WCSDIM', 1)
-        ccd.header.set('CTYPE1', 'LINEAR  ')
-        ccd.header.set('CRVAL1', new_crval)
-        ccd.header.set('CRPIX1', new_crpix)
-        ccd.header.set('CDELT1', new_cdelt)
-        ccd.header.set('CD1_1', new_cdelt)
-        ccd.header.set('LTM1_1', 1.)
-        ccd.header.set('WAT0_001', 'system=equispec')
-        ccd.header.set('WAT1_001', 'wtype=linear label=Wavelength units=angstroms')
-        ccd.header.set('DC-FLAG', 0)
-        ccd.header.set('DCLOG1', 'REFSPEC1 = {:s}'.format(reference_lamp))
-
-        return ccd
 
     def _automatic_wavelength_solution(self,
                                        save_data_to,
@@ -626,7 +584,7 @@ class WavelengthCalibration(object):
             data=ccd.data,
             wavelength_solution=wavelength_solution)
 
-        ccd = self.add_linear_wavelength_solution(
+        ccd = add_linear_wavelength_solution(
             ccd=ccd,
             x_axis=linear_x_axis,
             reference_lamp=self.calibration_lamp)

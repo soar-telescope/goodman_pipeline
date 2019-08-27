@@ -32,6 +32,7 @@ from ..core import (GenerateDcrParFile,
 
 # import of functions in core.py
 from ..core import (astroscrappy_lacosmic,
+                    add_linear_wavelength_solution,
                     add_wcs_keys,
                     bin_reference_data,
                     call_cosmic_rejection,
@@ -100,6 +101,43 @@ def test_spectroscopic_mode():
 
 def test_lacosmic_cosmicray_rejection():
     pass
+
+
+class AddLinearWavelengthSolutionTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.random.random_sample(200),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd = add_wcs_keys(ccd=self.ccd)
+        self.ccd.header.set('SLIT',
+                            value='1.0_LONG_SLIT',
+                            comment="slit [arcsec]")
+
+    def test_add_wavelength_solution(self):
+
+        calibration_lamp = 'non-existent.fits'
+
+        crval1 = 3977.948
+        npix = 4060
+        cdelt = 0.9910068
+
+        x_axis = np.linspace(crval1,
+                             crval1 + cdelt * npix,
+                             npix)
+
+        self.ccd = add_linear_wavelength_solution(
+            ccd=self.ccd,
+            x_axis=x_axis,
+            reference_lamp=calibration_lamp)
+
+        self.assertEqual(self.ccd.header['CTYPE1'], 'LINEAR')
+        self.assertEqual(self.ccd.header['CRVAL1'], crval1)
+        self.assertEqual(self.ccd.header['CRPIX1'], 1)
+        self.assertAlmostEqual(self.ccd.header['CDELT1'], cdelt, places=3)
+        self.assertEqual(self.ccd.header['DCLOG1'],
+                         'REFSPEC1 = {:s}'.format(calibration_lamp))
+
 
 class AddWCSKeywordsTest(TestCase):
 
