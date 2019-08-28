@@ -41,6 +41,7 @@ from ..core import (astroscrappy_lacosmic,
                     convert_time,
                     create_master_bias,
                     create_master_flats,
+                    cross_correlation,
                     dcr_cosmicray_rejection,
                     define_trim_section,
                     extraction,
@@ -679,40 +680,70 @@ class CreateMasterFlatsTest(TestCase):
 
         self.assertNotEqual(self.flat_files[0], master.header['GSP_IC01'])
 
+    def test_create_master_flats_empty_list(self):
+        master, name = create_master_flats(
+            flat_files=[],
+            raw_data=self.raw_data,
+            reduced_data=self.reduced_data,
+            technique='Spectroscopy',
+            overscan_region=self.overscan_region,
+            trim_section=self.trim_section,
+            master_bias_name='master_bias.fits',
+            new_master_flat_name=self.master_flat_name,
+            saturation=1,
+            ignore_bias=False)
+        self.assertIsNone(master)
+        self.assertIsNone(name)
+
 
 class CrossCorrelationTest(TestCase):
 
-    @skip
-    def test__cross_correlation(self):
-        self.wc.lamp = self.ccd.copy()
-        self.wc.serial_binning = 1
+    def setUp(self):
+        self.binning = 1
+        self.size = 5000
+        self.reference_array = np.ones(self.size)
+        self.compared_array = np.ones(self.size)
+        self.x_axis = np.arange(0, self.size, 1)
+        self.gaussian = models.Gaussian1D(stddev=5, amplitude=3000)
+        self.gaussian.mean.value = int(self.size / 2.)
+        self.reference_array += self.gaussian(self.x_axis)
 
-        x_axis = np.arange(0, 4060, 1)
+    def test_cross_correlation_small_slit(self):
 
-        reference = np.zeros(4060)
-        gaussian = models.Gaussian1D(stddev=2)
+        offset = 500
 
-        for i in sorted(np.random.choice(x_axis, 30)):
-            gaussian.mean.value = i
-            reference += gaussian(x_axis)
+        self.gaussian.mean.value -= offset
 
-        offset = np.random.choice(range(1, 15), 1)[0]
+        self.compared_array += self.gaussian(self.x_axis)
 
-        for slit in [1, 2, 3, 4, 5]:
+        correlation_value = cross_correlation(reference=self.reference_array,
+                                              compared=self.compared_array,
+                                              slit_size=1,
+                                              serial_binning=1,
+                                              mode='full',
+                                              plot=False)
 
-            new_array = np.append(reference[offset:], np.zeros(offset))
+        self.assertEqual(offset, correlation_value)
 
-            if slit > 3:
-                box_kernel = Box1DKernel(width=slit / 0.15)
-                new_array = convolve(new_array, box_kernel)
+    def test_cross_correlation_large_slit(self):
+        offset = 500
 
-            self.assertEqual(len(reference), len(new_array))
+        self.gaussian.mean.value -= offset
 
-            self.wc.lamp.header['SLIT'] = '{:d}.0" long slit'.format(slit)
+        self.compared_array += self.gaussian(self.x_axis)
 
-            correlation_value = self.wc._cross_correlation(reference=reference,
-                                                           new_array=new_array)
-            self.assertEqual(correlation_value, offset)
+        box_kernel = Box1DKernel(width=5 / 0.15)
+
+        self.compared_array = convolve(self.compared_array, box_kernel)
+
+        correlation_value = cross_correlation(reference=self.reference_array,
+                                              compared=self.compared_array,
+                                              slit_size=5,
+                                              serial_binning=1,
+                                              mode='full',
+                                              plot=False)
+
+        self.assertEqual(offset, correlation_value)
 
 
 class DefineTrimSectionTest(TestCase):

@@ -568,7 +568,7 @@ def create_master_flats(flat_files,
 
 
 def cross_correlation(reference,
-                      new_array,
+                      compared,
                       slit_size,
                       serial_binning,
                       mode='full',
@@ -585,7 +585,7 @@ def cross_correlation(reference,
 
     Args:
         reference (array): Reference array.
-        new_array (array): Array to be matched. A new reference lamp.
+        compared (array): Array to be matched. A new reference lamp.
         slit_size (float): Slit width in arcseconds
         serial_binning (int): Binning in the spectral axis
         mode (str): Correlation mode for `scipy.signal.correlate`.
@@ -595,7 +595,7 @@ def cross_correlation(reference,
         correlation_value (int): Shift value in pixels.
 
     """
-    cyaxis2 = new_array
+    cyaxis2 = compared
     if slit_size > 3:
 
         box_width = slit_size / (0.15 * serial_binning)
@@ -612,7 +612,7 @@ def cross_correlation(reference,
 
         gaussian_kernel = Gaussian1DKernel(stddev=kernel_stddev)
         cyaxis1 = convolve(reference, gaussian_kernel)
-        cyaxis2 = convolve(new_array, gaussian_kernel)
+        cyaxis2 = convolve(compared, gaussian_kernel)
 
     ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
 
