@@ -2277,15 +2277,13 @@ def name_master_flats(header,
         target_name = '_' + target_name
     if not get:
         # TODO (simon): There must be a pythonic way to do this
-        if (date_obs < sunset) or (date_obs > sunrise):
-            dome_sky = '_dome'
+        if afternoon_twilight < date_obs < morning_twilight:
+            dome_sky = '_night'
         elif (sunset < date_obs < afternoon_twilight) or \
                 (morning_twilight < date_obs < sunrise):
             dome_sky = '_sky'
-        elif afternoon_twilight < date_obs < morning_twilight:
-            dome_sky = '_night'
         else:
-            dome_sky = '_other'
+            dome_sky = '_dome'
     else:
         dome_sky = '*'
 
