@@ -646,8 +646,10 @@ class CreateMasterFlatsTest(TestCase):
             technique='Spectroscopy',
             overscan_region=self.overscan_region,
             trim_section=self.trim_section,
-            master_bias_name='master_bias.fits',
-            new_master_flat_name=self.master_flat_name,
+            master_bias_name=os.path.join(self.reduced_data,
+                                          'master_bias.fits'),
+            new_master_flat_name=os.path.join(self.reduced_data,
+                                              self.master_flat_name),
             saturation=1,
             ignore_bias=False)
 
@@ -1136,9 +1138,40 @@ class GenerateDcrFile(TestCase):
 
 class GetLinesInLampTest(TestCase):
 
-    @skip
-    def test_get_lines_in_lamp(self):
-        pass
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones(5000),
+                           meta=fits.Header(),
+                           unit='adu')
+        self.ccd.header.set('SLIT', value='1.0_LONG_SLIT')
+        self.ccd.header.set('CCDSUM', value='1 1')
+        self.ccd.header.set('OBJECT', value='TestSubject')
+        self.line_centers = np.arange(100, 4900, 200)
+
+        self.gaussian = models.Gaussian1D(amplitude=10000, stddev=3)
+
+        for line_center in self.line_centers:
+            self.gaussian.mean.value = line_center
+            self.ccd.data += self.gaussian(range(len(self.ccd.data)))
+
+    def test_get_lines_in_lamp_wrong_input(self):
+
+        expected_none = get_lines_in_lamp(ccd=list(range(100)))
+
+        self.assertIsNone(expected_none)
+
+
+    def test_get_lines_in_lamp_narrow_slit(self):
+        recovered_lines = get_lines_in_lamp(ccd=self.ccd, plots=False)
+        np.testing.assert_allclose(self.line_centers, recovered_lines)
+
+    def test_get_lines_in_lamp_broad_slit(self):
+        self.ccd.header.set('SLIT', value='5.0_LONG_SLIT')
+
+        box_kernel = Box1DKernel(width=5.0 / 0.15)
+        self.ccd.data = convolve(self.ccd.data, box_kernel)
+
+        recovered_lines = get_lines_in_lamp(ccd=self.ccd, plots=False)
+        np.testing.assert_allclose(self.line_centers, recovered_lines, atol=0.6)
 
 
 class GetOverscanRegionTest(TestCase):
