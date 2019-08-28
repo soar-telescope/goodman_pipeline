@@ -581,6 +581,105 @@ class CreateMasterBias(TestCase):
                           'not-a-region-either')
 
 
+class CreateMasterFlatsTest(TestCase):
+
+    def setUp(self):
+        self.flat_files = ['flat_{}.fits'.format(i) for i in range(1, 12)]
+        self.raw_data = os.getcwd()
+        self.reduced_data = os.getcwd()
+        self.master_flat_name = 'master_flat.fits'
+        self.saturation_level = 69257
+
+        self.overscan_region = '[1:10,1:100]'
+        self.trim_section = '[11:90,11:90]'
+
+        self.ccd = CCDData(data=np.ones((100, 100)),
+                           meta=fits.Header(),
+                           unit='adu')
+
+        self.ccd.data[11:90, 10:90] += 5
+        self.ccd.header.set('CCDSUM', value='1 1')
+        self.ccd.header.set('INSTCONF', value='Red')
+        self.ccd.header.set('GAIN', value=1.48)
+        self.ccd.header.set('RDNOISE', value=3.89)
+
+        for _file in self.flat_files:
+            self.ccd.write(os.path.join(self.reduced_data, _file))
+
+        self.bias = CCDData(data=np.ones((80, 80)),
+                            meta=fits.Header(),
+                            unit='adu')
+        self.bias.header.set('CCDSUM', value='1 1')
+        self.bias.write(os.path.join(self.reduced_data, 'master_bias.fits'))
+
+    def tearDown(self):
+        for _file in self.flat_files:
+            os.unlink(os.path.join(self.reduced_data, _file))
+        for _file in ['master_bias.fits', self.master_flat_name]:
+            if os.path.isfile(_file):
+                os.unlink(_file)
+
+    def test_create_master_flats_no_bias(self):
+        master, name = create_master_flats(
+            flat_files=self.flat_files,
+            raw_data=self.raw_data,
+            reduced_data=self.reduced_data,
+            technique='Spectroscopy',
+            overscan_region=self.overscan_region,
+            trim_section=self.trim_section,
+            master_bias_name='master_bias.fits',
+            new_master_flat_name=self.master_flat_name,
+            saturation=1,
+            ignore_bias=True)
+
+        self.assertEqual(self.master_flat_name, os.path.basename(name))
+        self.assertTrue(os.path.isfile(name))
+        self.assertEqual('none', master.header['GSP_BIAS'])
+
+    def test_create_master_flats_with_bias(self):
+
+        master, name = create_master_flats(
+            flat_files=self.flat_files,
+            raw_data=self.raw_data,
+            reduced_data=self.reduced_data,
+            technique='Spectroscopy',
+            overscan_region=self.overscan_region,
+            trim_section=self.trim_section,
+            master_bias_name='master_bias.fits',
+            new_master_flat_name=self.master_flat_name,
+            saturation=1,
+            ignore_bias=False)
+
+        self.assertEqual(self.master_flat_name, os.path.basename(name))
+        self.assertTrue(os.path.isfile(name))
+        self.assertEqual('master_bias.fits', master.header['GSP_BIAS'])
+
+
+    def test_create_master_flats_saturated_flats(self):
+
+        file_to_replace = os.path.join(self.reduced_data, self.flat_files[0])
+        os.unlink(file_to_replace)
+        self.assertFalse(os.path.isfile(file_to_replace))
+        self.ccd.data[11:90, 10:90] += 2 * self.saturation_level
+        self.ccd.header.set('OBJECT', value='saturated')
+        self.ccd.write(os.path.join(self.reduced_data, self.flat_files[0]),
+                       overwrite=True)
+
+        master, name = create_master_flats(
+            flat_files=self.flat_files,
+            raw_data=self.raw_data,
+            reduced_data=self.reduced_data,
+            technique='Spectroscopy',
+            overscan_region=self.overscan_region,
+            trim_section=self.trim_section,
+            master_bias_name='master_bias.fits',
+            new_master_flat_name=self.master_flat_name,
+            saturation=1,
+            ignore_bias=False)
+
+        self.assertNotEqual(self.flat_files[0], master.header['GSP_IC01'])
+
+
 class CrossCorrelationTest(TestCase):
 
     @skip
