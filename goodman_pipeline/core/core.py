@@ -2302,7 +2302,7 @@ def name_master_flats(header,
             flat_grating = '_no_grating'
             wavmode = ''
 
-        flat_slit = re.sub('[A-Za-z" ]',
+        flat_slit = re.sub('[A-Za-z_ ]',
                            '',
                            header['SLIT'])
 
@@ -2322,9 +2322,10 @@ def name_master_flats(header,
                             + '.fits'
 
     elif technique == 'Imaging':
-        flat_filter = re.sub('-', '_', header['FILTER'])
+        flat_filter = re.sub('[- ]', '_', header['FILTER'])
+        flat_filter = re.sub('[<> ]', '', flat_filter)
         master_flat_name += '_' + flat_filter + dome_sky + '.fits'
-    # print(master_flat_name)
+
     return master_flat_name
 
 

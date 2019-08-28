@@ -1415,6 +1415,117 @@ class MasterFlatTest(TestCase):
             self.assertIn('norm_', normalized_flat_name)
 
 
+class NameMasterFlatsTest(TestCase):
+
+    def setUp(self):
+        self.reduced_data = os.getcwd()
+
+        #reference
+        date = '2019-08-28'
+        self.twilight_start_evening = '2019-08-27T23:45:00.022'
+        self.twilight_end_morning = '2019-08-28T09:43:20.023'
+        self.sun_set_time = '2019-08-27T22:21:00.437'
+        self.sun_rise_time = '2019-08-28T11:07:11.851'
+
+        self.header = fits.Header()
+        self.header.set('GRATING', value='400_SYZY')
+        self.header.set('GRT_TARG', value=7.5)
+        self.header.set('CAM_TARG', value=16.1)
+        self.header.set('FILTER', value='<NO FILTER>')
+        self.header.set('FILTER2', value='<NO FILTER>')
+        self.header.set('SLIT', value='1.0_LONG_SLIT')
+
+    def test_name_master_flats_spectroscopy(self):
+
+        expected_name = 'master_flat_TestSubject_400m2_GG455_1.0_dome.fits'
+
+        self.header.set('FILTER2', value='GG455')
+        self.header.set('DATE-OBS', value='2019-08-27T20:21:00.437')
+
+        flat_name = name_master_flats(
+            header=self.header,
+            technique='Spectroscopy',
+            reduced_data=self.reduced_data,
+            sun_set=self.sun_set_time,
+            sun_rise=self.sun_rise_time,
+            evening_twilight=self.twilight_start_evening,
+            morning_twilight=self.twilight_end_morning,
+            target_name='TestSubject',
+            get=False)
+        self.assertEqual(expected_name, os.path.basename(flat_name))
+
+    def test_name_master_flats_spectroscopy_no_grating_no_filter2(self):
+
+        expected_name = 'master_flat_TestSubject_no_grating_1.0_sky.fits'
+
+        self.header.set('GRATING', value='<NO GRATING>')
+        self.header.set('DATE-OBS', value='2019-08-27T23:40:00.022')
+
+        flat_name = name_master_flats(
+            header=self.header,
+            technique='Spectroscopy',
+            reduced_data=self.reduced_data,
+            sun_set=self.sun_set_time,
+            sun_rise=self.sun_rise_time,
+            evening_twilight=self.twilight_start_evening,
+            morning_twilight=self.twilight_end_morning,
+            target_name='TestSubject',
+            get=False)
+
+        self.assertEqual(expected_name, os.path.basename(flat_name))
+
+    def test_name_master_flats_imaging_no_filter(self):
+        expected_name = 'master_flat_NO_FILTER_night.fits'
+        self.header.set('DATE-OBS', value='2019-08-27T23:50:00.022')
+
+        flat_name = name_master_flats(
+            header=self.header,
+            technique='Imaging',
+            reduced_data=self.reduced_data,
+            sun_set=self.sun_set_time,
+            sun_rise=self.sun_rise_time,
+            evening_twilight=self.twilight_start_evening,
+            morning_twilight=self.twilight_end_morning,
+            target_name='TestSubject',
+            get=False)
+        self.assertEqual(expected_name, os.path.basename(flat_name))
+
+    def test_name_master_flats_imaging(self):
+        expected_name = 'master_flat_u_BESSEL_night.fits'
+        self.header.set('DATE-OBS', value='2019-08-27T23:50:00.022')
+        self.header.set('FILTER', value='u-BESSEL')
+
+        flat_name = name_master_flats(
+            header=self.header,
+            technique='Imaging',
+            reduced_data=self.reduced_data,
+            sun_set=self.sun_set_time,
+            sun_rise=self.sun_rise_time,
+            evening_twilight=self.twilight_start_evening,
+            morning_twilight=self.twilight_end_morning,
+            target_name='TestSubject',
+            get=False)
+        self.assertEqual(expected_name, os.path.basename(flat_name))
+
+    def test_name_master_flats_get_true(self):
+        expected_name = 'master_flat_TestSubject_400m2_GG455_1.0*.fits'
+
+        self.header.set('FILTER2', value='GG455')
+        self.header.set('DATE-OBS', value='2019-08-27T20:21:00.437')
+
+        flat_name = name_master_flats(
+            header=self.header,
+            technique='Spectroscopy',
+            reduced_data=self.reduced_data,
+            sun_set=self.sun_set_time,
+            sun_rise=self.sun_rise_time,
+            evening_twilight=self.twilight_start_evening,
+            morning_twilight=self.twilight_end_morning,
+            target_name='TestSubject',
+            get=True)
+        self.assertEqual(expected_name, os.path.basename(flat_name))
+
+
 class NightDataContainerTests(TestCase):
 
     def setUp(self):
