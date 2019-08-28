@@ -2153,7 +2153,7 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
     #     print(data_point)
     # print('data ', data)
     pixel_axis = range(len(data))
-    if np.nan in data:
+    if any(np.isnan(data)):
         log.error("there are nans")
         sys.exit(0)
 

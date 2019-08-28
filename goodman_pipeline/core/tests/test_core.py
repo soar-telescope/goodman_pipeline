@@ -62,6 +62,7 @@ from ..core import (astroscrappy_lacosmic,
                     image_trim,
                     interpolate,
                     is_file_saturated,
+                    linearize_spectrum,
                     name_master_flats,
                     normalize_master_flat,
                     ra_dec_to_deg,
@@ -1284,6 +1285,48 @@ class IsFileSaturatedTest(TestCase):
         self.ccd.data[:10, :10] = self.half_full_well + 1
         self.ccd.data[0, 0] = 1
         self.assertFalse(is_file_saturated(ccd=self.ccd, threshold=1))
+
+
+class LinearizeSpectrumTest(TestCase):
+
+    def setUp(self):
+        feature = models.Gaussian1D(amplitude=500, mean=3000, stddev=5)
+        self.data = np.ones(5000) + feature(range(5000))
+        self.solution_model = models.Polynomial1D(degree=3)
+        self.solution_model.c0.value = 3500
+        self.solution_model.c1.value = 1
+        self.solution_model.c2.value = 1e-7
+
+        self.non_linear_x_axis = self.solution_model(range(len(self.data)))
+
+        self.feature_center = self.non_linear_x_axis[3000]
+
+    def test_linearize_spectrum_nans_in_data(self):
+        self.data[0:10] = np.nan
+        self.assertRaises(SystemExit,
+                          linearize_spectrum,
+                          self.data,
+                          self.solution_model)
+
+    def test_linearize_spectrum_wrong_input(self):
+        linear_data = linearize_spectrum(data=self.data,
+                                         wavelength_solution=None)
+        self.assertIsNone(linear_data)
+
+    def test_linearize_spectrum(self):
+        linear_x_axis, linear_data = linearize_spectrum(data=self.data,
+                                         wavelength_solution=self.solution_model)
+
+        new_gaussian = models.Gaussian1D(amplitude=100,
+                                         mean=self.feature_center,
+                                         stddev=5)
+        fitter = fitting.LevMarLSQFitter()
+
+        fitted_linear = fitter(new_gaussian, linear_x_axis, linear_data)
+
+        np.testing.assert_array_almost_equal(self.feature_center,
+                                             fitted_linear.mean.value,
+                                             decimal=2)
 
 
 class MasterFlatTest(TestCase):
