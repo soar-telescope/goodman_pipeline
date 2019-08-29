@@ -3951,42 +3951,6 @@ class ReferenceData(object):
                                                           'reference'])
             self.nist[key] = nist_data
 
-    def _validate_line_existence(self):
-        """Check if a line actually exists in any table of NIST
-
-        Notes:
-            It does not actually check NIST, it loads six csv tables
-            from NIST's strong lines for the elements used in lamps:
-            Ar,  Cu, Fe, He, Hg, Ne. It does not work perfect so far
-            so the it is not checking existence actually but if it finds it
-            it will get the value at "spectrum" column in NIST tables which
-            correspond to the source of the line, for instance Ne I, Ar II, etc.
-
-        """
-
-        lamp_elements = []
-        lamp_name = self._ccd.header['OBJECT']
-        if len(lamp_name) % 2 == 0:
-            for element_index in range(0, len(lamp_name), 2):
-                element = lamp_name[element_index:element_index + 2]
-                lamp_elements.append(element)
-
-        if self.nist is None:
-            self.nist = {}
-            self._load_nist_list()
-
-        self.spectrum = list(self.lines_angstrom)
-        for i in range(len(self.lines_angstrom)):
-            for element in lamp_elements:
-                line_info = self.nist[element][
-                    self.nist[element].air_wavelength == self.lines_angstrom[i]]
-                if line_info.empty:
-                    # print(self.lines_angstrom[i], 'no-info')
-                    self.spectrum[i] = ''
-                else:
-                    self.spectrum[i] = line_info['spectrum'].to_string(
-                        index=False)
-
 
 class SaturationValues(object):
     """Contains a complete table of readout modes and 50% half well
