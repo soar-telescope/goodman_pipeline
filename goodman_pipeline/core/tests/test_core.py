@@ -1832,9 +1832,37 @@ class ReferenceDataTest(TestCase):
         self.assertEqual(ref_lamp.header['LAMP_NE'], self.ccd.header['LAMP_NE'])
         self.assertEqual(ref_lamp.header['WAVMODE'], self.ccd.header['WAVMODE'])
 
+    def test_get_reference_lamp_no_match_status_keys(self):
+        self.ccd.header.set('LAMP_HGA', value='TRUE')
+        self.ccd.header.set('LAMP_NE', value='TRUE')
+        self.ccd.header.set('LAMP_AR', value='TRUE')
+        self.ccd.header.set('LAMP_FE', value='TRUE')
+        self.ccd.header.set('LAMP_CU', value='TRUE')
+        self.ccd.header.set('LAMP_QUA', value='TRUE')
+        self.ccd.header.set('LAMP_QPE', value=0)
+        self.ccd.header.set('LAMP_BUL', value='FALSE')
+        self.ccd.header.set('LAMP_DOM', value='FALSE')
+        self.ccd.header.set('LAMP_DPE', value=0)
+
+        self.ccd.header.set('WAVMODE', value='400_M2')
+
+        self.assertRaises(NotImplementedError,
+                          self.rd.get_reference_lamp,
+                          self.ccd.header)
+
     def test_get_reference_lamp_exist_with_object_key(self):
         self.ccd.header.set('OBJECT', value='HgArNe')
         self.ccd.header.set('WAVMODE', value='400_M2')
+
+        self.ccd.header.set('GSP_P', value='1')
+        self.ccd.header.set('GSP_P', value='2')
+        self.ccd.header.set('GSP_P', value='3')
+        self.ccd.header.set('GSP_P', value='4')
+
+        self.ccd.header.set('GSP_A', value='0')
+        self.ccd.header.set('GSP_A', value='100')
+        self.ccd.header.set('GSP_A', value='0')
+        self.ccd.header.set('GSP_A', value='200')
 
         ref_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
 
