@@ -82,6 +82,10 @@ def fake_subprocess_popen(*args, stdout, stderr):
     raise OSError
 
 
+def fake_dcr_communicate_stderr_no_dcr():
+    return b'some message', b'dcr: not found'
+
+
 class AddLinearWavelengthSolutionTest(TestCase):
 
     def setUp(self):
@@ -396,6 +400,18 @@ class CosmicRayRejectionTest(TestCase):
                           self.file_name,
                           self.out_prefix,
                           self.red_path,
+                          os.getcwd())
+
+    @mock.patch('subprocess.Popen.communicate',
+                side_effect=fake_dcr_communicate_stderr_no_dcr)
+    def test_dcr_cosmicray_rejection_no_dcr_executable(
+            self, subprocess_Popen_communicate):
+
+        self.assertRaises(SystemExit,
+                          dcr_cosmicray_rejection,
+                          self.red_path,
+                          self.file_name,
+                          'c',
                           os.getcwd())
 
 
