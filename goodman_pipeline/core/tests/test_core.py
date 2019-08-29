@@ -380,7 +380,7 @@ class CosmicRayRejectionTest(TestCase):
                                                 keep_files=True,
                                                 prefix=prefix,
                                                 method='default',
-                                                save=True)
+                                                save=False)
         self.assertAlmostEqual(initial_value, ccd.data[50, 50])
         self.assertEqual(out_prefix, prefix + self.out_prefix)
         self.assertEqual(ccd.header['GSP_FNAM'],
@@ -388,7 +388,6 @@ class CosmicRayRejectionTest(TestCase):
         self.assertEqual(ccd.header['GSP_COSM'], 'DCR')
 
         self.assertTrue(os.path.isfile('dcr.par'))
-        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
 
     @mock.patch('subprocess.Popen', side_effect=fake_subprocess_popen)
     def test_call_cosmic_rejection_default_1x1_no_dcr_par(self,
