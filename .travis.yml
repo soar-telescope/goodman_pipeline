@@ -1,24 +1,23 @@
-language: python
-python:
-- '3.5'
-- '3.6'
+language: c
+
+os:
+ - linux
+ - osx
 
 branches:
   only:
   - master
 
-# before_install:
-# - ./install_dcr.sh
-
-
 install:
-# - export PATH="$PATH:$HOME/build/soar-telescope/goodman_pipeline/dcrbin"
 
-- sudo apt-get update
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    sudo apt-get update &&
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  fi
 
-# Here we install Anaconda to work with Virtual Environments. We do this
-# conditionally because it saves us some downloading if the version is the same.
-- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --output miniconda.sh;
+  fi
 
 
 - bash miniconda.sh -b -p $HOME/miniconda
