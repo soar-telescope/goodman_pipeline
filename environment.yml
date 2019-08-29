@@ -13,5 +13,6 @@ dependencies:
     - ccdproc>=1.3.0.post1
     - coveralls
     - astroplan
+    - mock
     - sphinx
     - sphinxcontrib.napoleon
