@@ -140,7 +140,7 @@ class WavelengthCalibration(object):
         self.i_fig = None
 
         log.info('Processing Science Target: '
-                      '{:s}'.format(ccd.header['OBJECT']))
+                 '{:s}'.format(ccd.header['OBJECT']))
         if comp_list is not None:
             wavelength_solutions = []
             reference_lamp_names = []
@@ -155,7 +155,7 @@ class WavelengthCalibration(object):
                 self.lamp_name = self.lamp.header['OBJECT']
 
                 log.info('Processing Comparison Lamp: '
-                              '{:s}'.format(self.lamp_name))
+                         '{:s}'.format(self.lamp_name))
 
                 self.lines_center = get_lines_in_lamp(
                     ccd=self.lamp, plots=plots)
@@ -203,9 +203,9 @@ class WavelengthCalibration(object):
 
             if len(wavelength_solutions) > 1:
                 log.warning("The current version of the pipeline does not "
-                                 "combine multiple solution instead it saves a "
-                                 "single version of the science file for each "
-                                 "wavelength solution calculated.")
+                            "combine multiple solution instead it saves a "
+                            "single version of the science file for each "
+                            "wavelength solution calculated.")
                 for i in range(len(wavelength_solutions)):
                     # TODO (simon): Combine Multiple solutions
                     self.wsolution = wavelength_solutions[i]

@@ -3747,6 +3747,10 @@ class ReferenceData(object):
                                      filtered_collection.file.to_string(
                                          index=False))
             self._ccd = CCDData.read(full_path, unit=u.adu)
+            if 'GSP_FNAM' not in self._ccd.header.keys():
+                self._ccd.header.set('GSP_FNAM',
+                                     value=os.path.basename(full_path),
+                                     comment='File name')
             self._recover_lines()
             return self._ccd
         else:
