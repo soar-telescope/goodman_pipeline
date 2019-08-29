@@ -508,7 +508,6 @@ def create_master_flats(flat_files,
 
     log.info('Creating Master Flat')
     for flat_file in flat_files:
-        # print(f_file)
         image_full_path = os.path.join(raw_data, flat_file)
         ccd = read_fits(image_full_path, technique=technique)
         log.debug('Loading flat image: ' + image_full_path)
@@ -560,7 +559,6 @@ def create_master_flats(flat_files,
 
         log.info('Created Master Flat: ' + master_flat_name)
         return master_flat, master_flat_name
-        # print(master_flat_name)
     else:
         log.error('Empty flat list. Check that they do not exceed the '
                   'saturation limit.')
@@ -835,9 +833,6 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
                            field)
 
             combined_base_name += "{:s}_".format(value)
-
-        # print(combined_base_name)
-
         number = len(glob.glob(
             os.path.join(dest_path,
                          combined_base_name + "*.fits")))
@@ -936,8 +931,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
     log.debug('DCR command:')
     log.debug(command)
-    # print(command.split(' '))
-
     # get the current working directory to go back to it later in case the
     # the pipeline has not been called from the same data directory.
     cwd = os.getcwd()
@@ -1201,10 +1194,6 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
         # this defines the extraction limit for every column
         low_limit = trace_points[i] - 0.5 * extraction_width * target_fwhm
         high_limit = trace_points[i] + 0.5 * extraction_width * target_fwhm
-        # print(trace_points[i], extraction_width, target_stddev)
-
-        # low_limits_list.append(low_limit)
-        # high_limits_list.append(high_limit)
 
         if apnum1 is None:
             # TODO (simon): add secondary targets
@@ -1245,12 +1234,10 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
             # low_background_zone
             high_1 = low_limit - background_spacing * target_fwhm
             low_1 = high_1 - background_width
-            # print(low_1,high_1)
 
             # High background zone
             low_2 = high_limit + background_spacing * target_fwhm
             high_2 = low_2 + background_width
-            # print(low_1, ' to ', high_1, ':', low_2, ' to ', high_2,)
 
             # validate background subtraction zones
             background_1 = None
@@ -1268,7 +1255,7 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
                                               low_limit=low_1,
                                               high_limit=high_1)
             else:
-                print("Invalid Zone 1")
+                log.error("Invalid Zone 1: [{}:{}]".format(low_1, high_1))
 
             if high_2 < spat_length and neighbouring_target_condition:
                 background_2 = fractional_sum(data=ccd.data,
@@ -1276,7 +1263,7 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
                                               low_limit=low_2,
                                               high_limit=high_2)
             else:
-                print("Invalid Zone 2")
+                log.error("Invalid Zone 2: [{}:{}]".format(low_2, high_2))
 
             # background = 0
             if background_1 is not None and background_2 is None:
@@ -1412,7 +1399,6 @@ def fractional_sum(data, index, low_limit, high_limit):
         data[int(low_integer), index] * low_fraction + \
         data[int(high_integer), index] * high_fraction
 
-    # print(low_limit, high_limit, column_sum)
     return column_sum
 
 
@@ -1516,7 +1502,6 @@ def get_lines_in_lamp(ccd, plots=False):
 
     """
     if isinstance(ccd, CCDData):
-        # print(ccddata_lamp.data.shape)
         lamp_data = ccd.data
         lamp_header = ccd.header
         raw_pixel_axis = range(len(lamp_data))
@@ -1545,7 +1530,6 @@ def get_lines_in_lamp(ccd, plots=False):
     new_order = int(round(float(slit_size) / (0.15 * serial_binning)))
     log.debug('New Order:  {:d}'.format(new_order))
 
-    # print(round(new_order))
     peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
 
     if slit_size >= 5.:
@@ -1559,10 +1543,8 @@ def get_lines_in_lamp(ccd, plots=False):
         lines_center = recenter_lines(no_nan_lamp_data, peaks)
 
     if plots:  # pragma: no cover
-        # print(new_order, slit_size, )
         plt.close('all')
         fig, ax = plt.subplots()
-        # ax = fig.add_subplot(111)
         fig.canvas.set_window_title('Lines Detected')
 
         mng = plt.get_current_fig_manager()
@@ -2136,15 +2118,11 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
         and the smoothed linearized data itself.
 
     """
-    # for data_point in data:
-    #     print(data_point)
-    # print('data ', data)
     pixel_axis = range(len(data))
     if any(np.isnan(data)):
         log.error("there are nans")
         sys.exit(0)
 
-    # print(pixel_axis)
     if wavelength_solution is not None:
         x_axis = wavelength_solution(pixel_axis)
         try:
@@ -2159,7 +2137,6 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
                                                   der=0)
 
         smoothed_linearized_data = signal.medfilt(linearized_data)
-        # print('sl ', smoothed_linearized_data)
         if plots:  # pragma: no cover
             fig6 = plt.figure(6)
             plt.xlabel('Wavelength (Angstrom)')
@@ -2258,8 +2235,6 @@ def name_master_flats(header,
 
     date_obs = datetime.datetime.strptime(header['DATE-OBS'],
                                           "%Y-%m-%dT%H:%M:%S.%f")
-    # print(sunset, date_obs, evening_twilight)
-    # print(' ')
     if target_name != '':
         target_name = '_' + target_name
     if not get:
@@ -2854,7 +2829,6 @@ def search_comp_group(object_group, comp_groups, reference_data):
                 (comp_group['filter2'] == object_confs.iloc[0]['filter2']
                  )).all():
             if reference_data.check_comp_group(comp_group) is not None:
-                # print(comp_group)
                 log.debug('Found a matching comparison lamp group')
                 return comp_group
 
@@ -2994,28 +2968,24 @@ def trace(ccd,
         lower_limit_list.append(lower_limit)
         upper_limit_list.append(upper_limit)
 
-        # print(sample_center, nsigmas, model_fwhm, lower_limit, upper_limit)
-
         sample = ccd.data[lower_limit:upper_limit, point:point + sampling_step]
         sample_median = np.median(sample, axis=1)
 
         try:
             sample_peak = np.argmax(sample_median)
-            # print(sample_peak + lower_limit)
         except ValueError:  # pragma: no cover
-            # plt.plot(model(range(spatial_length)))
-            # plt.plot(ccd.data[:,point])
-            # plt.show()
-            print('Nfwhm ', nfwhm)
-            print('Model Stddev ', model_fwhm)
-            print('sample_center ', sample_center)
-            print('sample ', sample)
-            print('sample_median ', sample_median)
-            print('lower_limit ', lower_limit)
-            print('upper_limit ', upper_limit)
-            print('point ', point)
-            print('point + sampling_step ', point + sampling_step)
-            print(spatial_length, dispersion_length)
+            log.error('Nfwhm {}'.format(nfwhm))
+            log.error('Model Stddev {}'.format(model_fwhm))
+            log.error('sample_center {}'.format(sample_center))
+            log.error('sample {}'.format(sample))
+            log.error('sample_median {}'.format(sample_median))
+            log.error('lower_limit {}'.format(lower_limit))
+            log.error('upper_limit {}'.format(upper_limit))
+            log.error('point {}'.format(point))
+            log.error('point + sampling_step {}'.format(point + sampling_step))
+            log.error("Spatial length: {}, Dispersion length {}".format(
+                spatial_length,
+                dispersion_length))
             sys.exit()
 
         sample_values.append(sample_peak + lower_limit)
@@ -3194,8 +3164,6 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nfwhm=5,
                                          sampling_step=sampling_step,
                                          nfwhm=nfwhm,
                                          plots=plots)
-        # print(single_trace)
-        # print(trace_rms)
 
         if 0 < single_trace.c0.value < ccd.shape[0]:
             log.debug('Adding trace to list')
@@ -3449,7 +3417,6 @@ class NightDataContainer(object):
                                                       self.full_path,
                                                       self.instrument,
                                                       self.technique))
-            # print(class_info)
 
             if all([self.gain, self.rdnoise, self.roi]):
                 class_info += str("\nGain: {:.2f}\n"
@@ -3622,7 +3589,6 @@ class NightDataContainer(object):
             self.is_empty = False
         comp_group = spec_group[spec_group.obstype == 'COMP']
         self.add_comp_group(comp_group=comp_group)
-        # print(comp_group)
 
     def set_sun_times(self, sun_set, sun_rise):
         """Sets values for sunset and sunrise
@@ -3708,7 +3674,6 @@ class ReferenceData(object):
         self.reference_dir = reference_dir
         reference_collection = ccdproc.ImageFileCollection(self.reference_dir)
         self.ref_lamp_collection = reference_collection.summary.to_pandas()
-        # print(self.ref_lamp_collection)
         self.lines_pixel = None
         self.lines_angstrom = None
         self._ccd = None
@@ -3866,7 +3831,6 @@ class ReferenceData(object):
                     (comp_group['lamp_ar'] == lamps.iloc[i]['lamp_ar']) &
                     (comp_group['lamp_fe'] == lamps.iloc[i]['lamp_fe']) &
                     (comp_group['lamp_cu'] == lamps.iloc[i]['lamp_cu'])]
-                # print(new_group.file)
                 return new_group
             else:
                 self.log.warning("The target's comparison lamps do not have "
@@ -4102,7 +4066,6 @@ class SpectroscopicMode(object):
             camera_targ = str(header['cam_targ'])
             grating_targ = str(header['grt_targ'])
             blocking_filter = str(header['filter2'])
-            # print(grating, camera_targ, grating_targ, blocking_filter)
 
             return self.get_mode(grating=grating,
                                  camera_targ=camera_targ,
@@ -4136,8 +4099,6 @@ class SpectroscopicMode(object):
             string that defines the wavelength mode used
 
         """
-
-        # print(grating, camera_targ, grating_targ)
         if any(grat == grating for grat in ('1800', '2100', '2400')):
             central_wavelength = get_central_wavelength(grating=grating,
                                                         grt_ang=grating_targ,
@@ -4696,7 +4657,6 @@ class IdentifySpectroscopicTargets(object):
 
             ax.plot(spatial_profile, color='k', label='Median Profile')
             for profile in profile_model:
-                # print(profile_model)
                 ax.plot(profile(range(len(spatial_profile))),
                         label=profile.name)
 
