@@ -9,6 +9,7 @@ from astropy.modeling import (models,
                               fitting)
 import astropy.units as u
 import collections
+import mock
 import numpy as np
 import os
 import pandas
@@ -76,33 +77,9 @@ from ..core import (astroscrappy_lacosmic,
                     validate_ccd_region,
                     write_fits)
 
-# class ExceptionHandling(TestCase):
-#
-#     def test_critical_error(self):
-#         self.assertRaises(CriticalError)
-#
-#
-#     def test_night_data_container(self):
-#         pass
-#
-#
-#     def test_no_match_found(self):
-#         pass
-#
-#
-#     def test_not_enough_lines_detected(self):
-#         pass
-#
-#
-#     def test_no_target_exception(self):
-#         pass
 
-
-def test_spectroscopic_mode():
-    pass
-
-def test_lacosmic_cosmicray_rejection():
-    pass
+def fake_subprocess_popen(*args, stdout, stderr):
+    raise OSError
 
 
 class AddLinearWavelengthSolutionTest(TestCase):
@@ -408,6 +385,45 @@ class CosmicRayRejectionTest(TestCase):
 
         self.assertTrue(os.path.isfile('dcr.par'))
         self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+
+    def test_call_cosmic_rejection_default_1x1_no_dcr_par(self):
+        if os.path.isfile('dcr.par'):
+            os.unlink('dcr.par')
+        self.assertFalse(os.path.isfile('dcr.par'))
+        prefix = 'new_'
+        initial_value = self.ccd.data[50, 50]
+        self.ccd.data[50, 50] = 50000
+
+        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
+                                                image_name=self.file_name,
+                                                out_prefix=self.out_prefix,
+                                                red_path=self.red_path,
+                                                dcr_par=os.getcwd(),
+                                                keep_files=False,
+                                                prefix=prefix,
+                                                method='default',
+                                                save=False)
+        self.assertAlmostEqual(initial_value, ccd.data[50, 50])
+        self.assertEqual(out_prefix, prefix + self.out_prefix)
+        self.assertEqual(ccd.header['GSP_FNAM'],
+                         prefix + self.out_prefix + self.file_name)
+        self.assertEqual(ccd.header['GSP_COSM'], 'DCR')
+
+        self.assertTrue(os.path.isfile('dcr.par'))
+        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+
+    @mock.patch('subprocess.Popen', side_effect=fake_subprocess_popen)
+    def test_call_cosmic_rejection_default_1x1_no_dcr_par(self,
+                                                          subprocess_Popen_function):
+
+        self.assertRaises(SystemExit,
+                          call_cosmic_rejection,
+                          self.ccd,
+                          self.file_name,
+                          self.out_prefix,
+                          self.red_path,
+                          os.getcwd())
+
 
     def test_call_cosmic_rejection_default_2x2(self):
         self.ccd.header.set('CCDSUM', value='2 2')

@@ -975,7 +975,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
 
     # if the process is taking too long to respond, kill it
     # kill_process = lambda process: process.kill()
-    def kill_process(process):
+    def kill_process(process):  # pragma: no cover
         log.error("DCR Timed out")
         process.kill()
 
