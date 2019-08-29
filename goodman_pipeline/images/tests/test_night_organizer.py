@@ -11,6 +11,7 @@ from unittest import TestCase, skip
 
 from ..night_organizer import NightOrganizer
 
+
 def create_fake_data(technique, instrument, path):
     if os.path.isdir(path):
         card_values = [
