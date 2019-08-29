@@ -386,32 +386,6 @@ class CosmicRayRejectionTest(TestCase):
         self.assertTrue(os.path.isfile('dcr.par'))
         self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
 
-    def test_call_cosmic_rejection_default_1x1_no_dcr_par(self):
-        if os.path.isfile('dcr.par'):
-            os.unlink('dcr.par')
-        self.assertFalse(os.path.isfile('dcr.par'))
-        prefix = 'new_'
-        initial_value = self.ccd.data[50, 50]
-        self.ccd.data[50, 50] = 50000
-
-        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
-                                                image_name=self.file_name,
-                                                out_prefix=self.out_prefix,
-                                                red_path=self.red_path,
-                                                dcr_par=os.getcwd(),
-                                                keep_files=False,
-                                                prefix=prefix,
-                                                method='default',
-                                                save=False)
-        self.assertAlmostEqual(initial_value, ccd.data[50, 50])
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'DCR')
-
-        self.assertTrue(os.path.isfile('dcr.par'))
-        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
-
     @mock.patch('subprocess.Popen', side_effect=fake_subprocess_popen)
     def test_call_cosmic_rejection_default_1x1_no_dcr_par(self,
                                                           subprocess_Popen_function):
