@@ -29,6 +29,13 @@ class TestVersionChecker(unittest.TestCase):
         except KeyError:  # pragma: no cover
             pass
 
+    def test_get_last_token(self):
+        os.environ['FAKETOKEN'] = 'ThisIsNotARealToken'
+        self.assertRaises(ConnectionRefusedError,
+                          check_version.get_last,
+                          'FAKETOKEN')
+
+
     def test_am_i_updated(self):
         try:
             self.assertTrue(check_version.am_i_updated(__version__))

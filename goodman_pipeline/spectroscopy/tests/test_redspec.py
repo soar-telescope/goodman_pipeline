@@ -60,6 +60,10 @@ class TestArguments(TestCase):
         # If source folder does not exists, print message and leave program
         # error_message = 'Input folder "{} does not exists."'
 
+    def test_get_args_output_path_does_not_exist(self):
+        arguments = ['--data-path', 'does_not_exist']
+        self.assertRaises(SystemExit, get_args, arguments)
+
 
 def test_get_args():
     from ...spectroscopy.redspec import get_args

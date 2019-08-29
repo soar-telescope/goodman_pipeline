@@ -326,7 +326,7 @@ class WavelengthCalibration(object):
 
         global_cross_corr = cross_correlation(
             reference=reference_lamp_ccd.data,
-            new_array=self.lamp.data,
+            compared=self.lamp.data,
             slit_size=slit_size,
             serial_binning=self.serial_binning)
 
@@ -356,7 +356,7 @@ class WavelengthCalibration(object):
 
             correlation_value = cross_correlation(
                 reference=ref_sample,
-                new_array=lamp_sample,
+                compared=lamp_sample,
                 slit_size=slit_size,
                 serial_binning=self.serial_binning)
 

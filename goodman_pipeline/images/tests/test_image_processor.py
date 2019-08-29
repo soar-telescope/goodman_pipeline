@@ -31,6 +31,8 @@ class ImageProcessorTest(TestCase):
 
         self.half_full_well = 69257
 
+    def test___call__(self):
+        self.image_processor()
 
 def test_process_spectroscopy_science():
     pass

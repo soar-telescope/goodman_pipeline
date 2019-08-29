@@ -11,6 +11,8 @@ V1.3.0 Unreleased
   + `--max-targets` was not being used, missed connection in `MainApp`.
 
 - Updated keyword values of all reference lamps in the library according to [#292]
+- Refactored `wavelength.WavelengthCalibration` class moving several methods to
+  `core` [#300, #303]
 
 
 .. _v1.2.1:
