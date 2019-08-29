@@ -3917,26 +3917,6 @@ class ReferenceData(object):
                             angstrom_key,
                             float(self._ccd.header[angstrom_key])))
 
-    def _validate_lines(self):
-        """Calls all available validation methods
-
-        Notes:
-            Line existence validation is not being taken into consideration
-            since the method to prove existence is not fully developed yet.
-
-        Returns:
-            True if none of the validation fails.
-        """
-        assert len(self.lines_pixel) == len(self.lines_angstrom)
-        if not self._order_validation(self.lines_pixel):
-            return False
-        if not self._order_validation(self.lines_angstrom):
-            return False
-        # if not self._validate_line_existence():
-        #     return False
-        self._validate_line_existence()
-        return True
-
     @staticmethod
     def _order_validation(lines_array):
         """Checks that the array of lines only increases."""
