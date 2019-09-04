@@ -2726,6 +2726,26 @@ def recenter_lines(data, lines, plots=False):
 
 
 def record_trace_information(ccd, trace_info):
+    """Adds trace information to fits header
+
+    Notes:
+        Example of trace_info.
+        OrderedDict([('GSP_TMOD', ['Polynomial1D', 'Model name used to fit trace']),
+                     ('GSP_TORD', [2, 'Degree of the model used to fit target trace']),
+                     ('GSP_TC00', [80.92244303468138, 'Parameter c0']),
+                     ('GSP_TC01', [0.0018921968204536187, 'Parameter c1']),
+                     ('GSP_TC02', [-7.232545448865748e-07, 'Parameter c2']),
+                     ('GSP_TERR', [0.18741058188097284, 'RMS error of target trace'])])
+
+    Args:
+        ccd (CCDData): CCDData instance to have trace info recorded into its
+        header.
+        trace_info (OrderedDict): Ordered Dictionary with a set of fits keywords
+        associated to a list of values corresponding to value and comment.
+
+    Returns:
+        ccd (CCDData): Same CCDData instance with the header modified.
+    """
     last_keyword = None
     for info_key in trace_info:
         info_value, info_comment = trace_info[info_key]
