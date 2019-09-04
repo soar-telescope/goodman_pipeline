@@ -18,6 +18,8 @@ V1.3.0 Unreleased
 - Improved messages at critical stages of wavelength calibration.
 - Moved `setup_logging` call from main package `__init__` to scripts or entry
   points, this allows to re use other master loggers.
+- Changed `--background-threshold` to multiply by detection limit instead of
+  background level
 
 
 .. _v1.2.1:

@@ -4487,7 +4487,6 @@ class IdentifySpectroscopicTargets(object):
     def filter_peaks(self,
                      spatial_profile=None,
                      detected_peaks=None,
-                     background_level=None,
                      nfind=None,
                      background_threshold=None,
                      file_name=None,
@@ -4497,7 +4496,6 @@ class IdentifySpectroscopicTargets(object):
         Args:
             spatial_profile:
             detected_peaks:
-            background_level:
             nfind:
             background_threshold:
             file_name:
@@ -4508,7 +4506,6 @@ class IdentifySpectroscopicTargets(object):
         """
         if not all([spatial_profile,
                     detected_peaks,
-                    background_level,
                     nfind,
                     background_threshold,
                     file_name]):
@@ -4517,8 +4514,6 @@ class IdentifySpectroscopicTargets(object):
                 spatial_profile = self.spatial_profile
             if self.all_peaks is not None:
                 detected_peaks = self.all_peaks
-            if self.background_level is not None:
-                background_level = self.background_level
             if self.nfind is not None:
                 nfind = self.nfind
             if self.background_threshold is not None:
@@ -4537,19 +4532,19 @@ class IdentifySpectroscopicTargets(object):
 
         sorted_values = np.sort(peak_data_values)[::-1]
 
-        _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
+        detection_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
 
         n_strongest_values = sorted_values[:nfind]
 
         self.selected_peaks = []
         log.info("Validating peaks by setting threshold {:d} times the "
                  "background level {:.2f}".format(background_threshold,
-                                                  background_level))
+                                                  detection_limit))
         log.debug('Intensity threshold set to: {:.2f}'
-                  ''.format(background_threshold * background_level))
+                  ''.format(background_threshold * detection_limit))
         for peak_value in n_strongest_values:
             index = np.where(peak_data_values == peak_value)[0]
-            if peak_value > background_threshold * background_level:
+            if peak_value > background_threshold * detection_limit:
                 self.selected_peaks.append(detected_peaks[index[0]])
                 log.info(
                     'Selecting peak: Centered: {:.1f} Intensity {:.3f}'.format(
@@ -4559,7 +4554,7 @@ class IdentifySpectroscopicTargets(object):
                           'Reason: Below intensity threshold ({:.2f})'
                           ''.format(detected_peaks[index[0]],
                                     peak_value,
-                                    background_threshold * background_level))
+                                    background_threshold * detection_limit))
 
         if plots or self.plots:  # pragma: no cover
             plt.ioff()
@@ -4571,8 +4566,8 @@ class IdentifySpectroscopicTargets(object):
             mng.window.showMaximized()
 
             ax.plot(spatial_profile, label='Background subtracted profile')
-            ax.axhline(_upper_limit, color='g', label='Upper limit for peak detection')
-            ax.axhline(background_threshold * background_level,
+            ax.axhline(detection_limit, color='g', label='Upper limit for peak detection')
+            ax.axhline(background_threshold * detection_limit,
                        color='m',
                        label="Intensity Threshold")
             for peak in self.selected_peaks:
@@ -4705,8 +4700,8 @@ class IdentifySpectroscopicTargets(object):
                 'Moffat_{:}'.format(peak))
 
             fitted_moffat = fitter(moffat,
-                                     range(len(spatial_profile)),
-                                     spatial_profile)
+                                   range(len(spatial_profile)),
+                                   spatial_profile)
 
             # this ensures the profile returned are valid
             if (fitted_moffat.fwhm > 0.5 * order) and \
