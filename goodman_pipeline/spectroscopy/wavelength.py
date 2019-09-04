@@ -689,7 +689,7 @@ class WavelengthCalibration(object):
                                     ccd,
                                     original_filename,
                                     save_data_to,
-                                    output_prefix='',
+                                    output_prefix='w',
                                     index=None,
                                     lamp=False):
         if index is None:
