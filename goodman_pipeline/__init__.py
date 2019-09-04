@@ -7,10 +7,3 @@ from . import images
 from . import core
 
 from .core import setup_logging
-
-import sys
-
-if '-h' not in sys.argv and \
-                '--help' not in sys.argv and \
-                '--version' not in sys.argv:
-    setup_logging()

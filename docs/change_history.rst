@@ -13,6 +13,11 @@ V1.3.0 Unreleased
 - Updated keyword values of all reference lamps in the library according to [#292]
 - Refactored `wavelength.WavelengthCalibration` class moving several methods to
   `core` [#300, #303]
+- Refactored `wavelength.WavelengthCalibration` to be instantiated without
+  arguments.
+- Improved messages at critical stages of wavelength calibration.
+- Moved `setup_logging` call from main package `__init__` to scripts or entry
+  points, this allows to re use other master loggers.
 
 
 .. _v1.2.1:
