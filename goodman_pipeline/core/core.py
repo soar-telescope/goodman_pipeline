@@ -399,14 +399,6 @@ def create_master_bias(bias_files,
         image_full_path = os.path.join(raw_data, image_file)
         ccd = read_fits(image_full_path, technique=technique)
         log.debug('Loading bias image: ' + image_full_path)
-        if technique == 'Spectroscopy':
-            log.debug(
-                'Overscan Region: {:s}'.format(str(overscan_region)))
-            ccd = image_overscan(ccd=ccd,
-                                 overscan_region=overscan_region)
-        ccd = image_trim(ccd,
-                         trim_section=trim_section,
-                         trim_type='trimsec')
         master_bias_list.append(ccd)
 
     # combine bias for spectroscopy
