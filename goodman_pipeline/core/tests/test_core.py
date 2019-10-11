@@ -538,6 +538,9 @@ class CreateMasterBias(TestCase):
 
         self.ccd.data[11:90, 10:90] += 1
         self.ccd.header.set('CCDSUM', value='1 1')
+        self.ccd.header.set('INSTCONF', value='Red')
+        self.ccd.header.set('RDNOISE', value=3.89)
+        self.ccd.header.set('GAIN', value=1.48)
 
         for _file in self.bias_files:
             self.ccd.write(os.path.join(self.reduced_data, _file))
@@ -560,18 +563,8 @@ class CreateMasterBias(TestCase):
             trim_section=self.trim_section)
 
         self.assertTrue('master_bias' in self.name)
+        self.assertEqual('master_bias_RED_1x1_R03.89_G01.48.fits', self.name)
 
-        master_2, self.name_2 = create_master_bias(
-            bias_files=self.bias_files,
-            raw_data=self.raw_data,
-            reduced_data=self.reduced_data,
-            technique='Spectroscopy',
-            overscan_region=self.overscan_region,
-            trim_section=self.trim_section)
-
-        self.assertTrue('master_bias_2.fits' in self.name_2)
-
-        self.assertEqual(master.shape, master_2.shape)
 
         self.assertTrue(all(
             [master.header[key] in self.bias_files for key in master.header['GSP_IC*'].keys()]))

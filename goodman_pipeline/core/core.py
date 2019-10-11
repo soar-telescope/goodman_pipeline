@@ -393,18 +393,6 @@ def create_master_bias(bias_files,
     except SyntaxError as error:
         raise SyntaxError(error)
 
-    default_bias_name = os.path.join(reduced_data, 'master_bias.fits')
-    search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
-    n_bias = len(glob.glob(search_bias_name))
-    if n_bias > 0:
-        master_bias_name = re.sub('.fits',
-                                  '_{:d}.fits'.format(n_bias + 1),
-                                  default_bias_name)
-
-        log.info('New name for master bias: ' + master_bias_name)
-    else:
-        master_bias_name = default_bias_name
-
     master_bias_list = []
     log.info('Creating master bias')
     for image_file in bias_files:
@@ -435,8 +423,15 @@ def create_master_bias(bias_files,
             bias_files[n],
             'Image used to create master bias')
 
+    master_bias_name = "master_bias_{}_{}_R{:05.2f}_G{:05.2f}.fits".format(
+        master_bias.header['INSTCONF'].upper(),
+        "x".join(master_bias.header['CCDSUM'].split()),
+        float(master_bias.header['RDNOISE']),
+        float(master_bias.header['GAIN'])
+    )
+
     write_fits(ccd=master_bias,
-               full_path=master_bias_name,
+               full_path=os.path.join(reduced_data, master_bias_name),
                combined=True)
 
     log.info('Created master bias: ' + master_bias_name)
