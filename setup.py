@@ -143,7 +143,7 @@ setup(
     package_dir={'goodman_pipeline': 'goodman_pipeline'},
 
     package_data={'goodman_pipeline': ['data/params/dcr.par',
-                                       'data/params/*.json',
+                                       'data/params/*.json_output',
                                        'data/ref_comp/*fits',
                                        'data/dcr-source/README.md',
                                        'data/dcr-source/dcr/*',

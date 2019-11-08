@@ -216,7 +216,6 @@ def call_cosmic_rejection(ccd,
                           image_name,
                           out_prefix,
                           red_path,
-                          dcr_par,
                           keep_files=False,
                           prefix='c',
                           method='dcr',
@@ -249,7 +248,6 @@ def call_cosmic_rejection(ccd,
         out_prefix (str): Partial prefix to be added to the image name. Related
           to previous processes and not cosmic ray rejection.
         red_path (str): Path to reduced data directory.
-        dcr_par (str): Path to dcr.par file.
         keep_files (bool): If True, the original file and the cosmic ray mask
           will not be deleted. Default is False.
         prefix (str): Cosmic ray rejection related prefix to be added to image
@@ -324,7 +322,6 @@ def call_cosmic_rejection(ccd,
         ccd = dcr_cosmicray_rejection(data_path=red_path,
                                       in_file=in_file,
                                       prefix=prefix,
-                                      dcr_par_dir=dcr_par,
                                       keep_cosmic_files=keep_files,
                                       save=save)
         return ccd, out_prefix
@@ -864,7 +861,7 @@ def convert_time(in_time):
     return calendar.timegm(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
 
 
-def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
+def dcr_cosmicray_rejection(data_path, in_file, prefix,
                             keep_cosmic_files=False, save=True):
     """Runs an external code for cosmic ray rejection
 
@@ -890,7 +887,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         data_path (str): Data location
         in_file (str): Name of the file to have its cosmic rays removed
         prefix (str): Prefix to add to the file with the cosmic rays removed
-        dcr_par_dir (str): Directory of default dcr.par file
         keep_cosmic_files (bool): True for deleting the input and cosmic ray
           file.
         save (bool): Toggles the option of saving the image.

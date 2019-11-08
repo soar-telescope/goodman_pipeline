@@ -565,7 +565,6 @@ class CreateMasterBias(TestCase):
         self.assertTrue('master_bias' in self.name)
         self.assertEqual('master_bias_RED_1x1_R03.89_G01.48.fits', self.name)
 
-
         self.assertTrue(all(
             [master.header[key] in self.bias_files for key in master.header['GSP_IC*'].keys()]))
 
@@ -1828,7 +1827,7 @@ class ReferenceDataTest(TestCase):
 
         self.ccd.header.set('WAVMODE', value='400_M2')
 
-        self.assertRaises(NotImplementedError,
+        self.assertRaises(NoMatchFound,
                           self.rd.get_reference_lamp,
                           self.ccd.header)
 
@@ -1856,7 +1855,7 @@ class ReferenceDataTest(TestCase):
         self.ccd.header.set('OBJECT', value='HgArCu')
         self.ccd.header.set('WAVMODE', value='400_M5')
 
-        self.assertRaises(NotImplementedError,
+        self.assertRaises(NoMatchFound,
                           self.rd.get_reference_lamp,
                           self.ccd.header)
 
