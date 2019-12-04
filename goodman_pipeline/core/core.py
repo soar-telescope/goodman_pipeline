@@ -355,9 +355,7 @@ def call_cosmic_rejection(ccd,
 def create_master_bias(bias_files,
                        raw_data,
                        reduced_data,
-                       technique,
-                       overscan_region,
-                       trim_section):
+                       technique):
     """Create Master Bias
 
     Given a :class:`~pandas.DataFrame` object that contains a list of compatible bias.
@@ -371,11 +369,6 @@ def create_master_bias(bias_files,
         reduced_data (str): Full path to were reduced data will reside.
         technique (str): Name of observing technique. Imaging or
         Spectroscopy.
-        overscan_region (str): Defines the area to be used to estimate the
-        overscan region for overscan correction. Should be in the format.
-        `[x1:x2.,y1:y2]`.
-        trim_section (str): Defines the area to be used after trimming
-        unusable selected parts (edges). In the format `[x1:x2.,y1:y2]`.
 
     Returns:
         master_bias (object):
@@ -383,12 +376,6 @@ def create_master_bias(bias_files,
 
     """
     assert isinstance(bias_files, list)
-
-    try:
-        validate_ccd_region(ccd_region=overscan_region)
-        validate_ccd_region(ccd_region=trim_section)
-    except SyntaxError as error:
-        raise SyntaxError(error)
 
     master_bias_list = []
     log.info('Creating master bias')
@@ -412,8 +399,9 @@ def create_master_bias(bias_files,
             bias_files[n],
             'Image used to create master bias')
 
-    master_bias_name = "master_bias_{}_{}_R{:05.2f}_G{:05.2f}.fits".format(
+    master_bias_name = "master_bias_{}_{}_{}_R{:05.2f}_G{:05.2f}.fits".format(
         master_bias.header['INSTCONF'].upper(),
+        technique[0:2].upper(),
         "x".join(master_bias.header['CCDSUM'].split()),
         float(master_bias.header['RDNOISE']),
         float(master_bias.header['GAIN'])
@@ -421,7 +409,8 @@ def create_master_bias(bias_files,
 
     write_fits(ccd=master_bias,
                full_path=os.path.join(reduced_data, master_bias_name),
-               combined=True)
+               combined=True,
+               overwrite=True)
 
     log.info('Created master bias: ' + master_bias_name)
     return master_bias, master_bias_name
@@ -490,13 +479,20 @@ def create_master_flats(flat_files,
                                             os.path.basename(master_bias_name))
             master_bias = read_fits(master_bias_name, technique=technique)
 
+        master_bias = image_trim(ccd=master_bias,
+                                 trim_section=trim_section,
+                                 trim_type='trimsec')
+
     log.info('Creating Master Flat')
     for flat_file in flat_files:
-        image_full_path = os.path.join(raw_data, flat_file)
-        ccd = read_fits(image_full_path, technique=technique)
+        if os.path.isabs(flat_file):
+            image_full_path = flat_file
+        else:
+            image_full_path = os.path.join(raw_data, flat_file)
         log.debug('Loading flat image: ' + image_full_path)
+        ccd = read_fits(image_full_path, technique=technique)
 
-        if technique == 'Spectroscopy':
+        if ignore_bias and technique == 'Spectroscopy':
             ccd = image_overscan(ccd, overscan_region=overscan_region)
 
         ccd = image_trim(ccd=ccd,
@@ -1168,7 +1164,7 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
     extracted_spectrum = []
     background_list = []
 
-    if ccd.header['OBSTYPE'] != 'OBJECT':
+    if ccd.header['OBSTYPE'] not in ['OBJECT', 'SPECTRUM']:
         log.debug("No background subtraction for OBSTYPE = "
                   "{:s}".format(ccd.header['OBSTYPE']))
 
@@ -1204,7 +1200,7 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
 
         non_background_sub.append(column_sum)
 
-        if ccd.header['OBSTYPE'] == 'OBJECT':
+        if ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM']:
             # background limits
 
             # background_spacing is the distance from the edge of the target's
@@ -2451,7 +2447,7 @@ def read_fits(full_path, technique='Unknown'):
         ccd.header.set('GSP_PNAM',
                        value=os.path.basename(full_path),
                        comment='Parent file name')
-        
+
     ccd.header.set('GSP_FNAM',
                    value=os.path.basename(full_path),
                    comment='Current file name')
@@ -2543,7 +2539,7 @@ def read_fits(full_path, technique='Unknown'):
     if '' not in all_keys:
         ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --',
                              before='GSP_VERS')
-        
+
         ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
 
     ccd.header.set('BUNIT', after='CCDSUM')
@@ -2838,7 +2834,7 @@ def search_comp_group(object_group, comp_groups, reference_data):
     raise NoMatchFound
 
 
-def setup_logging():
+def setup_logging(debug=False):
     """configures logging
 
     Notes:
@@ -2848,7 +2844,7 @@ def setup_logging():
 
     log_filename = 'goodman_log.txt'
 
-    if '--debug' in sys.argv:
+    if '--debug' in sys.argv or debug:
         log_format = '[%(asctime)s][%(levelname)8s]: %(message)s ' \
                      '[%(module)s.%(funcName)s:%(lineno)d]'
         logging_level = logging.DEBUG
@@ -3635,8 +3631,8 @@ class NightDataContainer(object):
 
 class NoMatchFound(Exception):  # pragma: no cover
     """Exception for when no match is found."""
-    def __init__(self):
-        Exception.__init__(self, 'Did not find a match')
+    def __init__(self, message="No match found"):
+        Exception.__init__(self, message)
 
 
 class NoTargetException(Exception):  # pragma: no cover
@@ -3715,34 +3711,35 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
                 (self.ref_lamp_collection['wavmode'] == header['wavmode']))]
             if filtered_collection.empty:
-                self.log.error("Unable to find a match for: "
-                               "LAMP_HGA = {}, "
-                               "LAMP_NE = {}, "
-                               "LAMP_AR = {}, "
-                               "LAMP_FE = {}, "
-                               "LAMP_CU = {}, "
-                               "WAVMODE = {} ".format(header['LAMP_HGA'],
-                                                      header['LAMP_NE'],
-                                                      header['LAMP_AR'],
-                                                      header['LAMP_FE'],
-                                                      header['LAMP_CU'],
-                                                      header['WAVMODE']))
+                error_message = "Unable to find a match for: "\
+                                "LAMP_HGA = {}, "\
+                                "LAMP_NE = {}, "\
+                                "LAMP_AR = {}, "\
+                                "LAMP_FE = {}, "\
+                                "LAMP_CU = {}, "\
+                                "WAVMODE = {} ".format(header['LAMP_HGA'],
+                                                       header['LAMP_NE'],
+                                                       header['LAMP_AR'],
+                                                       header['LAMP_FE'],
+                                                       header['LAMP_CU'],
+                                                       header['WAVMODE'])
+                self.log.error(error_message)
+                raise NoMatchFound(error_message)
         else:
             filtered_collection = self.ref_lamp_collection[
                 (self.ref_lamp_collection['object'] == header['object']) &
                 # TODO (simon): Wavemode can be custom (GRT_TARG, CAM_TARG, GRATING)
-                (self.ref_lamp_collection['wavmode'] == header['wavmode'])]
+                (self.ref_lamp_collection['wavmode'] == re.sub(' ', '_', header['wavmode']).upper())]
             if filtered_collection.empty:
-                self.log.error("Unable to find matching "
-                               "reference lamp for: "
-                               "OBJECT = {}, "
-                               "WAVMODE = {}".format(header['OBJECT'],
-                                                     header['WAVMODE']))
+                error_message = "Unable to find matching "\
+                                "reference lamp for: "\
+                                "OBJECT = {}, "\
+                                "WAVMODE = {}".format(header['OBJECT'],
+                                                      header['WAVMODE'])
+                self.log.error(error_message)
+                raise NoMatchFound(error_message)
 
-        if filtered_collection.empty:
-            raise NotImplementedError("It was not possible to find any lamps "
-                                      "that match")
-        elif len(filtered_collection) == 1:
+        if len(filtered_collection) == 1:
             self.log.info(
                 "Reference Lamp Found: {:s}"
                 "".format(filtered_collection.file.to_string(index=False)))
@@ -3753,7 +3750,8 @@ class ReferenceData(object):
             self._recover_lines()
             return self._ccd
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                "Found {} matches".format(len(filtered_collection)))
 
     def lamp_exists(self, header):
         """Checks whether a matching lamp exist or not
@@ -4181,7 +4179,9 @@ class IdentifySpectroscopicTargets(object):
                  model_name='gaussian',
                  plots=False):
         assert isinstance(ccd, CCDData)
-        assert ccd.header['OBSTYPE'] == 'OBJECT'
+        assert ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM'], \
+            "Can't search for targets in files with" \
+            " OBSTYPE = {}".format(ccd.header['OBSTYPE'])
         self.file_name = ccd.header['GSP_FNAM']
 
         log.info('Searching spectroscopic targets in file: {:s}'

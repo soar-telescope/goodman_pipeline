@@ -558,9 +558,7 @@ class CreateMasterBias(TestCase):
             bias_files=self.bias_files,
             raw_data=self.raw_data,
             reduced_data=self.reduced_data,
-            technique='Spectroscopy',
-            overscan_region=self.overscan_region,
-            trim_section=self.trim_section)
+            technique='Spectroscopy')
 
         self.assertTrue('master_bias' in self.name)
         self.assertEqual('master_bias_RED_1x1_R03.89_G01.48.fits', self.name)

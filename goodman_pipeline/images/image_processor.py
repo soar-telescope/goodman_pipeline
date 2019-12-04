@@ -117,9 +117,7 @@ class ImageProcessor(object):
                                 bias_files=bias_files,
                                 raw_data=self.args.raw_path,
                                 reduced_data=self.args.red_path,
-                                technique=self.technique,
-                                overscan_region=self.overscan_region,
-                                trim_section=self.trim_section)
+                                technique=self.technique)
 
                     elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
                         log.debug('Create Master FLATS')
