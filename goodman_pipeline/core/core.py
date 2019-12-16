@@ -2834,7 +2834,7 @@ def search_comp_group(object_group, comp_groups, reference_data):
     raise NoMatchFound
 
 
-def setup_logging(debug=False):
+def setup_logging(debug=False, generic=False):
     """configures logging
 
     Notes:
@@ -2868,31 +2868,32 @@ def setup_logging(debug=False):
     file_handler.setLevel(level=logging_level)
     log.addHandler(file_handler)
 
-    log.info("Starting Goodman HTS Pipeline Log")
-    log.info("Local Time    : {:}".format(
-        datetime.datetime.now()))
-    log.info("Universal Time: {:}".format(
-        datetime.datetime.utcnow()))
+    if not generic:
+        log.info("Starting Goodman HTS Pipeline Log")
+        log.info("Local Time    : {:}".format(
+            datetime.datetime.now()))
+        log.info("Universal Time: {:}".format(
+            datetime.datetime.utcnow()))
 
-    try:
-        latest_release = check_version.get_last()
+        try:
+            latest_release = check_version.get_last()
 
-        if "dev" in __version__:
-            log.warning("Running Development version: {:s}".format(__version__))
-            log.info("Latest Release: {:s}".format(latest_release))
-        elif check_version.am_i_updated(__version__):
-            if __version__ == latest_release:
-                log.info("Pipeline Version: {:s} (latest)".format(__version__))
-            else:
-                log.warning("Current Version: {:s}".format(__version__))
+            if "dev" in __version__:
+                log.warning("Running Development version: {:s}".format(__version__))
                 log.info("Latest Release: {:s}".format(latest_release))
-        else:
-            log.warning("Current Version '{:s}' is outdated.".format(
-                __version__))
-            log.info("Latest Release: {:s}".format(latest_release))
-    except ConnectionRefusedError:
-        log.error('Unauthorized GitHub API Access reached maximum')
-        log.info("Current Version: {:s}".format(__version__))
+            elif check_version.am_i_updated(__version__):
+                if __version__ == latest_release:
+                    log.info("Pipeline Version: {:s} (latest)".format(__version__))
+                else:
+                    log.warning("Current Version: {:s}".format(__version__))
+                    log.info("Latest Release: {:s}".format(latest_release))
+            else:
+                log.warning("Current Version '{:s}' is outdated.".format(
+                    __version__))
+                log.info("Latest Release: {:s}".format(latest_release))
+        except ConnectionRefusedError:
+            log.error('Unauthorized GitHub API Access reached maximum')
+            log.info("Current Version: {:s}".format(__version__))
 
 
 def trace(ccd,
