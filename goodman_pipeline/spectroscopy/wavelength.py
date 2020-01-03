@@ -10,6 +10,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import glob
+import json
 import logging
 import os
 import re
@@ -32,7 +33,7 @@ from ..core import (add_linear_wavelength_solution,
                     linearize_spectrum,
                     write_fits)
 
-from ..core import (ReferenceData)
+from ..core import (ReferenceData, NoMatchFound)
 
 log = logging.getLogger(__name__)
 
