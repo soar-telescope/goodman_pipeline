@@ -3950,7 +3950,9 @@ class SaturationValues(object):
                             ['Red', 344, 3, 1.48, 3.89, 69257, True],
                             ['Red', 344, 0, 3.87, 7.05, 26486, False],
                             ['Red', 750, 2, 1.47, 5.27, 69728, True],
-                            ['Red', 750, 0, 3.77, 8.99, 27188, False]]
+                            ['Red', 750, 2, 1.45, 5.27, 69728, True],
+                            ['Red', 750, 0, 3.77, 8.99, 27188, False],
+                            ['Red', 750, 0, 3.78, 8.99, 27188, False]]
         self._sdf = pandas.DataFrame(saturation_table,
                                      columns=columns)
 
