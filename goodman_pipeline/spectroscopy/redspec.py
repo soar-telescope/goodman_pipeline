@@ -509,19 +509,22 @@ class MainApp(object):
                             continue
                     object_number = None
                     for sci_target, comp_list in extracted_target_and_lamps:
-                        self.wavelength_solution_obj = \
-                            self.wavelength_calibration(
-                                ccd=sci_target,
-                                comp_list=comp_list,
-                                save_data_to=self.args.destination,
-                                reference_data=self.args.reference_dir,
-                                object_number=object_number,
-                                output_prefix=self.args.output_prefix,
-                                plot_results=self.args.plot_results,
-                                save_plots=self.args.save_plots,
-                                plots=self.args.debug_with_plots)
-
-        return True
+                        try:
+                            self.wavelength_solution_obj = \
+                                self.wavelength_calibration(
+                                    ccd=sci_target,
+                                    comp_list=comp_list,
+                                    save_data_to=self.args.destination,
+                                    reference_data=self.args.reference_dir,
+                                    object_number=object_number,
+                                    output_prefix=self.args.output_prefix,
+                                    plot_results=self.args.plot_results,
+                                    save_plots=self.args.save_plots,
+                                    plots=self.args.debug_with_plots)
+                        except NoMatchFound as no_match_error:
+                            self.log.error(no_match_error)
+                        except NotImplemented as error:
+                            self.log.error(error)
 
 
 if __name__ == '__main__':
