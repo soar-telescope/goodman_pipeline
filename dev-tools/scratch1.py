@@ -2,7 +2,7 @@ import argparse
 import textwrap
 import json
 
-parameters_file = "/user/simon/development/soar/goodman/dev/param.json"
+parameters_file = "/user/simon/development/soar/goodman/dev/param.json_output"
 
 
 def load_json_params(json_file, param_group):

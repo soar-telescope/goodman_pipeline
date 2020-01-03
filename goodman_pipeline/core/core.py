@@ -2230,13 +2230,14 @@ def name_master_flats(header,
 
     if technique == 'Spectroscopy':
         if header['GRATING'] != '<NO GRATING>':
-            flat_grating = '_' + re.sub('[A-Za-z_-]',
+            flat_grating = '_' + re.sub('[A-Za-z_ ]',
                                         '',
                                         header['GRATING'])
 
             # self.spec_mode is an instance of SpectroscopicMode
             spectroscopic_mode = SpectroscopicMode()
             wavmode = spectroscopic_mode(header=header)
+            print("##{}##".format(wavmode))
         else:
             flat_grating = '_no_grating'
             wavmode = ''
