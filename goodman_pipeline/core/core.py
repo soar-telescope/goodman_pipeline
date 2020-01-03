@@ -3247,6 +3247,7 @@ def write_fits(ccd,
 
     # Current File Name
     ccd.header.set('GSP_FNAM', value=os.path.basename(full_path))
+    ccd.header.set('GSP_PATH', value=os.path.dirname(full_path))
 
     # write to file
     log.info("Saving FITS file to {:s}".format(os.path.basename(full_path)))
