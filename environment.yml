@@ -3,7 +3,7 @@ channels:
   - astroconda
 dependencies:
   - numpy
-  - pandas
+  - pandas==0.23.0
   - matplotlib
   - scipy
   - cython
