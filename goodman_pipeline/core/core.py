@@ -2237,7 +2237,6 @@ def name_master_flats(header,
             # self.spec_mode is an instance of SpectroscopicMode
             spectroscopic_mode = SpectroscopicMode()
             wavmode = spectroscopic_mode(header=header)
-            print("##{}##".format(wavmode))
         else:
             flat_grating = '_no_grating'
             wavmode = ''
@@ -3015,7 +3014,7 @@ def trace(ccd,
 
     clipped_values = sigma_clip(sampling_differences,
                                 sigma=2,
-                                iters=3,
+                                maxiters=3,
                                 cenfunc=np.ma.median)
     if np.ma.is_masked(clipped_values):
         _sampling_axis = list(sampling_axis)
@@ -3055,7 +3054,7 @@ def trace(ccd,
 
     for i in range(fitted_trace.degree + 1):
         trace_info['GSP_TC{:02d}'.format(i)] = [
-            fitted_trace.__getattr__('c{:d}'.format(i)).value,
+            fitted_trace.__getattribute__('c{:d}'.format(i)).value,
             'Parameter c{:d}'.format(i)]
 
     trace_info['GSP_TERR'] = [rms_error, 'RMS error of target trace']
@@ -4269,7 +4268,7 @@ class IdentifySpectroscopicTargets(object):
         log.info('Fitting Linear1D model to spatial profile to detect '
                  'background shape')
 
-        clipped_profile = sigma_clip(spatial_profile, sigma=2, iters=5)
+        clipped_profile = sigma_clip(spatial_profile, sigma=2, maxiters=5)
 
         linear_model = models.Linear1D(slope=0,
                                        intercept=np.median(spatial_profile))
@@ -4358,7 +4357,7 @@ class IdentifySpectroscopicTargets(object):
 
         self.spatial_profile = background_subtracted.copy()
 
-        clipped_final_profile = sigma_clip(self.spatial_profile, sigma=3, iters=3)
+        clipped_final_profile = sigma_clip(self.spatial_profile, sigma=3, maxiters=3)
 
         new_x_axis = [i for i in range(len(clipped_final_profile)) if
                       not clipped_final_profile.mask[i]]
