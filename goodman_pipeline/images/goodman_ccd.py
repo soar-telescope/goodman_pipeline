@@ -131,12 +131,12 @@ def get_args(arguments=None):
                         default='./RED',
                         help="Path to reduced data.")
 
-    parser.add_argument('--saturation',
+    parser.add_argument('--saturation_threshold',
                         action='store',
                         default=1.,
                         dest='saturation_threshold',
                         metavar='<value>',
-                        help="Maximum percent of pixels above saturation "
+                        help="Maximum percent of pixels above saturation_threshold "
                              "threshold. Default 1 percent.")
 
     parser.add_argument('--version',

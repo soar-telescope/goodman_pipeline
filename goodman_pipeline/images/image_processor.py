@@ -142,7 +142,7 @@ class ImageProcessor(object):
                             trim_section=self.trim_section,
                             master_bias_name=self.master_bias_name,
                             new_master_flat_name=master_flat_name,
-                            saturation=self.args.saturation_threshold,
+                            saturation_threshold=self.args.saturation_threshold,
                             ignore_bias=self.args.ignore_bias)
                     else:
                         log.debug('Process Data Group')
@@ -219,7 +219,7 @@ class ImageProcessor(object):
                             trim_section=self.trim_section,
                             master_bias_name=self.master_bias_name,
                             new_master_flat_name=master_flat_name,
-                            saturation=self.args.saturation_threshold,
+                            saturation_threshold=self.args.saturation_threshold,
                             ignore_bias=self.args.ignore_bias)
             elif self.args.ignore_flats:
                 log.warning('Ignoring creation of Master Flat by request.')
@@ -494,7 +494,7 @@ class ImageProcessor(object):
                             trim_section=self.trim_section,
                             master_bias_name=self.master_bias_name,
                             new_master_flat_name=master_flat_name,
-                            saturation=self.args.saturation_threshold)
+                            saturation_threshold=self.args.saturation_threshold)
         else:
             log.error('There is no valid datatype in this group')
 

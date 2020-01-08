@@ -14,7 +14,7 @@ import numpy as np
 class ImageProcessorTest(TestCase):
 
     def setUp(self):
-        arguments = ['--saturation', '1']
+        arguments = ['--saturation_threshold', '1']
         args = get_args(arguments=arguments)
         data_container = NightDataContainer(path='/fake',
                                             instrument='Red',
