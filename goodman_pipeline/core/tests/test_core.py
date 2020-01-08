@@ -376,7 +376,6 @@ class CosmicRayRejectionTest(TestCase):
                                                 image_name=self.file_name,
                                                 out_prefix=self.out_prefix,
                                                 red_path=self.red_path,
-                                                dcr_par=os.getcwd(),
                                                 keep_files=True,
                                                 prefix=prefix,
                                                 method='default',
@@ -424,7 +423,6 @@ class CosmicRayRejectionTest(TestCase):
                                                 image_name=self.file_name,
                                                 out_prefix=self.out_prefix,
                                                 red_path=self.red_path,
-                                                dcr_par=os.getcwd(),
                                                 keep_files=True,
                                                 prefix=prefix,
                                                 method='default',
@@ -446,7 +444,6 @@ class CosmicRayRejectionTest(TestCase):
                                                 image_name=self.file_name,
                                                 out_prefix=self.out_prefix,
                                                 red_path=self.red_path,
-                                                dcr_par=os.getcwd(),
                                                 keep_files=True,
                                                 prefix=prefix,
                                                 method='default',
@@ -465,7 +462,6 @@ class CosmicRayRejectionTest(TestCase):
                                                 image_name=self.file_name,
                                                 out_prefix=self.out_prefix,
                                                 red_path=self.red_path,
-                                                dcr_par=os.getcwd(),
                                                 keep_files=True,
                                                 prefix=prefix,
                                                 method='none',
@@ -483,7 +479,6 @@ class CosmicRayRejectionTest(TestCase):
                                                 image_name=self.file_name,
                                                 out_prefix=self.out_prefix,
                                                 red_path=self.red_path,
-                                                dcr_par=os.getcwd(),
                                                 keep_files=True,
                                                 prefix=prefix,
                                                 method='lacosmic',
@@ -501,7 +496,6 @@ class CosmicRayRejectionTest(TestCase):
                           self.file_name,
                           self.out_prefix,
                           self.red_path,
-                          os.getcwd(),
                           True,
                           prefix,
                           'not_implemented_method',
@@ -538,6 +532,9 @@ class CreateMasterBias(TestCase):
 
         self.ccd.data[11:90, 10:90] += 1
         self.ccd.header.set('CCDSUM', value='1 1')
+        self.ccd.header.set('INSTCONF', value='Red')
+        self.ccd.header.set('RDNOISE', value=3.89)
+        self.ccd.header.set('GAIN', value=1.48)
 
         for _file in self.bias_files:
             self.ccd.write(os.path.join(self.reduced_data, _file))
@@ -555,37 +552,13 @@ class CreateMasterBias(TestCase):
             bias_files=self.bias_files,
             raw_data=self.raw_data,
             reduced_data=self.reduced_data,
-            technique='Spectroscopy',
-            overscan_region=self.overscan_region,
-            trim_section=self.trim_section)
+            technique='Spectroscopy')
 
         self.assertTrue('master_bias' in self.name)
-
-        master_2, self.name_2 = create_master_bias(
-            bias_files=self.bias_files,
-            raw_data=self.raw_data,
-            reduced_data=self.reduced_data,
-            technique='Spectroscopy',
-            overscan_region=self.overscan_region,
-            trim_section=self.trim_section)
-
-        self.assertTrue('master_bias_2.fits' in self.name_2)
-
-        self.assertEqual(master.shape, master_2.shape)
+        self.assertEqual('master_bias_RED_SP_1x1_R03.89_G01.48.fits', self.name)
 
         self.assertTrue(all(
             [master.header[key] in self.bias_files for key in master.header['GSP_IC*'].keys()]))
-
-    def test_create_master_bias_wrong_ccd_region_syntax(self):
-
-        self.assertRaises(SyntaxError,
-                          create_master_bias,
-                          self.bias_files,
-                          self.raw_data,
-                          self.reduced_data,
-                          'Spectroscopy',
-                          'not-a-ccd-region',
-                          'not-a-region-either')
 
 
 class CreateMasterFlatsTest(TestCase):
@@ -613,7 +586,7 @@ class CreateMasterFlatsTest(TestCase):
         for _file in self.flat_files:
             self.ccd.write(os.path.join(self.reduced_data, _file))
 
-        self.bias = CCDData(data=np.ones((80, 80)),
+        self.bias = CCDData(data=np.ones((100, 100)),
                             meta=fits.Header(),
                             unit='adu')
         self.bias.header.set('CCDSUM', value='1 1')
@@ -1835,7 +1808,7 @@ class ReferenceDataTest(TestCase):
 
         self.ccd.header.set('WAVMODE', value='400_M2')
 
-        self.assertRaises(NotImplementedError,
+        self.assertRaises(NoMatchFound,
                           self.rd.get_reference_lamp,
                           self.ccd.header)
 
@@ -1863,7 +1836,7 @@ class ReferenceDataTest(TestCase):
         self.ccd.header.set('OBJECT', value='HgArCu')
         self.ccd.header.set('WAVMODE', value='400_M5')
 
-        self.assertRaises(NotImplementedError,
+        self.assertRaises(NoMatchFound,
                           self.rd.get_reference_lamp,
                           self.ccd.header)
 

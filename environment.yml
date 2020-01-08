@@ -2,15 +2,15 @@ name: goodman_pipeline
 channels:
   - astroconda
 dependencies:
-  - numpy>=1.15.2
+  - numpy
   - pandas==0.23.0
-  - matplotlib>=3.0.1
-  - scipy>=1.3.0
-  - cython>=0.26.1
-  - astropy>=3
+  - matplotlib
+  - scipy
+  - cython
+  - astropy
   - pip
   - pip:
-    - ccdproc>=1.3.0.post1
+    - ccdproc
     - coveralls
     - astroplan
     - mock

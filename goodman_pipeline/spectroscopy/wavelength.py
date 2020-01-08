@@ -10,6 +10,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import glob
+import json
 import logging
 import os
 import re
@@ -32,7 +33,7 @@ from ..core import (add_linear_wavelength_solution,
                     linearize_spectrum,
                     write_fits)
 
-from ..core import (ReferenceData)
+from ..core import (ReferenceData, NoMatchFound)
 
 log = logging.getLogger(__name__)
 
@@ -96,7 +97,8 @@ class WavelengthCalibration(object):
                  output_prefix='w',
                  plot_results=False,
                  save_plots=False,
-                 plots=False):
+                 plots=False,
+                 json_output=False):
         """Call method for the WavelengthSolution Class
 
         It takes extracted data and produces wavelength calibrated 1D FITS file.
@@ -109,15 +111,24 @@ class WavelengthCalibration(object):
         Args:
             ccd (CCDData) a :class:`~astropy.nddata.CCDData` instance
             comp_list (list): Comparison lamps for the science target that will
-                be processed here. Every element of this list is an instance of
-                :class:`~astropy.nddata.CCDData`.
+            be processed here. Every element of this list is an instance of
+            :class:`~astropy.nddata.CCDData`.
+            save_data_to (str): Path to save processed data.
             object_number (int): In case of multiple detections in a single
-                image this number will be added as a suffix before `.fits` in
-                order to allow for multiple 1D files. Default value is None.
+            image this number will be added as a suffix before `.fits` in
+            order to allow for multiple 1D files. Default value is None.
             corr_tolerance (int): `cross_corr_tolerance` stands for cross
-                correlation tolerance, in other words, how far the cross
-                correlation can be from the global cross correlation. It usually
-                increases with the frequency of the grating.
+            correlation tolerance, in other words, how far the cross
+            correlation can be from the global cross correlation. It usually
+            increases with the frequency of the grating.
+            output_prefix (str):  Prefix to add to files.
+            plot_results (bool): Present a plot showing the wavelength
+            calibrated data.
+            save_plots (bool): Save any plot shown. They are saved under
+            `<path>/<save_data_to>/plots/` where `<path>/<save_data_to>` is
+            the full path to the folder that `save_data_to` is pointing.
+            plots (bool): Show plots during operation.
+
 
         Returns:
             wavelength_solution (object): The mathematical model of the
@@ -140,13 +151,21 @@ class WavelengthCalibration(object):
         self.i_fig = None
 
         log.info('Processing Science Target: '
-                      '{:s}'.format(ccd.header['OBJECT']))
-        if comp_list is not None:
+                 '{:s}'.format(ccd.header['OBJECT']))
+
+        if len(comp_list) == 0:
+            log.warning("No comparison lamps were provided for file {}"
+                        "".format(self.sci_target_file))
+            log.error("Ending processing of {}".format(self.sci_target_file))
+            if json_output:
+                return {'error': 'Unable to process without reference lamps'}
+        else:
             wavelength_solutions = []
             reference_lamp_names = []
             for self.lamp in comp_list:
                 try:
                     self.calibration_lamp = self.lamp.header['GSP_FNAM']
+                    log.info('Using reference lamp {}'.format(self.calibration_lamp))
                 except KeyError:
                     self.calibration_lamp = ''
 
@@ -155,16 +174,19 @@ class WavelengthCalibration(object):
                 self.lamp_name = self.lamp.header['OBJECT']
 
                 log.info('Processing Comparison Lamp: '
-                              '{:s}'.format(self.lamp_name))
+                         '{:s}'.format(self.lamp_name))
 
                 self.lines_center = get_lines_in_lamp(
                     ccd=self.lamp, plots=plots)
                 self.serial_binning, self.parallel_binning = [
                     int(x) for x in self.lamp.header['CCDSUM'].split()]
 
-                self._automatic_wavelength_solution(
-                    save_data_to=save_data_to,
-                    corr_tolerance=self.cross_corr_tolerance)
+                try:
+                    self._automatic_wavelength_solution(
+                        save_data_to=save_data_to,
+                        corr_tolerance=self.cross_corr_tolerance)
+                except NoMatchFound as message:
+                    raise NoMatchFound(message)
 
                 if self.wsolution is not None:
                     ccd.header.set('GSP_WRMS', value=self.rms_error)
@@ -202,16 +224,19 @@ class WavelengthCalibration(object):
                     continue
 
             if len(wavelength_solutions) > 1:
-                log.warning("The current version of the pipeline does not "
-                                 "combine multiple solution instead it saves a "
-                                 "single version of the science file for each "
-                                 "wavelength solution calculated.")
+                warning_message = str("The current version of the pipeline "
+                                      "does not combine multiple solution "
+                                      "instead it saves a single version of "
+                                      "the science file for each wavelength "
+                                      "solution calculated.")
+                log.warning(warning_message)
+                all_solution_info = []
                 for i in range(len(wavelength_solutions)):
                     # TODO (simon): Combine Multiple solutions
                     self.wsolution = wavelength_solutions[i]
                     self.wcal_lamp_file = reference_lamp_names[i]
                     ccd = self.wcs.write_gsp_wcs(ccd=ccd, model=self.wsolution)
-                    self._save_science_data(
+                    saved_file_name = self._save_science_data(
                         ccd=ccd,
                         wavelength_solution=self.wsolution,
                         save_to=save_data_to,
@@ -219,24 +244,42 @@ class WavelengthCalibration(object):
                         plot_results=plot_results,
                         save_plots=save_plots,
                         plots=plots)
+                    all_solution_info.append({
+                        'solution_info': {'rms_error': "{:.4f}".format(self.rms_error),
+                                          'npoints': "{:d}".format(self.n_points),
+                                          'nrjections': "{:d}".format(self.n_rejections)},
+                        'file_name': saved_file_name,
+                        'reference_lamp': self.wcal_lamp_file})
+
+                if json_output:
+                    return {'warning': warning_message,
+                            'wavelength_solution': all_solution_info}
 
             elif len(wavelength_solutions) == 1:
                 self.wsolution = wavelength_solutions[0]
                 self.wcal_lamp_file = reference_lamp_names[0]
                 ccd = self.wcs.write_gsp_wcs(ccd=ccd, model=self.wsolution)
 
-                self._save_science_data(
+                saved_file_name = self._save_science_data(
                     ccd=ccd,
                     wavelength_solution=self.wsolution,
                     save_to=save_data_to,
                     plot_results=plot_results,
                     save_plots=save_plots,
+                    index=object_number,
                     plots=plots)
+                if json_output:
+                    return {
+                        'wavelength_solution': [
+                            {'solution_info': {'rms_error': "{:.4f}".format(self.rms_error),
+                                               'npoints': "{:d}".format(self.n_points),
+                                               'nrjections': "{:d}".format(self.n_rejections)},
+                             'file_name': saved_file_name,
+                             'reference_lamp': self.wcal_lamp_file}]}
             else:
                 log.error("No wavelength solution.")
-
-        else:
-            log.warning('Data should be saved anyways')
+                if json_output:
+                    return {'error': "no wavelength solution obtained"}
 
     def _automatic_wavelength_solution(self,
                                        save_data_to,
@@ -286,12 +329,10 @@ class WavelengthCalibration(object):
 
             log.debug('Found reference lamp: '
                       '{:s}'.format(reference_lamp_ccd.header['GSP_FNAM']))
-        except NotImplementedError:
-
-            log.warning('This configuration is not supported in '
-                        'automatic mode or there is a typo in the '
-                        'keywords.')
-            return None
+        except NoMatchFound as error:
+            raise NoMatchFound(error)
+        except NotImplementedError as error:
+            raise NotImplemented(error)
 
         # TODO (simon): Evaluate possibility to read iraf wcs. [#304]
 
@@ -322,7 +363,7 @@ class WavelengthCalibration(object):
         log.debug('Length / NLines {:.3f}'.format(
             len(self.lamp.data) / float(len(lamp_lines_pixel))))
 
-        slit_size = float(re.sub('[A-Za-z_ ]', '', self.lamp.header['SLIT']))
+        slit_size = float(re.sub('["A-Za-z_ ]', '', self.lamp.header['SLIT']))
 
         global_cross_corr = cross_correlation(
             reference=reference_lamp_ccd.data,
@@ -352,7 +393,7 @@ class WavelengthCalibration(object):
             # ref_wavele = reference_lamp_wav_axis[xmin:xmax]
             lamp_sample = self.lamp.data[xmin:xmax]
 
-            slit_size = float(re.sub('[A-Za-z_ ]', '', self.lamp.header['SLIT']))
+            slit_size = float(re.sub('["A-Za-z_ ]', '', self.lamp.header['SLIT']))
 
             correlation_value = cross_correlation(
                 reference=ref_sample,
@@ -361,8 +402,8 @@ class WavelengthCalibration(object):
                 serial_binning=self.serial_binning)
 
             log.debug('Cross correlation value '
-                           '{:s} vs {:s}'.format(str(global_cross_corr),
-                                                 str(correlation_value)))
+                      '{:s} vs {:s}'.format(str(global_cross_corr),
+                                            str(correlation_value)))
 
             if - corr_tolerance < (global_cross_corr - correlation_value) < \
                     corr_tolerance:
@@ -379,9 +420,8 @@ class WavelengthCalibration(object):
                 # print(angstrom_values)
                 pixel_values.append(line_value_pixel)
             else:
-                log.debug("Local cross correlation value {:.3f} is too far"
-                               " from global cross correlation value "
-                               "{:.3f}".format(correlation_value,
+                log.debug("Local cross correlation value {:.3f} is too far "
+                          "from {:.3f}".format(correlation_value,
                                                global_cross_corr))
 
             if plots:
@@ -577,7 +617,14 @@ class WavelengthCalibration(object):
                     plt.ioff()
                     plt.close()
 
-    def _save_science_data(self, ccd, wavelength_solution, save_to, index=None, plot_results=False, save_plots=False, plots=False):
+    def _save_science_data(self,
+                           ccd,
+                           wavelength_solution,
+                           save_to,
+                           index=None,
+                           plot_results=False,
+                           save_plots=False,
+                           plots=False):
         """Save science data"""
         ccd = ccd.copy()
         linear_x_axis, ccd.data = linearize_spectrum(
@@ -589,7 +636,7 @@ class WavelengthCalibration(object):
             x_axis=linear_x_axis,
             reference_lamp=self.calibration_lamp)
 
-        self._save_wavelength_calibrated(
+        save_file_name = self._save_wavelength_calibrated(
             ccd=ccd,
             original_filename=ccd.header['GSP_FNAM'],
             save_data_to=save_to,
@@ -661,13 +708,13 @@ class WavelengthCalibration(object):
                     plt.pause(2)
                     plt.ioff()
 
-                # return wavelength_solution
+        return save_file_name
 
     def _save_wavelength_calibrated(self,
                                     ccd,
                                     original_filename,
                                     save_data_to,
-                                    output_prefix='',
+                                    output_prefix='w',
                                     index=None,
                                     lamp=False):
         if index is None:
@@ -681,20 +728,20 @@ class WavelengthCalibration(object):
 
         if lamp:
             log.info('Wavelength-calibrated {:s} file saved to: '
-                          '{:s} for science file {:s}'
-                          ''.format(ccd.header['OBSTYPE'],
-                                    os.path.basename(new_filename),
-                                    self.sci_target_file))
+                     '{:s} for science file {:s}'
+                     ''.format(ccd.header['OBSTYPE'],
+                               os.path.basename(new_filename),
+                               self.sci_target_file))
 
             ccd.header.set('GSP_SCTR',
                            value=self.sci_target_file,
                            after='GSP_FLAT')
         else:
             log.info('Wavelength-calibrated {:s} file saved to: '
-                          '{:s} using reference lamp {:s}'
-                          ''.format(ccd.header['OBSTYPE'],
-                                    os.path.basename(new_filename),
-                                    self.wcal_lamp_file))
+                     '{:s} using reference lamp {:s}'
+                     ''.format(ccd.header['OBSTYPE'],
+                               os.path.basename(new_filename),
+                               self.wcal_lamp_file))
             ccd.header.set(
                 'GSP_LAMP',
                 value=self.wcal_lamp_file,

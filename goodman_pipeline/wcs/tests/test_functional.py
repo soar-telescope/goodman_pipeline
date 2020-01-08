@@ -53,7 +53,7 @@ class TestWCS(TestWCSBase):
         self.assertEqual(model.__class__.__name__, ccd.header['GSP_FUNC'])
         self.assertEqual(model.degree, ccd.header['GSP_ORDR'])
         for i in range(model.degree + 1):
-            self.assertAlmostEqual(model.__getattr__('c{:d}'.format(i)).value,
+            self.assertAlmostEqual(model.__getattribute__('c{:d}'.format(i)).value,
                              ccd.header['GSP_C{:03d}'.format(i)])
 
     def test_fit_linear(self):

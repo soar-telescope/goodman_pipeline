@@ -216,7 +216,6 @@ def call_cosmic_rejection(ccd,
                           image_name,
                           out_prefix,
                           red_path,
-                          dcr_par,
                           keep_files=False,
                           prefix='c',
                           method='dcr',
@@ -249,7 +248,6 @@ def call_cosmic_rejection(ccd,
         out_prefix (str): Partial prefix to be added to the image name. Related
           to previous processes and not cosmic ray rejection.
         red_path (str): Path to reduced data directory.
-        dcr_par (str): Path to dcr.par file.
         keep_files (bool): If True, the original file and the cosmic ray mask
           will not be deleted. Default is False.
         prefix (str): Cosmic ray rejection related prefix to be added to image
@@ -324,7 +322,6 @@ def call_cosmic_rejection(ccd,
         ccd = dcr_cosmicray_rejection(data_path=red_path,
                                       in_file=in_file,
                                       prefix=prefix,
-                                      dcr_par_dir=dcr_par,
                                       keep_cosmic_files=keep_files,
                                       save=save)
         return ccd, out_prefix
@@ -358,9 +355,7 @@ def call_cosmic_rejection(ccd,
 def create_master_bias(bias_files,
                        raw_data,
                        reduced_data,
-                       technique,
-                       overscan_region,
-                       trim_section):
+                       technique):
     """Create Master Bias
 
     Given a :class:`~pandas.DataFrame` object that contains a list of compatible bias.
@@ -374,11 +369,6 @@ def create_master_bias(bias_files,
         reduced_data (str): Full path to were reduced data will reside.
         technique (str): Name of observing technique. Imaging or
         Spectroscopy.
-        overscan_region (str): Defines the area to be used to estimate the
-        overscan region for overscan correction. Should be in the format.
-        `[x1:x2.,y1:y2]`.
-        trim_section (str): Defines the area to be used after trimming
-        unusable selected parts (edges). In the format `[x1:x2.,y1:y2]`.
 
     Returns:
         master_bias (object):
@@ -387,38 +377,12 @@ def create_master_bias(bias_files,
     """
     assert isinstance(bias_files, list)
 
-    try:
-        validate_ccd_region(ccd_region=overscan_region)
-        validate_ccd_region(ccd_region=trim_section)
-    except SyntaxError as error:
-        raise SyntaxError(error)
-
-    default_bias_name = os.path.join(reduced_data, 'master_bias.fits')
-    search_bias_name = re.sub('.fits', '*.fits', default_bias_name)
-    n_bias = len(glob.glob(search_bias_name))
-    if n_bias > 0:
-        master_bias_name = re.sub('.fits',
-                                  '_{:d}.fits'.format(n_bias + 1),
-                                  default_bias_name)
-
-        log.info('New name for master bias: ' + master_bias_name)
-    else:
-        master_bias_name = default_bias_name
-
     master_bias_list = []
     log.info('Creating master bias')
     for image_file in bias_files:
         image_full_path = os.path.join(raw_data, image_file)
         ccd = read_fits(image_full_path, technique=technique)
         log.debug('Loading bias image: ' + image_full_path)
-        if technique == 'Spectroscopy':
-            log.debug(
-                'Overscan Region: {:s}'.format(str(overscan_region)))
-            ccd = image_overscan(ccd=ccd,
-                                 overscan_region=overscan_region)
-        ccd = image_trim(ccd,
-                         trim_section=trim_section,
-                         trim_type='trimsec')
         master_bias_list.append(ccd)
 
     # combine bias for spectroscopy
@@ -435,9 +399,18 @@ def create_master_bias(bias_files,
             bias_files[n],
             'Image used to create master bias')
 
+    master_bias_name = "master_bias_{}_{}_{}_R{:05.2f}_G{:05.2f}.fits".format(
+        master_bias.header['INSTCONF'].upper(),
+        technique[0:2].upper(),
+        "x".join(master_bias.header['CCDSUM'].split()),
+        float(master_bias.header['RDNOISE']),
+        float(master_bias.header['GAIN'])
+    )
+
     write_fits(ccd=master_bias,
-               full_path=master_bias_name,
-               combined=True)
+               full_path=os.path.join(reduced_data, master_bias_name),
+               combined=True,
+               overwrite=True)
 
     log.info('Created master bias: ' + master_bias_name)
     return master_bias, master_bias_name
@@ -506,13 +479,20 @@ def create_master_flats(flat_files,
                                             os.path.basename(master_bias_name))
             master_bias = read_fits(master_bias_name, technique=technique)
 
+        master_bias = image_trim(ccd=master_bias,
+                                 trim_section=trim_section,
+                                 trim_type='trimsec')
+
     log.info('Creating Master Flat')
     for flat_file in flat_files:
-        image_full_path = os.path.join(raw_data, flat_file)
-        ccd = read_fits(image_full_path, technique=technique)
+        if os.path.isabs(flat_file):
+            image_full_path = flat_file
+        else:
+            image_full_path = os.path.join(raw_data, flat_file)
         log.debug('Loading flat image: ' + image_full_path)
+        ccd = read_fits(image_full_path, technique=technique)
 
-        if technique == 'Spectroscopy':
+        if ignore_bias and technique == 'Spectroscopy':
             ccd = image_overscan(ccd, overscan_region=overscan_region)
 
         ccd = image_trim(ccd=ccd,
@@ -877,7 +857,7 @@ def convert_time(in_time):
     return calendar.timegm(time.strptime(in_time, "%Y-%m-%dT%H:%M:%S.%f"))
 
 
-def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
+def dcr_cosmicray_rejection(data_path, in_file, prefix,
                             keep_cosmic_files=False, save=True):
     """Runs an external code for cosmic ray rejection
 
@@ -903,7 +883,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix, dcr_par_dir,
         data_path (str): Data location
         in_file (str): Name of the file to have its cosmic rays removed
         prefix (str): Prefix to add to the file with the cosmic rays removed
-        dcr_par_dir (str): Directory of default dcr.par file
         keep_cosmic_files (bool): True for deleting the input and cosmic ray
           file.
         save (bool): Toggles the option of saving the image.
@@ -1185,7 +1164,7 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
     extracted_spectrum = []
     background_list = []
 
-    if ccd.header['OBSTYPE'] != 'OBJECT':
+    if ccd.header['OBSTYPE'] not in ['OBJECT', 'SPECTRUM']:
         log.debug("No background subtraction for OBSTYPE = "
                   "{:s}".format(ccd.header['OBSTYPE']))
 
@@ -1221,7 +1200,7 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
 
         non_background_sub.append(column_sum)
 
-        if ccd.header['OBSTYPE'] == 'OBJECT':
+        if ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM']:
             # background limits
 
             # background_spacing is the distance from the edge of the target's
@@ -2251,7 +2230,7 @@ def name_master_flats(header,
 
     if technique == 'Spectroscopy':
         if header['GRATING'] != '<NO GRATING>':
-            flat_grating = '_' + re.sub('[A-Za-z_-]',
+            flat_grating = '_' + re.sub('[A-Za-z_ ]',
                                         '',
                                         header['GRATING'])
 
@@ -2468,7 +2447,7 @@ def read_fits(full_path, technique='Unknown'):
         ccd.header.set('GSP_PNAM',
                        value=os.path.basename(full_path),
                        comment='Parent file name')
-        
+
     ccd.header.set('GSP_FNAM',
                    value=os.path.basename(full_path),
                    comment='Current file name')
@@ -2560,7 +2539,7 @@ def read_fits(full_path, technique='Unknown'):
     if '' not in all_keys:
         ccd.header.add_blank('-- Goodman Spectroscopic Pipeline --',
                              before='GSP_VERS')
-        
+
         ccd.header.add_blank('-- GSP END --', after='GSP_WREJ')
 
     ccd.header.set('BUNIT', after='CCDSUM')
@@ -2726,6 +2705,26 @@ def recenter_lines(data, lines, plots=False):
 
 
 def record_trace_information(ccd, trace_info):
+    """Adds trace information to fits header
+
+    Notes:
+        Example of trace_info.
+        OrderedDict([('GSP_TMOD', ['Polynomial1D', 'Model name used to fit trace']),
+                     ('GSP_TORD', [2, 'Degree of the model used to fit target trace']),
+                     ('GSP_TC00', [80.92244303468138, 'Parameter c0']),
+                     ('GSP_TC01', [0.0018921968204536187, 'Parameter c1']),
+                     ('GSP_TC02', [-7.232545448865748e-07, 'Parameter c2']),
+                     ('GSP_TERR', [0.18741058188097284, 'RMS error of target trace'])])
+
+    Args:
+        ccd (CCDData): CCDData instance to have trace info recorded into its
+        header.
+        trace_info (OrderedDict): Ordered Dictionary with a set of fits keywords
+        associated to a list of values corresponding to value and comment.
+
+    Returns:
+        ccd (CCDData): Same CCDData instance with the header modified.
+    """
     last_keyword = None
     for info_key in trace_info:
         info_value, info_comment = trace_info[info_key]
@@ -2835,7 +2834,7 @@ def search_comp_group(object_group, comp_groups, reference_data):
     raise NoMatchFound
 
 
-def setup_logging():
+def setup_logging(debug=False, generic=False):
     """configures logging
 
     Notes:
@@ -2845,7 +2844,7 @@ def setup_logging():
 
     log_filename = 'goodman_log.txt'
 
-    if '--debug' in sys.argv:
+    if '--debug' in sys.argv or debug:
         log_format = '[%(asctime)s][%(levelname)8s]: %(message)s ' \
                      '[%(module)s.%(funcName)s:%(lineno)d]'
         logging_level = logging.DEBUG
@@ -2869,31 +2868,32 @@ def setup_logging():
     file_handler.setLevel(level=logging_level)
     log.addHandler(file_handler)
 
-    log.info("Starting Goodman HTS Pipeline Log")
-    log.info("Local Time    : {:}".format(
-        datetime.datetime.now()))
-    log.info("Universal Time: {:}".format(
-        datetime.datetime.utcnow()))
+    if not generic:
+        log.info("Starting Goodman HTS Pipeline Log")
+        log.info("Local Time    : {:}".format(
+            datetime.datetime.now()))
+        log.info("Universal Time: {:}".format(
+            datetime.datetime.utcnow()))
 
-    try:
-        latest_release = check_version.get_last()
+        try:
+            latest_release = check_version.get_last()
 
-        if "dev" in __version__:
-            log.warning("Running Development version: {:s}".format(__version__))
-            log.info("Latest Release: {:s}".format(latest_release))
-        elif check_version.am_i_updated(__version__):
-            if __version__ == latest_release:
-                log.info("Pipeline Version: {:s} (latest)".format(__version__))
-            else:
-                log.warning("Current Version: {:s}".format(__version__))
+            if "dev" in __version__:
+                log.warning("Running Development version: {:s}".format(__version__))
                 log.info("Latest Release: {:s}".format(latest_release))
-        else:
-            log.warning("Current Version '{:s}' is outdated.".format(
-                __version__))
-            log.info("Latest Release: {:s}".format(latest_release))
-    except ConnectionRefusedError:
-        log.error('Unauthorized GitHub API Access reached maximum')
-        log.info("Current Version: {:s}".format(__version__))
+            elif check_version.am_i_updated(__version__):
+                if __version__ == latest_release:
+                    log.info("Pipeline Version: {:s} (latest)".format(__version__))
+                else:
+                    log.warning("Current Version: {:s}".format(__version__))
+                    log.info("Latest Release: {:s}".format(latest_release))
+            else:
+                log.warning("Current Version '{:s}' is outdated.".format(
+                    __version__))
+                log.info("Latest Release: {:s}".format(latest_release))
+        except ConnectionRefusedError:
+            log.error('Unauthorized GitHub API Access reached maximum')
+            log.info("Current Version: {:s}".format(__version__))
 
 
 def trace(ccd,
@@ -3014,7 +3014,7 @@ def trace(ccd,
 
     clipped_values = sigma_clip(sampling_differences,
                                 sigma=2,
-                                iters=3,
+                                maxiters=3,
                                 cenfunc=np.ma.median)
     if np.ma.is_masked(clipped_values):
         _sampling_axis = list(sampling_axis)
@@ -3054,7 +3054,7 @@ def trace(ccd,
 
     for i in range(fitted_trace.degree + 1):
         trace_info['GSP_TC{:02d}'.format(i)] = [
-            fitted_trace.__getattr__('c{:d}'.format(i)).value,
+            fitted_trace.__getattribute__('c{:d}'.format(i)).value,
             'Parameter c{:d}'.format(i)]
 
     trace_info['GSP_TERR'] = [rms_error, 'RMS error of target trace']
@@ -3247,6 +3247,7 @@ def write_fits(ccd,
 
     # Current File Name
     ccd.header.set('GSP_FNAM', value=os.path.basename(full_path))
+    ccd.header.set('GSP_PATH', value=os.path.dirname(full_path))
 
     # write to file
     log.info("Saving FITS file to {:s}".format(os.path.basename(full_path)))
@@ -3632,8 +3633,8 @@ class NightDataContainer(object):
 
 class NoMatchFound(Exception):  # pragma: no cover
     """Exception for when no match is found."""
-    def __init__(self):
-        Exception.__init__(self, 'Did not find a match')
+    def __init__(self, message="No match found"):
+        Exception.__init__(self, message)
 
 
 class NoTargetException(Exception):  # pragma: no cover
@@ -3712,34 +3713,35 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
                 (self.ref_lamp_collection['wavmode'] == header['wavmode']))]
             if filtered_collection.empty:
-                self.log.error("Unable to find a match for: "
-                               "LAMP_HGA = {}, "
-                               "LAMP_NE = {}, "
-                               "LAMP_AR = {}, "
-                               "LAMP_FE = {}, "
-                               "LAMP_CU = {}, "
-                               "WAVMODE = {} ".format(header['LAMP_HGA'],
-                                                      header['LAMP_NE'],
-                                                      header['LAMP_AR'],
-                                                      header['LAMP_FE'],
-                                                      header['LAMP_CU'],
-                                                      header['WAVMODE']))
+                error_message = "Unable to find a match for: "\
+                                "LAMP_HGA = {}, "\
+                                "LAMP_NE = {}, "\
+                                "LAMP_AR = {}, "\
+                                "LAMP_FE = {}, "\
+                                "LAMP_CU = {}, "\
+                                "WAVMODE = {} ".format(header['LAMP_HGA'],
+                                                       header['LAMP_NE'],
+                                                       header['LAMP_AR'],
+                                                       header['LAMP_FE'],
+                                                       header['LAMP_CU'],
+                                                       header['WAVMODE'])
+                self.log.error(error_message)
+                raise NoMatchFound(error_message)
         else:
             filtered_collection = self.ref_lamp_collection[
                 (self.ref_lamp_collection['object'] == header['object']) &
                 # TODO (simon): Wavemode can be custom (GRT_TARG, CAM_TARG, GRATING)
-                (self.ref_lamp_collection['wavmode'] == header['wavmode'])]
+                (self.ref_lamp_collection['wavmode'] == re.sub(' ', '_', header['wavmode']).upper())]
             if filtered_collection.empty:
-                self.log.error("Unable to find matching "
-                               "reference lamp for: "
-                               "OBJECT = {}, "
-                               "WAVMODE = {}".format(header['OBJECT'],
-                                                     header['WAVMODE']))
+                error_message = "Unable to find matching "\
+                                "reference lamp for: "\
+                                "OBJECT = {}, "\
+                                "WAVMODE = {}".format(header['OBJECT'],
+                                                      header['WAVMODE'])
+                self.log.error(error_message)
+                raise NoMatchFound(error_message)
 
-        if filtered_collection.empty:
-            raise NotImplementedError("It was not possible to find any lamps "
-                                      "that match")
-        elif len(filtered_collection) == 1:
+        if len(filtered_collection) == 1:
             self.log.info(
                 "Reference Lamp Found: {:s}"
                 "".format(filtered_collection.file.to_string(index=False)))
@@ -3750,7 +3752,8 @@ class ReferenceData(object):
             self._recover_lines()
             return self._ccd
         else:
-            raise NotImplementedError
+            raise NotImplementedError(
+                "Found {} matches".format(len(filtered_collection)))
 
     def lamp_exists(self, header):
         """Checks whether a matching lamp exist or not
@@ -3947,7 +3950,9 @@ class SaturationValues(object):
                             ['Red', 344, 3, 1.48, 3.89, 69257, True],
                             ['Red', 344, 0, 3.87, 7.05, 26486, False],
                             ['Red', 750, 2, 1.47, 5.27, 69728, True],
-                            ['Red', 750, 0, 3.77, 8.99, 27188, False]]
+                            ['Red', 750, 2, 1.45, 5.27, 69728, True],
+                            ['Red', 750, 0, 3.77, 8.99, 27188, False],
+                            ['Red', 750, 0, 3.78, 8.99, 27188, False]]
         self._sdf = pandas.DataFrame(saturation_table,
                                      columns=columns)
 
@@ -4178,7 +4183,9 @@ class IdentifySpectroscopicTargets(object):
                  model_name='gaussian',
                  plots=False):
         assert isinstance(ccd, CCDData)
-        assert ccd.header['OBSTYPE'] == 'OBJECT'
+        assert ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM'], \
+            "Can't search for targets in files with" \
+            " OBSTYPE = {}".format(ccd.header['OBSTYPE'])
         self.file_name = ccd.header['GSP_FNAM']
 
         log.info('Searching spectroscopic targets in file: {:s}'
@@ -4261,7 +4268,7 @@ class IdentifySpectroscopicTargets(object):
         log.info('Fitting Linear1D model to spatial profile to detect '
                  'background shape')
 
-        clipped_profile = sigma_clip(spatial_profile, sigma=2, iters=5)
+        clipped_profile = sigma_clip(spatial_profile, sigma=2, maxiters=5)
 
         linear_model = models.Linear1D(slope=0,
                                        intercept=np.median(spatial_profile))
@@ -4350,7 +4357,7 @@ class IdentifySpectroscopicTargets(object):
 
         self.spatial_profile = background_subtracted.copy()
 
-        clipped_final_profile = sigma_clip(self.spatial_profile, sigma=3, iters=3)
+        clipped_final_profile = sigma_clip(self.spatial_profile, sigma=3, maxiters=3)
 
         new_x_axis = [i for i in range(len(clipped_final_profile)) if
                       not clipped_final_profile.mask[i]]
@@ -4467,7 +4474,6 @@ class IdentifySpectroscopicTargets(object):
     def filter_peaks(self,
                      spatial_profile=None,
                      detected_peaks=None,
-                     background_level=None,
                      nfind=None,
                      background_threshold=None,
                      file_name=None,
@@ -4477,7 +4483,6 @@ class IdentifySpectroscopicTargets(object):
         Args:
             spatial_profile:
             detected_peaks:
-            background_level:
             nfind:
             background_threshold:
             file_name:
@@ -4488,7 +4493,6 @@ class IdentifySpectroscopicTargets(object):
         """
         if not all([spatial_profile,
                     detected_peaks,
-                    background_level,
                     nfind,
                     background_threshold,
                     file_name]):
@@ -4497,8 +4501,6 @@ class IdentifySpectroscopicTargets(object):
                 spatial_profile = self.spatial_profile
             if self.all_peaks is not None:
                 detected_peaks = self.all_peaks
-            if self.background_level is not None:
-                background_level = self.background_level
             if self.nfind is not None:
                 nfind = self.nfind
             if self.background_threshold is not None:
@@ -4517,19 +4519,19 @@ class IdentifySpectroscopicTargets(object):
 
         sorted_values = np.sort(peak_data_values)[::-1]
 
-        _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
+        detection_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
 
         n_strongest_values = sorted_values[:nfind]
 
         self.selected_peaks = []
         log.info("Validating peaks by setting threshold {:d} times the "
                  "background level {:.2f}".format(background_threshold,
-                                                  background_level))
+                                                  detection_limit))
         log.debug('Intensity threshold set to: {:.2f}'
-                  ''.format(background_threshold * background_level))
+                  ''.format(background_threshold * detection_limit))
         for peak_value in n_strongest_values:
             index = np.where(peak_data_values == peak_value)[0]
-            if peak_value > background_threshold * background_level:
+            if peak_value > background_threshold * detection_limit:
                 self.selected_peaks.append(detected_peaks[index[0]])
                 log.info(
                     'Selecting peak: Centered: {:.1f} Intensity {:.3f}'.format(
@@ -4539,7 +4541,7 @@ class IdentifySpectroscopicTargets(object):
                           'Reason: Below intensity threshold ({:.2f})'
                           ''.format(detected_peaks[index[0]],
                                     peak_value,
-                                    background_threshold * background_level))
+                                    background_threshold * detection_limit))
 
         if plots or self.plots:  # pragma: no cover
             plt.ioff()
@@ -4551,8 +4553,8 @@ class IdentifySpectroscopicTargets(object):
             mng.window.showMaximized()
 
             ax.plot(spatial_profile, label='Background subtracted profile')
-            ax.axhline(_upper_limit, color='g', label='Upper limit for peak detection')
-            ax.axhline(background_threshold * background_level,
+            ax.axhline(detection_limit, color='g', label='Upper limit for peak detection')
+            ax.axhline(background_threshold * detection_limit,
                        color='m',
                        label="Intensity Threshold")
             for peak in self.selected_peaks:
@@ -4685,8 +4687,8 @@ class IdentifySpectroscopicTargets(object):
                 'Moffat_{:}'.format(peak))
 
             fitted_moffat = fitter(moffat,
-                                     range(len(spatial_profile)),
-                                     spatial_profile)
+                                   range(len(spatial_profile)),
+                                   spatial_profile)
 
             # this ensures the profile returned are valid
             if (fitted_moffat.fwhm > 0.5 * order) and \

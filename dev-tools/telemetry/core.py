@@ -12,11 +12,11 @@ import pkg_resources
 
 
 def load_config(name, config_path=None):
-    """Load configuration dictionary from json file
+    """Load configuration dictionary from json_output file
 
     Args:
-        name (str): name of configuration stored in the json file
-        config_file (str): json configuration file name
+        name (str): name of configuration stored in the json_output file
+        config_file (str): json_output configuration file name
 
     Returns:
         A dictionary of the configuration defined by **name**. If it doesn't
@@ -25,7 +25,7 @@ def load_config(name, config_path=None):
     """
     if config_path is None:
         config_path = pkg_resources.resource_filename('pipeline',
-                                                      'data/params/config.json')
+                                                      'data/params/config.json_output')
 
     if os.path.isfile(config_path):
         with open(config_path) as json_config:
@@ -185,8 +185,8 @@ class DatabaseHandler(object):
 
 
 if __name__ == '__main__':
-    json_config = 'config.json'
-    with open('config.json') as json_config:
+    json_config = 'config.json_output'
+    with open('config.json_output') as json_config:
         config = json.load(json_config)
 
         database = DatabaseHandler(host=config['mysql']['host'],

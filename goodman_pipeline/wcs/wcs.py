@@ -170,7 +170,7 @@ class WCS(object):
         last_keyword = 'GSP_NPIX'
         for i in range(model.degree + 1):
             ccd.header.set('GSP_C{:03d}'.format(i),
-                           value=model.__getattr__('c{:d}'.format(i)).value,
+                           value=model.__getattribute__('c{:d}'.format(i)).value,
                            comment="Value of parameter c{:d}".format(i),
                            after=last_keyword)
 
@@ -196,7 +196,7 @@ class WCS(object):
         if self.model_name == 'Chebyshev1D':
             self.model = models.Chebyshev1D(degree=self.degree)
             for i in range(ccd.header['GSP_ORDR'] + 1):
-                self.model.__getattr__('c{:d}'.format(i)).value = ccd.header[
+                self.model.__getattribute__('c{:d}'.format(i)).value = ccd.header[
                     'GSP_C{:03d}'.format(i)]
             self.wavelength_and_intensity = [
                 self.model(range(ccd.header['GSP_NPIX'])), ccd.data]
@@ -376,7 +376,7 @@ class WCS(object):
                                                'Legendre1D']:
             for par_index in range(len(self.model.parameters)):
                 parameter_name = self.model.param_names[par_index]
-                self.model.__getattr__(parameter_name).value *= \
+                self.model.__getattribute__(parameter_name).value *= \
                     self.binning ** par_index
         else:
             raise NotImplementedError("Model {:s} not implemented"
