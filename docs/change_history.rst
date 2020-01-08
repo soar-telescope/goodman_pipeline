@@ -6,6 +6,12 @@ Change History
 V1.3.0 Unreleased
 ^^^^^^^^^^^^^^^^^
 
+- Made it compatible with Astropy 4.0
+- All versions are free except for Pandas [#314]
+- `wavelength.WavelengthCalibration.__call__` can now return a json output.
+- `core.setup_logging` can now create a generic logger (same format).
+- Modified how master bias are named.
+- Removed bias overscan and trimming correction on master bias creation.
 - Bugs Fixed:
 
   + `--max-targets` was not being used, missed connection in `MainApp`.
