@@ -722,7 +722,7 @@ class WavelengthCalibration(object):
         else:
             f_end = '_ws_{:d}.fits'.format(index)
 
-        new_filename = os.path.join(save_data_to,
+        file_full_path = os.path.join(save_data_to,
                                     output_prefix +
                                     original_filename.replace('.fits', f_end))
 
@@ -730,7 +730,7 @@ class WavelengthCalibration(object):
             log.info('Wavelength-calibrated {:s} file saved to: '
                      '{:s} for science file {:s}'
                      ''.format(ccd.header['OBSTYPE'],
-                               os.path.basename(new_filename),
+                               os.path.basename(file_full_path),
                                self.sci_target_file))
 
             ccd.header.set('GSP_SCTR',
@@ -740,7 +740,7 @@ class WavelengthCalibration(object):
             log.info('Wavelength-calibrated {:s} file saved to: '
                      '{:s} using reference lamp {:s}'
                      ''.format(ccd.header['OBSTYPE'],
-                               os.path.basename(new_filename),
+                               os.path.basename(file_full_path),
                                self.wcal_lamp_file))
             ccd.header.set(
                 'GSP_LAMP',
@@ -749,10 +749,10 @@ class WavelengthCalibration(object):
                 after='GSP_FLAT')
 
         write_fits(ccd=ccd,
-                   full_path=new_filename,
+                   full_path=file_full_path,
                    parent_file=original_filename)
 
-        return os.path.basename(new_filename)
+        return file_full_path
 
 
 if __name__ == '__main__':
