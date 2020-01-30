@@ -451,7 +451,7 @@ class WavelengthCalibration(object):
         # correlation results
         clipped_values = sigma_clip(correlation_values,
                                     sigma=3,
-                                    iters=1,
+                                    maxiters=1,
                                     cenfunc=np.ma.median)
         # print(clipped_values)
 
@@ -487,7 +487,7 @@ class WavelengthCalibration(object):
 
         clipped_differences = sigma_clip(wavelength_differences,
                                          sigma=2,
-                                         iters=3,
+                                         maxiters=3,
                                          cenfunc=np.ma.median)
 
         if np.ma.is_masked(clipped_differences):
