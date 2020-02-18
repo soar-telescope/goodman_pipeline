@@ -502,7 +502,7 @@ def create_master_flats(flat_files,
                 'Master bias image')
 
         else:
-            log.error('Unknown observation technique: ' + technique)
+            log.warning('Ignoring bias on request')
         if is_file_saturated(ccd=ccd,
                              threshold=saturation_threshold):
             log.warning('Removing saturated image {:s}. '
@@ -1985,9 +1985,9 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
                                       'Slit trim section, slit illuminated '
                                       'area only.')
         else:
-            log.warning('Unrecognized trim type')
+            log.warning('Unrecognized trim type: {}'.format(trim_type))
             ccd.header['GSP_TRIM'] = (trim_section,
-                                      'Image trimmed by unreckognized method: '
+                                      'Image trimmed by unrecognized method: '
                                       '{:s}'.format(trim_type))
     else:
         log.info("{:s} trim section is not "
