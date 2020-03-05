@@ -1068,9 +1068,9 @@ def extraction(ccd,
           2D spectrum
         target_trace (object): Instance of astropy.modeling.Model, a low order
           polynomial that defines the trace of the spectrum in the ccd object.
-        spatial_profile (Model): Instance of astropy.modeling.Model, a Gaussian
-          model previously fitted to the spatial profile of the 2D spectrum
-          contained in the ccd object.
+        spatial_profile (Model): Instance of :class:`~astropy.modeling.Model`,
+          a Gaussian model previously fitted to the spatial profile of the 2D
+          spectrum contained in the ccd object.
         extraction_name (str): Extraction type, can be `fractional` or
           `optimal` though the optimal extraction is not implemented yet.
 

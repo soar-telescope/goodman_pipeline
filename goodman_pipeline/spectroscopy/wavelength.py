@@ -82,6 +82,8 @@ class WavelengthCalibration(object):
         self.cross_corr_tolerance = 5
         self.reference_data_dir = None
         self.reference_data = None
+        self.calibration_lamp = ''
+        self.wcal_lamp_file = ''
 
         # Instrument configuration and spectral characteristics
         self.serial_binning = None
@@ -633,7 +635,28 @@ class WavelengthCalibration(object):
                            plot_results=False,
                            save_plots=False,
                            plots=False):
-        """Save science data"""
+        """Save wavelength calibrated data
+
+        The spectrum is linearized, then the linear solution is recorded in the
+        ccd's header and finally it calls the method
+        :func:`~wavelength.WavelengthCalibration._save_wavelength_calibrated`
+        which performs the actual saving to a file.
+
+        Args:
+            ccd (CCDData): Instance of :class:`~astropy.nddata.CCDData` with a
+            1D spectrum.
+            wavelength_solution (object): A :class:`~astropy.modeling.Model`
+            save_to (str): Path to save location
+            index (int): If there are more than one target, they are identified
+            by this index.
+            plot_results (bool): Whether to show plots or not.
+            save_plots (bool): Whether to save plots to files.
+            plots
+
+        Returns:
+            File name of saved file.
+
+        """
         ccd = ccd.copy()
         linear_x_axis, ccd.data = linearize_spectrum(
             data=ccd.data,
