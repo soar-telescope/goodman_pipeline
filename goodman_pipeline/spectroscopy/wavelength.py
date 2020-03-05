@@ -139,6 +139,10 @@ class WavelengthCalibration(object):
         assert isinstance(ccd, CCDData)
         assert isinstance(comp_list, list)
 
+        json_payload = {'wavelength_solution': [],
+                        'warning': '',
+                        'error': ''}
+
         if os.path.isdir(reference_data):
             if self.reference_data_dir != reference_data:
                 self.reference_data_dir = reference_data
@@ -158,7 +162,8 @@ class WavelengthCalibration(object):
                         "".format(self.sci_target_file))
             log.error("Ending processing of {}".format(self.sci_target_file))
             if json_output:
-                return {'error': 'Unable to process without reference lamps'}
+                json_payload['error'] ='Unable to process without reference lamps'
+                return json_payload
         else:
             wavelength_solutions = []
             reference_lamp_names = []
@@ -252,8 +257,9 @@ class WavelengthCalibration(object):
                         'reference_lamp': self.wcal_lamp_file})
 
                 if json_output:
-                    return {'warning': warning_message,
-                            'wavelength_solution': all_solution_info}
+                    json_payload['warning'] = warning_message
+                    json_payload['wavelength_solution'] = all_solution_info
+                    return json_payload
 
             elif len(wavelength_solutions) == 1:
                 self.wsolution = wavelength_solutions[0]
@@ -269,17 +275,19 @@ class WavelengthCalibration(object):
                     index=object_number,
                     plots=plots)
                 if json_output:
-                    return {
-                        'wavelength_solution': [
-                            {'solution_info': {'rms_error': "{:.4f}".format(self.rms_error),
-                                               'npoints': "{:d}".format(self.n_points),
-                                               'nrjections': "{:d}".format(self.n_rejections)},
-                             'file_name': saved_file_name,
-                             'reference_lamp': self.wcal_lamp_file}]}
+                    json_payload['wavelength_solution'] = [
+                        {'solution_info': {'rms_error': "{:.4f}".format(self.rms_error),
+                                           'npoints': "{:d}".format(self.n_points),
+                                           'nrjections': "{:d}".format(self.n_rejections)},
+                         'file_name': saved_file_name,
+                         'reference_lamp': self.wcal_lamp_file}]
+
+                    return json_payload
             else:
                 log.error("No wavelength solution.")
                 if json_output:
-                    return {'error': "no wavelength solution obtained"}
+                    json_payload['error'] = "Unable to obtain wavelength solution"
+                    return json_payload
 
     def _automatic_wavelength_solution(self,
                                        save_data_to,
