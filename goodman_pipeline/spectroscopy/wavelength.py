@@ -786,5 +786,5 @@ class WavelengthCalibration(object):
         return file_full_path
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     sys.exit('This can not be run on its own.')
