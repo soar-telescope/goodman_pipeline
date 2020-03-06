@@ -3,7 +3,7 @@ Change History
 
 .. _v1.3.0:
 
-V1.3.0 Unreleased
+V1.3.0 06-03-2020
 ^^^^^^^^^^^^^^^^^
 
 - Made it compatible with Astropy 4.0
@@ -26,6 +26,7 @@ V1.3.0 Unreleased
   points, this allows to re use other master loggers.
 - Changed `--background-threshold` to multiply by detection limit instead of
   background level
+- Created standard JSON output for :class:`~wavelength.WavelengthCalibration`.
 
 
 .. _v1.2.1:

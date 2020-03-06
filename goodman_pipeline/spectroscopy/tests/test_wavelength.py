@@ -18,6 +18,7 @@ from ...core import add_wcs_keys
 class WavelengthCalibrationTests(TestCase):
 
     def setUp(self):
+        self.file_list = []
         argument_list = ['--data-path', os.getcwd(),
                          '--proc-path', os.getcwd(),
                          '--search-pattern', 'cfzsto',
@@ -46,7 +47,10 @@ class WavelengthCalibrationTests(TestCase):
                             value='some_flat_file.fits',
                             comment='The name of the flat')
 
-
+    def tearDown(self):
+        for _file in self.file_list:
+            if os.path.isfile(_file):
+                os.unlink(_file)
 
     @skip
     def test__automatic_wavelength_solution(self):
@@ -66,6 +70,7 @@ class WavelengthCalibrationTests(TestCase):
             plot_results=False,
             save_plots=False,
             plots=False)
+        self.file_list.append(fname)
 
         fname_2 = self.wc._save_science_data(
             ccd=self.ccd,
@@ -75,6 +80,7 @@ class WavelengthCalibrationTests(TestCase):
             plot_results=False,
             save_plots=False,
             plots=False)
+        self.file_list.append(fname_2)
         expected_name = os.getcwd() + '/w' + re.sub('.fits', '', os.path.basename(self.ccd.header['GSP_FNAM'])) + "_ws_{:d}".format(1) + ".fits"
 
         self.assertEqual(fname, os.getcwd() + '/w' + os.path.basename(self.ccd.header['GSP_FNAM']))
