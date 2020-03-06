@@ -82,6 +82,8 @@ class WavelengthCalibration(object):
         self.cross_corr_tolerance = 5
         self.reference_data_dir = None
         self.reference_data = None
+        self.calibration_lamp = ''
+        self.wcal_lamp_file = ''
 
         # Instrument configuration and spectral characteristics
         self.serial_binning = None
@@ -139,6 +141,10 @@ class WavelengthCalibration(object):
         assert isinstance(ccd, CCDData)
         assert isinstance(comp_list, list)
 
+        json_payload = {'wavelength_solution': [],
+                        'warning': '',
+                        'error': ''}
+
         if os.path.isdir(reference_data):
             if self.reference_data_dir != reference_data:
                 self.reference_data_dir = reference_data
@@ -158,7 +164,10 @@ class WavelengthCalibration(object):
                         "".format(self.sci_target_file))
             log.error("Ending processing of {}".format(self.sci_target_file))
             if json_output:
-                return {'error': 'Unable to process without reference lamps'}
+                json_payload['error'] ='Unable to process without reference lamps'
+                return json_payload
+            else:
+                return
         else:
             wavelength_solutions = []
             reference_lamp_names = []
@@ -252,8 +261,9 @@ class WavelengthCalibration(object):
                         'reference_lamp': self.wcal_lamp_file})
 
                 if json_output:
-                    return {'warning': warning_message,
-                            'wavelength_solution': all_solution_info}
+                    json_payload['warning'] = warning_message
+                    json_payload['wavelength_solution'] = all_solution_info
+                    return json_payload
 
             elif len(wavelength_solutions) == 1:
                 self.wsolution = wavelength_solutions[0]
@@ -269,17 +279,19 @@ class WavelengthCalibration(object):
                     index=object_number,
                     plots=plots)
                 if json_output:
-                    return {
-                        'wavelength_solution': [
-                            {'solution_info': {'rms_error': "{:.4f}".format(self.rms_error),
-                                               'npoints': "{:d}".format(self.n_points),
-                                               'nrjections': "{:d}".format(self.n_rejections)},
-                             'file_name': saved_file_name,
-                             'reference_lamp': self.wcal_lamp_file}]}
+                    json_payload['wavelength_solution'] = [
+                        {'solution_info': {'rms_error': "{:.4f}".format(self.rms_error),
+                                           'npoints': "{:d}".format(self.n_points),
+                                           'nrjections': "{:d}".format(self.n_rejections)},
+                         'file_name': saved_file_name,
+                         'reference_lamp': self.wcal_lamp_file}]
+
+                    return json_payload
             else:
                 log.error("No wavelength solution.")
                 if json_output:
-                    return {'error': "no wavelength solution obtained"}
+                    json_payload['error'] = "Unable to obtain wavelength solution"
+                    return json_payload
 
     def _automatic_wavelength_solution(self,
                                        save_data_to,
@@ -451,7 +463,7 @@ class WavelengthCalibration(object):
         # correlation results
         clipped_values = sigma_clip(correlation_values,
                                     sigma=3,
-                                    iters=1,
+                                    maxiters=1,
                                     cenfunc=np.ma.median)
         # print(clipped_values)
 
@@ -487,7 +499,7 @@ class WavelengthCalibration(object):
 
         clipped_differences = sigma_clip(wavelength_differences,
                                          sigma=2,
-                                         iters=3,
+                                         maxiters=3,
                                          cenfunc=np.ma.median)
 
         if np.ma.is_masked(clipped_differences):
@@ -625,7 +637,28 @@ class WavelengthCalibration(object):
                            plot_results=False,
                            save_plots=False,
                            plots=False):
-        """Save science data"""
+        """Save wavelength calibrated data
+
+        The spectrum is linearized, then the linear solution is recorded in the
+        ccd's header and finally it calls the method
+        :func:`~wavelength.WavelengthCalibration._save_wavelength_calibrated`
+        which performs the actual saving to a file.
+
+        Args:
+            ccd (CCDData): Instance of :class:`~astropy.nddata.CCDData` with a
+            1D spectrum.
+            wavelength_solution (object): A :class:`~astropy.modeling.Model`
+            save_to (str): Path to save location
+            index (int): If there are more than one target, they are identified
+            by this index.
+            plot_results (bool): Whether to show plots or not.
+            save_plots (bool): Whether to save plots to files.
+            plots
+
+        Returns:
+            File name of saved file.
+
+        """
         ccd = ccd.copy()
         linear_x_axis, ccd.data = linearize_spectrum(
             data=ccd.data,
@@ -722,7 +755,7 @@ class WavelengthCalibration(object):
         else:
             f_end = '_ws_{:d}.fits'.format(index)
 
-        new_filename = os.path.join(save_data_to,
+        file_full_path = os.path.join(save_data_to,
                                     output_prefix +
                                     original_filename.replace('.fits', f_end))
 
@@ -730,7 +763,7 @@ class WavelengthCalibration(object):
             log.info('Wavelength-calibrated {:s} file saved to: '
                      '{:s} for science file {:s}'
                      ''.format(ccd.header['OBSTYPE'],
-                               os.path.basename(new_filename),
+                               os.path.basename(file_full_path),
                                self.sci_target_file))
 
             ccd.header.set('GSP_SCTR',
@@ -740,7 +773,7 @@ class WavelengthCalibration(object):
             log.info('Wavelength-calibrated {:s} file saved to: '
                      '{:s} using reference lamp {:s}'
                      ''.format(ccd.header['OBSTYPE'],
-                               os.path.basename(new_filename),
+                               os.path.basename(file_full_path),
                                self.wcal_lamp_file))
             ccd.header.set(
                 'GSP_LAMP',
@@ -749,11 +782,11 @@ class WavelengthCalibration(object):
                 after='GSP_FLAT')
 
         write_fits(ccd=ccd,
-                   full_path=new_filename,
+                   full_path=file_full_path,
                    parent_file=original_filename)
 
-        return os.path.basename(new_filename)
+        return file_full_path
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     sys.exit('This can not be run on its own.')

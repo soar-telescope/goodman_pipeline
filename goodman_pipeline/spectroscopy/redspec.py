@@ -527,7 +527,7 @@ class MainApp(object):
                             self.log.error(error)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     MAIN_APP = MainApp()
     try:
         MAIN_APP()

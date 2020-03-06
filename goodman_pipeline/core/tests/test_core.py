@@ -609,7 +609,7 @@ class CreateMasterFlatsTest(TestCase):
             trim_section=self.trim_section,
             master_bias_name='master_bias.fits',
             new_master_flat_name=self.master_flat_name,
-            saturation=1,
+            saturation_threshold=1,
             ignore_bias=True)
 
         self.assertEqual(self.master_flat_name, os.path.basename(name))
@@ -629,7 +629,7 @@ class CreateMasterFlatsTest(TestCase):
                                           'master_bias.fits'),
             new_master_flat_name=os.path.join(self.reduced_data,
                                               self.master_flat_name),
-            saturation=1,
+            saturation_threshold=1,
             ignore_bias=False)
 
         self.assertEqual(self.master_flat_name, os.path.basename(name))
@@ -656,7 +656,7 @@ class CreateMasterFlatsTest(TestCase):
             trim_section=self.trim_section,
             master_bias_name='master_bias.fits',
             new_master_flat_name=self.master_flat_name,
-            saturation=1,
+            saturation_threshold=1,
             ignore_bias=False)
 
         self.assertNotEqual(self.flat_files[0], master.header['GSP_IC01'])
@@ -671,7 +671,7 @@ class CreateMasterFlatsTest(TestCase):
             trim_section=self.trim_section,
             master_bias_name='master_bias.fits',
             new_master_flat_name=self.master_flat_name,
-            saturation=1,
+            saturation_threshold=1,
             ignore_bias=False)
         self.assertIsNone(master)
         self.assertIsNone(name)

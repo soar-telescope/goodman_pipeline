@@ -2,24 +2,21 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import calendar
+import ccdproc
 import collections
 import datetime
 import glob
 import logging
 import math
+import numpy as np
 import os
+import pandas
 import re
-import shutil
+import scipy
 import subprocess
 import sys
 import time
-from threading import Timer
-import pickle
 
-import ccdproc
-import numpy as np
-import pandas
-import scipy
 from astroplan import Observer
 from astropy import units as u
 from astropy.io import fits
@@ -30,18 +27,15 @@ from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
 from ccdproc import CCDData, ImageFileCollection
-# matplotlib.use('Qt5Agg')
 from matplotlib import pyplot as plt
 from scipy import signal
+from threading import Timer
 
 from . import check_version
 
 __version__ = __import__('goodman_pipeline').__version__
 
 log = logging.getLogger(__name__)
-
-
-
 
 
 def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
@@ -424,7 +418,7 @@ def create_master_flats(flat_files,
                         trim_section,
                         master_bias_name,
                         new_master_flat_name,
-                        saturation,
+                        saturation_threshold,
                         ignore_bias=False):
     """Creates master flats
 
@@ -450,7 +444,7 @@ def create_master_flats(flat_files,
         the full path as `raw_path` + `basename`.
         new_master_flat_name (str): Name of the file to save new master
         flat. Can be absolute path or not.
-        saturation (int): Saturation threshold, defines the percentage of
+        saturation_threshold (int): Saturation threshold, defines the percentage of
         pixels above saturation level allowed for flat field images.
         ignore_bias (bool): Flag to create master bias without master bias.
 
@@ -508,11 +502,11 @@ def create_master_flats(flat_files,
                 'Master bias image')
 
         else:
-            log.error('Unknown observation technique: ' + technique)
+            log.warning('Ignoring bias on request')
         if is_file_saturated(ccd=ccd,
-                             threshold=saturation):
+                             threshold=saturation_threshold):
             log.warning('Removing saturated image {:s}. '
-                        'Use --saturation to change saturation '
+                        'Use --saturation_threshold to change saturation_threshold '
                         'level'.format(flat_file))
             continue
         else:
@@ -541,7 +535,7 @@ def create_master_flats(flat_files,
         return master_flat, master_flat_name
     else:
         log.error('Empty flat list. Check that they do not exceed the '
-                  'saturation limit.')
+                  'saturation_threshold limit.')
         return None, None
 
 
@@ -1074,9 +1068,9 @@ def extraction(ccd,
           2D spectrum
         target_trace (object): Instance of astropy.modeling.Model, a low order
           polynomial that defines the trace of the spectrum in the ccd object.
-        spatial_profile (Model): Instance of astropy.modeling.Model, a Gaussian
-          model previously fitted to the spatial profile of the 2D spectrum
-          contained in the ccd object.
+        spatial_profile (Model): Instance of :class:`~astropy.modeling.Model`,
+          a Gaussian model previously fitted to the spatial profile of the 2D
+          spectrum contained in the ccd object.
         extraction_name (str): Extraction type, can be `fractional` or
           `optimal` though the optimal extraction is not implemented yet.
 
@@ -1991,9 +1985,9 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
                                       'Slit trim section, slit illuminated '
                                       'area only.')
         else:
-            log.warning('Unrecognized trim type')
+            log.warning('Unrecognized trim type: {}'.format(trim_type))
             ccd.header['GSP_TRIM'] = (trim_section,
-                                      'Image trimmed by unreckognized method: '
+                                      'Image trimmed by unrecognized method: '
                                       '{:s}'.format(trim_type))
     else:
         log.info("{:s} trim section is not "
@@ -2038,13 +2032,13 @@ def interpolate(spectrum, interpolation_size):
 def is_file_saturated(ccd, threshold):
     """Detects a saturated image
 
-    It counts the number of pixels above the saturation level, then finds
+    It counts the number of pixels above the saturation_threshold level, then finds
     which percentage they represents and if it is above the threshold it
     will return True. The percentage threshold can be set using the command
-    line argument ``--saturation``.
+    line argument ``--saturation_threshold``.
 
     Args:
-        ccd (CCDData): Image to be tested for saturation
+        ccd (CCDData): Image to be tested for saturation_threshold
         threshold (float): Percentage of saturated pixels allowed. Default 1.
 
     Returns:
@@ -2066,7 +2060,7 @@ def is_file_saturated(ccd, threshold):
     if saturated_percent >= float(threshold):
         log.warning(
             "The current image has more than {:.2f} percent "
-            "of pixels above saturation level".format(float(threshold)))
+            "of pixels above saturation_threshold level".format(float(threshold)))
         return True
     else:
         return False
@@ -3912,18 +3906,18 @@ class SaturationValues(object):
     """
 
     def __init__(self, ccd=None):
-        """Defines a :class:`~pandas.DataFrame` with saturation information
+        """Defines a :class:`~pandas.DataFrame` with saturation_threshold information
 
-        Both, Red and Blue cameras have tabulated saturation values depending
+        Both, Red and Blue cameras have tabulated saturation_threshold values depending
         on the readout configurations. It defines a :class:`~pandas.DataFrame`
         object.
 
         Notes:
             For the purposes of this documentation *50% full well* is the same
-            as ``saturation level`` though they are not the same thing.
+            as ``saturation_threshold level`` though they are not the same thing.
 
         Args:
-            ccd (CCDData): Image to be tested for saturation
+            ccd (CCDData): Image to be tested for saturation_threshold
 
         """
         self.log = logging.getLogger(__name__)
@@ -3964,7 +3958,7 @@ class SaturationValues(object):
         """Saturation value in counts
 
         In fact the value it returns is the 50% of full potential well,
-        Some configurations reach digital saturation before 50% of full
+        Some configurations reach digital saturation_threshold before 50% of full
         potential well, they are specified in the last column:
         ``saturates_before``.
 
@@ -3979,13 +3973,13 @@ class SaturationValues(object):
             return self.__saturation
 
     def get_saturation_value(self, ccd):
-        """Defines the saturation level
+        """Defines the saturation_threshold level
 
         Args:
-            ccd (CCDData): Image to be tested for saturation
+            ccd (CCDData): Image to be tested for saturation_threshold
 
         Returns:
-            The saturation value or None
+            The saturation_threshold value or None
 
         """
         hfw = self._sdf.half_full_well[
@@ -3994,12 +3988,12 @@ class SaturationValues(object):
             (self._sdf.read_noise == ccd.header['RDNOISE'])]
 
         if hfw.empty:
-            self.log.critical('Unable to obtain saturation level')
+            self.log.critical('Unable to obtain saturation_threshold level')
             self.__saturation = None
             return None
         else:
             self.__saturation = float(hfw.to_string(index=False))
-            self.log.debug("Set saturation level as {:.0f}".format(
+            self.log.debug("Set saturation_threshold level as {:.0f}".format(
                 self.__saturation))
             return self.__saturation
 

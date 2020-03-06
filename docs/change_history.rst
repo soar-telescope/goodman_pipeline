@@ -3,9 +3,15 @@ Change History
 
 .. _v1.3.0:
 
-V1.3.0 Unreleased
+V1.3.0 06-03-2020
 ^^^^^^^^^^^^^^^^^
 
+- Made it compatible with Astropy 4.0
+- All versions are free except for Pandas [#314]
+- `wavelength.WavelengthCalibration.__call__` can now return a json output.
+- `core.setup_logging` can now create a generic logger (same format).
+- Modified how master bias are named.
+- Removed bias overscan and trimming correction on master bias creation.
 - Bugs Fixed:
 
   + `--max-targets` was not being used, missed connection in `MainApp`.
@@ -20,6 +26,7 @@ V1.3.0 Unreleased
   points, this allows to re use other master loggers.
 - Changed `--background-threshold` to multiply by detection limit instead of
   background level
+- Created standard JSON output for :class:`~wavelength.WavelengthCalibration`.
 
 
 .. _v1.2.1:
