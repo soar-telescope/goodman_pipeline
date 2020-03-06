@@ -43,9 +43,24 @@ class WavelengthCalibrationTests(TestCase):
         self.ccd.header.set('OBSTYPE',
                             value='SPECTRUM',
                             comment='Obstype')
+        self.ccd.header.set('OBJECT',
+                            value='An X Object',
+                            comment='Some random object name')
         self.ccd.header.set('GSP_FLAT',
                             value='some_flat_file.fits',
                             comment='The name of the flat')
+        self.ccd.header.set('CCDSUM',
+                            value='1 1',
+                            comment='Binning')
+        self.ccd.header.set('WAVMODE',
+                            value='400 M1',
+                            comment='wavmode')
+
+        self.lamp = self.ccd.copy()
+        self.lamp.header.set('OBSTYPE',
+                             value='COMP',
+                             comment='Comparison lamp obstype')
+        self.lamp.header.set('OBJECT', value='HgArNe')
 
     def tearDown(self):
         for _file in self.file_list:
@@ -55,6 +70,24 @@ class WavelengthCalibrationTests(TestCase):
     @skip
     def test__automatic_wavelength_solution(self):
         pass
+
+    def test__save_wavelength_calibrated(self):
+        self.wc.sci_target_file = 'target_sci_file.fits'
+        fname = self.wc._save_wavelength_calibrated(ccd=self.lamp,
+                                                    original_filename='file_name.fits',
+                                                    save_data_to=os.getcwd(),
+                                                    lamp=True)
+        self.file_list.append(fname)
+        self.assertEqual(fname, os.path.join(os.getcwd(), 'wfile_name.fits'))
+
+        fname = self.wc._save_wavelength_calibrated(ccd=self.lamp,
+                                                    index=1,
+                                                    original_filename='file_name.fits',
+                                                    save_data_to=os.getcwd())
+        self.file_list.append(fname)
+        self.assertEqual(fname, os.path.join(os.getcwd(), 'wfile_name_ws_1.fits'))
+        print(fname)
+        self.fail()
 
     def test__save_science_data(self):
         wavelength_solution = models.Chebyshev1D(degree=3)
@@ -85,4 +118,35 @@ class WavelengthCalibrationTests(TestCase):
 
         self.assertEqual(fname, os.getcwd() + '/w' + os.path.basename(self.ccd.header['GSP_FNAM']))
         self.assertEqual(fname_2, expected_name)
+
+    def test___call___method_wrong_ccd(self):
+        self.assertRaises(AssertionError, self.wc, [], [], '', '')
+
+    def test___call___method_wrong_comp_list(self):
+        self.assertRaises(AssertionError, self.wc, self.ccd, 'comp_list', '', '')
+
+    def test___call___method_no_comparison_lamps(self):
+        json_output = self.wc(ccd=self.ccd,
+                              comp_list=[],
+                              save_data_to='',
+                              reference_data='',
+                              json_output=True)
+
+        self.assertEqual(json_output['error'], 'Unable to process without reference lamps')
+        self.assertEqual(json_output['warning'], '')
+        self.assertEqual(json_output['wavelength_solution'], [])
+
+    def test___call___method_one_comparison_lamps(self):
+        json_output = self.wc(ccd=self.ccd,
+                              comp_list=[self.lamp],
+                              save_data_to='',
+                              reference_data='goodman_pipeline/data/ref_comp',
+                              json_output=True)
+
+        print(json_output)
+
+        self.assertEqual(json_output['error'], 'Unable to obtain wavelength solution')
+        self.assertEqual(json_output['warning'], '')
+        self.assertEqual(json_output['wavelength_solution'], [])
+
 

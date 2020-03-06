@@ -166,6 +166,8 @@ class WavelengthCalibration(object):
             if json_output:
                 json_payload['error'] ='Unable to process without reference lamps'
                 return json_payload
+            else:
+                return
         else:
             wavelength_solutions = []
             reference_lamp_names = []
