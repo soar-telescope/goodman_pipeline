@@ -86,8 +86,6 @@ class WavelengthCalibrationTests(TestCase):
                                                     save_data_to=os.getcwd())
         self.file_list.append(fname)
         self.assertEqual(fname, os.path.join(os.getcwd(), 'wfile_name_ws_1.fits'))
-        print(fname)
-        self.fail()
 
     def test__save_science_data(self):
         wavelength_solution = models.Chebyshev1D(degree=3)
