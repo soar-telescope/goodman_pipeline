@@ -179,6 +179,20 @@ def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
 
 
 def bias_subtract(ccd, master_bias, master_bias_name):
+    """Subtract bias from file.
+
+    Wrapper for :func:`~ccdproc.subtract_bias`. The main goal is to have a
+    consistent API for apps using the Goodman Pipeline as a library.
+
+    Args:
+        ccd (CCDData): A file to be bias-subtracted
+        master_bias (CCDData):
+        master_bias_name (str): Full path to master bias file, this is added to
+        the bias-subtracted ccd under `GSP_BIAS`.
+
+    Returns:
+        A bias-subtracted file.
+    """
     ccd = ccdproc.subtract_bias(ccd=ccd, master=master_bias, add_keyword=False)
     log.info("Bias subtracted")
     ccd.header.set('GSP_BIAS',
