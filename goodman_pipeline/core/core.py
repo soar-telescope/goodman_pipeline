@@ -178,6 +178,15 @@ def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
     return ccd
 
 
+def bias_subtract(ccd, master_bias, master_bias_name):
+    ccd = ccdproc.subtract_bias(ccd=ccd, master=master_bias, add_keyword=False)
+    log.info("Bias subtracted")
+    ccd.header.set('GSP_BIAS',
+                   value=os.path.basename(master_bias_name),
+                   comment="Master Bias Image")
+    return ccd
+
+
 def bin_reference_data(wavelength, intensity, serial_binning):
     """Bins a 1D array
 

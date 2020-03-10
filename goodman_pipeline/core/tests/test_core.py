@@ -35,6 +35,7 @@ from ..core import (GenerateDcrParFile,
 from ..core import (astroscrappy_lacosmic,
                     add_linear_wavelength_solution,
                     add_wcs_keys,
+                    bias_subtract,
                     bin_reference_data,
                     call_cosmic_rejection,
                     classify_spectroscopic_data,
@@ -167,6 +168,29 @@ class AddWCSKeywordsTest(TestCase):
                     'DCLOG1']
 
 
+class BiasSubtractTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)) * 100,
+                           meta=fits.Header(),
+                           unit='adu')
+        self.master_bias = CCDData(data=np.ones((100, 100)) * 50,
+                           meta=fits.Header(),
+                           unit='adu')
+
+        self.master_bias_name = os.path.join(os.getcwd(),
+                                             'master_bias_file.fits')
+
+    def test_bias_subtract(self):
+
+        ccd = bias_subtract(ccd=self.ccd,
+                            master_bias=self.master_bias,
+                            master_bias_name=self.master_bias_name)
+        np.testing.assert_array_equal(ccd.data, np.ones((100, 100)) * 50.)
+        self.assertEqual(ccd.header['GSP_BIAS'],
+                         os.path.basename(self.master_bias_name))
+
+
 class BinningTest(TestCase):
 
     def test__bin_reference_data(self):
@@ -288,8 +312,8 @@ class CombineDataTest(TestCase):
 
     def setUp(self):
         self.ccd1 = CCDData(data=np.ones((100, 100)),
-                           meta=fits.Header(),
-                           unit='adu')
+                            meta=fits.Header(),
+                            unit='adu')
         self.ccd1.header.set('OBJECT', value='TestObject')
         self.ccd1.header.set('GRATING', value='Grating')
         self.ccd1.header.set('SLIT', value='1.05SlitSize')
