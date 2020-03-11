@@ -1412,7 +1412,7 @@ def get_best_flat(flat_name, path):
     None instead of master_flat_name.
 
     Args:
-        flat_name (str): Full path of master flat basename. Ends in '\*.fits'
+        flat_name (str): Full path of master flat basename. Ends in '*.fits'
           for using glob.
         path (str): Location to look for flats.
 
