@@ -68,15 +68,15 @@ class WavelengthCalibrationTests(TestCase):
             if os.path.isfile(_file):
                 os.unlink(_file)
 
-    def test__automatic_wavelength_solution_no_match(self):
-        self.wc.reference_data = ReferenceData(
-            reference_dir='goodman_pipeline/data/ref_comp')
-
-        self.lamp.header.set('OBJECT', value='PbNa')
-        self.wc.lamp = self.lamp
-        self.assertRaises(NoMatchFound,
-                          self.wc._automatic_wavelength_solution,
-                          os.getcwd())
+    # def test__automatic_wavelength_solution_no_match(self):
+    #     self.wc.reference_data = ReferenceData(
+    #         reference_dir='goodman_pipeline/data/ref_comp')
+    #
+    #     self.lamp.header.set('OBJECT', value='PbNa')
+    #     self.wc.lamp = self.lamp
+    #     self.assertRaises(NoMatchFound,
+    #                       self.wc._automatic_wavelength_solution,
+    #                       os.getcwd())
 
     def test__save_wavelength_calibrated(self):
         self.wc.sci_target_file = 'target_sci_file.fits'
@@ -160,6 +160,16 @@ class WavelengthCalibrationTests(TestCase):
         self.assertEqual(json_output['error'], 'Unable to obtain wavelength solution')
         self.assertEqual(json_output['warning'], '')
         self.assertEqual(json_output['wavelength_solution'], [])
+
+    def test___call___method_no_match_found(self):
+        self.lamp.header.set('OBJECT', value='PbNa')
+
+        self.assertRaises(NoMatchFound,
+                          self.wc,
+                          self.ccd,
+                          [self.lamp],
+                          '',
+                          'goodman_pipeline/data/ref_comp')
 
 
 
