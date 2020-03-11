@@ -184,9 +184,6 @@ class WavelengthCalibration(object):
 
                 self.lines_center = get_lines_in_lamp(
                     ccd=self.lamp, plots=plots)
-                self.serial_binning, self.parallel_binning = [
-                    int(x) for x in self.lamp.header['CCDSUM'].split()]
-
                 try:
                     self._automatic_wavelength_solution(
                         save_data_to=save_data_to,
@@ -347,6 +344,9 @@ class WavelengthCalibration(object):
 
         reference_lamp_wav_axis, reference_lamp_ccd.data = \
             self.wcs.read_gsp_wcs(ccd=reference_lamp_ccd)
+
+        self.serial_binning, self.parallel_binning = [
+            int(x) for x in self.lamp.header['CCDSUM'].split()]
 
         if self.serial_binning != 1:
             reference_lamp_wav_axis, reference_lamp_ccd.data = \

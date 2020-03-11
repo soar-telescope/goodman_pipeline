@@ -13,6 +13,7 @@ from ..wavelength import (WavelengthCalibration)
 
 from ..redspec import get_args
 from ...core import add_wcs_keys
+from ...core import ReferenceData, NoMatchFound
 
 
 class WavelengthCalibrationTests(TestCase):
