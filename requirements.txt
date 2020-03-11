@@ -6,7 +6,7 @@ ccdproc
 coveralls
 astroplan
 matplotlib
-scipy
+scipy==1.3.3
 astropy
 sphinx
 sphinxcontrib.napoleon
