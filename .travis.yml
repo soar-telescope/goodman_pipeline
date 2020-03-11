@@ -38,7 +38,7 @@ install:
 # Create astroconda virtual environment
 - conda env create -q python=$TRAVIS_PYTHON_VERSION -f environment.yml
 - source activate goodman_pipeline
-
+- pip freeze
 # Run DCR installer
 - ./install_dcr.sh
 
