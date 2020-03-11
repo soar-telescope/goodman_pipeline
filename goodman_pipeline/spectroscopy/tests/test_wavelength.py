@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import json
 import numpy as np
 import os
 import re
@@ -12,7 +13,7 @@ from unittest import TestCase, skip
 from ..wavelength import (WavelengthCalibration)
 
 from ..redspec import get_args
-from ...core import add_wcs_keys
+from ...core import add_wcs_keys, write_fits
 from ...core import ReferenceData, NoMatchFound
 
 
@@ -171,5 +172,22 @@ class WavelengthCalibrationTests(TestCase):
                           '',
                           'goodman_pipeline/data/ref_comp')
 
+    def test___call___method_one_solution(self):
+        file_path = os.path.join(os.getcwd(),
+                                 'goodman_pipeline/data/ref_comp',
+                                 'goodman_comp_1200M2_FeHeAr.fits')
+        ref_lamp = CCDData.read(file_path, unit='adu')
+        lamp_ccd = write_fits(ref_lamp, os.path.join(os.getcwd(), 'test_comparison_lamp.fits'), )
+        self.file_list.append('test_comparison_lamp.fits')
+        json_output = self.wc(ccd=self.ccd,
+                              comp_list=[lamp_ccd],
+                              save_data_to='',
+                              reference_data='goodman_pipeline/data/ref_comp',
+                              json_output=True)
+        # print(json.dumps(json_output, indent=4))
+        self.assertEqual(len(json_output['wavelength_solution']), 1)
+        for _solution in json_output['wavelength_solution']:
+            self.file_list.append(_solution['file_name'])
+            self.file_list.append(_solution['reference_lamp'])
 
 

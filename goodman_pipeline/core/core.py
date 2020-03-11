@@ -3243,7 +3243,7 @@ def write_fits(ccd,
 
     """
     assert isinstance(ccd, CCDData)
-    if not os.path.isdir(os.path.dirname(full_path)):
+    if os.path.isabs(full_path) and not os.path.isdir(os.path.dirname(full_path)):
         log.error("Directory {} does not exist. Creating it right now."
                   "".format(os.path.dirname(full_path)))
         os.mkdir(os.path.dirname(full_path))
