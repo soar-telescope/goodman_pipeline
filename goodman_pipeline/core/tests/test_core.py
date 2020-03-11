@@ -542,7 +542,6 @@ class CreateMasterBias(TestCase):
 
     def setUp(self):
         self.name = ''
-        self.name_2 = ''
         self.bias_files = ['bias_{}.fits'.format(i) for i in range(1, 12)]
         self.raw_data = os.getcwd()
         self.reduced_data = os.getcwd()
@@ -567,8 +566,8 @@ class CreateMasterBias(TestCase):
         for _file in self.bias_files:
             os.unlink(os.path.join(self.reduced_data, _file))
 
-        if self.name != '' and self.name_2 != '':
-            for _file in [self.name, self.name_2]:
+        if self.name != '':
+            for _file in [self.name]:
                 os.unlink(_file)
 
     def test_create_master_bias(self):
