@@ -123,7 +123,7 @@ class WavelengthCalibrationTests(TestCase):
     def test___call___method_wrong_comp_list(self):
         self.assertRaises(AssertionError, self.wc, self.ccd, 'comp_list', '', '')
 
-    def test___call___method_no_comparison_lamps(self):
+    def test___call___method_no_comparison_lamps_json(self):
         json_output = self.wc(ccd=self.ccd,
                               comp_list=[],
                               save_data_to='',
@@ -134,14 +134,21 @@ class WavelengthCalibrationTests(TestCase):
         self.assertEqual(json_output['warning'], '')
         self.assertEqual(json_output['wavelength_solution'], [])
 
+    def test___call___method_no_comparison_lamps(self):
+        output = self.wc(ccd=self.ccd,
+                         comp_list=[],
+                         save_data_to='',
+                         reference_data='',
+                         json_output=False)
+
+        self.assertIsNone(output)
+
     def test___call___method_one_comparison_lamps(self):
         json_output = self.wc(ccd=self.ccd,
                               comp_list=[self.lamp],
                               save_data_to='',
                               reference_data='goodman_pipeline/data/ref_comp',
                               json_output=True)
-
-        print(json_output)
 
         self.assertEqual(json_output['error'], 'Unable to obtain wavelength solution')
         self.assertEqual(json_output['warning'], '')

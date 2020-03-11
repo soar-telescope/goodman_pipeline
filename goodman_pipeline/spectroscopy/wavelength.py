@@ -172,11 +172,8 @@ class WavelengthCalibration(object):
             wavelength_solutions = []
             reference_lamp_names = []
             for self.lamp in comp_list:
-                try:
-                    self.calibration_lamp = self.lamp.header['GSP_FNAM']
-                    log.info('Using reference lamp {}'.format(self.calibration_lamp))
-                except KeyError:
-                    self.calibration_lamp = ''
+                self.calibration_lamp = self.lamp.header['GSP_FNAM']
+                log.info('Using reference lamp {}'.format(self.calibration_lamp))
 
                 self.raw_pixel_axis = range(self.lamp.shape[0])
 
