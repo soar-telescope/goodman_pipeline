@@ -2121,7 +2121,7 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
 
     if wavelength_solution is not None:
         x_axis = wavelength_solution(pixel_axis)
-        try:
+        try:  # pragma: no cover
             plt.imshow(data)
             plt.show()
         except TypeError:
@@ -2851,7 +2851,7 @@ def search_comp_group(object_group, comp_groups, reference_data):
     raise NoMatchFound
 
 
-def setup_logging(debug=False, generic=False):
+def setup_logging(debug=False, generic=False):  # pragma: no cover
     """configures logging
 
     Notes:
