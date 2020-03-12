@@ -388,6 +388,6 @@ class MainApp(object):
         return True
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main_app = MainApp()
     main_app()
