@@ -4,10 +4,6 @@ from unittest import TestCase, skip
 from ..goodman_ccd import get_args, MainApp
 
 
-def test_get_args():
-    pass
-
-
 class MainAppTest(TestCase):
 
     def setUp(self):
@@ -15,3 +11,8 @@ class MainAppTest(TestCase):
 
     def test___call__(self):
         self.assertRaises(SystemExit, self.main_app)
+
+    def test___call___show_version(self):
+        arguments = ['--version']
+        args = get_args(arguments=arguments)
+        self.assertRaises(SystemExit, self.main_app, args)
