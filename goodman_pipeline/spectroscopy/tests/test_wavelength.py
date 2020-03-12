@@ -190,4 +190,30 @@ class WavelengthCalibrationTests(TestCase):
             self.file_list.append(_solution['file_name'])
             self.file_list.append(_solution['reference_lamp'])
 
+    def test___call___method_two_solution(self):
+        file_path_1 = os.path.join(os.getcwd(),
+                                   'goodman_pipeline/data/ref_comp',
+                                   'goodman_comp_1200M2_FeHeAr.fits')
+        file_path_2 = os.path.join(os.getcwd(),
+                                   'goodman_pipeline/data/ref_comp',
+                                   'goodman_comp_1200M2_CuHeAr.fits')
+        ref_lamp_1 = CCDData.read(file_path_1, unit='adu')
+        ref_lamp_2 = CCDData.read(file_path_2, unit='adu')
+        lamp_ccd_1 = write_fits(ref_lamp_1, os.path.join(os.getcwd(), 'test_comparison_lamp_1.fits'), )
+        lamp_ccd_2 = write_fits(ref_lamp_2, os.path.join(os.getcwd(),
+                                                         'test_comparison_lamp_2.fits'), )
+        self.file_list.append('test_comparison_lamp_1.fits')
+        self.file_list.append('test_comparison_lamp_2.fits')
+        json_output = self.wc(ccd=self.ccd,
+                              comp_list=[lamp_ccd_1, lamp_ccd_2],
+                              save_data_to='',
+                              reference_data='goodman_pipeline/data/ref_comp',
+                              json_output=True)
+        # print(json.dumps(json_output, indent=4))
+        self.assertEqual(len(json_output['wavelength_solution']), 2)
+        for _solution in json_output['wavelength_solution']:
+            self.file_list.append(_solution['file_name'])
+            self.file_list.append(_solution['reference_lamp'])
+
+
 
