@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import argparse
 import os
+import shutil
 from unittest import TestCase
 
 from ...spectroscopy.redspec import (get_args, MainApp)
@@ -14,8 +15,11 @@ class TestArguments(TestCase):
         os.mkdir(self.dummy_path)
 
     def tearDown(self):
-        if os.path.exists(self.dummy_path):
-            os.rmdir(self.dummy_path)
+        for _path in [self.dummy_path, 'testing/reference_files']:
+            print(_path)
+            if os.path.exists(_path):
+                print("Deleting {}".format(_path))
+                shutil.rmtree(_path)
 
     def test_input_path_is_relative(self):
         arguments = ['--data-path', self.dummy_path]
@@ -63,6 +67,20 @@ class TestArguments(TestCase):
     def test_get_args_output_path_does_not_exist(self):
         arguments = ['--data-path', 'does_not_exist']
         self.assertRaises(SystemExit, get_args, arguments)
+
+    def test_reference_dir_does_not_exists(self):
+        arguments = ['--reference-files', 'testing/reference_files']
+
+        args = get_args(arguments=arguments)
+        self.assertTrue(os.path.exists(
+            os.path.join(os.getcwd(),
+                         'goodman_pipeline/testing/reference_files')))
+
+    def test_reference_dir_os_error(self):
+        arguments = ['--reference-files', '/testing/reference_files']
+
+        args = get_args(arguments=arguments)
+        self.assertFalse(os.path.exists('/testing/reference_files'))
 
 
 def test_get_args():
