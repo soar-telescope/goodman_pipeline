@@ -15,11 +15,15 @@ class TestArguments(TestCase):
         os.mkdir(self.dummy_path)
 
     def tearDown(self):
-        for _path in [self.dummy_path, 'testing/reference_files']:
+        for _path in [self.dummy_path,
+                      'goodman_pipeline/testing/reference_files',
+                      'goodman_pipeline/testing',
+                      'testing/processed_files',
+                      'testing']:
             print(_path)
             if os.path.exists(_path):
                 print("Deleting {}".format(_path))
-                shutil.rmtree(_path)
+                os.rmdir(_path)
 
     def test_input_path_is_relative(self):
         arguments = ['--data-path', self.dummy_path]
@@ -75,12 +79,27 @@ class TestArguments(TestCase):
         self.assertTrue(os.path.exists(
             os.path.join(os.getcwd(),
                          'goodman_pipeline/testing/reference_files')))
+        self.assertTrue(os.path.isabs(args.reference_dir))
 
     def test_reference_dir_os_error(self):
         arguments = ['--reference-files', '/testing/reference_files']
 
         args = get_args(arguments=arguments)
+        print(args)
         self.assertFalse(os.path.exists('/testing/reference_files'))
+
+    def test_destination_path_not_abs(self):
+        arguments = ['--proc-path', 'testing/processed_files']
+        args = get_args(arguments=arguments)
+        self.assertTrue(os.path.isabs(args.destination))
+        self.assertTrue(os.path.exists(args.destination))
+        self.assertEqual(args.destination,
+                         os.path.join(os.getcwd(),
+                                      'testing/processed_files'))
+
+    def test_destination_path_sysexit(self):
+        arguments = ['--proc-path', '/testing/processed_files']
+        self.assertRaises(SystemExit, get_args, arguments)
 
 
 def test_get_args():
