@@ -433,7 +433,7 @@ class WavelengthCalibration(object):
                           "from {:.3f}".format(correlation_value,
                                                global_cross_corr))
 
-            if plots:
+            if plots:  # pragma: no cover
                 # print(global_cross_corr, correlation_value)
                 plt.ion()
                 plt.title('Samples after cross correlation\n Shift {:.3f}'
