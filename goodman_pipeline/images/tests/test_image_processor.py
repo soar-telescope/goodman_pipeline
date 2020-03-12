@@ -33,14 +33,3 @@ class ImageProcessorTest(TestCase):
 
     def test___call__(self):
         self.image_processor()
-
-def test_process_spectroscopy_science():
-    pass
-
-
-def test_processing_imaging_science():
-    pass
-
-
-def test_combine_data():
-    pass

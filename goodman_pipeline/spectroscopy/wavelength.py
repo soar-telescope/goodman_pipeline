@@ -172,11 +172,8 @@ class WavelengthCalibration(object):
             wavelength_solutions = []
             reference_lamp_names = []
             for self.lamp in comp_list:
-                try:
-                    self.calibration_lamp = self.lamp.header['GSP_FNAM']
-                    log.info('Using reference lamp {}'.format(self.calibration_lamp))
-                except KeyError:
-                    self.calibration_lamp = ''
+                self.calibration_lamp = self.lamp.header['GSP_FNAM']
+                log.info('Using reference lamp {}'.format(self.calibration_lamp))
 
                 self.raw_pixel_axis = range(self.lamp.shape[0])
 
@@ -187,9 +184,6 @@ class WavelengthCalibration(object):
 
                 self.lines_center = get_lines_in_lamp(
                     ccd=self.lamp, plots=plots)
-                self.serial_binning, self.parallel_binning = [
-                    int(x) for x in self.lamp.header['CCDSUM'].split()]
-
                 try:
                     self._automatic_wavelength_solution(
                         save_data_to=save_data_to,
@@ -351,6 +345,9 @@ class WavelengthCalibration(object):
         reference_lamp_wav_axis, reference_lamp_ccd.data = \
             self.wcs.read_gsp_wcs(ccd=reference_lamp_ccd)
 
+        self.serial_binning, self.parallel_binning = [
+            int(x) for x in self.lamp.header['CCDSUM'].split()]
+
         if self.serial_binning != 1:
             reference_lamp_wav_axis, reference_lamp_ccd.data = \
                 bin_reference_data(wavelength=reference_lamp_wav_axis,
@@ -436,7 +433,7 @@ class WavelengthCalibration(object):
                           "from {:.3f}".format(correlation_value,
                                                global_cross_corr))
 
-            if plots:
+            if plots:  # pragma: no cover
                 # print(global_cross_corr, correlation_value)
                 plt.ion()
                 plt.title('Samples after cross correlation\n Shift {:.3f}'

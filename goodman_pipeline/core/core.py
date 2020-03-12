@@ -178,6 +178,29 @@ def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
     return ccd
 
 
+def bias_subtract(ccd, master_bias, master_bias_name):
+    """Subtract bias from file.
+
+    Wrapper for :func:`~ccdproc.subtract_bias`. The main goal is to have a
+    consistent API for apps using the Goodman Pipeline as a library.
+
+    Args:
+        ccd (CCDData): A file to be bias-subtracted
+        master_bias (CCDData):
+        master_bias_name (str): Full path to master bias file, this is added to
+        the bias-subtracted ccd under `GSP_BIAS`.
+
+    Returns:
+        A bias-subtracted file.
+    """
+    ccd = ccdproc.subtract_bias(ccd=ccd, master=master_bias, add_keyword=False)
+    log.info("Bias subtracted")
+    ccd.header.set('GSP_BIAS',
+                   value=os.path.basename(master_bias_name),
+                   comment="Master Bias Image")
+    return ccd
+
+
 def bin_reference_data(wavelength, intensity, serial_binning):
     """Bins a 1D array
 
@@ -1389,7 +1412,7 @@ def get_best_flat(flat_name, path):
     None instead of master_flat_name.
 
     Args:
-        flat_name (str): Full path of master flat basename. Ends in '\*.fits'
+        flat_name (str): Full path of master flat basename. Ends in '*.fits'
           for using glob.
         path (str): Location to look for flats.
 
@@ -3220,7 +3243,7 @@ def write_fits(ccd,
 
     """
     assert isinstance(ccd, CCDData)
-    if not os.path.isdir(os.path.dirname(full_path)):
+    if os.path.isabs(full_path) and not os.path.isdir(os.path.dirname(full_path)):
         log.error("Directory {} does not exist. Creating it right now."
                   "".format(os.path.dirname(full_path)))
         os.mkdir(os.path.dirname(full_path))

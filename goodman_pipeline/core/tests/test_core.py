@@ -35,6 +35,7 @@ from ..core import (GenerateDcrParFile,
 from ..core import (astroscrappy_lacosmic,
                     add_linear_wavelength_solution,
                     add_wcs_keys,
+                    bias_subtract,
                     bin_reference_data,
                     call_cosmic_rejection,
                     classify_spectroscopic_data,
@@ -167,6 +168,29 @@ class AddWCSKeywordsTest(TestCase):
                     'DCLOG1']
 
 
+class BiasSubtractTest(TestCase):
+
+    def setUp(self):
+        self.ccd = CCDData(data=np.ones((100, 100)) * 100,
+                           meta=fits.Header(),
+                           unit='adu')
+        self.master_bias = CCDData(data=np.ones((100, 100)) * 50,
+                           meta=fits.Header(),
+                           unit='adu')
+
+        self.master_bias_name = os.path.join(os.getcwd(),
+                                             'master_bias_file.fits')
+
+    def test_bias_subtract(self):
+
+        ccd = bias_subtract(ccd=self.ccd,
+                            master_bias=self.master_bias,
+                            master_bias_name=self.master_bias_name)
+        np.testing.assert_array_equal(ccd.data, np.ones((100, 100)) * 50.)
+        self.assertEqual(ccd.header['GSP_BIAS'],
+                         os.path.basename(self.master_bias_name))
+
+
 class BinningTest(TestCase):
 
     def test__bin_reference_data(self):
@@ -288,8 +312,8 @@ class CombineDataTest(TestCase):
 
     def setUp(self):
         self.ccd1 = CCDData(data=np.ones((100, 100)),
-                           meta=fits.Header(),
-                           unit='adu')
+                            meta=fits.Header(),
+                            unit='adu')
         self.ccd1.header.set('OBJECT', value='TestObject')
         self.ccd1.header.set('GRATING', value='Grating')
         self.ccd1.header.set('SLIT', value='1.05SlitSize')
@@ -518,7 +542,6 @@ class CreateMasterBias(TestCase):
 
     def setUp(self):
         self.name = ''
-        self.name_2 = ''
         self.bias_files = ['bias_{}.fits'.format(i) for i in range(1, 12)]
         self.raw_data = os.getcwd()
         self.reduced_data = os.getcwd()
@@ -543,8 +566,8 @@ class CreateMasterBias(TestCase):
         for _file in self.bias_files:
             os.unlink(os.path.join(self.reduced_data, _file))
 
-        if self.name != '' and self.name_2 != '':
-            for _file in [self.name, self.name_2]:
+        if self.name != '':
+            for _file in [self.name]:
                 os.unlink(_file)
 
     def test_create_master_bias(self):
