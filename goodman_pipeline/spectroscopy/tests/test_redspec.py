@@ -130,8 +130,17 @@ class TestMainApp(TestCase):
         self.assertIsNone(self.main_app.wavelength_calibration)
         self.assertIsNone(self.main_app.reference)
 
-    def test_main_app(self):
-        pass
+    def test___call___no_args(self):
+        self.assertRaises(SystemExit, self.main_app)
+
+    def test___call___with_valid_arguments(self):
+        arguments = ['--data-path', './',
+                     '--proc-path', './',
+                     '--search-pattern', 'test-pattern',
+                     '--output-prefix', 'w',
+                     '--extraction', 'fractional']
+        args = get_args(arguments=arguments)
+        self.assertRaises(SystemExit, self.main_app, args)
 
 
 if __name__ == '__main__':
