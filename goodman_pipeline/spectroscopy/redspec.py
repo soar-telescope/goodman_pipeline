@@ -309,7 +309,8 @@ class MainApp(object):
                 # instantiate WavelengthCalibration here for each group.
                 self.wavelength_calibration = WavelengthCalibration()
                 # this will contain only obstype == OBJECT
-                object_group = group[group.obstype == 'OBJECT']
+                object_group = group[((group.obstype == 'OBJECT') |
+                                      (group.obstype == 'SPECTRUM'))]
                 obj_groupby = object_group.groupby(['object']).size(
 
                 ).reset_index().rename(columns={0: 'count'})
@@ -321,9 +322,10 @@ class MainApp(object):
                 # this has to be initialized here
                 comp_group = None
                 comp_ccd_list = []
-                if 'COMP' in group.obstype.unique():
+                if any([value in ['COMP', 'ARC'] for value in group.obstype.unique()]):
                     self.log.debug('Group has comparison lamps')
-                    comp_group = group[group.obstype == 'COMP']
+                    comp_group = group[((group.obstype == 'COMP') |
+                                        (group.obstype == 'ARC'))]
                     comp_group = self.reference.check_comp_group(comp_group)
 
                 if comp_group is None:
