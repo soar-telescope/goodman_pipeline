@@ -17,6 +17,8 @@ import subprocess
 import sys
 import time
 
+from astropy.utils import iers
+iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
 from astroplan import Observer
 from astropy import units as u
 from astropy.io import fits
