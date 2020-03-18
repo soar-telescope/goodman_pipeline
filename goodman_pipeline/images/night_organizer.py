@@ -288,7 +288,7 @@ class NightOrganizer(object):
         else:
             self.log.warning('Ignoring BIAS by request.')
 
-        if 'FLAT' not in file_collection.obstype.unique() and \
+        if not any([value in ['FLAT', 'LAMPFLAT'] for value in file_collection.obstype.unique()]) and \
                 not self.ignore_flats:
             self.log.critical('There is no FLAT images. Use --ignore-flats to '
                               'continue without FLATs.')
@@ -328,7 +328,7 @@ class NightOrganizer(object):
 
             group_obstype = data_group.obstype.unique()
 
-            if 'FLAT' in group_obstype and len(group_obstype) == 1:
+            if any([value in ['FLAT', 'LAMPFLAT'] for value in group_obstype]) and len(group_obstype) == 1:
 
                 data_container.add_day_flats(data_group)
 
@@ -336,10 +336,11 @@ class NightOrganizer(object):
                 # Comparison lamps are processed as science data.
                 data_container.add_spec_group(data_group)
 
-                if 'FLAT' in group_obstype:
+                if any([value in ['FLAT', 'LAMPFLAT'] for value in group_obstype]):
                     # grab flats and put them in the flats group as well
-                    object_flat_group = data_group[
-                        data_group['obstype'] == 'FLAT']
+                    object_flat_group = data_group[(
+                        (data_group['obstype'] == 'FLAT') |
+                        (data_group['obstype'] == 'LAMPFLAT'))]
                     data_container.add_day_flats(object_flat_group)
 
         return data_container
@@ -391,7 +392,9 @@ class NightOrganizer(object):
             sys.exit("Bias required for imaging.")
 
         # flats separation
-        flat_data = self.file_collection[self.file_collection.obstype == 'FLAT']
+        flat_data = self.file_collection[(
+                (self.file_collection.obstype == 'FLAT') |
+                (self.file_collection.obstype == 'LAMPFLAT'))]
 
         # confs stands for configurations
         confs = flat_data.groupby(
@@ -407,8 +410,9 @@ class NightOrganizer(object):
             self.data_container.add_day_flats(flat_group)
 
         # science data separation
-        science_data = self.file_collection[
-            self.file_collection.obstype == 'OBJECT']
+        science_data = self.file_collection[(
+            (self.file_collection.obstype == 'OBJECT') |
+            (self.file_collection.obstype == 'EXPOSE'))]
 
         # confs stands for configurations
         confs = science_data.groupby(

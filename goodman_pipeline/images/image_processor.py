@@ -69,7 +69,7 @@ class ImageProcessor(object):
         self.morning_twilight = data_container.morning_twilight
         self.evening_twilight = data_container.evening_twilight
         self.pixel_scale = 0.15 * u.arcsec
-        self.queue = None
+        self.queue = []
         self.trim_section = None
         self.overscan_region = None
         self.master_bias = None
