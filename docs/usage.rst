@@ -37,4 +37,6 @@ Getting Help.
 
 .. include:: _file_prefixes.rst
 
+.. include:: _file_suffixes.rst
+
 .. include:: _shortcuts.rst
