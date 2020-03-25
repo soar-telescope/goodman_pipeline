@@ -431,6 +431,7 @@ class MainApp(object):
                                 target_trace=single_trace,
                                 spatial_profile=single_profile,
                                 extraction_name=extraction_type)
+
                             saved_ccd = save_extracted(
                                 ccd=extracted,
                                 destination=self.args.destination,

@@ -2775,7 +2775,7 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
         ccd (CCDData) :class:`~astropy.nddata.CCDData` instance
         destination (str): Path where the file will be saved.
         prefix (str): Prefix to be added to images. Default `e`.
-        target_number (int):
+        target_number (int): Secuential number of spectroscopic target.
 
     Returns:
         :class:`~astropy.nddata.CCDData` instance of the image just recorded.
