@@ -767,10 +767,12 @@ def classify_spectroscopic_data(path, search_pattern):
 
         group_obstype = spec_group.obstype.unique()
 
-        if 'COMP' in group_obstype and len(group_obstype) == 1:
+        if any([value in ['COMP', 'ARC'] for value in group_obstype]) and \
+                len(group_obstype) == 1:
             log.debug('Adding COMP group')
             data_container.add_comp_group(comp_group=spec_group)
-        elif 'OBJECT' in group_obstype and len(group_obstype) == 1:
+        elif any([value in ['OBJECT', 'SPECTRUM'] for value in group_obstype]) \
+                and len(group_obstype) == 1:
             log.debug('Adding OBJECT group')
             data_container.add_object_group(object_group=spec_group)
         else:
