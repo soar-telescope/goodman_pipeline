@@ -312,8 +312,7 @@ class MainApp(object):
                 object_group = group[((group.obstype == 'OBJECT') |
                                       (group.obstype == 'SPECTRUM'))]
                 obj_groupby = object_group.groupby(['object']).size(
-
-                ).reset_index().rename(columns={0: 'count'})
+                    ).reset_index().rename(columns={0: 'count'})
 
                 self.log.info("Processing Science Target: "
                               "{:s} with {:d} files."
@@ -405,7 +404,7 @@ class MainApp(object):
                                                    plots=self.args.debug_with_plots)
                     else:
                         self.log.error("The list of identified targets is "
-                                       "empty.")
+                                       "empty for {}.".format(spec_file))
                         continue
 
                     # if len(trace_list) > 0:
