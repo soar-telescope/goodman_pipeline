@@ -1069,14 +1069,19 @@ class FitsFileIOAndOps(TestCase):
 
     def test_save_extracted_target_zero_comp(self):
         self.fake_image.header.set('GSP_FNAM', value=self.file_name)
-        self.fake_image.header.set('OBSTYPE', value='COMP')
+        self.fake_image.header.set('OBSTYPE', value='ARC')
         self.fake_image.header.set('GSP_EXTR', value='100.00:101.00')
         same_fake_image = save_extracted(ccd=self.fake_image,
                                          destination=self.current_directory,
                                          prefix='e',
                                          target_number=0)
+        expected_new_name = 'e' + re.sub(
+            '.fits',
+            '_' + re.sub(':', '-', same_fake_image.header['GSP_EXTR']) + '.fits',
+            self.file_name)
 
         self.assertEqual(same_fake_image, self.fake_image)
+        self.assertEqual(same_fake_image.header['GSP_FNAM'], expected_new_name)
         self.assertTrue(os.path.isfile(self.fake_image.header['GSP_FNAM']))
 
     def tearDown(self):
