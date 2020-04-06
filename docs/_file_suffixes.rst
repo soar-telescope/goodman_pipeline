@@ -23,3 +23,6 @@ There are two scenarios where this can happen:
      lamp_001.fits    COMP      Reference lamp valid for sci_file.fits
      lamp_002.fits    COMP      Another valid reference lamp
     ================ ========= ========================================
+
+
+Assuming the two targets in `sci_file.fits` are extracted we'll end up with
