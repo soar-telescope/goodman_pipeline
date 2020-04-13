@@ -1941,6 +1941,22 @@ def identify_targets(ccd,
     return identified_targets
 
 
+def identify_technique(target, obstype, slit, grating, wavmode, roi):
+    if 'Spectroscopic' in roi or \
+            obstype in ['ARC', 'SPECTRUM', 'COMP'] or \
+            slit not in ['NO_MASK', '<NO MASK>'] or \
+            grating not in ['NO_GRATING', '<NO GRATING>'] or \
+            '_SP_' in target:
+        technique = 'Spectroscopy'
+    elif 'Imaging' in roi or \
+            obstype in ['EXPOSE'] or\
+            wavmode == 'IMAGING' or '_IM_' in target:
+        technique = 'Imaging'
+    else:
+        technique = 'Unknown'
+    return technique
+
+
 def image_overscan(ccd, overscan_region, add_keyword=False):
     """Apply overscan correction to data
 

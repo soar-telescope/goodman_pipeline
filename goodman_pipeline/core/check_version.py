@@ -21,8 +21,8 @@ def get_last(github_api_token='GITHUB_ACCESS_TOKEN'):
 
     Parameters
     ----------
-        github_api_token (str, optional) : Name of the environment variable holding the github
-        access token for the API
+        github_api_token (str, optional) : Name of the environment variable
+        holding the github access token for the API
 
     Returns
     -------
