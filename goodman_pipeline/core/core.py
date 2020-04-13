@@ -405,6 +405,8 @@ def create_master_bias(bias_files,
         master_bias_list.append(ccd)
 
     # combine bias for spectroscopy
+    log.info("Combining {} images to create master bias".format(
+        len(master_bias_list)))
     master_bias = ccdproc.combine(master_bias_list,
                                   method='median',
                                   sigma_clip=True,
@@ -539,6 +541,8 @@ def create_master_flats(flat_files,
             master_flat_list.append(ccd)
 
     if master_flat_list != []:
+        log.info("Combining {} images to create master flat".format(
+            len(master_flat_list)))
         master_flat = ccdproc.combine(master_flat_list,
                                       method='median',
                                       sigma_clip=True,
