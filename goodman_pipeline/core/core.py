@@ -815,19 +815,15 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
         combined_base_name = ''
         target_name = image_list[0].header["OBJECT"]
 
-        grating_name = re.sub('[A-Za-z_-]',
-                              '',
-                              image_list[0].header["GRATING"])
+        obstype = image_list[0].header['OBSTYPE']
 
-        slit_size = re.sub('[A-Za-z" ]',
-                           '',
-                           image_list[0].header["SLIT"])
+        obs_date = image_list[0].header['DATE']
 
         for field in [prefix,
                       'combined',
                       target_name,
-                      grating_name,
-                      slit_size]:
+                      obstype,
+                      obs_date]:
 
             value = re.sub('[_ /]',
                            '',
@@ -840,7 +836,7 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
 
         combined_full_path = os.path.join(
             dest_path,
-            combined_base_name + "{:02d}.fits".format(number + 1))
+            combined_base_name + "{:03d}.fits".format(number + 1))
 
     # combine image
     combined_image = ccdproc.combine(image_list,
@@ -861,6 +857,7 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
         write_fits(combined_image,
                    full_path=combined_full_path,
                    combined=True)
+        log.info("Saved combined file to {}".format(combined_full_path))
 
     return combined_image
 
