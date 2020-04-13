@@ -437,27 +437,27 @@ class ImageProcessor(object):
                                   "".format(ccd.header['OBSTYPE']))
                 else:
                     log.warning("Cosmic ray rejection returned a None.")
-
             if self.args.combine:
                 log.warning("Combination of data is experimental.")
                 if len(all_object_image) > 1:
-                    print(len(all_object_image))
+                    # print(len(all_object_image))
                     log.info("Combining {:d} OBJECT images"
-                                  "".format(len(all_object_image)))
+                             "".format(len(all_object_image)))
 
-                    object_group = object_comp_group[(
-                        (object_comp_group.obstype == "OBJECT") |
-                        (object_comp_group.obstype == "SPECTRUM"))]
+                    # object_group = object_comp_group[(
+                    #     (object_comp_group.obstype == "OBJECT") |
+                    #     (object_comp_group.obstype == "SPECTRUM"))]
 
-                    print(object_group, len(all_object_image))
+                    # print(object_group, len(all_object_image))
 
-                    combine_data(all_object_image,
-                                 dest_path=self.args.red_path,
-                                 prefix=self.out_prefix,
-                                 save=True)
+                    combined_data = combine_data(all_object_image,
+                                                 dest_path=self.args.red_path,
+                                                 prefix=self.out_prefix,
+                                                 save=True)
+
                 elif len(all_object_image) == 1:
                     # write_fits(all_object_image[0])
-                    pass
+                    log.critical("Unable to combine one single image")
 
                 else:
                     log.error("No OBJECT images to combine")
