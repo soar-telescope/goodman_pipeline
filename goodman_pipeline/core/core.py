@@ -11,6 +11,7 @@ import math
 import numpy as np
 import os
 import pandas
+import random
 import re
 import scipy
 import subprocess
@@ -807,40 +808,28 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
         A combined image as a :class:`~astropy.nddata.CCDData` object.
 
     """
-    # TODO (simon): apparently dest_path is not needed all the time, the full
-    # method should be reviewed.
     assert len(image_list) > 1
 
-    # This defines a default filename that should be deleted below
-    combined_full_path = os.path.join(dest_path, "combined.fits")
+    combined_full_path = os.path.join(dest_path, 'combined_file.fits')
+
     if output_name is not None:
         combined_full_path = os.path.join(dest_path, output_name)
     elif prefix is not None:
-        combined_base_name = ''
-        target_name = image_list[0].header["OBJECT"]
+        sample_image_name = random.choice(image_list).header['GSP_FNAM']
+        splitted_name = sample_image_name.split('_')
+        splitted_name[0] = re.sub('_', '', prefix)
+        splitted_name[1] = 'comb'
+        splitted_name[-1] = re.sub('.fits', '', splitted_name[-1])
 
-        obstype = image_list[0].header['OBSTYPE']
+        combined_base_name = "_".join(splitted_name)
 
-        obs_date = image_list[0].header['DATE']
-
-        for field in [prefix,
-                      'combined',
-                      target_name,
-                      obstype,
-                      obs_date]:
-
-            value = re.sub('[_ /]',
-                           '',
-                           field)
-
-            combined_base_name += "{:s}_".format(value)
         number = len(glob.glob(
             os.path.join(dest_path,
                          combined_base_name + "*.fits")))
 
         combined_full_path = os.path.join(
             dest_path,
-            combined_base_name + "{:03d}.fits".format(number + 1))
+            combined_base_name + "_{:03d}.fits".format(number + 1))
 
     # combine image
     combined_image = ccdproc.combine(image_list,
@@ -853,8 +842,19 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
     # add name of files used in the combination process
     for i in range(len(image_list)):
         image_name = image_list[i].header['GSP_FNAM']
+        new_image_name = '_' + image_name
+        if os.path.isfile(os.path.join(dest_path, image_name)):
+            write_fits(image_list[i],
+                       full_path=os.path.join(dest_path,
+                                              new_image_name))
+            log.info("Deleting file {}".format(image_name))
+            os.unlink(os.path.join(dest_path, image_name))
+        else:
+            log.error("File {} does not exists".format(
+                os.path.join(dest_path,
+                             image_name)))
         combined_image.header.set("GSP_IC{:02d}".format(i + 1),
-                                  value=image_name,
+                                  value=new_image_name,
                                   comment='Image used to create combined')
 
     if save:

@@ -322,9 +322,9 @@ class CombineDataTest(TestCase):
         self.ccd2.data *= 2
         self.ccd3 = self.ccd1.copy()
         self.ccd3.data *= 5
-        self.ccd1.header.set('GSP_FNAM', value='image_1.fits')
-        self.ccd2.header.set('GSP_FNAM', value='image_2.fits')
-        self.ccd3.header.set('GSP_FNAM', value='image_3.fits')
+        self.ccd1.header.set('GSP_FNAM', value='prefix_0001_image.fits')
+        self.ccd2.header.set('GSP_FNAM', value='prefix_0002_image.fits')
+        self.ccd3.header.set('GSP_FNAM', value='prefix_0003_image.fits')
         self.image_list = [self.ccd1, self.ccd2, self.ccd3]
         self.dest_path = os.getcwd()
         self.prefix = 'testing_'
