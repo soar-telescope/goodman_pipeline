@@ -93,8 +93,7 @@ class NightOrganizer(object):
         # WAVMODE = Imaging because assumes they are acquisition images
         if self.technique == 'Spectroscopy':
             _imaging_file = self.file_collection[
-                ((self.file_collection.wavmode == 'Imaging') or
-                 (self.file_collection.wavmode == 'IMAGING'))]
+                self.file_collection.wavmode == 'IMAGING']
             if not _imaging_file.empty:
                 self.log.warning("Ignoring all Imaging data. Assuming they are "
                                  "not science exposures.")
@@ -106,15 +105,13 @@ class NightOrganizer(object):
                     self.log.info("Discarding image: {:s}".format(_file))
 
             self.file_collection = self.file_collection[
-                ((self.file_collection.wavmode != 'Imaging') or
-                 (self.file_collection.wavmode != 'IMAGING'))].reset_index(drop=True)
+                self.file_collection.wavmode != 'IMAGING'].reset_index(drop=True)
 
         elif self.technique == 'Imaging':
             self.log.warning("Ignoring all files where `wavmode` is not "
                              "Imaging.")
             self.file_collection = self.file_collection[
-                ((self.file_collection.wavmode == 'Imaging') or
-                 (self.file_collection.wavmode == 'IMAGING'))].reset_index(drop=True)
+                self.file_collection.wavmode == 'IMAGING'].reset_index(drop=True)
 
         # add two columns that will contain the ra and dec in degrees
 
@@ -141,10 +138,10 @@ class NightOrganizer(object):
         data_container_list = []
         for i in readout_configurations.index:
             self.log.info("Organizing data for this configuration: "
-                           "Gain: {:.2f}, Noise: {:.2f}, ROI: {:s}"
-                           "".format(readout_configurations.iloc[i]['gain'],
-                                     readout_configurations.iloc[i]['rdnoise'],
-                                     readout_configurations.iloc[i]['roi']))
+                          "Gain: {:.2f}, Noise: {:.2f}, ROI: {:s}"
+                          "".format(readout_configurations.iloc[i]['gain'],
+                                    readout_configurations.iloc[i]['rdnoise'],
+                                    readout_configurations.iloc[i]['roi']))
             if not self.data_container.is_empty:
                 self.log.debug("Reset data container")
                 self.data_container = NightDataContainer(
