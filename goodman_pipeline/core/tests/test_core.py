@@ -340,7 +340,7 @@ class CombineDataTest(TestCase):
         not_using_output_name_file_name_list = os.listdir(self.dest_path)
         if not_using_output_name_file_name_list:
             for _file in not_using_output_name_file_name_list:
-                if '{:s}combined'.format(self.prefix) in _file:
+                if '{:s}comb_'.format(self.prefix) in _file:
                     os.unlink(_file)
 
     def test_combine_data_median_prefix_ignored(self):
@@ -367,7 +367,6 @@ class CombineDataTest(TestCase):
         np.testing.assert_array_equal(combined.data, np.ones((100, 100)) * 1.5)
         self.assertEqual(len(combined.header['GSP_IC*']), 3)
         self.assertTrue(self.prefix in combined.header['GSP_FNAM'])
-
 
 
 class CosmicRayRejectionTest(TestCase):
