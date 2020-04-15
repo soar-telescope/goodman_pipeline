@@ -1946,6 +1946,21 @@ def identify_targets(ccd,
 
 
 def identify_technique(target, obstype, slit, grating, wavmode, roi):
+    """Identify whether is Imaging or Spectroscopic data
+
+    Args:
+        target (str): Target name as in the keyword `OBJECT` this is useful in
+        Automated aquisition mode, such as AEON.
+        obstype (str): Observation type as in `OBSTYPE`
+        slit (str): Value of `SLIT` keyword.
+        grating (str): Value of `GRATING` keyword.
+        wavmode (str): Value of `WAVMODE` keyword.
+        roi (str): Value of `ROI` keyword.
+
+    Returns:
+        Observing technique as a string. Either `Imaging` or `Spectroscopy`.
+
+    """
     if 'Spectroscopic' in roi or \
             obstype in ['ARC', 'SPECTRUM', 'COMP'] or \
             slit not in ['NO_MASK', '<NO MASK>'] or \

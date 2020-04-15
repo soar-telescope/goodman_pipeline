@@ -142,7 +142,6 @@ class DataClassifier(object):
         # self.technique = identify_technique()
 
         wavmodes = [str(w).upper() for w in self.objects_collection.wavmode.unique()]
-        print(wavmodes)
         if len(wavmodes) == 1 and wavmodes[0] == 'IMAGING':
                 self.technique = 'Imaging'
 
