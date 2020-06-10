@@ -110,6 +110,11 @@ def get_args(arguments=None):
                         dest='ignore_flats',
                         help="Ignore flat field correction")
 
+    parser.add_argument('--skip-slit-trim',
+                        action='store_true',
+                        dest='skip_slit_trim',
+                        help="Do not apply slit trimming")
+
     parser.add_argument('--keep-cosmic-files',
                         action='store_true',
                         dest='keep_cosmic_files',

@@ -266,8 +266,12 @@ class ImageProcessor(object):
                         log.critical('Failed to obtain master flat')
 
             if master_flat is not None and not self.args.ignore_flats:
-                log.debug('Attempting to find slit trim section')
-                slit_trim = get_slit_trim_section(master_flat=master_flat)
+                if not self.args.skip_slit_trim:
+                    log.debug('Attempting to find slit trim section')
+                    slit_trim = get_slit_trim_section(master_flat=master_flat)
+                    log.debug('Slit trim section found: {}'.format(slit_trim))
+                else:
+                    log.warning('Skipping slit trim section trimming')
             elif self.args.ignore_flats:
                 log.warning('Slit Trimming will be skipped, '
                                  '--ignore-flats is activated')
@@ -286,7 +290,9 @@ class ImageProcessor(object):
                                              trim_type='slit')
             else:
                 try:
-                    master_bias = self.master_bias.copy()
+                    master_bias = image_trim(ccd=self.master_bias,
+                                             trim_section=self.trim_section,
+                                             trim_type='trimsec')
                 except AttributeError:
                     master_bias = None
 
@@ -354,6 +360,8 @@ class ImageProcessor(object):
 
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
+                    print(ccd.data.shape)
+                    print(master_bias.data.shape)
 
                     ccd = ccdproc.subtract_bias(ccd=ccd,
                                                 master=master_bias,
