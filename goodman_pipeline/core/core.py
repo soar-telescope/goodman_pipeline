@@ -245,7 +245,7 @@ def call_cosmic_rejection(ccd,
     There are four options when dealing with cosmic ray rejection in this
     pipeline, The default option is called ``default`` and it will choose the
     rejection method based on the binning of the image. Note that there are only
-    two *real* methdos: ``dcr`` and ``lacosmic``.
+    two *real* methods: ``dcr`` and ``lacosmic``.
 
     For ``binning 1x1`` the choice will be ``dcr`` for ``binning 2x2`` and
     ``3x3`` will be ``lacosmic``.
@@ -3827,11 +3827,11 @@ class ReferenceData(object):
         """
         filtered_collection = self.ref_lamp_collection[
             (self.ref_lamp_collection['lamp_hga'] == header['LAMP_HGA']) &
-            (self.ref_lamp_collection['lamp_ne'] ==  header['LAMP_NE']) &
-            (self.ref_lamp_collection['lamp_ar'] ==  header['LAMP_AR']) &
-            (self.ref_lamp_collection['lamp_cu'] ==  header['LAMP_CU']) &
-            (self.ref_lamp_collection['lamp_fe'] ==  header['LAMP_FE']) &
-            (self.ref_lamp_collection['grating'] ==  header['GRATING']) &
+            (self.ref_lamp_collection['lamp_ne'] == header['LAMP_NE']) &
+            (self.ref_lamp_collection['lamp_ar'] == header['LAMP_AR']) &
+            (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
+            (self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) &
+            (self.ref_lamp_collection['grating'] == header['GRATING']) &
             (self.ref_lamp_collection['grt_targ'] == header['GRT_TARG']) &
             (self.ref_lamp_collection['cam_targ'] == header['CAM_TARG'])]
 
