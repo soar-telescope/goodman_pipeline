@@ -309,10 +309,10 @@ class MainApp(object):
                 # instantiate WavelengthCalibration here for each group.
                 self.wavelength_calibration = WavelengthCalibration()
                 # this will contain only obstype == OBJECT
-                object_group = group[group.obstype == 'OBJECT']
+                object_group = group[((group.obstype == 'OBJECT') |
+                                      (group.obstype == 'SPECTRUM'))]
                 obj_groupby = object_group.groupby(['object']).size(
-
-                ).reset_index().rename(columns={0: 'count'})
+                    ).reset_index().rename(columns={0: 'count'})
 
                 self.log.info("Processing Science Target: "
                               "{:s} with {:d} files."
@@ -321,9 +321,10 @@ class MainApp(object):
                 # this has to be initialized here
                 comp_group = None
                 comp_ccd_list = []
-                if 'COMP' in group.obstype.unique():
+                if any([value in ['COMP', 'ARC'] for value in group.obstype.unique()]):
                     self.log.debug('Group has comparison lamps')
-                    comp_group = group[group.obstype == 'COMP']
+                    comp_group = group[((group.obstype == 'COMP') |
+                                        (group.obstype == 'ARC'))]
                     comp_group = self.reference.check_comp_group(comp_group)
 
                 if comp_group is None:
@@ -403,7 +404,7 @@ class MainApp(object):
                                                    plots=self.args.debug_with_plots)
                     else:
                         self.log.error("The list of identified targets is "
-                                       "empty.")
+                                       "empty for {}.".format(spec_file))
                         continue
 
                     # if len(trace_list) > 0:
@@ -429,6 +430,7 @@ class MainApp(object):
                                 target_trace=single_trace,
                                 spatial_profile=single_profile,
                                 extraction_name=extraction_type)
+
                             saved_ccd = save_extracted(
                                 ccd=extracted,
                                 destination=self.args.destination,

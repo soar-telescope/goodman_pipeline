@@ -12,14 +12,7 @@ from distutils.version import LooseVersion
 
 logger = logging.getLogger(__name__)
 
-
-def get_github_api_url(token_env_name):
-    try:
-        ACCESS_TOKEN = os.environ[token_env_name]
-        return 'https://api.github.com/repos/soar-telescope/goodman/releases/latest' \
-               '?access_token={:s}'.format(ACCESS_TOKEN)
-    except KeyError:
-        return 'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
+API_URL = 'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
 
 
 def get_last(github_api_token='GITHUB_ACCESS_TOKEN'):
@@ -28,16 +21,20 @@ def get_last(github_api_token='GITHUB_ACCESS_TOKEN'):
 
     Parameters
     ----------
-        github_api_token (str, optional) : Name of the environment variable holding the github
-        access token for the API
+        github_api_token (str, optional) : Name of the environment variable
+        holding the github access token for the API
 
     Returns
     -------
         version (LooseVersion) : the last version of the pipeline.
     """
-    url = get_github_api_url(github_api_token)
+    try:
+        access_token = os.environ[github_api_token]
+        headers = {'Authorization': 'token {}'.format(access_token)}
+    except KeyError:
+        headers = {}
 
-    response = requests.get(url)
+    response = requests.get(API_URL, headers=headers)
 
     if response.status_code != 200:  # pragma: no cover
         raise ConnectionRefusedError('Number of tests reached maximum for now.')

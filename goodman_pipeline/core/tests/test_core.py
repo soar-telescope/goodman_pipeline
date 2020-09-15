@@ -322,9 +322,9 @@ class CombineDataTest(TestCase):
         self.ccd2.data *= 2
         self.ccd3 = self.ccd1.copy()
         self.ccd3.data *= 5
-        self.ccd1.header.set('GSP_FNAM', value='image_1.fits')
-        self.ccd2.header.set('GSP_FNAM', value='image_2.fits')
-        self.ccd3.header.set('GSP_FNAM', value='image_3.fits')
+        self.ccd1.header.set('GSP_FNAM', value='prefix_0001_image.fits')
+        self.ccd2.header.set('GSP_FNAM', value='prefix_0002_image.fits')
+        self.ccd3.header.set('GSP_FNAM', value='prefix_0003_image.fits')
         self.image_list = [self.ccd1, self.ccd2, self.ccd3]
         self.dest_path = os.getcwd()
         self.prefix = 'testing_'
@@ -340,7 +340,7 @@ class CombineDataTest(TestCase):
         not_using_output_name_file_name_list = os.listdir(self.dest_path)
         if not_using_output_name_file_name_list:
             for _file in not_using_output_name_file_name_list:
-                if '{:s}combined'.format(self.prefix) in _file:
+                if '{:s}comb_'.format(self.prefix) in _file:
                     os.unlink(_file)
 
     def test_combine_data_median_prefix_ignored(self):
@@ -367,7 +367,6 @@ class CombineDataTest(TestCase):
         np.testing.assert_array_equal(combined.data, np.ones((100, 100)) * 1.5)
         self.assertEqual(len(combined.header['GSP_IC*']), 3)
         self.assertTrue(self.prefix in combined.header['GSP_FNAM'])
-
 
 
 class CosmicRayRejectionTest(TestCase):
@@ -1069,14 +1068,19 @@ class FitsFileIOAndOps(TestCase):
 
     def test_save_extracted_target_zero_comp(self):
         self.fake_image.header.set('GSP_FNAM', value=self.file_name)
-        self.fake_image.header.set('OBSTYPE', value='COMP')
+        self.fake_image.header.set('OBSTYPE', value='ARC')
         self.fake_image.header.set('GSP_EXTR', value='100.00:101.00')
         same_fake_image = save_extracted(ccd=self.fake_image,
                                          destination=self.current_directory,
                                          prefix='e',
                                          target_number=0)
+        expected_new_name = 'e' + re.sub(
+            '.fits',
+            '_' + re.sub(':', '-', same_fake_image.header['GSP_EXTR']) + '.fits',
+            self.file_name)
 
         self.assertEqual(same_fake_image, self.fake_image)
+        self.assertEqual(same_fake_image.header['GSP_FNAM'], expected_new_name)
         self.assertTrue(os.path.isfile(self.fake_image.header['GSP_FNAM']))
 
     def tearDown(self):

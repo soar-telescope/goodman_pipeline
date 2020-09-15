@@ -69,7 +69,7 @@ class ImageProcessor(object):
         self.morning_twilight = data_container.morning_twilight
         self.evening_twilight = data_container.evening_twilight
         self.pixel_scale = 0.15 * u.arcsec
-        self.queue = None
+        self.queue = []
         self.trim_section = None
         self.overscan_region = None
         self.master_bias = None
@@ -177,15 +177,19 @@ class ImageProcessor(object):
         master_flat = None
         master_flat_name = None
         obstype = science_group.obstype.unique()
+        valid_obstypes = ['OBJECT', 'COMP', 'SPECTRUM', 'ARC']
         # print(obstype)
-        if 'OBJECT' in obstype or 'COMP' in obstype:
-            object_comp_group = science_group[
+        if any([value in valid_obstypes for value in obstype]):
+            object_comp_group = science_group[(
                 (science_group.obstype == 'OBJECT') |
-                (science_group.obstype == 'COMP')]
+                (science_group.obstype == 'COMP') |
+                (science_group.obstype == 'SPECTRUM') |
+                (science_group.obstype == 'ARC'))]
 
-            if 'OBJECT' in obstype:
-                target_name = science_group.object[science_group.obstype ==
-                                                   'OBJECT'].unique()[0]
+            if any([value in ['OBJECT', 'SPECTRUM'] for value in obstype]):
+                target_name = science_group.object[(
+                        (science_group.obstype == 'OBJECT') |
+                        (science_group.obstype == 'SPECTRUM'))].unique()[0]
 
                 log.info('Processing Science Target: '
                               '{:s}'.format(target_name))
@@ -194,8 +198,11 @@ class ImageProcessor(object):
                 log.info('Processing Comparison Lamp: '
                               '{:s}'.format(target_name))
 
-            if 'FLAT' in obstype and not self.args.ignore_flats:
-                flat_sub_group = science_group[science_group.obstype == 'FLAT']
+            if any([value in ['FLAT', 'LAMPFLAT'] for value in obstype]) and \
+                    not self.args.ignore_flats:
+                flat_sub_group = science_group[(
+                        (science_group.obstype == 'FLAT') |
+                        (science_group.obstype == 'LAMPFLAT'))]
 
                 flat_files = flat_sub_group.file.tolist()
                 sample_header = fits.getheader(os.path.join(
@@ -259,8 +266,12 @@ class ImageProcessor(object):
                         log.critical('Failed to obtain master flat')
 
             if master_flat is not None and not self.args.ignore_flats:
-                log.debug('Attempting to find slit trim section')
-                slit_trim = get_slit_trim_section(master_flat=master_flat)
+                if not self.args.skip_slit_trim:
+                    log.debug('Attempting to find slit trim section')
+                    slit_trim = get_slit_trim_section(master_flat=master_flat)
+                    log.debug('Slit trim section found: {}'.format(slit_trim))
+                else:
+                    log.warning('Skipping slit trim section trimming')
             elif self.args.ignore_flats:
                 log.warning('Slit Trimming will be skipped, '
                                  '--ignore-flats is activated')
@@ -279,7 +290,9 @@ class ImageProcessor(object):
                                              trim_type='slit')
             else:
                 try:
-                    master_bias = self.master_bias.copy()
+                    master_bias = image_trim(ccd=self.master_bias,
+                                             trim_section=self.trim_section,
+                                             trim_type='trimsec')
                 except AttributeError:
                     master_bias = None
 
@@ -347,6 +360,8 @@ class ImageProcessor(object):
 
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
+                    print(ccd.data.shape)
+                    print(master_bias.data.shape)
 
                     ccd = ccdproc.subtract_bias(ccd=ccd,
                                                 master=master_bias,
@@ -410,7 +425,6 @@ class ImageProcessor(object):
                     image_name=science_image,
                     out_prefix=self.out_prefix,
                     red_path=self.args.red_path,
-                    dcr_par=self.args.dcr_par_dir,
                     keep_files=self.args.keep_cosmic_files,
                     method=self.args.clean_cosmic,
                     save=True)
@@ -418,37 +432,40 @@ class ImageProcessor(object):
                 self.out_prefix = prefix
 
                 if ccd is not None:
-                    if ccd.header['OBSTYPE'] == 'OBJECT':
-                        log.debug("Appending OBJECT image for combination")
+                    if ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM']:
+                        log.debug("Appending {} image for combination".format(
+                            ccd.header['OBSTYPE']))
                         all_object_image.append(ccd)
-                    elif ccd.header['OBSTYPE'] == 'COMP':
-                        log.debug("Appending COMP image for combination")
+                    elif ccd.header['OBSTYPE'] in ['COMP', 'ARC']:
+                        log.debug("Appending {} image for combination".format(
+                            ccd.header['OBSTYPE']))
                         all_comp_image.append(ccd)
                     else:
                         log.error("Unknown OBSTYPE = {:s}"
-                                       "".format(ccd.header['OBSTYPE']))
+                                  "".format(ccd.header['OBSTYPE']))
                 else:
                     log.warning("Cosmic ray rejection returned a None.")
-
             if self.args.combine:
                 log.warning("Combination of data is experimental.")
                 if len(all_object_image) > 1:
-                    print(len(all_object_image))
+                    # print(len(all_object_image))
                     log.info("Combining {:d} OBJECT images"
-                                  "".format(len(all_object_image)))
+                             "".format(len(all_object_image)))
 
-                    object_group = object_comp_group[
-                        object_comp_group.obstype == "OBJECT"]
+                    # object_group = object_comp_group[(
+                    #     (object_comp_group.obstype == "OBJECT") |
+                    #     (object_comp_group.obstype == "SPECTRUM"))]
 
-                    print(object_group, len(all_object_image))
+                    # print(object_group, len(all_object_image))
 
-                    combine_data(all_object_image,
-                                 dest_path=self.args.red_path,
-                                 prefix=self.out_prefix,
-                                 save=True)
+                    combined_data = combine_data(all_object_image,
+                                                 dest_path=self.args.red_path,
+                                                 prefix=self.out_prefix,
+                                                 save=True)
+
                 elif len(all_object_image) == 1:
                     # write_fits(all_object_image[0])
-                    pass
+                    log.critical("Unable to combine one single image")
 
                 else:
                     log.error("No OBJECT images to combine")
@@ -467,10 +484,12 @@ class ImageProcessor(object):
             else:
                 log.debug("Combine is disabled (default)")
 
-        elif 'FLAT' in obstype:
+        elif any([value in ['FLAT', 'LAMPFLAT'] for value in obstype]):
             self.queue.append(science_group)
             log.warning('Only flats found in this group')
-            flat_sub_group = science_group[science_group.obstype == 'FLAT']
+            flat_sub_group = science_group[(
+                    (science_group.obstype == 'FLAT') |
+                    (science_group.obstype == 'LAMPFLAT'))]
             # TODO (simon): Find out if these variables are useful or not
             flat_files = flat_sub_group.file.tolist()
 

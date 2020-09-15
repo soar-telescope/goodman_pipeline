@@ -6,7 +6,7 @@ import logging
 
 from astropy.io.fits.verify import VerifyError
 from ccdproc import ImageFileCollection
-from ..core import fix_keywords
+from ..core import fix_keywords, identify_technique
 
 
 class DataClassifier(object):
@@ -139,12 +139,13 @@ class DataClassifier(object):
 
         """
 
-        wavmodes = self.objects_collection.wavmode.unique()
+        # self.technique = identify_technique()
 
-        if len(wavmodes) == 1 and wavmodes[0] == 'Imaging':
+        wavmodes = [str(w).upper() for w in self.objects_collection.wavmode.unique()]
+        if len(wavmodes) == 1 and wavmodes[0] == 'IMAGING':
                 self.technique = 'Imaging'
 
-        elif 'Imaging' in wavmodes and len(wavmodes) > 1:
+        elif 'IMAGING' in wavmodes and len(wavmodes) > 1:
                 self.log.error('There seems to be Imaging and Spectroscopic '
                                'data. I will assume the Imaging data are '
                                'acquisition images therefore they will be '

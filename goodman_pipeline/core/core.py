@@ -11,12 +11,15 @@ import math
 import numpy as np
 import os
 import pandas
+import random
 import re
 import scipy
 import subprocess
 import sys
 import time
 
+from astropy.utils import iers
+iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
 from astroplan import Observer
 from astropy import units as u
 from astropy.io import fits
@@ -242,7 +245,7 @@ def call_cosmic_rejection(ccd,
     There are four options when dealing with cosmic ray rejection in this
     pipeline, The default option is called ``default`` and it will choose the
     rejection method based on the binning of the image. Note that there are only
-    two *real* methdos: ``dcr`` and ``lacosmic``.
+    two *real* methods: ``dcr`` and ``lacosmic``.
 
     For ``binning 1x1`` the choice will be ``dcr`` for ``binning 2x2`` and
     ``3x3`` will be ``lacosmic``.
@@ -403,6 +406,8 @@ def create_master_bias(bias_files,
         master_bias_list.append(ccd)
 
     # combine bias for spectroscopy
+    log.info("Combining {} images to create master bias".format(
+        len(master_bias_list)))
     master_bias = ccdproc.combine(master_bias_list,
                                   method='median',
                                   sigma_clip=True,
@@ -537,6 +542,8 @@ def create_master_flats(flat_files,
             master_flat_list.append(ccd)
 
     if master_flat_list != []:
+        log.info("Combining {} images to create master flat".format(
+            len(master_flat_list)))
         master_flat = ccdproc.combine(master_flat_list,
                                       method='median',
                                       sigma_clip=True,
@@ -765,10 +772,12 @@ def classify_spectroscopic_data(path, search_pattern):
 
         group_obstype = spec_group.obstype.unique()
 
-        if 'COMP' in group_obstype and len(group_obstype) == 1:
+        if any([value in ['COMP', 'ARC'] for value in group_obstype]) and \
+                len(group_obstype) == 1:
             log.debug('Adding COMP group')
             data_container.add_comp_group(comp_group=spec_group)
-        elif 'OBJECT' in group_obstype and len(group_obstype) == 1:
+        elif any([value in ['OBJECT', 'SPECTRUM'] for value in group_obstype]) \
+                and len(group_obstype) == 1:
             log.debug('Adding OBJECT group')
             data_container.add_object_group(object_group=spec_group)
         else:
@@ -799,44 +808,28 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
         A combined image as a :class:`~astropy.nddata.CCDData` object.
 
     """
-    # TODO (simon): apparently dest_path is not needed all the time, the full
-    # method should be reviewed.
     assert len(image_list) > 1
 
-    # This defines a default filename that should be deleted below
-    combined_full_path = os.path.join(dest_path, "combined.fits")
+    combined_full_path = os.path.join(dest_path, 'combined_file.fits')
+
     if output_name is not None:
         combined_full_path = os.path.join(dest_path, output_name)
     elif prefix is not None:
-        combined_base_name = ''
-        target_name = image_list[0].header["OBJECT"]
+        sample_image_name = random.choice(image_list).header['GSP_FNAM']
+        splitted_name = sample_image_name.split('_')
+        splitted_name[0] = re.sub('_', '', prefix)
+        splitted_name[1] = 'comb'
+        splitted_name[-1] = re.sub('.fits', '', splitted_name[-1])
 
-        grating_name = re.sub('[A-Za-z_-]',
-                              '',
-                              image_list[0].header["GRATING"])
+        combined_base_name = "_".join(splitted_name)
 
-        slit_size = re.sub('[A-Za-z" ]',
-                           '',
-                           image_list[0].header["SLIT"])
-
-        for field in [prefix,
-                      'combined',
-                      target_name,
-                      grating_name,
-                      slit_size]:
-
-            value = re.sub('[_ /]',
-                           '',
-                           field)
-
-            combined_base_name += "{:s}_".format(value)
         number = len(glob.glob(
             os.path.join(dest_path,
                          combined_base_name + "*.fits")))
 
         combined_full_path = os.path.join(
             dest_path,
-            combined_base_name + "{:02d}.fits".format(number + 1))
+            combined_base_name + "_{:03d}.fits".format(number + 1))
 
     # combine image
     combined_image = ccdproc.combine(image_list,
@@ -849,14 +842,26 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
     # add name of files used in the combination process
     for i in range(len(image_list)):
         image_name = image_list[i].header['GSP_FNAM']
+        new_image_name = '_' + image_name
+        if os.path.isfile(os.path.join(dest_path, image_name)):
+            write_fits(image_list[i],
+                       full_path=os.path.join(dest_path,
+                                              new_image_name))
+            log.info("Deleting file {}".format(image_name))
+            os.unlink(os.path.join(dest_path, image_name))
+        else:
+            log.error("File {} does not exists".format(
+                os.path.join(dest_path,
+                             image_name)))
         combined_image.header.set("GSP_IC{:02d}".format(i + 1),
-                                  value=image_name,
+                                  value=new_image_name,
                                   comment='Image used to create combined')
 
     if save:
         write_fits(combined_image,
                    full_path=combined_full_path,
                    combined=True)
+        log.info("Saved combined file to {}".format(combined_full_path))
 
     return combined_image
 
@@ -1940,6 +1945,37 @@ def identify_targets(ccd,
     return identified_targets
 
 
+def identify_technique(target, obstype, slit, grating, wavmode, roi):
+    """Identify whether is Imaging or Spectroscopic data
+
+    Args:
+        target (str): Target name as in the keyword `OBJECT` this is useful in
+        Automated aquisition mode, such as AEON.
+        obstype (str): Observation type as in `OBSTYPE`
+        slit (str): Value of `SLIT` keyword.
+        grating (str): Value of `GRATING` keyword.
+        wavmode (str): Value of `WAVMODE` keyword.
+        roi (str): Value of `ROI` keyword.
+
+    Returns:
+        Observing technique as a string. Either `Imaging` or `Spectroscopy`.
+
+    """
+    if 'Spectroscopic' in roi or \
+            obstype in ['ARC', 'SPECTRUM', 'COMP'] or \
+            slit not in ['NO_MASK', '<NO MASK>'] or \
+            grating not in ['NO_GRATING', '<NO GRATING>'] or \
+            '_SP_' in target:
+        technique = 'Spectroscopy'
+    elif 'Imaging' in roi or \
+            obstype in ['EXPOSE'] or\
+            wavmode == 'IMAGING' or '_IM_' in target:
+        technique = 'Imaging'
+    else:
+        technique = 'Unknown'
+    return technique
+
+
 def image_overscan(ccd, overscan_region, add_keyword=False):
     """Apply overscan correction to data
 
@@ -2121,7 +2157,7 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
 
     if wavelength_solution is not None:
         x_axis = wavelength_solution(pixel_axis)
-        try:
+        try:  # pragma: no cover
             plt.imshow(data)
             plt.show()
         except TypeError:
@@ -2773,7 +2809,7 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
         ccd (CCDData) :class:`~astropy.nddata.CCDData` instance
         destination (str): Path where the file will be saved.
         prefix (str): Prefix to be added to images. Default `e`.
-        target_number (int):
+        target_number (int): Secuential number of spectroscopic target.
 
     Returns:
         :class:`~astropy.nddata.CCDData` instance of the image just recorded.
@@ -2788,9 +2824,10 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
         new_suffix = '_target_{:d}.fits'.format(target_number)
         file_name = re.sub('.fits', new_suffix, file_name)
 
-    if ccd.header['OBSTYPE'] == 'COMP':
+    if ccd.header['OBSTYPE'] in ['COMP', 'ARC']:
         extraction_region = re.sub(':','-', ccd.header['GSP_EXTR'])
-        file_name = re.sub('.fits', '_{:s}.fits'.format(extraction_region), file_name)
+        file_name = re.sub('.fits', '_{:s}.fits'.format(extraction_region),
+                           file_name)
         new_file_name = prefix + file_name
 
     else:
@@ -2851,7 +2888,7 @@ def search_comp_group(object_group, comp_groups, reference_data):
     raise NoMatchFound
 
 
-def setup_logging(debug=False, generic=False):
+def setup_logging(debug=False, generic=False):  # pragma: no cover
     """configures logging
 
     Notes:
@@ -3790,11 +3827,11 @@ class ReferenceData(object):
         """
         filtered_collection = self.ref_lamp_collection[
             (self.ref_lamp_collection['lamp_hga'] == header['LAMP_HGA']) &
-            (self.ref_lamp_collection['lamp_ne'] ==  header['LAMP_NE']) &
-            (self.ref_lamp_collection['lamp_ar'] ==  header['LAMP_AR']) &
-            (self.ref_lamp_collection['lamp_cu'] ==  header['LAMP_CU']) &
-            (self.ref_lamp_collection['lamp_fe'] ==  header['LAMP_FE']) &
-            (self.ref_lamp_collection['grating'] ==  header['GRATING']) &
+            (self.ref_lamp_collection['lamp_ne'] == header['LAMP_NE']) &
+            (self.ref_lamp_collection['lamp_ar'] == header['LAMP_AR']) &
+            (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
+            (self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) &
+            (self.ref_lamp_collection['grating'] == header['GRATING']) &
             (self.ref_lamp_collection['grt_targ'] == header['GRT_TARG']) &
             (self.ref_lamp_collection['cam_targ'] == header['CAM_TARG'])]
 
