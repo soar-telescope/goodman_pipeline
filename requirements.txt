@@ -1,7 +1,7 @@
 astroscrappy
 recommonmark
 numpy
-pandas
+pandas==0.23.0
 ccdproc
 coveralls
 astroplan
