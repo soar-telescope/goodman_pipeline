@@ -9,3 +9,4 @@ files.txt
 docs/_build/*
 goodman_pipeline/data/dcr-source/dcr
 goodman_pipeline/data/dcr-source/*.o
+/dev-tools/
