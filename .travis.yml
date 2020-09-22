@@ -3,44 +3,15 @@ python:
 - '3.6'
 - '3.7'
 - '3.8'
-- '3.9-dev'
 
 branches:
   only:
   - master
 
-# before_install:
-# - ./install_dcr.sh
-
-
 install:
-# - export PATH="$PATH:$HOME/build/soar-telescope/goodman_pipeline/dcrbin"
 
-#- sudo apt-get update
-
-# Here we install Anaconda to work with Virtual Environments. We do this
-# conditionally because it saves us some downloading if the version is the same.
-#- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-
-
-#- bash miniconda.sh -b -p $HOME/miniconda
-#- export PATH="$HOME/miniconda/bin:$PATH"
-#- hash -r
-#- conda config --set always_yes yes --set changeps1 no
-
-# Adding AstroConda Channel since it contains most of the dependencies for
-# Dragons and Dragons-SOAR
-#- conda config --add channels http://ssb.stsci.edu/astroconda
-#- conda update -q conda
-
-# Useful for debugging any issues with conda
-#- conda info -a
-
-# Create astroconda virtual environment
-#- conda env create --force python=$TRAVIS_PYTHON_VERSION -f environment.yml
-#- source activate goodman_pipeline
 - pip install -r requirements.txt
-- pip freeze
+
 # Run DCR installer
 - ./travis_install_dcr.sh
 
@@ -51,7 +22,6 @@ install:
 script:
 - pytest
 - coverage run --branch --source= setup.py test
-# TODO - How can I add the ./goodman as a source?
 
 after_success:
 - coveralls
