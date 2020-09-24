@@ -1,6 +1,33 @@
 Change History
 ##############
 
+.. _v1.3.1:
+
+V1.3.1 23-09-2020
+^^^^^^^^^^^^^^^^^
+
+- Documentation improvements:
+
+  + More docstrings
+  + New `File Suffixes`_ section
+
+- Added more test code.
+- Cleaned .travis.yml and created special dcr installation script for travis.
+- Changed the way `core.combine_data` names new files.
+- Fixed version checker due to deprecation of access token as url parameter.
+- New `core.identify_technique`. Was developed in the web application context.
+- Created `--skip-slit-trim` argument to provide more control for certain use cases.
+- Removed python 3.5 because it will not be supported anymore.
+- Improved AEON Support:
+
+  + Added values for OBSTYPE and required logic.
+  +
+
+- Bugs Fixed:
+
+  + Serial and Parallell binning extraction from header was not working
+  + Changed url for astroplan's server
+
 .. _v1.3.0:
 
 V1.3.0 06-03-2020
