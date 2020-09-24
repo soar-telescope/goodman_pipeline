@@ -25,7 +25,7 @@ V1.3.1 23-09-2020
 
 - Bugs Fixed:
 
-  + Serial and Parallell binning extraction from header was not working
+  + Serial and Parallel binning extraction from header was not working
   + Changed url for astroplan's server
 
 .. _v1.3.0:
