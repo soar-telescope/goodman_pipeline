@@ -5,7 +5,7 @@ dependencies:
   - numpy
   - pandas==0.23.0
   - matplotlib
-  - scipy==1.3.1
+  - scipy
   - cython
   - astropy
   - pip
