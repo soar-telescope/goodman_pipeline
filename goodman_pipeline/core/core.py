@@ -3798,10 +3798,10 @@ class ReferenceData(object):
         if len(filtered_collection) == 1:
             self.log.info(
                 "Reference Lamp Found: {:s}"
-                "".format(filtered_collection.file.to_string(index=False)))
+                "".format("".join(filtered_collection.file.to_string(index=False).split())))
             full_path = os.path.join(self.reference_dir,
-                                     filtered_collection.file.to_string(
-                                         index=False))
+                                     "".join(filtered_collection.file.to_string(
+                                         index=False).split()))
             self._ccd = CCDData.read(full_path, unit=u.adu)
             self._recover_lines()
             return self._ccd
@@ -4052,7 +4052,7 @@ class SaturationValues(object):
             self.__saturation = None
             return None
         else:
-            self.__saturation = float(hfw.to_string(index=False))
+            self.__saturation = float("".join(hfw.to_string(index=False).split()))
             self.log.debug("Set saturation_threshold level as {:.0f}".format(
                 self.__saturation))
             return self.__saturation
@@ -4180,7 +4180,7 @@ class SpectroscopicMode(object):
                 return 'Custom_{:d}nm'.format(int(round(
                     central_wavelength.value)))
             else:
-                return _mode['wavmode'].to_string(index=False)
+                return "".join(_mode['wavmode'].to_string(index=False).split())
 
     def get_cam_grt_targ_angle(self, grating, mode):
         """Get the camera and grating target values grating and mode
@@ -4207,8 +4207,8 @@ class SpectroscopicMode(object):
                 self.log.error("No data")
                 return None, None
             else:
-                return (angle['camtarg'].to_string(index=False),
-                        angle['grttarg'].to_string(index=False))
+                return ("".join(angle['camtarg'].to_string(index=False).split()),
+                        "".join(angle['grttarg'].to_string(index=False).split()))
 
 
 class IdentifySpectroscopicTargets(object):
