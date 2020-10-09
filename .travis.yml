@@ -22,7 +22,7 @@ install:
 
 script:
 - pytest
-- coverage run --branch --source= setup.py test
+- coverage run --branch --omit=/home/travis/virtualenv --source= setup.py test
 
 after_success:
 - coveralls
