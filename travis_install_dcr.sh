@@ -15,21 +15,21 @@ if [ -d "$BINARY_FOLDER" ]; then
 			echo "Adding executing permission"
 			chmod +x "$SOURCE_DIR"/dcr
 
-			if [ -d "$BINARY_FOLDER" ] &&  echo "$PATH" | grep -q "$BINARY_FOLDER"
-
-			then
-				echo "Copying binary file"
-				cp -v "$SOURCE_DIR"/dcr "$BINARY_FOLDER"
-			else
-				echo "Directory does not exist: $ENV_PATH"
-			fi
-
-			if [ -f "$BINARY_FOLDER"/dcr ]
-			then
-			    echo "DCR Installed Successfully on:  $BINARY_FOLDER"
-			else
-			    echo "DCR installation failed"
-			fi
+#			if [ -d "$BINARY_FOLDER" ] &&  echo "$PATH" | grep -q "$BINARY_FOLDER"
+#
+#			then
+#				echo "Copying binary file"
+#				cp -v "$SOURCE_DIR"/dcr "$BINARY_FOLDER"
+#			else
+#				echo "Directory does not exist: $ENV_PATH"
+#			fi
+#
+#			if [ -f "$BINARY_FOLDER"/dcr ]
+#			then
+#			    echo "DCR Installed Successfully on:  $BINARY_FOLDER"
+#			else
+#			    echo "DCR installation failed"
+#			fi
 		else
 			echo "Unable to find compiled file"
 		fi

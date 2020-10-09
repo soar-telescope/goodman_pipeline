@@ -26,13 +26,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest
+        pip install flake8 pytest wheel
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Adding DCR binaries path
+    - name: Compile DCR Binaries
       run: |
-        echo "adding dcr PATH"
-        export PATH=$PATH:$(pwd)/data/dcr-source/dcr
-        echo "$PATH"
+        SOURCE_DIR=${{ github.workspace }}/goodman_pipeline/data/dcr-source/dcr
+        make --directory $SOURCE_DIR
+        chmod +x $SOURCE_DIR/dcr
+        echo "${{ github.workspace }}/goodman_pipeline/data/dcr-source/dcr" >> $GITHUB_PATH
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
