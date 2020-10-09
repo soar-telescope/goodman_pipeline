@@ -6,6 +6,10 @@
 [![pypi](https://img.shields.io/pypi/v/goodman_pipeline.svg?style=flat)](https://pypi.org/project/goodman-pipeline/)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
+![Goodman Pipeline](https://github.com/soar-telescope/goodman_pipeline/workflows/Goodman%20Pipeline/badge.svg?branch=master)
+![Goodman Pipeline with Conda](https://github.com/soar-telescope/goodman_pipeline/workflows/Goodman%20Pipeline%20with%20Conda/badge.svg)
+![Upload to PYPI](https://github.com/soar-telescope/goodman_pipeline/workflows/Upload%20to%20PYPI/badge.svg)
+
 ## Overview
 The Goodman High Throughput Spectrograph (Goodman HTS) Data-Reduction Pipeline
 is the SOAR Telescope's official data reduction pipeline for *Goodman HTS*.
