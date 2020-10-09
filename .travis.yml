@@ -14,6 +14,7 @@ install:
 
 # Run DCR installer
 - ./travis_install_dcr.sh
+- export "PATH=$(pwd)/goodman_pipeline/data/dcr-source/dcr:$PATH"
 
 # install
 - python setup.py test
