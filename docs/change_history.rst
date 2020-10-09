@@ -1,6 +1,16 @@
 Change History
 ##############
 
+.. _v1.3.2:
+
+V1.3.2 09-10-2020
+^^^^^^^^^^^^^^^^^
+
+- Fixed Github Actions setup
+- Removed pandas version constraint and implemented workaround to be able to
+  use latest pandas version.
+- Modified installation of dcr on travis and Github Actions
+
 .. _v1.3.1:
 
 V1.3.1 23-09-2020
