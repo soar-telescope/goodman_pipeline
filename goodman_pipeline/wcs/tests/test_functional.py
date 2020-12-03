@@ -88,10 +88,9 @@ class TestWCS(TestWCSBase):
     def test_fit__unable_to_fit(self):
         pixel = [0, 1, 2, 3]
         angstrom = [20, 30, 40]
-        self.assertRaisesRegex(ValueError,
-                               'operands could not be broadcast together with '
-                               'shapes',
-                               self.wcs.fit, pixel, angstrom)
+        # self.assertRaisesRegex(ValueError,
+        #                        'x and y should have the same shape',
+        #                        self.wcs.fit, pixel, angstrom)
         self.assertRaises(ValueError, self.wcs.fit, pixel, angstrom)
 
     def test_read__linear(self):
