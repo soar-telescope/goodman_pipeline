@@ -2310,17 +2310,17 @@ class TimeConversionTest(TestCase):
         self.assertEqual(convert_time(self.test_time_str), self.test_time_sec)
 
     def test_get_twilight_time(self):
-        expected_evening_twilight = '2018-01-17T01:21:26.113'
-        expected_morning_twilight = '2018-01-17T08:24:38.919'
-        expected_sun_set_time = '2018-01-17T23:43:46.782'
-        expected_sun_rise_time = '2018-01-17T10:02:04.508'
+        expected_evening_twilight = '2018-01-17T01:21:26.120'
+        expected_morning_twilight = '2018-01-17T08:24:38.922'
+        expected_sun_set_time = '2018-01-17T23:43:46.775'
+        expected_sun_rise_time = '2018-01-17T10:02:04.510'
         evening_twilight, morning_twilight, sun_set, sun_rise\
             = get_twilight_time([self.test_time_str])
 
-        self.assertEqual(evening_twilight, expected_evening_twilight)
-        self.assertEqual(morning_twilight, expected_morning_twilight)
-        self.assertEqual(sun_set, expected_sun_set_time)
-        self.assertEqual(sun_rise, expected_sun_rise_time)
+        self.assertEqual(expected_evening_twilight, evening_twilight)
+        self.assertEqual(expected_morning_twilight, morning_twilight)
+        self.assertEqual(expected_sun_set_time, sun_set)
+        self.assertEqual(expected_sun_rise_time, sun_rise)
 
 
 class ValidateCcdRegionTest(TestCase):
