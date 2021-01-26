@@ -48,6 +48,7 @@ conf = ConfigParser()
 # conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
 conf.read([os.path.join(os.path.dirname(__file__), 'setup.cfg')])
 metadata = dict(conf.items('metadata'))
+options = dict(conf.items('options'))
 
 PACKAGENAME = metadata['package_name']
 
@@ -65,7 +66,7 @@ AUTHOR = metadata['author']
 
 AUTHOR_EMAIL = metadata['author_email']
 
-INSTALL_REQUIRES = metadata['install_requires'].split()
+INSTALL_REQUIRES = options['install_requires'].split()
 
 # freezes version information in version.py
 create_version_py(PACKAGENAME, VERSION)

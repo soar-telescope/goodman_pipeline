@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from unittest import TestCase, skip
-from ..wcs import WCS
+from goodman_pipeline.wcs.wcs import WCS
 import numpy as np
 import os
 import re

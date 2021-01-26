@@ -10,11 +10,11 @@ from astropy.io import fits
 from astropy.modeling import models, Model
 from ccdproc import CCDData
 from unittest import TestCase, skip
-from ..wavelength import (WavelengthCalibration)
+from goodman_pipeline.spectroscopy.wavelength import (WavelengthCalibration)
 
-from ..redspec import get_args
-from ...core import add_wcs_keys, write_fits
-from ...core import ReferenceData, NoMatchFound
+from goodman_pipeline.spectroscopy.redspec import get_args
+from goodman_pipeline.core import add_wcs_keys, write_fits
+from goodman_pipeline.core import ReferenceData, NoMatchFound
 
 
 class WavelengthCalibrationTests(TestCase):

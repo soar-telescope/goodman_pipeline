@@ -5,7 +5,7 @@ import os
 import shutil
 from unittest import TestCase
 
-from ...spectroscopy.redspec import (get_args, MainApp)
+from goodman_pipeline.spectroscopy.redspec import (get_args, MainApp)
 
 
 class TestArguments(TestCase):
@@ -103,8 +103,8 @@ class TestArguments(TestCase):
 
 
 def test_get_args():
-    from ...spectroscopy.redspec import get_args
-    import argparse
+    # from ...spectroscopy.redspec import get_args
+    # import argparse
     arguments = ['--data-path', './',
                  '--proc-path', './',
                  '--search-pattern', 'test-pattern',

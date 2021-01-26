@@ -21,62 +21,62 @@ import logging
 logging.disable(logging.CRITICAL)
 
 # import all classes in core.py
-from ..core import (GenerateDcrParFile,
-                    NightDataContainer,
-                    NoMatchFound,
-                    NotEnoughLinesDetected,
-                    NoTargetException,
-                    ReferenceData,
-                    SaturationValues,
-                    SpectroscopicMode)
+from goodman_pipeline.core.core import (GenerateDcrParFile,
+                                        NightDataContainer,
+                                        NoMatchFound,
+                                        NotEnoughLinesDetected,
+                                        NoTargetException,
+                                        ReferenceData,
+                                        SaturationValues,
+                                        SpectroscopicMode)
 
 
 # import of functions in core.py
-from ..core import (astroscrappy_lacosmic,
-                    add_linear_wavelength_solution,
-                    add_wcs_keys,
-                    bias_subtract,
-                    bin_reference_data,
-                    call_cosmic_rejection,
-                    classify_spectroscopic_data,
-                    combine_data,
-                    convert_time,
-                    create_master_bias,
-                    create_master_flats,
-                    cross_correlation,
-                    dcr_cosmicray_rejection,
-                    define_trim_section,
-                    extraction,
-                    extract_fractional_pixel,
-                    extract_optimal,
-                    evaluate_wavelength_solution,
-                    fix_keywords,
-                    fractional_sum,
-                    get_best_flat,
-                    get_central_wavelength,
-                    get_lines_in_lamp,
-                    get_overscan_region,
-                    get_spectral_characteristics,
-                    get_slit_trim_section,
-                    get_twilight_time,
-                    identify_targets,
-                    image_overscan,
-                    image_trim,
-                    interpolate,
-                    is_file_saturated,
-                    linearize_spectrum,
-                    name_master_flats,
-                    normalize_master_flat,
-                    ra_dec_to_deg,
-                    read_fits,
-                    record_trace_information,
-                    save_extracted,
-                    search_comp_group,
-                    setup_logging,
-                    trace,
-                    trace_targets,
-                    validate_ccd_region,
-                    write_fits)
+from goodman_pipeline.core.core import (astroscrappy_lacosmic,
+                                        add_linear_wavelength_solution,
+                                        add_wcs_keys,
+                                        bias_subtract,
+                                        bin_reference_data,
+                                        call_cosmic_rejection,
+                                        classify_spectroscopic_data,
+                                        combine_data,
+                                        convert_time,
+                                        create_master_bias,
+                                        create_master_flats,
+                                        cross_correlation,
+                                        dcr_cosmicray_rejection,
+                                        define_trim_section,
+                                        extraction,
+                                        extract_fractional_pixel,
+                                        extract_optimal,
+                                        evaluate_wavelength_solution,
+                                        fix_keywords,
+                                        fractional_sum,
+                                        get_best_flat,
+                                        get_central_wavelength,
+                                        get_lines_in_lamp,
+                                        get_overscan_region,
+                                        get_spectral_characteristics,
+                                        get_slit_trim_section,
+                                        get_twilight_time,
+                                        identify_targets,
+                                        image_overscan,
+                                        image_trim,
+                                        interpolate,
+                                        is_file_saturated,
+                                        linearize_spectrum,
+                                        name_master_flats,
+                                        normalize_master_flat,
+                                        ra_dec_to_deg,
+                                        read_fits,
+                                        record_trace_information,
+                                        save_extracted,
+                                        search_comp_group,
+                                        setup_logging,
+                                        trace,
+                                        trace_targets,
+                                        validate_ccd_region,
+                                        write_fits)
 
 
 def fake_subprocess_popen(*args, stdout, stderr):
@@ -233,9 +233,9 @@ class ClassifySpectroscopicData(TestCase):
     def setUp(self):
         self.path = os.path.join(
             os.getcwd(),
-            'goodman_pipeline/data/test_data/test_classify_spectroscopic');
+            'test_classify_spectroscopic')
         if not os.path.isdir(self.path):
-            os.mkdir(self.path)
+            os.makedirs(self.path)
 
     def tearDown(self):
         if os.path.isdir(self.path):
@@ -1386,11 +1386,13 @@ class MasterFlatTest(TestCase):
         self.assertFalse(os.path.isfile(norm_flat))
 
     def test_get_best_flat(self):
-        # print(self.flat_name_base)
+        print(self.flat_name_base)
+        print(os.path.dirname(__file__))
 
         master_flat, master_flat_name = get_best_flat(
             flat_name=self.flat_name_base,
             path=self.flat_path)
+        print(master_flat_name)
         self.assertIsInstance(master_flat, CCDData)
         self.assertEqual(os.path.basename(master_flat_name),
                          self.reference_flat_name)
