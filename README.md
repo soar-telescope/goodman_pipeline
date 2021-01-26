@@ -50,8 +50,8 @@ open a [new Issue](https://github.com/soar-telescope/goodman_pipeline/issues/new
 
 We acknowledge the important contribution of  [David Sanmartim](https://github.com/dsanmartim), who developed
 the initial incarnation of the redccd module. We thank [Tina Armond](https://github.com/tarmond) for her
-invaluable help in adding calibrated comparison lamps to the library of
-reference comparison lamps for wavelngth solution.
+invaluable help in adding calibrated comparison lamps to the [library](https://goodman.readthedocs.io/projects/lamps/en/latest/) of
+reference comparison lamps for wavelength solution.
 
 Our work would not be possible without the friendly work atmosphere at CTIO
 headquarters in La Serena, were we can interact with our SOAR and CTIO
