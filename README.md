@@ -1,13 +1,12 @@
 # Goodman High Throughput Spectrograph Data Reduction Pipeline
 
-[![Build Status](https://travis-ci.org/soar-telescope/goodman_pipeline.svg?branch=master)](https://travis-ci.org/soar-telescope/goodman_pipeline)
+![Goodman Pipeline](https://github.com/soar-telescope/goodman_pipeline/workflows/Goodman%20Pipeline/badge.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/soar-telescope/goodman_pipeline/badge.svg?branch=master)](https://coveralls.io/github/soar-telescope/goodman_pipeline?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/goodman/badge/?version=latest)](http://goodman.readthedocs.io/en/latest/?badge=latest)
 [![pypi](https://img.shields.io/pypi/v/goodman_pipeline.svg?style=flat)](https://pypi.org/project/goodman-pipeline/)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
-![Goodman Pipeline](https://github.com/soar-telescope/goodman_pipeline/workflows/Goodman%20Pipeline/badge.svg?branch=master)
-![Goodman Pipeline with Conda](https://github.com/soar-telescope/goodman_pipeline/workflows/Goodman%20Pipeline%20with%20Conda/badge.svg)
+
 ![Upload to PYPI](https://github.com/soar-telescope/goodman_pipeline/workflows/Upload%20to%20PYPI/badge.svg)
 
 ## Overview
@@ -51,8 +50,8 @@ open a [new Issue](https://github.com/soar-telescope/goodman_pipeline/issues/new
 
 We acknowledge the important contribution of  [David Sanmartim](https://github.com/dsanmartim), who developed
 the initial incarnation of the redccd module. We thank [Tina Armond](https://github.com/tarmond) for her
-invaluable help in adding calibrated comparison lamps to the library of
-reference comparison lamps for wavelngth solution.
+invaluable help in adding calibrated comparison lamps to the [library](https://goodman.readthedocs.io/projects/lamps/en/latest/) of
+reference comparison lamps for wavelength solution.
 
 Our work would not be possible without the friendly work atmosphere at CTIO
 headquarters in La Serena, were we can interact with our SOAR and CTIO
