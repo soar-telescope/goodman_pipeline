@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from unittest import TestCase, skip
 
-from ..goodman_ccd import get_args, MainApp
+from goodman_pipeline.images.goodman_ccd import get_args, MainApp
 
 
 class MainAppTest(TestCase):

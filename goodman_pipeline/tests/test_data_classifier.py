@@ -9,7 +9,7 @@ from astropy.io import fits
 from ccdproc import CCDData
 from unittest import TestCase, skip
 
-from ..data_classifier import DataClassifier
+from goodman_pipeline.images.data_classifier import DataClassifier
 
 
 class DataClassifierTests(TestCase):

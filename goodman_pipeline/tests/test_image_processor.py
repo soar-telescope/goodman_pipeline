@@ -4,9 +4,9 @@ from astropy.io import fits
 from unittest import TestCase, skip
 
 from ccdproc import CCDData
-from ...core import NightDataContainer
-from ..image_processor import ImageProcessor
-from ..goodman_ccd import get_args
+from goodman_pipeline.core import NightDataContainer
+from goodman_pipeline.images.image_processor import ImageProcessor
+from goodman_pipeline.images.goodman_ccd import get_args
 
 import numpy as np
 

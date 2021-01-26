@@ -9,7 +9,7 @@ from astropy.io import fits
 from ccdproc import CCDData
 from unittest import TestCase, skip
 
-from ..night_organizer import NightOrganizer
+from goodman_pipeline.images.night_organizer import NightOrganizer
 
 
 def create_fake_data(technique, instrument, path):
