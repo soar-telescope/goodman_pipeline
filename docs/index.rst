@@ -38,6 +38,7 @@ computers.
   usage
   Remote Access <remote_access>
   install
+  Header Changes <header_history>
 
 
 .. toctree::
