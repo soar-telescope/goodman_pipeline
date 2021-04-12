@@ -324,7 +324,7 @@ def call_cosmic_rejection(ccd,
 
             _create(instrument=_instrument, binning=_binning, path=red_path)
 
-        full_path = os.path.join(red_path, out_prefix + image_name)
+        full_path = os.path.join(red_path, f"{out_prefix}{image_name}")
 
         ccd.header.set('GSP_COSM',
                        value="DCR",
@@ -333,7 +333,7 @@ def call_cosmic_rejection(ccd,
         write_fits(ccd=ccd, full_path=full_path)
         log.info('Saving image: {:s}'.format(full_path))
 
-        in_file = out_prefix + image_name
+        in_file = f"{out_prefix}{image_name}"
 
         # This is to return the prefix that will be used by dcr
         # Not to be used by dcr_cosmicray_rejection
@@ -352,7 +352,7 @@ def call_cosmic_rejection(ccd,
                                     save_mask=keep_files)
 
         out_prefix = prefix + out_prefix
-        full_path = os.path.join(red_path, out_prefix + image_name)
+        full_path = os.path.join(red_path, f"{out_prefix}{image_name}")
 
         if save:
             log.info('Saving image: {:s}'.format(full_path))
@@ -360,7 +360,7 @@ def call_cosmic_rejection(ccd,
         return ccd, out_prefix
 
     elif method == 'none':
-        full_path = os.path.join(red_path, out_prefix + image_name)
+        full_path = os.path.join(red_path, f"{out_prefix}{image_name}")
         if save:
             log.info('Saving image: {:s}'.format(full_path))
             write_fits(ccd=ccd, full_path=full_path)
