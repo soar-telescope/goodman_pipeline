@@ -1,6 +1,14 @@
 Change History
 ##############
 
+.. _v1.3.3:
+
+V1.3.3 19-04-2021
+^^^^^^^^^^^^^^^^^
+
+- Fixed bug that caused overscan and bias correction happen in the same image
+  resulting in double bias level subtraction.
+
 .. _v1.3.2:
 
 V1.3.2 09-10-2020
