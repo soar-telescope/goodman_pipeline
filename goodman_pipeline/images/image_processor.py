@@ -163,7 +163,7 @@ class ImageProcessor(object):
                 list of science images that where observed at the same pointing
                 and time. It also contains a set of selected keywords from the
                 image's header.
-            save_all (bool): If True the pipeline will save all the intermadiate
+            save_all (bool): If True the pipeline will save all the intermediate
                 files such as after overscan correction or bias corrected and
                 etc.
 
@@ -311,16 +311,17 @@ class ImageProcessor(object):
                 ccd = read_fits(image_full_path, technique=self.technique)
 
                 # apply overscan
-                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                self.out_prefix += 'o'
+                if self.args.ignore_bias:
+                    ccd = image_overscan(ccd, overscan_region=self.overscan_region)
+                    self.out_prefix += 'o'
 
-                if save_all:
-                    full_path = os.path.join(
-                        self.args.red_path,
-                        f"{self.out_prefix}_{science_image}")
+                    if save_all:
+                        full_path = os.path.join(
+                            self.args.red_path,
+                            f"{self.out_prefix}_{science_image}")
 
-                    # ccd.write(full_path, clobber=True)
-                    write_fits(ccd=ccd, full_path=full_path)
+                        # ccd.write(full_path, clobber=True)
+                        write_fits(ccd=ccd, full_path=full_path)
 
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match
@@ -356,14 +357,10 @@ class ImageProcessor(object):
                             self.args.red_path,
                             f"{self.out_prefix}_{science_image}")
 
-                        # ccd.write(full_path, clobber=True)
                         write_fits(ccd=ccd, full_path=full_path)
 
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
-                    print(ccd.data.shape)
-                    print(master_bias.data.shape)
-
                     ccd = ccdproc.subtract_bias(ccd=ccd,
                                                 master=master_bias,
                                                 add_keyword=False)
