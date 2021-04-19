@@ -404,10 +404,10 @@ class CosmicRayRejectionTest(TestCase):
                                                 method='default',
                                                 save=False)
         self.assertAlmostEqual(initial_value, ccd.data[50, 50])
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'DCR')
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('DCR', ccd.header['GSP_COSM'])
 
         self.assertTrue(os.path.isfile('dcr.par'))
 
@@ -451,11 +451,11 @@ class CosmicRayRejectionTest(TestCase):
                                                 method='default',
                                                 save=True)
         self.assertAlmostEqual(initial_value, ccd.data[50, 50])
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'LACosmic')
-        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('LACosmic', ccd.header['GSP_COSM'])
+        self.assertTrue(os.path.isfile('new_prefix_cr_test.fits'))
 
     def test_call_cosmic_rejection_default_3x3(self):
         self.ccd.header.set('CCDSUM', value='3 3')
@@ -472,12 +472,12 @@ class CosmicRayRejectionTest(TestCase):
                                                 method='default',
                                                 save=True)
         self.assertAlmostEqual(initial_value, ccd.data[50, 50])
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'LACosmic')
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('LACosmic', ccd.header['GSP_COSM'])
 
-        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+        self.assertTrue(os.path.isfile('new_prefix_cr_test.fits'))
 
     def test_call_cosmic_rejection_none(self):
         prefix = 'new_'
@@ -489,11 +489,11 @@ class CosmicRayRejectionTest(TestCase):
                                                 prefix=prefix,
                                                 method='none',
                                                 save=True)
-        self.assertEqual(out_prefix, self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'none')
-        self.assertTrue(os.path.isfile('prefixcr_test.fits'))
+        self.assertEqual(self.out_prefix, out_prefix)
+        self.assertEqual(f"{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('none', ccd.header['GSP_COSM'])
+        self.assertTrue(os.path.isfile('prefix_cr_test.fits'))
 
     def test_call_cosmic_rejection_comp_lamp(self):
         self.ccd.header.set('OBSTYPE', value='COMP')
@@ -506,10 +506,10 @@ class CosmicRayRejectionTest(TestCase):
                                                 prefix=prefix,
                                                 method='lacosmic',
                                                 save=True)
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'none')
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('none', ccd.header['GSP_COSM'])
 
     def test_call_cosmic_rejection_not_implemented_error(self):
         prefix = 'new_'
