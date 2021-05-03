@@ -2,18 +2,12 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import ccdproc
-import datetime
-import glob
 import logging
-import numpy as np
-import matplotlib.pyplot as plt
 import random
-import re
 import os
 
 from astropy import units as u
 from astropy.io import fits
-from ccdproc import CCDData
 from ..core import (astroscrappy_lacosmic,
                     call_cosmic_rejection,
                     combine_data,
@@ -29,8 +23,6 @@ from ..core import (astroscrappy_lacosmic,
                     normalize_master_flat,
                     read_fits,
                     write_fits)
-
-from ..core import SaturationValues, SpectroscopicMode
 
 log = logging.getLogger(__name__)
 
@@ -244,7 +236,7 @@ class ImageProcessor(object):
                                                  random_image)
 
                 # read the random chosen file
-                ccd = CCDData.read(random_image_full, unit=u.adu)
+                ccd = ccdproc.CCDData.read(random_image_full, unit=u.adu)
 
                 if not self.args.ignore_flats:
                     # define the master flat name
@@ -450,11 +442,10 @@ class ImageProcessor(object):
                     log.info("Combining {:d} OBJECT images"
                              "".format(len(all_object_image)))
 
-
-                    combined_data = combine_data(all_object_image,
-                                                 dest_path=self.args.red_path,
-                                                 prefix=self.out_prefix,
-                                                 save=True)
+                    combine_data(all_object_image,
+                                 dest_path=self.args.red_path,
+                                 prefix=self.out_prefix,
+                                 save=True)
 
                 elif len(all_object_image) == 1:
                     # write_fits(all_object_image[0])
@@ -523,7 +514,7 @@ class ImageProcessor(object):
         # pick a random image in order to get a header
         random_image = random.choice(imaging_group.file.tolist())
         path_random_image = os.path.join(self.args.raw_path, random_image)
-        sample_file = CCDData.read(path_random_image, unit=u.adu)
+        sample_file = ccdproc.CCDData.read(path_random_image, unit=u.adu)
 
         master_flat_name = name_master_flats(
             header=sample_file.header,

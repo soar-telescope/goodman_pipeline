@@ -6,7 +6,6 @@ v1.0.0
 import logging
 import requests
 import os
-import re
 
 from distutils.version import LooseVersion
 

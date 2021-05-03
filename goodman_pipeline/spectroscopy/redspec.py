@@ -30,14 +30,11 @@ from ..core import (NoMatchFound,
 
 import sys
 import os
-import textwrap
 import argparse
 import astropy.units as u
 import logging
 from ccdproc import CCDData
 
-# import matplotlib
-# matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
 import warnings
 

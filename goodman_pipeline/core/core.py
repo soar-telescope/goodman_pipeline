@@ -29,9 +29,7 @@ from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
-from ccdproc import CCDData, ImageFileCollection
 from matplotlib import pyplot as plt
-from scipy import signal
 from threading import Timer
 
 from . import check_version
@@ -616,7 +614,7 @@ def cross_correlation(reference,
         cyaxis1 = convolve(reference, gaussian_kernel)
         cyaxis2 = convolve(compared, gaussian_kernel)
 
-    ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
+    ccorr = scipy.signal.correlate(cyaxis1, cyaxis2, mode=mode)
 
     max_index = np.argmax(ccorr)
 
@@ -732,7 +730,7 @@ def classify_spectroscopic_data(path, search_pattern):
                 'lamp_cu'
                 ]
 
-    ifc = ImageFileCollection(path, keywords=keywords, filenames=file_list)
+    ifc = ccdproc.ImageFileCollection(path, keywords=keywords, filenames=file_list)
 
     pifc = ifc.summary.to_pandas()
 
@@ -1006,7 +1004,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # recovers the saved file and returns the :class:`~astropy.nddata.CCDData`
     # instance
     if os.path.isfile(full_path_out):
-        ccd = CCDData.read(full_path_out, unit=u.adu)
+        ccd = ccdproc.CCDData.read(full_path_out, unit=u.adu)
         if not save:
             log.warning("Removing file because the attribute 'save' "
                         "is set to False")
@@ -1111,7 +1109,7 @@ def extraction(ccd,
         NotImplementedError: When `extraction_name` is `optimal`.
 
     """
-    assert isinstance(ccd, CCDData)
+    assert isinstance(ccd, ccdproc.CCDData)
     assert isinstance(target_trace, Model)
 
     if spatial_profile.__class__.name == 'Gaussian1D':
@@ -1167,7 +1165,7 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
           target extraction to the background. This is from the edge of the
           extraction zone to the edge of the background region.
     """
-    assert isinstance(ccd, CCDData)
+    assert isinstance(ccd, ccdproc.CCDData)
     assert isinstance(target_trace, Model)
     log.info("Fractional Pixel Extraction for "
              "{:s}".format(ccd.header['GSP_FNAM']))
@@ -1358,7 +1356,7 @@ def fix_keywords(path, pattern='*.fits'):
     file_list = glob.glob(os.path.join(path, pattern))
     for _file in file_list:
         log.info("Fixing file {:s}".format(_file))
-        ccd = CCDData.read(_file, unit='adu')
+        ccd = ccdproc.CCDData.read(_file, unit='adu')
 
         ccd.write(_file, overwrite=True)
         log.info("Fix succeeded!")
@@ -1438,7 +1436,7 @@ def get_best_flat(flat_name, path):
         # elif any('dome' in flat for flat in flat_list):
         #     master_flat_name =
 
-        master_flat = CCDData.read(master_flat_name, unit=u.adu)
+        master_flat = ccdproc.CCDData.read(master_flat_name, unit=u.adu)
         log.debug('Found suitable master flat: {:s}'.format(master_flat_name))
         return master_flat, master_flat_name
     else:
@@ -1502,7 +1500,7 @@ def get_lines_in_lamp(ccd, plots=False):
             approximate location of lines.
 
     """
-    if isinstance(ccd, CCDData):
+    if isinstance(ccd, ccdproc.CCDData):
         lamp_data = ccd.data
         lamp_header = ccd.header
         raw_pixel_axis = range(len(lamp_data))
@@ -1531,7 +1529,7 @@ def get_lines_in_lamp(ccd, plots=False):
     new_order = int(round(float(slit_size) / (0.15 * serial_binning)))
     log.debug('New Order:  {:d}'.format(new_order))
 
-    peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
+    peaks = scipy.signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
 
     if slit_size >= 5.:
 
@@ -1608,7 +1606,7 @@ def get_overscan_region(sample_image, technique):
     assert os.path.isfile(sample_image)
 
     log.debug('Overscan Sample File ' + sample_image)
-    ccd = CCDData.read(sample_image, unit=u.adu)
+    ccd = ccdproc.CCDData.read(sample_image, unit=u.adu)
 
     # Image height - spatial direction
     spatial_length, dispersion_length = ccd.data.shape
@@ -1677,7 +1675,7 @@ def get_overscan_region(sample_image, technique):
     return overscan_region
 
 
-def get_slit_trim_section(master_flat):
+def get_slit_trim_section(master_flat, debug_plots=False):
     """Find the slit edges to trim all data
 
     Using a master flat, ideally with good signal to noise ratio, this function
@@ -1688,6 +1686,7 @@ def get_slit_trim_section(master_flat):
 
     Args:
         master_flat (CCDData): A :class:`~astropy.nddata.CCDData` instance.
+        debug_plots (bool): Flag to show debugging plots
 
     Returns:
         slit_trim_section (str): Trim section in spatial direction in the format
@@ -1743,7 +1742,7 @@ def get_slit_trim_section(master_flat):
     log.debug("Slit Trim Section: {:s}".format(slit_trim_section))
 
     # debugging plots that have to be manually turned on
-    if False:  # pragma: no cover
+    if debug_plots:  # pragma: no cover
         manager = plt.get_current_fig_manager()
         manager.window.showMaximized()
         plt.title('Slit Edge Detection')
@@ -2168,7 +2167,7 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
                                                   tck,
                                                   der=0)
 
-        smoothed_linearized_data = signal.medfilt(linearized_data)
+        smoothed_linearized_data = scipy.signal.medfilt(linearized_data)
         if plots:  # pragma: no cover
             fig6 = plt.figure(6)
             plt.xlabel('Wavelength (Angstrom)')
@@ -2349,7 +2348,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
          :class:`~astropy.nddata.CCDData` instance.
 
     """
-    assert isinstance(master, CCDData)
+    assert isinstance(master, ccdproc.CCDData)
     master = master.copy()
 
     # define new name, base path and full new name
@@ -2484,7 +2483,7 @@ def read_fits(full_path, technique='Unknown'):
 
     """
     assert os.path.isfile(full_path)
-    ccd = CCDData.read(full_path, unit=u.adu)
+    ccd = ccdproc.CCDData.read(full_path, unit=u.adu)
 
     all_keys = [key for key in ccd.header.keys()]
 
@@ -2770,13 +2769,13 @@ def record_trace_information(ccd, trace_info):
                      ('GSP_TERR', [0.18741058188097284, 'RMS error of target trace'])])
 
     Args:
-        ccd (CCDData): CCDData instance to have trace info recorded into its
+        ccd (CCDData): ccdproc.CCDData instance to have trace info recorded into its
         header.
         trace_info (OrderedDict): Ordered Dictionary with a set of fits keywords
         associated to a list of values corresponding to value and comment.
 
     Returns:
-        ccd (CCDData): Same CCDData instance with the header modified.
+        ccd (CCDData): Same ccdproc.CCDData instance with the header modified.
     """
     last_keyword = None
     for info_key in trace_info:
@@ -2816,7 +2815,7 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
           although is not really necessary.
 
     """
-    assert isinstance(ccd, CCDData)
+    assert isinstance(ccd, ccdproc.CCDData)
     assert os.path.isdir(destination)
 
     file_name = ccd.header['GSP_FNAM']
@@ -2989,7 +2988,7 @@ def trace(ccd,
         spectrum.
 
     """
-    assert isinstance(ccd, CCDData)
+    assert isinstance(ccd, ccdproc.CCDData)
     assert isinstance(model, Model)
     assert isinstance(trace_model, Model)
 
@@ -3196,7 +3195,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nfwhm=5,
     """
 
     # added two assert for debugging purposes
-    assert isinstance(ccd, CCDData)
+    assert isinstance(ccd, ccdproc.CCDData)
     assert all([isinstance(profile, Model) for profile in target_list])
 
     # Initialize model fitter
@@ -3279,7 +3278,7 @@ def write_fits(ccd,
         :class:`~astropy.nddata.CCDData` instance.
 
     """
-    assert isinstance(ccd, CCDData)
+    assert isinstance(ccd, ccdproc.CCDData)
     if os.path.isabs(full_path) and not os.path.isdir(os.path.dirname(full_path)):
         log.error("Directory {} does not exist. Creating it right now."
                   "".format(os.path.dirname(full_path)))
@@ -3802,7 +3801,7 @@ class ReferenceData(object):
             full_path = os.path.join(self.reference_dir,
                                      "".join(filtered_collection.file.to_string(
                                          index=False).split()))
-            self._ccd = CCDData.read(full_path, unit=u.adu)
+            self._ccd = ccdproc.CCDData.read(full_path, unit=u.adu)
             self._recover_lines()
             return self._ccd
         else:
@@ -4236,7 +4235,7 @@ class IdentifySpectroscopicTargets(object):
                  background_threshold=3,
                  model_name='gaussian',
                  plots=False):
-        assert isinstance(ccd, CCDData)
+        assert isinstance(ccd, ccdproc.CCDData)
         assert ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM'], \
             "Can't search for targets in files with" \
             " OBSTYPE = {}".format(ccd.header['OBSTYPE'])
@@ -4483,7 +4482,7 @@ class IdentifySpectroscopicTargets(object):
 
         log.info("Finding all peaks in spatial profile")
 
-        spatial_profile = signal.medfilt(spatial_profile, kernel_size=1)
+        spatial_profile = scipy.signal.medfilt(spatial_profile, kernel_size=1)
         _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
 
         filtered_profile = np.where(np.abs(
@@ -4496,7 +4495,7 @@ class IdentifySpectroscopicTargets(object):
         filtered_profile = np.array(none_to_zero_prof)
 
         # order *= 2
-        self.all_peaks = signal.argrelmax(filtered_profile,
+        self.all_peaks = scipy.signal.argrelmax(filtered_profile,
                                           axis=0,
                                           order=order)[0]
         log.debug("Found {:d} peaks".format(len(self.all_peaks)))
