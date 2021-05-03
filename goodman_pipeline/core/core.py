@@ -30,6 +30,7 @@ from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
 from matplotlib import pyplot as plt
+from scipy import signal
 from threading import Timer
 
 from . import check_version
@@ -588,7 +589,7 @@ def cross_correlation(reference,
         compared (array): Array to be matched. A new reference lamp.
         slit_size (float): Slit width in arcseconds
         serial_binning (int): Binning in the spectral axis
-        mode (str): Correlation mode for `scipy.signal.correlate`.
+        mode (str): Correlation mode for `signal.correlate`.
         plot (bool): Switch debugging plots on or off.
 
     Returns:
@@ -614,7 +615,7 @@ def cross_correlation(reference,
         cyaxis1 = convolve(reference, gaussian_kernel)
         cyaxis2 = convolve(compared, gaussian_kernel)
 
-    ccorr = scipy.signal.correlate(cyaxis1, cyaxis2, mode=mode)
+    ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
 
     max_index = np.argmax(ccorr)
 
@@ -1486,7 +1487,7 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 def get_lines_in_lamp(ccd, plots=False):
     """Identify peaks in a lamp spectrum
 
-    Uses `scipy.signal.argrelmax` to find peaks in a spectrum i.e emission
+    Uses `signal.argrelmax` to find peaks in a spectrum i.e emission
     lines, then it calls the recenter_lines method that will recenter them
     using a "center of mass", because, not always the maximum value (peak)
     is the center of the line.
@@ -1529,7 +1530,7 @@ def get_lines_in_lamp(ccd, plots=False):
     new_order = int(round(float(slit_size) / (0.15 * serial_binning)))
     log.debug('New Order:  {:d}'.format(new_order))
 
-    peaks = scipy.signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
+    peaks = signal.argrelmax(filtered_data, axis=0, order=new_order)[0]
 
     if slit_size >= 5.:
 
@@ -2167,7 +2168,7 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
                                                   tck,
                                                   der=0)
 
-        smoothed_linearized_data = scipy.signal.medfilt(linearized_data)
+        smoothed_linearized_data = signal.medfilt(linearized_data)
         if plots:  # pragma: no cover
             fig6 = plt.figure(6)
             plt.xlabel('Wavelength (Angstrom)')
@@ -4482,7 +4483,7 @@ class IdentifySpectroscopicTargets(object):
 
         log.info("Finding all peaks in spatial profile")
 
-        spatial_profile = scipy.signal.medfilt(spatial_profile, kernel_size=1)
+        spatial_profile = signal.medfilt(spatial_profile, kernel_size=1)
         _upper_limit = spatial_profile.min() + 0.03 * spatial_profile.max()
 
         filtered_profile = np.where(np.abs(
@@ -4495,7 +4496,7 @@ class IdentifySpectroscopicTargets(object):
         filtered_profile = np.array(none_to_zero_prof)
 
         # order *= 2
-        self.all_peaks = scipy.signal.argrelmax(filtered_profile,
+        self.all_peaks = signal.argrelmax(filtered_profile,
                                           axis=0,
                                           order=order)[0]
         log.debug("Found {:d} peaks".format(len(self.all_peaks)))
