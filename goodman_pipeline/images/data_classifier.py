@@ -6,7 +6,7 @@ import logging
 
 from astropy.io.fits.verify import VerifyError
 from ccdproc import ImageFileCollection
-from ..core import fix_keywords, identify_technique
+from ..core import fix_keywords
 
 
 class DataClassifier(object):

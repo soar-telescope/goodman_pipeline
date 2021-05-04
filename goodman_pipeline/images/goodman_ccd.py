@@ -38,8 +38,6 @@ def get_args(arguments=None):
             attributes
 
     """
-    arg_log = logging.getLogger()
-
     parser = argparse.ArgumentParser(
         description="Goodman CCD Reduction - CCD reductions for Goodman "
                     "spectroscopic data."
