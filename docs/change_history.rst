@@ -1,6 +1,15 @@
 Change History
 ##############
 
+.. _v1.3.4:
+
+V1.3.4 11-05-2021
+^^^^^^^^^^^^^^^^^
+
+- Updated default search pattern for `redspec`
+- Fixed branch name in Github Actions
+
+
 .. _v1.3.3:
 
 V1.3.3 19-04-2021
