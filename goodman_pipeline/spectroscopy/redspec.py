@@ -87,7 +87,7 @@ def get_args(arguments=None):
 
     parser.add_argument('--search-pattern',
                         action='store',
-                        default='cfzsto',
+                        default='cfzst',
                         type=str,
                         metavar='<Search Pattern>',
                         dest='pattern',

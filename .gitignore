@@ -10,3 +10,8 @@ docs/_build/*
 goodman_pipeline/data/dcr-source/dcr
 goodman_pipeline/data/dcr-source/*.o
 /dev-tools/
+.cache/*
+.eggs/*
+.tmp/*
+.tox/*
+goodman_pipeline.egg-info/*
