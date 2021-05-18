@@ -119,6 +119,23 @@ def get_args(arguments=None):
                         choices=['moffat', 'gaussian'],
                         help="Model to fit peaks found on spatial profile "
                              "while searching for spectroscopic targets.")
+    parser.add_argument('--target-min-width',
+                        action='store',
+                        # default=0.,
+                        type=float,
+                        dest='target_min_width',
+                        help="Minimum profile width for fitting the spatial axis of spectroscopic targets. If fitting "
+                             "a Moffat it will be reflected as the FWHM attribute of the fitted model and if fitting a "
+                             "Gaussian it will be reflected as the STDDEV attribute of the Gaussian model.")
+
+    parser.add_argument('--target-max-width',
+                        action='store',
+                        # default=0.,
+                        type=float,
+                        dest='target_max_width',
+                        help="Maximum profile width for fitting the spatial axis of spectroscopic targets. If fitting "
+                             "a Moffat it will be reflected as the FWHM attribute of the fitted model and if fitting a "
+                             "Gaussian it will be reflected as the STDDEV attribute of the Gaussian model.")
 
     parser.add_argument('--reference-files',
                         action='store',
@@ -389,6 +406,8 @@ class MainApp(object):
                         fit_model=target_fit_model,
                         background_threshold=background_threshold,
                         nfind=self.args.max_n_targets,
+                        profile_min_width=self.args.target_min_width,
+                        profile_max_width=self.args.target_max_width,
                         plots=self.args.debug_with_plots)
 
                     # trace
