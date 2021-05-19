@@ -42,9 +42,11 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest
-    - name: Coveralls GitHub Action
-      uses: coverallsapp/github-action@v1.1.2
+        pytest --cov=goodman_pipeline
+
+    - uses: codecov/codecov-action@v1
       with:
-        github-token: ${{ secrets.github_token }}
+        token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+        fail_ci_if_error: true # optional (default = false)
+
 
