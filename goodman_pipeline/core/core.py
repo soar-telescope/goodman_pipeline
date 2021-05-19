@@ -4670,7 +4670,9 @@ class IdentifySpectroscopicTargets(object):
                 selected_peaks=selected_peaks,
                 order=order,
                 file_name=file_name,
-                plots=plots or self.plots)
+                plots=plots or self.plots,
+                stddev_min=self.profile_min_width,
+                stddev_max=self.profile_max_width)
             return self.profile_model
 
         if model_name == 'moffat':
@@ -4680,7 +4682,9 @@ class IdentifySpectroscopicTargets(object):
                 selected_peaks=selected_peaks,
                 order=order,
                 file_name=file_name,
-                plots=plots or self.plots)
+                plots=plots or self.plots,
+                fwhm_min=self.profile_min_width,
+                fwhm_max=self.profile_max_width)
             return self.profile_model
 
     @staticmethod
@@ -4696,10 +4700,12 @@ class IdentifySpectroscopicTargets(object):
         profile_model = []
         if stddev_min is None:
             stddev_min = 0
-            log.debug(f"Setting STDDEV minimum value to {stddev_min}. Set it with `--profile-min-width`.")
+            log.debug(f"Setting STDDEV minimum value to {stddev_min} pixels. Set it with `--profile-min-width`.")
         if stddev_max is None:
             stddev_max = 4 * order
-            log.debug(f"Setting STDDEV maximum value to {stddev_max}. Set it with `--profile-max-width`.")
+            log.debug(f"Setting STDDEV maximum value to {stddev_max} pixels. Set it with `--profile-max-width`.")
+        log.debug(f"Using minimum STDDEV = {stddev_min} pixels.")
+        log.debug(f"Using maximum STDDEV = {stddev_max} pixels.")
         for peak in selected_peaks:
             peak_value = spatial_profile[peak]
             gaussian = models.Gaussian1D(amplitude=peak_value,
@@ -4757,10 +4763,12 @@ class IdentifySpectroscopicTargets(object):
         log.info("Fitting 'Moffat1D' to spatial profile of targets.")
         if fwhm_min is None:
             fwhm_min = 0.5 * order
-            log.debug(f"Setting FWHM minimum value to {fwhm_min}. Set it with `--profile-min-width`.")
+            log.debug(f"Setting FWHM minimum value to {fwhm_min} pixels. Set it with `--profile-min-width`.")
         if fwhm_max is None:
             fwhm_max = 4 * order
-            log.debug(f"Setting FWHM maximum value to {fwhm_max}. Set it with `--profile-max-width`.")
+            log.debug(f"Setting FWHM maximum value to {fwhm_max} pixels. Set it with `--profile-max-width`.")
+        log.debug(f"Using minimum FWHM = {fwhm_min} pixels.")
+        log.debug(f"Using maximum FWHM = {fwhm_max} pixels.")
         profile_model = []
         for peak in selected_peaks:
             peak_value = spatial_profile[peak]
