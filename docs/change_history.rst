@@ -1,6 +1,15 @@
 Change History
 ##############
 
+.. _v1.3.5:
+
+V1.3.5 Not Released
+^^^^^^^^^^^^^^^^^^^
+
+- Created `--target-min-width` and `--target-max-width` flags to allow extraction of extended sources.
+- Replaced coveralls with codecov for code coverage.
+- Documentation improvements and updates.
+
 .. _v1.3.4:
 
 V1.3.4 11-05-2021
@@ -35,8 +44,8 @@ V1.3.1 23-09-2020
 
 - Documentation improvements:
 
-  + More docstrings
-  + New `File Suffixes`_ section
+  + More docstrings.
+  + New :ref:`file-suffixes` section.
 
 - Added more test code.
 - Cleaned .travis.yml and created special dcr installation script for travis.

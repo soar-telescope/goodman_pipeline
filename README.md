@@ -15,7 +15,7 @@
 The Goodman High Throughput Spectrograph (Goodman HTS) Data-Reduction Pipeline
 is the SOAR Telescope's official data reduction pipeline for *Goodman HTS*.
 
-It has been fully developed in Python 3.5 and uses mostly astropy affiliated packages
+It has been fully developed in Python and uses mostly astropy affiliated packages
 with the exception of [dcr](http://users.camk.edu.pl/pych/DCR/) which is an external tool
 that does cosmic ray identification and correction. The reason for using it
 instead of LACosmic is that it works very well for spectroscopic data and the
@@ -43,7 +43,7 @@ open a [new Issue](https://github.com/soar-telescope/goodman_pipeline/issues/new
 
 ## Development Team
 
-- [Simón Torres](https://github.com/simontorres) (SOAR Telescope Data Analyst - main code developer)
+- [Simón Torres](https://github.com/simontorres) (NOIRLab Software Engineer - main code developer)
 - [César Briceño](https://github.com/cbaorion) (SOAR Telescope Scientist - team lead)
 - [Bruno Quint](https://github.com/b1quint) (Brazil Support Astronomer - code development adviser)
 

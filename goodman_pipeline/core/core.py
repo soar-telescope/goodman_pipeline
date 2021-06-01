@@ -4722,11 +4722,11 @@ class IdentifySpectroscopicTargets(object):
                     (fitted_gaussian.stddev.value < stddev_max):
                 profile_model.append(fitted_gaussian)
                 log.info(
-                    "Recording target centered at: {:.2f}, stddev: {:.2f}"
+                    "Recording target centered at: {:.2f}, STDDEV: {:.2f}"
                     "".format(fitted_gaussian.mean.value,
                               fitted_gaussian.stddev.value))
             else:
-                log.error(f"Discarding target with stddev: {fitted_gaussian.stddev.value}. "
+                log.error(f"Discarding target with STDDEV: {fitted_gaussian.stddev.value}. "
                           f"Outside of limits {stddev_min} - {stddev_max}. Set new limits with "
                           f"`--profile-min-width` and `--profile-max-width`")
 
@@ -4763,10 +4763,10 @@ class IdentifySpectroscopicTargets(object):
         log.info("Fitting 'Moffat1D' to spatial profile of targets.")
         if fwhm_min is None:
             fwhm_min = 0.5 * order
-            log.debug(f"Setting FWHM minimum value to {fwhm_min} pixels. Set it with `--profile-min-width`.")
+            log.debug(f"Setting FWHM minimum value to {fwhm_min} pixels. Set it with `--target-min-width`.")
         if fwhm_max is None:
             fwhm_max = 4 * order
-            log.debug(f"Setting FWHM maximum value to {fwhm_max} pixels. Set it with `--profile-max-width`.")
+            log.debug(f"Setting FWHM maximum value to {fwhm_max} pixels. Set it with `--target-max-width`.")
         log.debug(f"Using minimum FWHM = {fwhm_min} pixels.")
         log.debug(f"Using maximum FWHM = {fwhm_max} pixels.")
         profile_model = []
@@ -4786,7 +4786,7 @@ class IdentifySpectroscopicTargets(object):
                     (fitted_moffat.fwhm < fwhm_max):
                 profile_model.append(fitted_moffat)
                 log.info(
-                    "Recording target centered at: {:.2f}, fwhm: {:.2f}"
+                    "Recording target centered at: {:.2f}, FWHM: {:.2f}"
                     "".format(fitted_moffat.x_0.value,
                               fitted_moffat.fwhm))
             else:
