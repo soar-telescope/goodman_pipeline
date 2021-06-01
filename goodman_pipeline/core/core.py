@@ -1916,6 +1916,8 @@ def identify_targets(ccd,
                      fit_model,
                      background_threshold,
                      nfind=3,
+                     profile_min_width=None,
+                     profile_max_width=None,
                      plots=False):
     """Identify Spectroscopic Targets
 
@@ -1928,6 +1930,8 @@ def identify_targets(ccd,
         discrimination.
         nfind (int): Maximum number of targets passing the background threshold
         to be returned, they are order from most intense peak to least intense.
+        profile_min_width (float): Minimum FWHM (moffat) or STDDEV (gaussian) for spatial profile model.
+        profile_max_width (float): Maximum FWHM (moffat) or STDDEV (gaussian) for spatial profile model.
         plots (bool): Flat for plotting results.
 
     Returns:
@@ -1940,6 +1944,8 @@ def identify_targets(ccd,
                                   nfind=nfind,
                                   background_threshold=background_threshold,
                                   model_name=fit_model,
+                                  profile_min_width=profile_min_width,
+                                  profile_max_width=profile_max_width,
                                   plots=plots)
 
     return identified_targets
@@ -4218,6 +4224,8 @@ class IdentifySpectroscopicTargets(object):
         self.plots = False
         self.background_threshold = 3
         self.profile_model = []
+        self.profile_min_width = None
+        self.profile_max_width = None
         self.model_name = None
         self.ccd = None
         self.slit_size = None
@@ -4235,6 +4243,8 @@ class IdentifySpectroscopicTargets(object):
                  nfind=3,
                  background_threshold=3,
                  model_name='gaussian',
+                 profile_min_width=None,
+                 profile_max_width=None,
                  plots=False):
         assert isinstance(ccd, ccdproc.CCDData)
         assert ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM'], \
@@ -4250,6 +4260,8 @@ class IdentifySpectroscopicTargets(object):
         self.plots = plots
         self.model_name = model_name
         self.background_threshold = background_threshold
+        self.profile_min_width = profile_min_width
+        self.profile_max_width = profile_max_width
 
         self.slit_size = re.sub('[a-zA-Z"_*]', '', self.ccd.header['SLIT'])
         log.debug('Slit size: {:s}'.format(self.slit_size))
@@ -4658,7 +4670,9 @@ class IdentifySpectroscopicTargets(object):
                 selected_peaks=selected_peaks,
                 order=order,
                 file_name=file_name,
-                plots=plots or self.plots)
+                plots=plots or self.plots,
+                stddev_min=self.profile_min_width,
+                stddev_max=self.profile_max_width)
             return self.profile_model
 
         if model_name == 'moffat':
@@ -4668,7 +4682,9 @@ class IdentifySpectroscopicTargets(object):
                 selected_peaks=selected_peaks,
                 order=order,
                 file_name=file_name,
-                plots=plots or self.plots)
+                plots=plots or self.plots,
+                fwhm_min=self.profile_min_width,
+                fwhm_max=self.profile_max_width)
             return self.profile_model
 
     @staticmethod
@@ -4677,9 +4693,19 @@ class IdentifySpectroscopicTargets(object):
                       selected_peaks,
                       order,
                       file_name,
-                      plots):
+                      plots,
+                      stddev_min=None,
+                      stddev_max=None):
         log.info("Fitting 'Gaussian1D' to spatial profile of targets.")
         profile_model = []
+        if stddev_min is None:
+            stddev_min = 0
+            log.debug(f"Setting STDDEV minimum value to {stddev_min} pixels. Set it with `--profile-min-width`.")
+        if stddev_max is None:
+            stddev_max = 4 * order
+            log.debug(f"Setting STDDEV maximum value to {stddev_max} pixels. Set it with `--profile-max-width`.")
+        log.debug(f"Using minimum STDDEV = {stddev_min} pixels.")
+        log.debug(f"Using maximum STDDEV = {stddev_max} pixels.")
         for peak in selected_peaks:
             peak_value = spatial_profile[peak]
             gaussian = models.Gaussian1D(amplitude=peak_value,
@@ -4692,16 +4718,17 @@ class IdentifySpectroscopicTargets(object):
                                      spatial_profile)
 
             # this ensures the profile returned are valid
-            if (fitted_gaussian.stddev.value > 0) and \
-                    (fitted_gaussian.stddev.value < 4 * order):
+            if (fitted_gaussian.stddev.value > stddev_min) and \
+                    (fitted_gaussian.stddev.value < stddev_max):
                 profile_model.append(fitted_gaussian)
                 log.info(
-                    "Recording target centered at: {:.2f}, stddev: {:.2f}"
+                    "Recording target centered at: {:.2f}, STDDEV: {:.2f}"
                     "".format(fitted_gaussian.mean.value,
                               fitted_gaussian.stddev.value))
             else:
-                log.error("Discarding target with stddev: {:.3f}".format(
-                    fitted_gaussian.stddev.value))
+                log.error(f"Discarding target with STDDEV: {fitted_gaussian.stddev.value}. "
+                          f"Outside of limits {stddev_min} - {stddev_max}. Set new limits with "
+                          f"`--profile-min-width` and `--profile-max-width`")
 
         if plots:  # pragma: no cover
             fig, ax = plt.subplots()
@@ -4730,8 +4757,18 @@ class IdentifySpectroscopicTargets(object):
                     selected_peaks,
                     order,
                     file_name,
-                    plots):
+                    plots,
+                    fwhm_min=None,
+                    fwhm_max=None):
         log.info("Fitting 'Moffat1D' to spatial profile of targets.")
+        if fwhm_min is None:
+            fwhm_min = 0.5 * order
+            log.debug(f"Setting FWHM minimum value to {fwhm_min} pixels. Set it with `--target-min-width`.")
+        if fwhm_max is None:
+            fwhm_max = 4 * order
+            log.debug(f"Setting FWHM maximum value to {fwhm_max} pixels. Set it with `--target-max-width`.")
+        log.debug(f"Using minimum FWHM = {fwhm_min} pixels.")
+        log.debug(f"Using maximum FWHM = {fwhm_max} pixels.")
         profile_model = []
         for peak in selected_peaks:
             peak_value = spatial_profile[peak]
@@ -4745,11 +4782,11 @@ class IdentifySpectroscopicTargets(object):
                                    spatial_profile)
 
             # this ensures the profile returned are valid
-            if (fitted_moffat.fwhm > 0.5 * order) and \
-                    (fitted_moffat.fwhm < 4 * order):
+            if (fitted_moffat.fwhm > fwhm_min) and \
+                    (fitted_moffat.fwhm < fwhm_max):
                 profile_model.append(fitted_moffat)
                 log.info(
-                    "Recording target centered at: {:.2f}, fwhm: {:.2f}"
+                    "Recording target centered at: {:.2f}, FWHM: {:.2f}"
                     "".format(fitted_moffat.x_0.value,
                               fitted_moffat.fwhm))
             else:
@@ -4757,12 +4794,12 @@ class IdentifySpectroscopicTargets(object):
                     fitted_moffat.x_0.value))
                 if fitted_moffat.fwhm < 0:
                     log.error("Moffat model FWHM is negative")
-                elif 0 <= fitted_moffat.fwhm < 0.5 * order:
-                    log.error("Moffat model FWHM is too small: {:.3f}, most "
-                              "likely is an artifact".format(fitted_moffat.fwhm))
+                elif 0 <= fitted_moffat.fwhm < fwhm_min:
+                    log.error(f"Moffat model FWHM is too small: {fitted_moffat.fwhm}. "
+                              "Set a minimum limit with `--profile-min-width`.")
                 else:
-                    log.error("Moffat model FWHM too large: {:.3f}"
-                              "".format(fitted_moffat.fwhm))
+                    log.error(f"Moffat model FWHM is {fitted_moffat.fwhm}, larger than  current limit {fwhm_max}. "
+                              f"Set a maximum limit with `--profile-max-width`.")
 
         if plots:  # pragma: no cover
             fig, ax = plt.subplots()

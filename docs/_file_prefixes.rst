@@ -3,11 +3,17 @@
 File Prefixes
 *************
 
+.. note::
+
+  Overscan is no longer performed by default. Since it caused a double bias level substraction.
+  Fixed since release :ref:`v1.3.3`.
+
+
 There are several ways one can do this but we selected adding prefixes to the
 file name because is easier to add and also easy to filter using a terminal,
 for instance.
 
-  ``ls cfzsto*fits``
+  ``ls cfzst*fits``
 
 or in python
 
@@ -15,7 +21,7 @@ or in python
 
   import glob
 
-  file_list = glob.glob('cfzsto*fits')
+  file_list = glob.glob('cfzst*fits')
 
 So what does all those letter mean? Here is a table to explain it.
 

@@ -378,6 +378,14 @@ class WavelengthCalibration(object):
             compared=self.lamp.data,
             slit_size=slit_size,
             serial_binning=self.serial_binning)
+        log.debug(f"Found global cross-correlation value of: {global_cross_corr}")
+
+        if plots:
+            plt.title(f"Comparison of New to Reference Lamp\nGlobal Cross Correlation Value: {global_cross_corr}")
+            plt.plot(reference_lamp_ccd.data, label='Reference Lamp')
+            plt.plot(self.lamp.data, label='New Lamp')
+            plt.legend(loc='best')
+            plt.show()
 
         half_width = np.max(
             [int((len(self.lamp.data) / float(len(lamp_lines_pixel)))),
@@ -409,9 +417,7 @@ class WavelengthCalibration(object):
                 slit_size=slit_size,
                 serial_binning=self.serial_binning)
 
-            log.debug('Cross correlation value '
-                      '{:s} vs {:s}'.format(str(global_cross_corr),
-                                            str(correlation_value)))
+            log.debug(f"Cross correlation value {correlation_value} vs Global Reference value: {global_cross_corr}")
 
             if - corr_tolerance < (global_cross_corr - correlation_value) < \
                     corr_tolerance:
