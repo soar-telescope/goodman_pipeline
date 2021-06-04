@@ -2,6 +2,7 @@ astropy
 astroplan
 astroscrappy
 ccdproc
+coloredlogs
 coveralls
 cython
 recommonmark

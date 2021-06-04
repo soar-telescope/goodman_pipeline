@@ -10,6 +10,7 @@ dependencies:
   - pip
   - pip:
     - ccdproc
+    - coloredlogs
     - coveralls
     - astroplan
     - mock
