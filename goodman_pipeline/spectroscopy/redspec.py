@@ -328,7 +328,9 @@ class MainApp(object):
                 obj_groupby = object_group.groupby(['object']).size(
                     ).reset_index().rename(columns={0: 'count'})
 
-                self.log.info("Processing Science Target: "
+                self.log.debug(f"Here is where the process starts")
+
+                self.log.info("Starting process for Science Target: "
                               "{:s} with {:d} files."
                               "".format(obj_groupby.iloc[0]['object'],
                                         obj_groupby.iloc[0]['count']))
@@ -342,7 +344,7 @@ class MainApp(object):
                     comp_group = self.reference.check_comp_group(comp_group)
 
                 if comp_group is None:
-                    self.log.debug('Group does not have comparison lamps')
+                    self.log.warning('Group does not have comparison lamps')
                     if data_container.comp_groups is not None:
                         self.log.debug('There are comparison lamp group '
                                        'candidates')
@@ -387,6 +389,7 @@ class MainApp(object):
                     if comp_group is not None and comp_ccd_list == []:
 
                         for comp_file in comp_group.file.tolist():
+                            self.log.debug(f"Preparing comparison lamp file {comp_file} for processing.")
                             comp_path = os.path.join(full_path, comp_file)
                             comp_ccd = CCDData.read(comp_path, unit=u.adu)
                             comp_ccd = add_wcs_keys(ccd=comp_ccd)
@@ -399,8 +402,7 @@ class MainApp(object):
                             'Comp Group is None or comp list already exist')
 
                     # identify
-                    self.log.debug("Calling procedure for target "
-                                   "identification.")
+                    self.log.info(f"Starting target identification for file {spec_file}")
                     target_list = identify_targets(
                         ccd=ccd,
                         fit_model=target_fit_model,
@@ -430,6 +432,8 @@ class MainApp(object):
                             single_profile_center = single_profile.mean.value
                         elif single_profile.__class__.name == 'Moffat1D':
                             single_profile_center = single_profile.x_0.value
+                        self.log.info(f"Processing traced profile fitted wit {single_profile.__class__.name} "
+                                      f"centered at {single_profile_center}")
 
                         if len(trace_list) > 1:
                             target_number = trace_list.index(
@@ -454,6 +458,7 @@ class MainApp(object):
                             # print(spec_file)
 
                             # lamp extraction
+                            self.log.debug(f"Starting lamps extraction for science file {spec_file}")
                             all_lamps = []
                             if comp_ccd_list:
                                 for comp_lamp in comp_ccd_list:
@@ -525,6 +530,7 @@ class MainApp(object):
                             self.log.error('No target was identified in file'
                                            ' {:s}'.format(spec_file))
                             continue
+                    self.log.debug(f"Starting Wavelength Calibration Process for File {spec_file}.")
                     object_number = None
                     for sci_target, comp_list in extracted_target_and_lamps:
                         try:
@@ -543,6 +549,8 @@ class MainApp(object):
                             self.log.error(no_match_error)
                         except NotImplemented as error:
                             self.log.error(error)
+
+                    self.log.debug(f"End of process for file {spec_file}.")
 
 
 if __name__ == '__main__':  # pragma: no cover

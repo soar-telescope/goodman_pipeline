@@ -155,8 +155,8 @@ class WavelengthCalibration(object):
 
         self.i_fig = None
 
-        log.info('Processing Science Target: '
-                 '{:s}'.format(ccd.header['OBJECT']))
+        log.info(f"Starting Wavelength calibration of Science Target: {ccd.header['OBJECT']} "
+                 f"File: {self.sci_target_file}.")
 
         if len(comp_list) == 0:
             log.warning("No comparison lamps were provided for file {}"
@@ -168,18 +168,17 @@ class WavelengthCalibration(object):
             else:
                 return
         else:
+            log.debug(f"Science file {self.sci_target_file} has {len(comp_list)} comparison lamps.")
             wavelength_solutions = []
             reference_lamp_names = []
             for self.lamp in comp_list:
                 self.calibration_lamp = self.lamp.header['GSP_FNAM']
-                log.info('Using reference lamp {}'.format(self.calibration_lamp))
 
                 self.raw_pixel_axis = range(self.lamp.shape[0])
 
                 self.lamp_name = self.lamp.header['OBJECT']
 
-                log.info('Processing Comparison Lamp: '
-                         '{:s}'.format(self.lamp_name))
+                log.info(f"Using Comparison lamp {self.lamp_name} {self.calibration_lamp}")
 
                 self.lines_center = get_lines_in_lamp(
                     ccd=self.lamp, plots=plots)
@@ -218,14 +217,12 @@ class WavelengthCalibration(object):
                     wavelength_solutions.append(self.wsolution)
                     reference_lamp_names.append(self.wcal_lamp_file)
                 else:
-                    log.error('It was not possible to get a wavelength '
-                              'solution from lamp '
-                              '{:s} {:s}.'.format(
-                               self.lamp.header['GSP_FNAM'],
-                               self.lamp.header['OBJECT']))
+                    log.error(f"It was not possible to get a wavelength solution from lamp {self.lamp_name} "
+                              f"{self.calibration_lamp}.")
                     continue
 
             if len(wavelength_solutions) > 1:
+                log.warning(f"Multiple ({len(wavelength_solutions)}) wavelength solutions found.")
                 warning_message = str("The current version of the pipeline "
                                       "does not combine multiple solution "
                                       "instead it saves a single version of "
@@ -281,9 +278,9 @@ class WavelengthCalibration(object):
 
                     return json_payload
             else:
-                log.error("No wavelength solution.")
+                log.error("Unable to obtain wavelength solution.")
                 if json_output:
-                    json_payload['error'] = "Unable to obtain wavelength solution"
+                    json_payload['error'] = "Unable to obtain wavelength solution."
                     return json_payload
 
     def _automatic_wavelength_solution(self,

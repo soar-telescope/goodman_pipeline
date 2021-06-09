@@ -3762,7 +3762,7 @@ class ReferenceData(object):
                 lamp.
 
         Returns:
-            full path to best matching reference lamp.
+            full path to best matching reference lamp or None.
 
         """
 
@@ -3776,7 +3776,7 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
                 (self.ref_lamp_collection['wavmode'] == header['wavmode']))]
             if filtered_collection.empty:
-                error_message = "Unable to find a match for: "\
+                error_message = "Unable to find a match in the reference library for: "\
                                 "LAMP_HGA = {}, "\
                                 "LAMP_NE = {}, "\
                                 "LAMP_AR = {}, "\
@@ -4703,10 +4703,10 @@ class IdentifySpectroscopicTargets(object):
         profile_model = []
         if stddev_min is None:
             stddev_min = 0
-            log.debug(f"Setting STDDEV minimum value to {stddev_min} pixels. Set it with `--profile-min-width`.")
+            log.debug(f"Setting STDDEV minimum value to {stddev_min} pixels. Set it with `--target-min-width`.")
         if stddev_max is None:
             stddev_max = 4 * order
-            log.debug(f"Setting STDDEV maximum value to {stddev_max} pixels. Set it with `--profile-max-width`.")
+            log.debug(f"Setting STDDEV maximum value to {stddev_max} pixels. Set it with `--target-max-width`.")
         log.debug(f"Using minimum STDDEV = {stddev_min} pixels.")
         log.debug(f"Using maximum STDDEV = {stddev_max} pixels.")
         for peak in selected_peaks:
