@@ -176,7 +176,7 @@ def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
     ccd.header.set('WAT0_001', 'system=equispec')
     ccd.header.set('WAT1_001', 'wtype=linear label=Wavelength units=angstroms')
     ccd.header.set('DC-FLAG', 0)
-    ccd.header.set('DCLOG1', 'REFSPEC1 = {:s}'.format(reference_lamp))
+    ccd.header.set('DCLOG1', 'REFSPEC1 = {:s}'.format(os.path.basename(reference_lamp)))
 
     return ccd
 

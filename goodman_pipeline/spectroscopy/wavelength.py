@@ -667,7 +667,7 @@ class WavelengthCalibration(object):
         ccd = add_linear_wavelength_solution(
             ccd=ccd,
             x_axis=linear_x_axis,
-            reference_lamp=self.calibration_lamp)
+            reference_lamp=self.wcal_lamp_file)
 
         save_file_name = self._save_wavelength_calibrated(
             ccd=ccd,
