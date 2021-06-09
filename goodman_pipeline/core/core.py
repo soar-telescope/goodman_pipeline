@@ -573,6 +573,7 @@ def cross_correlation(reference,
                       compared,
                       slit_size,
                       serial_binning,
+                      selection_bias='none',
                       mode='full',
                       plot=False):
     """Do cross correlation of two 1D spectra
@@ -590,6 +591,8 @@ def cross_correlation(reference,
         compared (array): Array to be matched. A new reference lamp.
         slit_size (float): Slit width in arcseconds
         serial_binning (int): Binning in the spectral axis
+        selection_bias (str): For arrays expected to be similar therefore a relatively small shift is expected select 'center'.
+         'none' (default) or 'center'.
         mode (str): Correlation mode for `signal.correlate`.
         plot (bool): Switch debugging plots on or off.
 
@@ -618,19 +621,35 @@ def cross_correlation(reference,
 
     ccorr = signal.correlate(cyaxis1, cyaxis2, mode=mode)
 
-    max_index = np.argmax(ccorr)
-
     x_ccorr = np.linspace(-int(len(ccorr) / 2.),
                           int(len(ccorr) / 2.),
                           len(ccorr))
+    if selection_bias == 'center':
+        gaussian_model = models.Gaussian1D(amplitude=1, mean=len(ccorr) / 2., stddev=50)
+        gaussian_weights = gaussian_model(range(len(x_ccorr)))
+        gaussian_weighted = gaussian_weights * ccorr
+
+        max_index = np.argmax(gaussian_weighted)
+    elif selection_bias == 'none':
+        max_index = np.argmax(ccorr)
+
+    else:
+        raise NotImplementedError(f"'selection_bias' {selection_bias} is not valid. Options are 'none' and 'center'")
 
     correlation_value = x_ccorr[max_index]
+
+    log.debug(f"Found correlation value of {correlation_value}")
+
     if plot:  # pragma: no cover
         plt.ion()
         plt.title('Cross Correlation')
         plt.xlabel('Lag Value')
         plt.ylabel('Correlation Value')
-        plt.plot(x_ccorr, ccorr)
+        plt.plot(x_ccorr, ccorr, label='Original Cross Correlation')
+        if selection_bias == 'center':
+            plt.plot(x_ccorr, gaussian_weights, label="Centered Gaussian")
+            plt.plot(x_ccorr, gaussian_weighted, label='Gaussian Weighted')
+        plt.legend(loc='best')
         plt.draw()
         plt.pause(2)
         plt.clf()

@@ -374,7 +374,8 @@ class WavelengthCalibration(object):
             reference=reference_lamp_ccd.data,
             compared=self.lamp.data,
             slit_size=slit_size,
-            serial_binning=self.serial_binning)
+            serial_binning=self.serial_binning,
+            selection_bias='center')
         log.debug(f"Found global cross-correlation value of: {global_cross_corr}")
 
         if plots:
