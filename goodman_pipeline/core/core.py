@@ -760,9 +760,9 @@ def classify_spectroscopic_data(path, search_pattern):
     for i in pifc.index.tolist():
         radeg, decdeg = ra_dec_to_deg(pifc.obsra.iloc[i], pifc.obsdec.iloc[i])
 
-        pifc.iloc[i, pifc.columns.get_loc('radeg')] = '{:.2f}'.format(radeg)
+        pifc.iloc[i, pifc.columns.get_loc('radeg')] = '{:.6f}'.format(radeg)
 
-        pifc.iloc[i, pifc.columns.get_loc('decdeg')] = '{:.2f}'.format(decdeg)
+        pifc.iloc[i, pifc.columns.get_loc('decdeg')] = '{:.6f}'.format(decdeg)
         # now we can compare using degrees
 
     confs = pifc.groupby(['slit',
