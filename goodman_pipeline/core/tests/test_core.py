@@ -922,7 +922,7 @@ class ExtractionTest(TestCase):
         np.testing.assert_array_almost_equal(extracted, self.reference_result_moffat)
 
     def test_extraction_not_implemented_model(self):
-        spatial_profile = models.BlackBody1D()
+        spatial_profile = models.BlackBody()
         self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
                           target_trace=self.target_trace,
                           spatial_profile=spatial_profile,
@@ -2281,7 +2281,7 @@ class TargetsTest(TestCase):
         self.assertRaises(NotImplementedError,
                           trace,
                           self.ccd2,
-                          models.BlackBody1D(),
+                          models.BlackBody(),
                           trace_model,
                           fitter,
                           5)
