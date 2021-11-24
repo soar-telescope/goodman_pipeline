@@ -2064,7 +2064,7 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
     return ccd
 
 
-def interpolate(spectrum, interpolation_size):
+def interpolate_spectrum(spectrum, interpolation_size):
     """Creates an interpolated version of the input spectrum
 
     This method creates an interpolated version of the input array, it is
