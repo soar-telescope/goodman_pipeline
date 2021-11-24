@@ -821,6 +821,7 @@ class ExtractionTest(TestCase):
         self.fake_image = CCDData(data=np.ones((100, 100)),
                                   meta=fits.Header(),
                                   unit='adu')
+        self.fake_image.mask = np.zeros((100, 100), dtype=bool)
         self.fake_image.header.set('NAXIS', value=2)
         self.fake_image.header.set('NAXIS1', value=100)
         self.fake_image.header.set('NAXIS2', value=100)
