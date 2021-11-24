@@ -1835,9 +1835,9 @@ class ReferenceDataTest(TestCase):
 
         self.ccd.header.set('WAVMODE', value='400_M2')
 
-        self.assertRaises(NoMatchFound,
-                          self.rd.get_reference_lamp,
-                          self.ccd.header)
+        reference_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
+
+        self.assertIsNone(reference_lamp)
 
     def test_get_reference_lamp_exist_with_object_key(self):
         self.ccd.header.set('OBJECT', value='HgArNe')
@@ -1863,9 +1863,9 @@ class ReferenceDataTest(TestCase):
         self.ccd.header.set('OBJECT', value='HgArCu')
         self.ccd.header.set('WAVMODE', value='400_M5')
 
-        self.assertRaises(NoMatchFound,
-                          self.rd.get_reference_lamp,
-                          self.ccd.header)
+        reference_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
+
+        self.assertIsNone(reference_lamp)
 
     def test_lamp_exist(self):
         self.ccd.header.set('LAMP_HGA', value='TRUE')
