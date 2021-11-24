@@ -195,6 +195,11 @@ class WavelengthCalibration(object):
                     ccd.header.set('GSP_WPOI', value=self.n_points)
                     ccd.header.set('GSP_WREJ', value=self.n_rejections)
 
+                    self.lamp.header.set('GSP_WRMS', value=self.rms_error)
+                    self.lamp.header.set('GSP_WPOI', value=self.n_points)
+                    self.lamp.header.set('GSP_WREJ', value=self.n_rejections)
+
+
                     linear_x_axis, self.lamp.data = linearize_spectrum(
                         self.lamp.data,
                         wavelength_solution=self.wsolution)
