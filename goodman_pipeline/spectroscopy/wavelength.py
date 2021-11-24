@@ -335,10 +335,11 @@ class WavelengthCalibration(object):
             reference_lamp_ccd = self.reference_data.get_reference_lamp(
                 header=self.lamp.header)
 
-            log.debug('Found reference lamp: '
-                      '{:s}'.format(reference_lamp_ccd.header['GSP_FNAM']))
-        except NoMatchFound as error:
-            raise NoMatchFound(error)
+            if reference_lamp_ccd is not None:
+                log.debug(f"Found reference lamp {reference_lamp_ccd.header['GSP_FNAM']} "
+                          f"for {self.sci_target_file}'s lamp {self.lamp.header['OBJECT']}: ")
+            else:
+                raise NoMatchFound(f"Unable to find a suitable reference lamp for {self.lamp.header['OBJECT']} {self.lamp.header['GSP_FNAM']}.")
         except NotImplementedError as error:
             raise NotImplemented(error)
 
