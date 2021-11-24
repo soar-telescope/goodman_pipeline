@@ -337,7 +337,7 @@ class WavelengthCalibration(object):
         except NoMatchFound as error:
             raise NoMatchFound(error)
         except NotImplementedError as error:
-            raise NotImplemented(error)
+            raise NotImplementedError(error)
 
         # TODO (simon): Evaluate possibility to read iraf wcs. [#304]
 

@@ -62,7 +62,7 @@ from ..core import (astroscrappy_lacosmic,
                     identify_targets,
                     image_overscan,
                     image_trim,
-                    interpolate,
+                    interpolate_spectrum,
                     is_file_saturated,
                     linearize_spectrum,
                     name_master_flats,
@@ -821,6 +821,7 @@ class ExtractionTest(TestCase):
         self.fake_image = CCDData(data=np.ones((100, 100)),
                                   meta=fits.Header(),
                                   unit='adu')
+        self.fake_image.mask = np.zeros((100, 100), dtype=bool)
         self.fake_image.header.set('NAXIS', value=2)
         self.fake_image.header.set('NAXIS1', value=100)
         self.fake_image.header.set('NAXIS2', value=100)
@@ -1259,12 +1260,12 @@ class GetSpectralCharacteristicsTest(TestCase):
 
 class InterpolationTest(TestCase):
 
-    def test_interpolate(self):
+    def test_interpolate_spectrum(self):
         initial_array = np.sin(np.arange(0, 3 * np.pi))
         initial_length = len(initial_array)
 
-        new_x_axis, new_array = interpolate(spectrum=initial_array,
-                                            interpolation_size=100)
+        new_x_axis, new_array = interpolate_spectrum(spectrum=initial_array,
+                                                     interpolation_size=100)
 
         self.assertEqual(len(new_x_axis), len(new_array))
         self.assertEqual(len(new_array), initial_length * 100)

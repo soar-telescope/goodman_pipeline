@@ -13,7 +13,6 @@ import os
 import pandas
 import random
 import re
-import scipy
 import subprocess
 import sys
 import time
@@ -30,7 +29,7 @@ from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
 from matplotlib import pyplot as plt
-from scipy import signal
+from scipy import signal, interpolate
 from threading import Timer
 
 from . import check_version
@@ -1296,6 +1295,8 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
 
     new_ccd = ccd.copy()
     new_ccd.data = np.asarray(extracted_spectrum)
+    log.warning("Setting mask to None, otherwise saving will fail.")
+    new_ccd.mask = None
     if new_ccd.header['NAXIS'] != 1:
         for i in range(int(new_ccd.header['NAXIS']), 1, -1):
             new_ccd.header.remove(keyword="NAXIS{:d}".format(i))
@@ -2062,7 +2063,7 @@ def image_trim(ccd, trim_section, trim_type='trimsec', add_keyword=False):
     return ccd
 
 
-def interpolate(spectrum, interpolation_size):
+def interpolate_spectrum(spectrum, interpolation_size):
     """Creates an interpolated version of the input spectrum
 
     This method creates an interpolated version of the input array, it is
@@ -2089,8 +2090,8 @@ def interpolate(spectrum, interpolation_size):
                              last_x,
                              spectrum.size * interpolation_size)
 
-    tck = scipy.interpolate.splrep(x_axis, spectrum, s=0)
-    new_spectrum = scipy.interpolate.splev(new_x_axis, tck, der=0)
+    tck = interpolate.splrep(x_axis, spectrum, s=0)
+    new_spectrum = interpolate.splev(new_x_axis, tck, der=0)
     return [new_x_axis, new_spectrum]
 
 
@@ -2169,10 +2170,8 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
         except TypeError:
             pass
         new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
-        tck = scipy.interpolate.splrep(x_axis, data, s=0)
-        linearized_data = scipy.interpolate.splev(new_x_axis,
-                                                  tck,
-                                                  der=0)
+        tck = interpolate.splrep(x_axis, data, s=0)
+        linearized_data = interpolate.splev(new_x_axis, tck, der=0)
 
         smoothed_linearized_data = signal.medfilt(linearized_data)
         if plots:  # pragma: no cover

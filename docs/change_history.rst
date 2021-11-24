@@ -3,12 +3,15 @@ Change History
 
 .. _v1.3.5:
 
-V1.3.5 Not Released
-^^^^^^^^^^^^^^^^^^^
+V1.3.5 24-11-2021
+^^^^^^^^^^^^^^^^^
 
 - Created `--target-min-width` and `--target-max-width` flags to allow extraction of extended sources.
 - Replaced coveralls with codecov for code coverage.
 - Documentation improvements and updates.
+- Fixed issue with extracted spectrum that where masked in 2D.
+- Code style improvements.
+
 
 .. _v1.3.4:
 
