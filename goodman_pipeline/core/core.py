@@ -35,6 +35,7 @@ from scipy import signal
 from threading import Timer
 
 from . import check_version
+from ..wcs import WCS
 
 __version__ = __import__('goodman_pipeline').__version__
 
@@ -1567,8 +1568,11 @@ def get_lines_in_lamp(ccd, plots=False):
         fig, ax = plt.subplots()
         fig.canvas.set_window_title('Lines Detected')
 
-        mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
+        try:
+            mng = plt.get_current_fig_manager()
+            mng.window.showMaximized()
+        except AttributeError as error:
+            log.debug(error)
 
         ax.set_title('Lines detected in Lamp\n'
                      '{:s}'.format(lamp_header['OBJECT']))
