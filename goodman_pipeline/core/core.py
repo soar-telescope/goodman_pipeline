@@ -1317,6 +1317,8 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
 
     new_ccd = ccd.copy()
     new_ccd.data = np.asarray(extracted_spectrum)
+    log.warning("Setting mask to None, otherwise saving will fail.")
+    new_ccd.mask = None
     if new_ccd.header['NAXIS'] != 1:
         for i in range(int(new_ccd.header['NAXIS']), 1, -1):
             new_ccd.header.remove(keyword="NAXIS{:d}".format(i))
