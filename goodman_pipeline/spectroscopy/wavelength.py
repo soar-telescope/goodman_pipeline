@@ -341,7 +341,7 @@ class WavelengthCalibration(object):
             else:
                 raise NoMatchFound(f"Unable to find a suitable reference lamp for {self.lamp.header['OBJECT']} {self.lamp.header['GSP_FNAM']}.")
         except NotImplementedError as error:
-            raise NotImplemented(error)
+            raise NotImplementedError(error)
 
         # TODO (simon): Evaluate possibility to read iraf wcs. [#304]
 
