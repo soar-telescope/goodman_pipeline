@@ -15,6 +15,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from .wavelength import WavelengthCalibration
+from .interactive_target_extraction import InteractiveExtraction
 from ..core import (classify_spectroscopic_data,
                     search_comp_group,
                     add_wcs_keys,
@@ -426,6 +427,12 @@ class MainApp(object):
                         continue
 
                     # if len(trace_list) > 0:
+                    ## Experimental interactive extraction
+                    if True:
+                        ie = InteractiveExtraction()
+                        # ie = InteractiveExtractionGUI()
+                        ie(ccd=ccd, lamps=comp_ccd_list, traces=trace_list)
+
                     extracted_target_and_lamps = []
                     for single_trace, single_profile, trace_info in trace_list:
                         if single_profile.__class__.name == 'Gaussian1D':
