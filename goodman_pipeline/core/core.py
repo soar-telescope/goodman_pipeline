@@ -14,7 +14,6 @@ import os
 import pandas
 import random
 import re
-import scipy
 import subprocess
 import sys
 import time
@@ -31,7 +30,7 @@ from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
 from matplotlib import pyplot as plt
-from scipy import signal
+from scipy import signal, interpolate
 from threading import Timer
 
 from . import check_version
@@ -2115,8 +2114,8 @@ def interpolate_spectrum(spectrum, interpolation_size):
                              last_x,
                              spectrum.size * interpolation_size)
 
-    tck = scipy.interpolate.splrep(x_axis, spectrum, s=0)
-    new_spectrum = scipy.interpolate.splev(new_x_axis, tck, der=0)
+    tck = interpolate.splrep(x_axis, spectrum, s=0)
+    new_spectrum = interpolate.splev(new_x_axis, tck, der=0)
     return [new_x_axis, new_spectrum]
 
 
@@ -2195,10 +2194,8 @@ def linearize_spectrum(data, wavelength_solution, plots=False):
         except TypeError:
             pass
         new_x_axis = np.linspace(x_axis[0], x_axis[-1], len(data))
-        tck = scipy.interpolate.splrep(x_axis, data, s=0)
-        linearized_data = scipy.interpolate.splev(new_x_axis,
-                                                  tck,
-                                                  der=0)
+        tck = interpolate.splrep(x_axis, data, s=0)
+        linearized_data = interpolate.splev(new_x_axis, tck, der=0)
 
         smoothed_linearized_data = signal.medfilt(linearized_data)
         if plots:  # pragma: no cover
