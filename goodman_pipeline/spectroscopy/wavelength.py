@@ -187,7 +187,8 @@ class WavelengthCalibration(object):
                         save_data_to=save_data_to,
                         corr_tolerance=self.cross_corr_tolerance)
                 except NoMatchFound as message:
-                    raise NoMatchFound(message)
+                    log.error(message)
+                    continue
 
                 if self.wsolution is not None:
                     ccd.header.set('GSP_WRMS', value=self.rms_error)

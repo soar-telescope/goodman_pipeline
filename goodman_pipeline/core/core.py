@@ -3808,7 +3808,7 @@ class ReferenceData(object):
                                                        header['LAMP_CU'],
                                                        header['WAVMODE'])
                 self.log.error(error_message)
-                raise NoMatchFound(error_message)
+                return None
         else:
             filtered_collection = self.ref_lamp_collection[
                 (self.ref_lamp_collection['object'] == header['object']) &
@@ -3821,7 +3821,7 @@ class ReferenceData(object):
                                 "WAVMODE = {}".format(header['OBJECT'],
                                                       header['WAVMODE'])
                 self.log.error(error_message)
-                raise NoMatchFound(error_message)
+                return None
 
         if len(filtered_collection) == 1:
             self.log.info(
