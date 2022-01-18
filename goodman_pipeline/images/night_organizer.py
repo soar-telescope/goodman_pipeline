@@ -399,13 +399,14 @@ class NightOrganizer(object):
         # confs stands for configurations
         confs = flat_data.groupby(
             ['object',
-             'filter']).size().reset_index().rename(columns={0: 'count'})
+             'filter', 'filter2']).size().reset_index().rename(columns={0: 'count'})
 
         for i in confs.index:
 
             flat_group = flat_data[
                 ((flat_data['object'] == confs.iloc[i]['object']) &
-                 (flat_data['filter'] == confs.iloc[i]['filter']))]
+                 (flat_data['filter'] == confs.iloc[i]['filter']) &
+                 (flat_data['filter2'] == confs.iloc[i]['filter2']))]
 
             self.data_container.add_day_flats(flat_group)
 
@@ -417,12 +418,14 @@ class NightOrganizer(object):
         # confs stands for configurations
         confs = science_data.groupby(
             ['object',
-             'filter']).size().reset_index().rename(columns={0: 'count'})
+             'filter',
+             'filter2']).size().reset_index().rename(columns={0: 'count'})
 
         for i in confs.index:
 
             science_group = science_data[
                 ((science_data['object'] == confs.iloc[i]['object']) &
-                 (science_data['filter'] == confs.iloc[i]['filter']))]
+                 (science_data['filter'] == confs.iloc[i]['filter']) &
+                 (science_data['filter2'] == confs.iloc[i]['filter2']))]
 
             self.data_container.add_data_group(science_group)

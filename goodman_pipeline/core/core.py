@@ -2319,7 +2319,13 @@ def name_master_flats(header,
                             + '.fits'
 
     elif technique == 'Imaging':
-        flat_filter = re.sub('[- ]', '_', header['FILTER'])
+        if header['FILTER'] != 'NO_FILTER':
+            flat_filter = header['FILTER']
+        elif header['FILTER2'] != 'NO_FILTER':
+            flat_filter = header['FILTER2']
+        else:
+            flat_filter = "NO_FILTER"
+        flat_filter = re.sub('[- ]', '_', flat_filter)
         flat_filter = re.sub('[<> ]', '', flat_filter)
         master_flat_name += '_' + flat_filter + dome_sky + '.fits'
 
