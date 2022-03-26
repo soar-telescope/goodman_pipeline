@@ -1,6 +1,14 @@
 Change History
 ##############
 
+.. _v1.3.6:
+
+V1.3.6 25-03-2022
+^^^^^^^^^^^^^^^^^
+
+- Updated HgArNe reference lamps for 400M1 and 600MID GG395
+- Fixed deprecation warning  for numpy.float conversion
+
 .. _v1.3.5:
 
 V1.3.5 24-11-2021
