@@ -554,7 +554,7 @@ class MainApp(object):
                                     plots=self.args.debug_with_plots)
                         except NoMatchFound as no_match_error:
                             self.log.error(no_match_error)
-                        except NotImplemented as error:
+                        except NotImplementedError as error:
                             self.log.error(error)
 
                     self.log.debug(f"End of process for file {spec_file}.")
