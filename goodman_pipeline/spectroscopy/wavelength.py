@@ -667,14 +667,18 @@ class WavelengthCalibration(object):
 
         """
         ccd = ccd.copy()
-        linear_x_axis, ccd.data = linearize_spectrum(
-            data=ccd.data,
-            wavelength_solution=wavelength_solution)
+        resample = False
+        if resample:
+            linear_x_axis, ccd.data = linearize_spectrum(
+                data=ccd.data,
+                wavelength_solution=wavelength_solution)
 
-        ccd = add_linear_wavelength_solution(
-            ccd=ccd,
-            x_axis=linear_x_axis,
-            reference_lamp=self.wcal_lamp_file)
+            ccd = add_linear_wavelength_solution(
+                ccd=ccd,
+                x_axis=linear_x_axis,
+                reference_lamp=self.wcal_lamp_file)
+        else:
+            wavelength_axis = wavelength_solution(range(ccd.data.shape[0]))
 
         save_file_name = self._save_wavelength_calibrated(
             ccd=ccd,
