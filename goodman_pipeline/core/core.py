@@ -147,7 +147,7 @@ def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
     astronomical tool. (e.g. IRAF)
 
     Args:
-        ccd (CCDData) Instance of :class:`~astropy.nddata.CCDData`
+        ccd (CCDData): Instance of :class:`~astropy.nddata.CCDData`
         x_axis (ndarray): Linearized x-axis in angstrom
         reference_lamp (str): Name of lamp used to get wavelength solution.
         crpix (int): reference pixel for defining wavelength solution.
@@ -2091,7 +2091,7 @@ def interpolate_spectrum(spectrum, interpolation_size):
     """Creates an interpolated version of the input spectrum
 
     This method creates an interpolated version of the input array, it is
-    used mainly for a spectrum but it can also be used with any
+    used mainly for a spectrum, but it can also be used with any
     unidimensional array. The reason for doing interpolation is
     that it allows to find the lines and its respective center more
     precisely.
@@ -2123,7 +2123,7 @@ def is_file_saturated(ccd, threshold):
     """Detects a saturated image
 
     It counts the number of pixels above the saturation_threshold level, then finds
-    which percentage they represents and if it is above the threshold it
+    which percentage they represent and if it is above the threshold it
     will return True. The percentage threshold can be set using the command
     line argument ``--saturation_threshold``.
 
