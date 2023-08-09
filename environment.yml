@@ -1,6 +1,6 @@
 name: goodman_pipeline
 dependencies:
-  - python=3.8
+  - python='3.11'
   - numpy==1.25.2
   - pandas
   - matplotlib
