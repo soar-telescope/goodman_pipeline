@@ -109,7 +109,7 @@ pdf_documents = [('user_manual',
 #
 # html_theme = 'bootstrap-astropy'
 
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
 
 html_logo = '_static/soar_logo.png'
 

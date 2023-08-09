@@ -1,6 +1,6 @@
 name: goodman_pipeline
 dependencies:
-  - python=3.8
+  - python
   - numpy
   - pandas
   - matplotlib
@@ -11,6 +11,7 @@ dependencies:
   - pip:
     - ccdproc
     - coveralls
+    - pydata-sphinx-theme
     - astroplan
     - mock
     - sphinx
