@@ -1,6 +1,19 @@
 Change History
 ##############
 
+.. _v1.3.7:
+
+V1.3.7 17-08-2023
+^^^^^^^^^^^^^^^^^
+
+- Updated documentation theme to allow dark mode
+- Removed python 3.6 and 3.8 from testing and added 3.9 and 3.10
+- Unfixed numpy version
+- Removed testing with conda on github action because it only added complexity
+- Added 3 seconds timeout to request to github to validate version and check if running version is latest
+- Added correct exception handler in case the http request timed out.
+
+
 .. _v1.3.6:
 
 V1.3.6 25-03-2022
