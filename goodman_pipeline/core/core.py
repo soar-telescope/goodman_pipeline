@@ -2958,7 +2958,10 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
                 log.info("Latest Release: {:s}".format(latest_release))
         except ConnectionRefusedError:
             log.error('Unauthorized GitHub API Access reached maximum')
-            log.info("Current Version: {:s}".format(__version__))
+            log.info(f"Current Version: {__version__}")
+        except ConnectionError:
+            log.error("The connection timed out or was not possible to establish")
+            log.info(f"Current Version: {__version__}")
 
 
 def trace(ccd,
