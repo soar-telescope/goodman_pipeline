@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 
+import requests
 from astropy.utils import iers
 iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
 from astroplan import Observer
@@ -2959,8 +2960,9 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
         except ConnectionRefusedError:
             log.error('Unauthorized GitHub API Access reached maximum')
             log.info(f"Current Version: {__version__}")
-        except ConnectionError:
-            log.error("The connection timed out or was not possible to establish")
+        except requests.exceptions.ConnectionError:
+            log.warning("Unable to validate latest version. "
+                        "The connection timed out or was not possible to establish")
             log.info(f"Current Version: {__version__}")
 
 
