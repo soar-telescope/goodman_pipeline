@@ -30,10 +30,10 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Compile DCR Binaries
       run: |
-        SOURCE_DIR=${{ github.workspace }}/goodman_pipeline/data/dcr-source/dcr
+        SOURCE_DIR=${{ github.workspace }}/goodman_pipeline/data/dcr_source/dcr
         make --directory $SOURCE_DIR
         chmod +x $SOURCE_DIR/dcr
-        echo "${{ github.workspace }}/goodman_pipeline/data/dcr-source/dcr" >> $GITHUB_PATH
+        echo "${{ github.workspace }}/goodman_pipeline/data/dcr_source/dcr" >> $GITHUB_PATH
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
