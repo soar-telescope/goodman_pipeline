@@ -7,8 +7,8 @@ __pycache__/*
 .ipynb_checkpoints/*
 files.txt
 docs/_build/*
-goodman_pipeline/data/dcr-source/dcr
-goodman_pipeline/data/dcr-source/*.o
+goodman_pipeline/data/dcr_source/dcr
+goodman_pipeline/data/dcr_source/*.o
 /dev-tools/
 .cache/*
 .eggs/*

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SOURCE_DIR=$(pwd)/goodman_pipeline/data/dcr-source/dcr
+SOURCE_DIR=$(pwd)/goodman_pipeline/data/dcr_source/dcr
 
 
 
