@@ -6,13 +6,13 @@ dependencies:
   - matplotlib
   - scipy
   - cython
-  - astropy
   - pip
   - pip:
-    - ccdproc
-    - coveralls
-    - pydata-sphinx-theme
-    - astroplan
-    - mock
-    - sphinx
-    - sphinxcontrib.napoleon
+      - astropy>=5.3
+      - ccdproc
+      - coveralls
+      - pydata-sphinx-theme
+      - astroplan
+      - mock
+      - sphinx
+      - sphinxcontrib.napoleon
