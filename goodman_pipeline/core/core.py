@@ -1149,7 +1149,7 @@ def extraction(ccd,
 
 def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
                              background_spacing=3):
-    """Performs an spectrum extraction using fractional pixels.
+    """Performs a spectrum extraction using fractional pixels.
 
     Args:
         ccd (CCDData) Instance of :class:`~astropy.nddata.CCDData` that
