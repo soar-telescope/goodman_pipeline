@@ -45,19 +45,15 @@ So what does all those letter mean? Here is a table to explain it.
 
 So, for an original file named ``file.fits``:
 
-  ``o_file.fits``
-
-Means the file have been overscan corrected while
-
-  ``eczsto_file.fits``
+  ``eczst_file.fits``
 
 Means the spectrum has been extracted to a 1D  file but the file has not been
 flat fielded (``f`` missing).
 
 Ideally after running ``redccd`` the file should be named:
 
-  ``cfzsto_file.fits``
+  ``cfzst_file.fits``
 
 And after running ``redspec``:
 
-  ``wecfzsto_file.fits``
+  ``wecfzst_file.fits``
