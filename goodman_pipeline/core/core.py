@@ -3781,7 +3781,7 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['lamp_ar'] == header['LAMP_AR']) &
                 (self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) &
                 (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
-                (self.ref_lamp_collection['wavmode'] == header['wavmode']))]
+                (self.ref_lamp_collection['wavmode'] == header['WAVMODE']))]
             if filtered_collection.empty:
                 error_message = "Unable to find a match for: "\
                                 "LAMP_HGA = {}, "\
