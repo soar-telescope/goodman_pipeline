@@ -1547,7 +1547,7 @@ def get_lines_in_lamp(ccd, plots=False):
     if plots:  # pragma: no cover
         plt.close('all')
         fig, ax = plt.subplots()
-        fig.canvas.set_window_title('Lines Detected')
+        fig.canvas.manager.set_window_title('Lines Detected')
 
         mng = plt.get_current_fig_manager()
         mng.window.showMaximized()
@@ -2743,7 +2743,7 @@ def recenter_lines(data, lines, plots=False):
             new_center.append(centroid)
     if plots:  # pragma: no cover
         fig, ax = plt.subplots(1, 1)
-        fig.canvas.set_window_title('Lines Detected in Lamp')
+        fig.canvas.manager.set_window_title('Lines Detected in Lamp')
         ax.axhline(median, color='b')
 
         ax.plot(range(len(data)),
@@ -3135,7 +3135,7 @@ def trace(ccd,
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
         z2 = np.median(ccd.data) + np.std(ccd.data)
         fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+        fig.canvas.manager.set_window_title(ccd.header['GSP_FNAM'])
 
         mng = plt.get_current_fig_manager()
         mng.window.showMaximized()
@@ -3247,7 +3247,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nfwhm=5,
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
         z2 = np.median(ccd.data) + np.std(ccd.data)
         fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+        fig.canvas.manager.set_window_title(ccd.header['GSP_FNAM'])
 
         mng = plt.get_current_fig_manager()
         mng.window.showMaximized()
@@ -3781,7 +3781,7 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['lamp_ar'] == header['LAMP_AR']) &
                 (self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) &
                 (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
-                (self.ref_lamp_collection['wavmode'] == header['wavmode']))]
+                (self.ref_lamp_collection['wavmode'] == header['WAVMODE']))]
             if filtered_collection.empty:
                 error_message = "Unable to find a match for: "\
                                 "LAMP_HGA = {}, "\
@@ -4286,7 +4286,7 @@ class IdentifySpectroscopicTargets(object):
 
             plt.switch_backend('Qt5Agg')
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(self.file_name)
+            fig.canvas.manager.set_window_title(self.file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -4363,7 +4363,7 @@ class IdentifySpectroscopicTargets(object):
 
         if plots or self.plots:  # pragma: no cover
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -4380,7 +4380,7 @@ class IdentifySpectroscopicTargets(object):
             plt.show()
 
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -4451,7 +4451,7 @@ class IdentifySpectroscopicTargets(object):
             plt.close()
 
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -4527,7 +4527,7 @@ class IdentifySpectroscopicTargets(object):
             plt.ioff()
 
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             ax.set_title('All detected Peaks')
 
@@ -4623,7 +4623,7 @@ class IdentifySpectroscopicTargets(object):
             plt.ioff()
 
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -4742,7 +4742,7 @@ class IdentifySpectroscopicTargets(object):
 
         if plots:  # pragma: no cover
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -4813,7 +4813,7 @@ class IdentifySpectroscopicTargets(object):
 
         if plots:  # pragma: no cover
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
