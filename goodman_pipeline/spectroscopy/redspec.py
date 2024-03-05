@@ -487,7 +487,7 @@ class MainApp(object):
                                 ax.set_ylabel("Intensity (ADU)")
                                 ax.set_xlabel("Dispersion Axis (Pixels)")
 
-                                fig.canvas.set_window_title(
+                                fig.canvas.manager.set_window_title(
                                     'Extracted Data: Target Center ~ '
                                     '{:.2f}'.format(single_profile_center))
 
