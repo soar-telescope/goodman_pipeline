@@ -15,3 +15,4 @@ goodman_pipeline/data/dcr_source/*.o
 .tmp/*
 .tox/*
 goodman_pipeline.egg-info/*
+*.DS_Store
