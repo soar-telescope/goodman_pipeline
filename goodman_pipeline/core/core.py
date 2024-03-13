@@ -2288,7 +2288,7 @@ def name_master_flats(header,
         dome_sky = '*'
 
     if technique == 'Spectroscopy':
-        if header['GRATING'] != '<NO GRATING>':
+        if header['GRATING'] not in ['<NO GRATING>', 'NO_GRATING']:
             flat_grating = '_' + re.sub('[A-Za-z_ ]',
                                         '',
                                         header['GRATING'])
@@ -2297,7 +2297,7 @@ def name_master_flats(header,
             spectroscopic_mode = SpectroscopicMode()
             wavmode = spectroscopic_mode(header=header)
         else:
-            flat_grating = '_no_grating'
+            flat_grating = '_NO_GRATING'
             wavmode = ''
 
         flat_slit = re.sub('[A-Za-z_ ]',
@@ -2305,7 +2305,7 @@ def name_master_flats(header,
                            header['SLIT'])
 
         filter2 = header['FILTER2']
-        if filter2 == '<NO FILTER>':
+        if filter2 in ['<NO FILTER>', 'NO_FILTER']:
             filter2 = ''
         else:
             filter2 = '_' + filter2
@@ -2320,9 +2320,9 @@ def name_master_flats(header,
                             + '.fits'
 
     elif technique == 'Imaging':
-        if header['FILTER'] != 'NO_FILTER':
+        if header['FILTER'] not in ['<NO FILTER>', 'NO_FILTER']:
             flat_filter = header['FILTER']
-        elif header['FILTER2'] != 'NO_FILTER':
+        elif header['FILTER2'] not in ['<NO FILTER>', 'NO_FILTER']:
             flat_filter = header['FILTER2']
         else:
             flat_filter = "NO_FILTER"
@@ -4084,30 +4084,30 @@ class SpectroscopicMode(object):
 
         """
         self.log = logging.getLogger(__name__)
-        columns = ['grating_freq', 'wavmode', 'camtarg', 'grttarg', 'ob_filter']
-        spec_mode = [['400', 'm1', '11.6', '5.8', 'None'],
-                     ['400', 'm2', '16.1', '7.5', 'GG455'],
-                     ['600', 'UV', '15.25', '7.0', 'None'],
-                     ['600', 'Blue', '17.0', '7.0', 'None'],
-                     ['600', 'Mid', '20.0', '10.0', 'GG385'],
-                     ['600', 'Red', '27.0', '12.0', 'GG495'],
-                     ['930', 'm1', '20.6', '10.3', 'None'],
-                     ['930', 'm2', '25.2', '12.6', 'None'],
-                     ['930', 'm3', '29.9', '15.0', 'GG385'],
-                     ['930', 'm4', '34.6', '18.3', 'GG495'],
-                     ['930', 'm5', '39.4', '19.7', 'GG495'],
-                     ['930', 'm6', '44.2', '22.1', 'OG570'],
-                     ['1200', 'm0', '26.0', '16.3', 'None'],
-                     ['1200', 'm1', '29.5', '16.3', 'None'],
-                     ['1200', 'm2', '34.4', '18.7', 'None'],
-                     ['1200', 'm3', '39.4', '20.2', 'None'],
-                     ['1200', 'm4', '44.4', '22.2', 'GG455'],
-                     ['1200', 'm5', '49.6', '24.8', 'GG455'],
-                     ['1200', 'm6', '54.8', '27.4', 'GG495'],
-                     ['1200', 'm7', '60.2', '30.1', 'OG570'],
-                     ['1800', 'Custom', 'None', 'None', 'None'],
-                     ['2100', 'Custom', 'None', 'None', 'None'],
-                     ['2400', 'Custom', 'None', 'None', 'None']
+        columns = ['grating_freq', 'wavmode', 'camtarg', 'grttarg', 'ob_filter', 'ob_filter_old']
+        spec_mode = [['400', 'm1', '11.6', '5.8', 'NO_FILTER', '<NO FILTER>'],
+                     ['400', 'm2', '16.1', '7.5', 'GG455', 'GG455'],
+                     ['600', 'UV', '15.25', '7.0', 'NO_FILTER', '<NO FILTER>'],
+                     ['600', 'Blue', '17.0', '7.0', 'NO_FILTER', '<NO FILTER>'],
+                     ['600', 'Mid', '20.0', '10.0', 'GG385', 'GG385'],
+                     ['600', 'Red', '27.0', '12.0', 'GG495', 'GG495'],
+                     ['930', 'm1', '20.6', '10.3', 'NO_FILTER', '<NO FILTER>'],
+                     ['930', 'm2', '25.2', '12.6', 'NO_FILTER', '<NO FILTER>'],
+                     ['930', 'm3', '29.9', '15.0', 'GG385', 'GG385'],
+                     ['930', 'm4', '34.6', '18.3', 'GG495', 'GG495'],
+                     ['930', 'm5', '39.4', '19.7', 'GG495', 'GG495'],
+                     ['930', 'm6', '44.2', '22.1', 'OG570', 'OG570'],
+                     ['1200', 'm0', '26.0', '16.3', 'NO_FILTER', '<NO FILTER>'],
+                     ['1200', 'm1', '29.5', '16.3', 'NO_FILTER', '<NO FILTER>'],
+                     ['1200', 'm2', '34.4', '18.7', 'NO_FILTER', '<NO FILTER>'],
+                     ['1200', 'm3', '39.4', '20.2', 'NO_FILTER', '<NO FILTER>'],
+                     ['1200', 'm4', '44.4', '22.2', 'GG455', 'GG455'],
+                     ['1200', 'm5', '49.6', '24.8', 'GG455', 'GG455'],
+                     ['1200', 'm6', '54.8', '27.4', 'GG495', 'GG495'],
+                     ['1200', 'm7', '60.2', '30.1', 'OG570', 'OG570'],
+                     ['1800', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>'],
+                     ['2100', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>'],
+                     ['2400', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>']
                      ]
         self.modes_data_frame = pandas.DataFrame(spec_mode, columns=columns)
 
@@ -4186,7 +4186,8 @@ class SpectroscopicMode(object):
                 ((self.modes_data_frame['grating_freq'] == grating) &
                  (self.modes_data_frame['camtarg'] == camera_targ) &
                  (self.modes_data_frame['grttarg'] == grating_targ) &
-                 (self.modes_data_frame['ob_filter'] == blocking_filter))]
+                 ((self.modes_data_frame['ob_filter'] == blocking_filter) |
+                  (self.modes_data_frame['ob_filter_old'] == blocking_filter)))]
             if _mode.empty:
                 central_wavelength = get_central_wavelength(
                     grating=grating,
