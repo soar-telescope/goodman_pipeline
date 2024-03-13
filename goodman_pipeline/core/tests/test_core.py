@@ -2124,7 +2124,7 @@ class SpectroscopicModeTest(TestCase):
                                             blocking_filter='GG455')
         self.assertEqual(mode_custom_2100, 'Custom_1334nm')
 
-    def test_get_mode_m1_from_header(self):
+    def test_get_mode_400_m1_from_header(self):
         header = fits.Header()
         header.set('GRATING', value='400_SYZY')
         header.set('CAM_TARG', value='11.6')
@@ -2135,7 +2135,7 @@ class SpectroscopicModeTest(TestCase):
 
         self.assertEqual(spectroscopic_mode, 'm1')
 
-    def test_get_mode_m1_from_old_header(self):
+    def test_get_mode_400_m1_from_old_header(self):
         header = fits.Header()
         header.set('GRATING', value='SYZY_400')
         header.set('CAM_TARG', value='11.6')
@@ -2145,6 +2145,17 @@ class SpectroscopicModeTest(TestCase):
         spectroscopic_mode = self.sm(header=header)
 
         self.assertEqual(spectroscopic_mode, 'm1')
+
+    def test_get_mode_1200_m3_from_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='1200')
+        header.set('CAM_TARG', value='39.4')
+        header.set('GRT_TARG', value='20.2')
+        header.set('FILTER2', value='NO_FILTER')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm3')
 
     def test_get_cam_grt_targ_angle(self):
 
@@ -2190,15 +2201,6 @@ class TargetsTest(TestCase):
             self.ccd.data[:, i] *= profile_sum(range(self.ccd.data.shape[0]))
             self.ccd2.data[:, i] *= self.profile_3(
                 range(self.ccd2.data.shape[0]))
-            # this add noise to test the removal of masked values
-            # self.ccd.data[
-            #     random.randrange(self.ccd.data.shape[0]),
-            #     random.randrange(self.ccd.data.shape[1])] *= 300
-            # self.ccd2.data[
-            #     random.randrange(self.ccd2.data.shape[0]),
-            #     random.randrange(self.ccd2.data.shape[1])] *= 300
-
-
 
     def tearDown(self):
         del self.ccd
