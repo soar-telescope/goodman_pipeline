@@ -2288,7 +2288,7 @@ def name_master_flats(header,
         dome_sky = '*'
 
     if technique == 'Spectroscopy':
-        if header['GRATING'] != '<NO GRATING>':
+        if header['GRATING'] not in ['<NO GRATING>', 'NO_GRATING']:
             flat_grating = '_' + re.sub('[A-Za-z_ ]',
                                         '',
                                         header['GRATING'])
@@ -2297,7 +2297,7 @@ def name_master_flats(header,
             spectroscopic_mode = SpectroscopicMode()
             wavmode = spectroscopic_mode(header=header)
         else:
-            flat_grating = '_no_grating'
+            flat_grating = '_NO_GRATING'
             wavmode = ''
 
         flat_slit = re.sub('[A-Za-z_ ]',
@@ -2305,7 +2305,7 @@ def name_master_flats(header,
                            header['SLIT'])
 
         filter2 = header['FILTER2']
-        if filter2 == '<NO FILTER>':
+        if filter2 in ['<NO FILTER>', 'NO_FILTER']:
             filter2 = ''
         else:
             filter2 = '_' + filter2
@@ -2320,9 +2320,9 @@ def name_master_flats(header,
                             + '.fits'
 
     elif technique == 'Imaging':
-        if header['FILTER'] != 'NO_FILTER':
+        if header['FILTER'] not in ['<NO FILTER>', 'NO_FILTER']:
             flat_filter = header['FILTER']
-        elif header['FILTER2'] != 'NO_FILTER':
+        elif header['FILTER2'] not in ['<NO FILTER>', 'NO_FILTER']:
             flat_filter = header['FILTER2']
         else:
             flat_filter = "NO_FILTER"

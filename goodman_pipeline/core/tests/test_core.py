@@ -1425,8 +1425,6 @@ class NameMasterFlatsTest(TestCase):
 
     def setUp(self):
         self.reduced_data = os.getcwd()
-
-        #reference
         date = '2019-08-28'
         self.twilight_start_evening = '2019-08-27T23:45:00.022'
         self.twilight_end_morning = '2019-08-28T09:43:20.023'
@@ -1462,7 +1460,7 @@ class NameMasterFlatsTest(TestCase):
 
     def test_name_master_flats_spectroscopy_no_grating_no_filter2(self):
 
-        expected_name = 'master_flat_TestSubject_no_grating_1.0_sky.fits'
+        expected_name = 'master_flat_TestSubject_NO_GRATING_1.0_sky.fits'
 
         self.header.set('GRATING', value='<NO GRATING>')
         self.header.set('DATE-OBS', value='2019-08-27T23:40:00.022')
@@ -2331,4 +2329,3 @@ class ValidateCcdRegionTest(TestCase):
 
     def test_validate_ccd_region_invalid(self):
         self.assertRaises(SyntaxError, validate_ccd_region, "10:10:10]")
-
