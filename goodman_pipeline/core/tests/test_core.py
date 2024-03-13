@@ -2057,24 +2057,15 @@ class SlitTrimTest(TestCase):
     def test_get_slit_trim_section__slit_within_data(self):
 
         slit_trim = get_slit_trim_section(master_flat=self.fake_image)
-        # print(fake_image.data[:,5])
-        # print(slit_trim)
         self.assertEqual(slit_trim, self.reference_slit_trim)
 
     def test_get_slit_trim_section__slit_full_data(self):
         self.fake_image.data[:, :] = 100
 
         slit_trim = get_slit_trim_section(master_flat=self.fake_image)
-        # print(fake_image.data[:,5])
         self.assertEqual(slit_trim, '[1:100,1:100]')
 
     def test_image_trim_slit(self):
-        # # define
-        # slit_low_limit = 5
-        # slit_high_limit = 95
-        #
-        # slit_trim = '[1:100,{:d}:{:d}]'.format(slit_low_limit + 10 + 1,
-        #                                        slit_high_limit - 10)
         self.fake_image = image_trim(ccd=self.fake_image,
                                      trim_section=self.reference_slit_trim,
                                      trim_type='slit')
@@ -2085,8 +2076,6 @@ class SlitTrimTest(TestCase):
 
         self.assertEqual(self.fake_image.header['GSP_SLIT'],
                          self.reference_slit_trim)
-
-
 
 
 class SpectroscopicModeTest(TestCase):
@@ -2115,7 +2104,7 @@ class SpectroscopicModeTest(TestCase):
 
         self.assertEqual(mode_m2_keywords, 'm2')
 
-    def test_get_mode(self):
+    def test_get_modes(self):
         mode_m2 = self.sm.get_mode(grating='400',
                                    camera_targ='16.1',
                                    grating_targ='7.5',
@@ -2134,6 +2123,28 @@ class SpectroscopicModeTest(TestCase):
                                             grating_targ='7.5',
                                             blocking_filter='GG455')
         self.assertEqual(mode_custom_2100, 'Custom_1334nm')
+
+    def test_get_mode_m1_from_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='400_SYZY')
+        header.set('CAM_TARG', value='11.6')
+        header.set('GRT_TARG', value='5.8')
+        header.set('FILTER2', value='NO_FILTER')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm1')
+
+    def test_get_mode_m1_from_old_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='SYZY_400')
+        header.set('CAM_TARG', value='11.6')
+        header.set('GRT_TARG', value='5.8')
+        header.set('FILTER2', value='<NO FILTER>')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm1')
 
     def test_get_cam_grt_targ_angle(self):
 
