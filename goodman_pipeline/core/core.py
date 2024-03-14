@@ -323,6 +323,8 @@ def call_cosmic_rejection(ccd,
 
             _create(instrument=_instrument, binning=_binning, path=red_path)
 
+        #out_prefix = prefix + out_prefix #Move line here
+
         full_path = os.path.join(red_path, f"{out_prefix}_{image_name}")
 
         ccd.header.set('GSP_COSM',
@@ -337,6 +339,8 @@ def call_cosmic_rejection(ccd,
         # This is to return the prefix that will be used by dcr
         # Not to be used by dcr_cosmicray_rejection
         out_prefix = prefix + out_prefix
+        print("Prefix value before calling dcr_cosmicray_rejection:", prefix)
+        print("Current working directory before calling dcr_cosmicray_rejection:", os.getcwd())
 
         ccd = dcr_cosmicray_rejection(data_path=red_path,
                                       in_file=in_file,
@@ -934,9 +938,13 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # get the current working directory to go back to it later in case the
     # the pipeline has not been called from the same data directory.
     cwd = os.getcwd()
+    print("Current working directory:", cwd)
 
     # move to the directory were the data is, dcr is expecting a file dcr.par
-    os.chdir(data_path)
+
+    full_path_data = os.path.join(cwd, data_path)
+    os.chdir(full_path_data)
+    print("Moving to data path:", full_path_data)
 
     # call dcr
     try:
@@ -971,6 +979,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
 
     # go back to the original directory. Could be the same.
     os.chdir(cwd)
+    print("Print Current working directory, after kill dcr:", cwd)
 
     # If no error stderr is an empty string
     if stderr != b'':
@@ -1011,7 +1020,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
                         "is set to False")
             os.unlink(full_path_out)
         return ccd
-
+#Add y si en vez de moverse entre working directories, solo se usa el full path?
 
 def define_trim_section(sample_image, technique):
     """Get the initial trim section
