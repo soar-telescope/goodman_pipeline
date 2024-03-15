@@ -339,8 +339,6 @@ def call_cosmic_rejection(ccd,
         # This is to return the prefix that will be used by dcr
         # Not to be used by dcr_cosmicray_rejection
         out_prefix = prefix + out_prefix
-        print("Prefix value before calling dcr_cosmicray_rejection:", prefix)
-        print("Current working directory before calling dcr_cosmicray_rejection:", os.getcwd())
 
         ccd = dcr_cosmicray_rejection(data_path=red_path,
                                       in_file=in_file,
@@ -923,28 +921,26 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # define the name for the cosmic rays file
     cosmic_file = 'cosmic_' + '_'.join(in_file.split('_')[1:])
 
+    # get current working directory and goes to reduction folder
+    cwd = os.getcwd()
+    full_path_data = os.path.join(cwd, data_path)
+
     # define full path for all the files involved
-    full_path_in = os.path.join(data_path, in_file)
-    full_path_out = os.path.join(data_path, out_file)
-    full_path_cosmic = os.path.join(data_path, cosmic_file)
+    full_path_in = os.path.join(full_path_data, in_file)
+    full_path_out = os.path.join(full_path_data, out_file)
+    full_path_cosmic = os.path.join(full_path_data, cosmic_file)
 
     # this is the command for running dcr, all arguments are required
     command = 'dcr {:s} {:s} {:s}'.format(full_path_in,
                                           full_path_out,
                                           full_path_cosmic)
-
     log.debug('DCR command:')
     log.debug(command)
     # get the current working directory to go back to it later in case the
     # the pipeline has not been called from the same data directory.
-    cwd = os.getcwd()
-    print("Current working directory:", cwd)
 
     # move to the directory were the data is, dcr is expecting a file dcr.par
-
-    full_path_data = os.path.join(cwd, data_path)
     os.chdir(full_path_data)
-    print("Moving to data path:", full_path_data)
 
     # call dcr
     try:
@@ -977,9 +973,8 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # wait for dcr to terminate
     # dcr.wait()
 
-    # go back to the original directory. Could be the same.
+    #go back to the original directory. Could be the same.
     os.chdir(cwd)
-    print("Print Current working directory, after kill dcr:", cwd)
 
     # If no error stderr is an empty string
     if stderr != b'':
@@ -1020,7 +1015,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
                         "is set to False")
             os.unlink(full_path_out)
         return ccd
-#Add y si en vez de moverse entre working directories, solo se usa el full path?
 
 def define_trim_section(sample_image, technique):
     """Get the initial trim section
