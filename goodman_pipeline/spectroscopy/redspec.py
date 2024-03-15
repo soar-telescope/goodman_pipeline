@@ -91,7 +91,7 @@ def get_args(arguments=None):
                         type=str,
                         metavar='<Search Pattern>',
                         dest='pattern',
-                        help="Pattern for matching the goodman's reduced data.")
+                        help="Pattern for matching the goodman's reduced data. Default is cfzst*.")
 
     parser.add_argument('--output-prefix',
                         action='store',
