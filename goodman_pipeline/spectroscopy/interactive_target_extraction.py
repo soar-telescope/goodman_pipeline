@@ -5,8 +5,6 @@ import sys
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import PySimpleGUI as sg
-
 
 from astropy.visualization import ZScaleInterval
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg

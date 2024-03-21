@@ -4,7 +4,6 @@ from __future__ import (absolute_import, division, print_function,
 import calendar
 import ccdproc
 import collections
-import coloredlogs
 import datetime
 import glob
 import logging
@@ -2955,8 +2954,6 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
                         datefmt=date_format)
 
     log = logging.getLogger(__name__)
-
-    coloredlogs.install(level=logging_level, logger=log, fmt=log_format)
 
     file_handler = logging.FileHandler(filename=log_filename)
     file_handler.setFormatter(fmt=formatter)
