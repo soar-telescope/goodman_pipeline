@@ -731,7 +731,7 @@ class InteractiveWavelengthCalibration(object):
                          2,
                          gridspec_kw={'width_ratios': [4, 1]})
 
-        self.i_fig.canvas.set_window_title('Science Target: {:s}'.format(
+        self.i_fig.canvas.setWindowTitle('Science Target: {:s}'.format(
             object_name))
 
         manager = plt.get_current_fig_manager()
@@ -830,7 +830,7 @@ class InteractiveWavelengthCalibration(object):
         Args:
             event (object): Click event
         """
-        if event.button == 2:
+        if event.button == 3:
             self.register_mark(event)
         # TODO (simon): Make sure the text below is useless
         # else:
@@ -891,7 +891,7 @@ class InteractiveWavelengthCalibration(object):
             print("ctrl+t: Save as template")
             print("ctrl+z: Go back to previous solution "
                   "(deletes automatic added points")
-            print('Middle Button Click: records data location.')
+            print('Right Button Click or p: records data location.')
             print("Enter: Close figure and apply solution if exists.")
         elif event.key == 'f2' or event.key == 'f':
             log.debug('Calling function to fit wavelength Solution')
@@ -1055,6 +1055,9 @@ class InteractiveWavelengthCalibration(object):
                 wavelength_solution=self.wsolution,
                 lines_pixel=self.line_pixels,
                 lines_angstrom=self.line_angstroms)
+
+        elif event.key == 'p':
+            self.register_mark(event)
 
         elif event.key == 'enter':
             if self.wsolution is not None:
