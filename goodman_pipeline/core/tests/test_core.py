@@ -1387,8 +1387,6 @@ class MasterFlatTest(TestCase):
         self.assertFalse(os.path.isfile(norm_flat))
 
     def test_get_best_flat(self):
-        # print(self.flat_name_base)
-
         master_flat, master_flat_name = get_best_flat(
             flat_name=self.flat_name_base,
             path=self.flat_path)
@@ -1404,6 +1402,14 @@ class MasterFlatTest(TestCase):
             path=self.flat_path)
         self.assertIsNone(master_flat)
         self.assertIsNone(master_flat_name)
+
+    def test_get_best_flat_relative_path(self):
+        master_flat, master_flat_name = get_best_flat(
+            flat_name=os.path.join(self.flat_path,self.flat_name_base),
+            path=self.flat_path)
+        self.assertIsInstance(master_flat, CCDData)
+        self.assertEqual(os.path.basename(master_flat_name),
+                         self.reference_flat_name)
 
     def test_normalize_master_flat(self):
         methods = ['mean', 'simple', 'full']
