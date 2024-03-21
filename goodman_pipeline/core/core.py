@@ -380,7 +380,7 @@ def create_master_bias(bias_files,
     """Create Master Bias
 
     Given a :class:`~pandas.DataFrame` object that contains a list of compatible bias.
-    This function creates the master flat using ccdproc.combine using median
+    This function creates the master bias using ccdproc.combine using median
     and 3-sigma clipping.
 
     Args:
@@ -1430,7 +1430,7 @@ def get_best_flat(flat_name, path):
         master_flat_name (str): Full path to the chosen master flat.
 
     """
-    flat_list = glob.glob(os.path.join(path, flat_name))
+    flat_list = glob.glob(os.path.join(path, os.path.basename(flat_name)))
     log.debug('Flat base name {:s}'.format(flat_name))
     log.debug('Matching master flats found: {:d}'.format(len(flat_list)))
     if len(flat_list) > 0:
@@ -4108,6 +4108,7 @@ class SpectroscopicMode(object):
                      ['1200', 'm5', '49.6', '24.8', 'GG455', 'GG455'],
                      ['1200', 'm6', '54.8', '27.4', 'GG495', 'GG495'],
                      ['1200', 'm7', '60.2', '30.1', 'OG570', 'OG570'],
+                     ['1200', 'CaNIR', '60.2', '30.1', 'OG570', 'OG570'],
                      ['1800', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>'],
                      ['2100', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>'],
                      ['2400', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>']
