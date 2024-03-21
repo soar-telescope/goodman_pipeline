@@ -527,9 +527,9 @@ class CosmicRayRejectionTest(TestCase):
     def tearDown(self):
         files_to_delete = ['dcr.par',
                            'goodman_log.txt',
-                           'cosmic_test.fits',
-                           'new_prefixcr_test.fits',
-                           'prefixcr_test.fits',
+                           'cosmic_cr_test.fits',
+                           'new_prefix_cr_test.fits',
+                           'prefix_cr_test.fits',
                            'crmask_cr_test.fits']
 
         for _file in files_to_delete:
