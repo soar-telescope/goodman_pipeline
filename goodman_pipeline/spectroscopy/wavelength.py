@@ -34,6 +34,8 @@ from ..core import (add_linear_wavelength_solution,
 
 from ..core import (ReferenceData, NoMatchFound)
 
+from .interactive import InteractiveWavelengthCalibration
+
 log = logging.getLogger(__name__)
 
 
@@ -96,6 +98,7 @@ class WavelengthCalibration(object):
                  object_number=None,
                  corr_tolerance=15,
                  output_prefix='w',
+                 interactive_wavelength=False,
                  plot_results=False,
                  save_plots=False,
                  plots=False,
@@ -183,9 +186,16 @@ class WavelengthCalibration(object):
                 self.lines_center = get_lines_in_lamp(
                     ccd=self.lamp, plots=plots)
                 try:
-                    self._automatic_wavelength_solution(
-                        save_data_to=save_data_to,
-                        corr_tolerance=self.cross_corr_tolerance)
+                    if interactive_wavelength:
+                        interactive_wavelength = InteractiveWavelengthCalibration()
+                        interactive_wavelength(ccd=ccd,
+                                               comp_list=comp_list,
+                                               save_data_to=save_data_to,
+                                               reference_data=reference_data)
+                    else:
+                        self._automatic_wavelength_solution(
+                            save_data_to=save_data_to,
+                            corr_tolerance=self.cross_corr_tolerance)
                 except NoMatchFound as message:
                     log.error(message)
                     continue

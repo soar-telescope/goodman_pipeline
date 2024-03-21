@@ -173,6 +173,11 @@ def get_args(arguments=None):
                              "discriminate usable targets. Default 3 times "
                              "background level")
 
+    parser.add_argument('--interactive-wavelength',
+                        action='store_true',
+                        dest='interactive_wavelength',
+                        help="Interactive Wavelength Calibration.")
+
     parser.add_argument('--save-plots',
                         action='store_true',
                         dest='save_plots',
@@ -428,7 +433,7 @@ class MainApp(object):
 
                     # if len(trace_list) > 0:
                     ## Experimental interactive extraction
-                    if True:
+                    if False:
                         ie = InteractiveExtraction()
                         # ie = InteractiveExtractionGUI()
                         ie(ccd=ccd, lamps=comp_ccd_list, traces=trace_list)
@@ -549,6 +554,7 @@ class MainApp(object):
                                     reference_data=self.args.reference_dir,
                                     object_number=object_number,
                                     output_prefix=self.args.output_prefix,
+                                    interactive_wavelength=self.args.interactive_wavelength,
                                     plot_results=self.args.plot_results,
                                     save_plots=self.args.save_plots,
                                     plots=self.args.debug_with_plots)
