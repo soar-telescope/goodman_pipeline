@@ -1,6 +1,16 @@
 Change History
 ##############
 
+.. _v1.3.8:
+
+V1.3.8 Not Released
+^^^^^^^^^^^^^^^^^^^
+
+- Documentation update
+- Fix DCR bug that was present when called from CLI.
+- Fixed Bug when using relative path for selecting master flat
+
+
 .. _v1.3.7:
 
 V1.3.7 17-08-2023
