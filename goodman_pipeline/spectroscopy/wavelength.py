@@ -541,7 +541,7 @@ class WavelengthCalibration(object):
             self.i_fig = None
             if self.i_fig is None:
                 self.i_fig = plt.figure()
-                self.i_fig.canvas.set_window_title(
+                self.i_fig.canvas.manager.set_window_title(
                     'Automatic Wavelength Solution')
                 self.ax1 = self.i_fig.add_subplot(111)
                 self.ax1.set_rasterization_zorder(1)
@@ -704,7 +704,7 @@ class WavelengthCalibration(object):
                         '{:s}\n{:s}'.format(object_name, grating)
 
             fig, ax1 = plt.subplots(1)
-            fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+            fig.canvas.manager.set_window_title(ccd.header['GSP_FNAM'])
             # ax1 = fig.add_subplot(111)
 
             mng = plt.get_current_fig_manager()

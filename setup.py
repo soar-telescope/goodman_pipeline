@@ -145,8 +145,8 @@ setup(
     package_data={'goodman_pipeline': ['data/params/dcr.par',
                                        'data/params/*.json_output',
                                        'data/ref_comp/*fits',
-                                       'data/dcr-source/README.md',
-                                       'data/dcr-source/dcr/*',
+                                       'data/dcr_source/README.md',
+                                       'data/dcr_source/dcr/*',
                                        'data/test_data/master_flat/*',
                                        'data/test_data/wcs_data/*']},
 

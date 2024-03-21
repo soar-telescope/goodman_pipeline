@@ -1,18 +1,18 @@
 name: goodman_pipeline
 dependencies:
-  - python=3.8
+  - python
   - numpy
   - pandas
   - matplotlib
   - scipy
   - cython
-  - astropy
   - pip
   - pip:
-    - ccdproc
-    - coloredlogs
-    - coveralls
-    - astroplan
-    - mock
-    - sphinx
-    - sphinxcontrib.napoleon
+      - astropy>=5.3
+      - ccdproc
+      - coveralls
+      - pydata-sphinx-theme
+      - astroplan
+      - mock
+      - sphinx
+      - sphinxcontrib.napoleon

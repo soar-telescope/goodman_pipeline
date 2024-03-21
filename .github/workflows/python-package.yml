@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -30,10 +30,10 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Compile DCR Binaries
       run: |
-        SOURCE_DIR=${{ github.workspace }}/goodman_pipeline/data/dcr-source/dcr
+        SOURCE_DIR=${{ github.workspace }}/goodman_pipeline/data/dcr_source/dcr
         make --directory $SOURCE_DIR
         chmod +x $SOURCE_DIR/dcr
-        echo "${{ github.workspace }}/goodman_pipeline/data/dcr-source/dcr" >> $GITHUB_PATH
+        echo "${{ github.workspace }}/goodman_pipeline/data/dcr_source/dcr" >> $GITHUB_PATH
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -44,7 +44,7 @@ jobs:
       run: |
         pytest --cov=goodman_pipeline
 
-    - uses: codecov/codecov-action@v1
+    - uses: codecov/codecov-action@v3
       with:
         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
         fail_ci_if_error: true # optional (default = false)

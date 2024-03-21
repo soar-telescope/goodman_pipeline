@@ -34,9 +34,10 @@ Getting Help.
 
 .. include:: _extraction_methods.rst
 
-
 .. include:: _file_prefixes.rst
 
 .. include:: _file_suffixes.rst
 
 .. include:: _shortcuts.rst
+
+.. include:: _common_issues.rst

@@ -92,7 +92,7 @@ def get_args(arguments=None):
                         type=str,
                         metavar='<Search Pattern>',
                         dest='pattern',
-                        help="Pattern for matching the goodman's reduced data.")
+                        help="Pattern for matching the goodman's reduced data. Default is cfzst*.")
 
     parser.add_argument('--output-prefix',
                         action='store',
@@ -499,7 +499,7 @@ class MainApp(object):
                                 ax.set_ylabel("Intensity (ADU)")
                                 ax.set_xlabel("Dispersion Axis (Pixels)")
 
-                                fig.canvas.set_window_title(
+                                fig.canvas.manager.set_window_title(
                                     'Extracted Data: Target Center ~ '
                                     '{:.2f}'.format(single_profile_center))
 

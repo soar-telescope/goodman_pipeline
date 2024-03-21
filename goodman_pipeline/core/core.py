@@ -18,6 +18,7 @@ import subprocess
 import sys
 import time
 
+import requests
 from astropy.utils import iers
 iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
 from astroplan import Observer
@@ -324,6 +325,8 @@ def call_cosmic_rejection(ccd,
 
             _create(instrument=_instrument, binning=_binning, path=red_path)
 
+        #out_prefix = prefix + out_prefix #Move line here
+
         full_path = os.path.join(red_path, f"{out_prefix}_{image_name}")
 
         ccd.header.set('GSP_COSM',
@@ -379,7 +382,7 @@ def create_master_bias(bias_files,
     """Create Master Bias
 
     Given a :class:`~pandas.DataFrame` object that contains a list of compatible bias.
-    This function creates the master flat using ccdproc.combine using median
+    This function creates the master bias using ccdproc.combine using median
     and 3-sigma clipping.
 
     Args:
@@ -939,24 +942,26 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # define the name for the cosmic rays file
     cosmic_file = 'cosmic_' + '_'.join(in_file.split('_')[1:])
 
+    # get current working directory and goes to reduction folder
+    cwd = os.getcwd()
+    full_path_data = os.path.join(cwd, data_path)
+
     # define full path for all the files involved
-    full_path_in = os.path.join(data_path, in_file)
-    full_path_out = os.path.join(data_path, out_file)
-    full_path_cosmic = os.path.join(data_path, cosmic_file)
+    full_path_in = os.path.join(full_path_data, in_file)
+    full_path_out = os.path.join(full_path_data, out_file)
+    full_path_cosmic = os.path.join(full_path_data, cosmic_file)
 
     # this is the command for running dcr, all arguments are required
     command = 'dcr {:s} {:s} {:s}'.format(full_path_in,
                                           full_path_out,
                                           full_path_cosmic)
-
     log.debug('DCR command:')
     log.debug(command)
     # get the current working directory to go back to it later in case the
     # the pipeline has not been called from the same data directory.
-    cwd = os.getcwd()
 
     # move to the directory were the data is, dcr is expecting a file dcr.par
-    os.chdir(data_path)
+    os.chdir(full_path_data)
 
     # call dcr
     try:
@@ -989,7 +994,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # wait for dcr to terminate
     # dcr.wait()
 
-    # go back to the original directory. Could be the same.
+    #go back to the original directory. Could be the same.
     os.chdir(cwd)
 
     # If no error stderr is an empty string
@@ -1031,7 +1036,6 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
                         "is set to False")
             os.unlink(full_path_out)
         return ccd
-
 
 def define_trim_section(sample_image, technique):
     """Get the initial trim section
@@ -1169,7 +1173,7 @@ def extraction(ccd,
 
 def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
                              background_spacing=3):
-    """Performs an spectrum extraction using fractional pixels.
+    """Performs a spectrum extraction using fractional pixels.
 
     Args:
         ccd (CCDData) Instance of :class:`~astropy.nddata.CCDData` that
@@ -1447,7 +1451,7 @@ def get_best_flat(flat_name, path):
         master_flat_name (str): Full path to the chosen master flat.
 
     """
-    flat_list = glob.glob(os.path.join(path, flat_name))
+    flat_list = glob.glob(os.path.join(path, os.path.basename(flat_name)))
     log.debug('Flat base name {:s}'.format(flat_name))
     log.debug('Matching master flats found: {:d}'.format(len(flat_list)))
     if len(flat_list) > 0:
@@ -1567,7 +1571,7 @@ def get_lines_in_lamp(ccd, plots=False):
     if plots:  # pragma: no cover
         plt.close('all')
         fig, ax = plt.subplots()
-        fig.canvas.set_window_title('Lines Detected')
+        fig.canvas.manager.set_window_title('Lines Detected')
 
         try:
             mng = plt.get_current_fig_manager()
@@ -2311,7 +2315,7 @@ def name_master_flats(header,
         dome_sky = '*'
 
     if technique == 'Spectroscopy':
-        if header['GRATING'] != '<NO GRATING>':
+        if header['GRATING'] not in ['<NO GRATING>', 'NO_GRATING']:
             flat_grating = '_' + re.sub('[A-Za-z_ ]',
                                         '',
                                         header['GRATING'])
@@ -2320,7 +2324,7 @@ def name_master_flats(header,
             spectroscopic_mode = SpectroscopicMode()
             wavmode = spectroscopic_mode(header=header)
         else:
-            flat_grating = '_no_grating'
+            flat_grating = '_NO_GRATING'
             wavmode = ''
 
         flat_slit = re.sub('[A-Za-z_ ]',
@@ -2328,7 +2332,7 @@ def name_master_flats(header,
                            header['SLIT'])
 
         filter2 = header['FILTER2']
-        if filter2 == '<NO FILTER>':
+        if filter2 in ['<NO FILTER>', 'NO_FILTER']:
             filter2 = ''
         else:
             filter2 = '_' + filter2
@@ -2343,9 +2347,9 @@ def name_master_flats(header,
                             + '.fits'
 
     elif technique == 'Imaging':
-        if header['FILTER'] != 'NO_FILTER':
+        if header['FILTER'] not in ['<NO FILTER>', 'NO_FILTER']:
             flat_filter = header['FILTER']
-        elif header['FILTER2'] != 'NO_FILTER':
+        elif header['FILTER2'] not in ['<NO FILTER>', 'NO_FILTER']:
             flat_filter = header['FILTER2']
         else:
             flat_filter = "NO_FILTER"
@@ -2766,7 +2770,7 @@ def recenter_lines(data, lines, plots=False):
             new_center.append(centroid)
     if plots:  # pragma: no cover
         fig, ax = plt.subplots(1, 1)
-        fig.canvas.set_window_title('Lines Detected in Lamp')
+        fig.canvas.manager.set_window_title('Lines Detected in Lamp')
         ax.axhline(median, color='b')
 
         ax.plot(range(len(data)),
@@ -2984,7 +2988,11 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
                 log.info("Latest Release: {:s}".format(latest_release))
         except ConnectionRefusedError:
             log.error('Unauthorized GitHub API Access reached maximum')
-            log.info("Current Version: {:s}".format(__version__))
+            log.info(f"Current Version: {__version__}")
+        except requests.exceptions.ConnectionError:
+            log.warning("Unable to validate latest version. "
+                        "The connection timed out or was not possible to establish")
+            log.info(f"Current Version: {__version__}")
 
 
 def trace(ccd,
@@ -3156,7 +3164,7 @@ def trace(ccd,
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
         z2 = np.median(ccd.data) + np.std(ccd.data)
         fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+        fig.canvas.manager.set_window_title(ccd.header['GSP_FNAM'])
 
         mng = plt.get_current_fig_manager()
         mng.window.showMaximized()
@@ -3268,7 +3276,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nfwhm=5,
         z1 = np.mean(ccd.data) - 0.5 * np.std(ccd.data)
         z2 = np.median(ccd.data) + np.std(ccd.data)
         fig, ax = plt.subplots()
-        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+        fig.canvas.manager.set_window_title(ccd.header['GSP_FNAM'])
 
         mng = plt.get_current_fig_manager()
         mng.window.showMaximized()
@@ -4488,7 +4496,7 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['lamp_ar'] == header['LAMP_AR']) &
                 (self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) &
                 (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
-                (self.ref_lamp_collection['wavmode'] == header['wavmode']))]
+                (self.ref_lamp_collection['wavmode'] == header['WAVMODE']))]
             if filtered_collection.empty:
                 error_message = "Unable to find a match in the reference library for: "\
                                 "LAMP_HGA = {}, "\
@@ -4842,30 +4850,31 @@ class SpectroscopicMode(object):
 
         """
         self.log = logging.getLogger(__name__)
-        columns = ['grating_freq', 'wavmode', 'camtarg', 'grttarg', 'ob_filter']
-        spec_mode = [['400', 'm1', '11.6', '5.8', 'None'],
-                     ['400', 'm2', '16.1', '7.5', 'GG455'],
-                     ['600', 'UV', '15.25', '7.0', 'None'],
-                     ['600', 'Blue', '17.0', '7.0', 'None'],
-                     ['600', 'Mid', '20.0', '10.0', 'GG385'],
-                     ['600', 'Red', '27.0', '12.0', 'GG495'],
-                     ['930', 'm1', '20.6', '10.3', 'None'],
-                     ['930', 'm2', '25.2', '12.6', 'None'],
-                     ['930', 'm3', '29.9', '15.0', 'GG385'],
-                     ['930', 'm4', '34.6', '18.3', 'GG495'],
-                     ['930', 'm5', '39.4', '19.7', 'GG495'],
-                     ['930', 'm6', '44.2', '22.1', 'OG570'],
-                     ['1200', 'm0', '26.0', '16.3', 'None'],
-                     ['1200', 'm1', '29.5', '16.3', 'None'],
-                     ['1200', 'm2', '34.4', '18.7', 'None'],
-                     ['1200', 'm3', '39.4', '20.2', 'None'],
-                     ['1200', 'm4', '44.4', '22.2', 'GG455'],
-                     ['1200', 'm5', '49.6', '24.8', 'GG455'],
-                     ['1200', 'm6', '54.8', '27.4', 'GG495'],
-                     ['1200', 'm7', '60.2', '30.1', 'OG570'],
-                     ['1800', 'Custom', 'None', 'None', 'None'],
-                     ['2100', 'Custom', 'None', 'None', 'None'],
-                     ['2400', 'Custom', 'None', 'None', 'None']
+        columns = ['grating_freq', 'wavmode', 'camtarg', 'grttarg', 'ob_filter', 'ob_filter_old']
+        spec_mode = [['400', 'm1', '11.6', '5.8', 'NO_FILTER', '<NO FILTER>'],
+                     ['400', 'm2', '16.1', '7.5', 'GG455', 'GG455'],
+                     ['600', 'UV', '15.25', '7.0', 'NO_FILTER', '<NO FILTER>'],
+                     ['600', 'Blue', '17.0', '7.0', 'NO_FILTER', '<NO FILTER>'],
+                     ['600', 'Mid', '20.0', '10.0', 'GG385', 'GG385'],
+                     ['600', 'Red', '27.0', '12.0', 'GG495', 'GG495'],
+                     ['930', 'm1', '20.6', '10.3', 'NO_FILTER', '<NO FILTER>'],
+                     ['930', 'm2', '25.2', '12.6', 'NO_FILTER', '<NO FILTER>'],
+                     ['930', 'm3', '29.9', '15.0', 'GG385', 'GG385'],
+                     ['930', 'm4', '34.6', '18.3', 'GG495', 'GG495'],
+                     ['930', 'm5', '39.4', '19.7', 'GG495', 'GG495'],
+                     ['930', 'm6', '44.2', '22.1', 'OG570', 'OG570'],
+                     ['1200', 'm0', '26.0', '16.3', 'NO_FILTER', '<NO FILTER>'],
+                     ['1200', 'm1', '29.5', '16.3', 'NO_FILTER', '<NO FILTER>'],
+                     ['1200', 'm2', '34.4', '18.7', 'NO_FILTER', '<NO FILTER>'],
+                     ['1200', 'm3', '39.4', '20.2', 'NO_FILTER', '<NO FILTER>'],
+                     ['1200', 'm4', '44.4', '22.2', 'GG455', 'GG455'],
+                     ['1200', 'm5', '49.6', '24.8', 'GG455', 'GG455'],
+                     ['1200', 'm6', '54.8', '27.4', 'GG495', 'GG495'],
+                     ['1200', 'm7', '60.2', '30.1', 'OG570', 'OG570'],
+                     ['1200', 'CaNIR', '60.2', '30.1', 'OG570', 'OG570'],
+                     ['1800', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>'],
+                     ['2100', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>'],
+                     ['2400', 'Custom', 'None', 'None', 'NO_FILTER', '<NO FILTER>']
                      ]
         self.modes_data_frame = pandas.DataFrame(spec_mode, columns=columns)
 
@@ -4944,7 +4953,8 @@ class SpectroscopicMode(object):
                 ((self.modes_data_frame['grating_freq'] == grating) &
                  (self.modes_data_frame['camtarg'] == camera_targ) &
                  (self.modes_data_frame['grttarg'] == grating_targ) &
-                 (self.modes_data_frame['ob_filter'] == blocking_filter))]
+                 ((self.modes_data_frame['ob_filter'] == blocking_filter) |
+                  (self.modes_data_frame['ob_filter_old'] == blocking_filter)))]
             if _mode.empty:
                 central_wavelength = get_central_wavelength(
                     grating=grating,
@@ -5044,7 +5054,7 @@ class IdentifySpectroscopicTargets(object):
 
             plt.switch_backend('Qt5Agg')
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(self.file_name)
+            fig.canvas.manager.set_window_title(self.file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -5121,7 +5131,7 @@ class IdentifySpectroscopicTargets(object):
 
         if plots or self.plots:  # pragma: no cover
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -5138,7 +5148,7 @@ class IdentifySpectroscopicTargets(object):
             plt.show()
 
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -5209,7 +5219,7 @@ class IdentifySpectroscopicTargets(object):
             plt.close()
 
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -5285,7 +5295,7 @@ class IdentifySpectroscopicTargets(object):
             plt.ioff()
 
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             ax.set_title('All detected Peaks')
 
@@ -5381,7 +5391,7 @@ class IdentifySpectroscopicTargets(object):
             plt.ioff()
 
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -5500,7 +5510,7 @@ class IdentifySpectroscopicTargets(object):
 
         if plots:  # pragma: no cover
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()
@@ -5571,7 +5581,7 @@ class IdentifySpectroscopicTargets(object):
 
         if plots:  # pragma: no cover
             fig, ax = plt.subplots()
-            fig.canvas.set_window_title(file_name)
+            fig.canvas.manager.set_window_title(file_name)
 
             mng = plt.get_current_fig_manager()
             mng.window.showMaximized()

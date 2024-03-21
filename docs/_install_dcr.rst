@@ -16,7 +16,7 @@ of LACosmic.
 The latest version of the Goodman Spectroscopic Pipeline uses a modified version
 of ``dcr`` to help with the pipeline's workflow. It is included under
 
-  ``<path_to_download_location>/goodman_pipeline/goodman_pipeline/data/dcr-source/dcr/``
+  ``<path_to_download_location>/goodman_pipeline/goodman_pipeline/data/dcr_source/dcr/``
 
 ``goodman_pipeline-<version>`` is the folder that will be created once you untar or unzip the latest
 release of the |pipeline name|.
@@ -38,7 +38,7 @@ Compiling DCR
 
 Compiling ``dcr`` is actually very simple.
 
-  ``cd <path_to_download_location>/goodman_pipeline/goodman_pipeline/data/dcr-source/dcr/``
+  ``cd <path_to_download_location>/goodman_pipeline/goodman_pipeline/data/dcr_source/dcr/``
 
 Then simply type:
 

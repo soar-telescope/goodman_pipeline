@@ -27,13 +27,14 @@ behavior for every user or science case, we have implemented a set of
   is *current working directory*.
 - ``--proc-path <path>`` Folder were processed data will be stored. Default
   is *current working directory*.
-- ``--search-pattern <pattern>`` Prefix for picking up files. Default
-  ``cfzst``. See :ref:`file-prefixes`.
-- ``--output-prefix <prefix>`` Prefix to be added to calibrated spectrum.
+- ``--search-pattern <pattern>`` Prefix for picking up files. Default is
+  ``cfzst-``. See :ref:`file-prefixes`.
+- ``--output-prefix <prefix>`` Prefix to be added to calibrated spectrum. Default is
+  ``w-``. See :ref:`file-prefixes`.
 - ``--extraction <method>`` Select the :ref:`extraction-methods`. The only one
   implemented at the moment is ``fractional`` .
 - ``--fit-targets-with {moffat, gaussian}`` Model to fit peaks on spatial profile
-  while searching for spectroscopic targets.
+  while searching for spectroscopic targets. Default ``moffat``.
 - ``--target-min-width <target min width>`` Minimum profile width for fitting the spatial axis of spectroscopic targets.
   If fitting a Moffat it will be reflected as the FWHM attribute of the fitted model and if fitting a Gaussian it will
   be reflected as the STDDEV attribute of the Gaussian model.

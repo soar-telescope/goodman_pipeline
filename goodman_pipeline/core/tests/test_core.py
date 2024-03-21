@@ -1387,8 +1387,6 @@ class MasterFlatTest(TestCase):
         self.assertFalse(os.path.isfile(norm_flat))
 
     def test_get_best_flat(self):
-        # print(self.flat_name_base)
-
         master_flat, master_flat_name = get_best_flat(
             flat_name=self.flat_name_base,
             path=self.flat_path)
@@ -1404,6 +1402,14 @@ class MasterFlatTest(TestCase):
             path=self.flat_path)
         self.assertIsNone(master_flat)
         self.assertIsNone(master_flat_name)
+
+    def test_get_best_flat_relative_path(self):
+        master_flat, master_flat_name = get_best_flat(
+            flat_name=os.path.join(self.flat_path,self.flat_name_base),
+            path=self.flat_path)
+        self.assertIsInstance(master_flat, CCDData)
+        self.assertEqual(os.path.basename(master_flat_name),
+                         self.reference_flat_name)
 
     def test_normalize_master_flat(self):
         methods = ['mean', 'simple', 'full']
@@ -1425,8 +1431,6 @@ class NameMasterFlatsTest(TestCase):
 
     def setUp(self):
         self.reduced_data = os.getcwd()
-
-        #reference
         date = '2019-08-28'
         self.twilight_start_evening = '2019-08-27T23:45:00.022'
         self.twilight_end_morning = '2019-08-28T09:43:20.023'
@@ -1462,7 +1466,7 @@ class NameMasterFlatsTest(TestCase):
 
     def test_name_master_flats_spectroscopy_no_grating_no_filter2(self):
 
-        expected_name = 'master_flat_TestSubject_no_grating_1.0_sky.fits'
+        expected_name = 'master_flat_TestSubject_NO_GRATING_1.0_sky.fits'
 
         self.header.set('GRATING', value='<NO GRATING>')
         self.header.set('DATE-OBS', value='2019-08-27T23:40:00.022')
@@ -2059,24 +2063,15 @@ class SlitTrimTest(TestCase):
     def test_get_slit_trim_section__slit_within_data(self):
 
         slit_trim = get_slit_trim_section(master_flat=self.fake_image)
-        # print(fake_image.data[:,5])
-        # print(slit_trim)
         self.assertEqual(slit_trim, self.reference_slit_trim)
 
     def test_get_slit_trim_section__slit_full_data(self):
         self.fake_image.data[:, :] = 100
 
         slit_trim = get_slit_trim_section(master_flat=self.fake_image)
-        # print(fake_image.data[:,5])
         self.assertEqual(slit_trim, '[1:100,1:100]')
 
     def test_image_trim_slit(self):
-        # # define
-        # slit_low_limit = 5
-        # slit_high_limit = 95
-        #
-        # slit_trim = '[1:100,{:d}:{:d}]'.format(slit_low_limit + 10 + 1,
-        #                                        slit_high_limit - 10)
         self.fake_image = image_trim(ccd=self.fake_image,
                                      trim_section=self.reference_slit_trim,
                                      trim_type='slit')
@@ -2087,8 +2082,6 @@ class SlitTrimTest(TestCase):
 
         self.assertEqual(self.fake_image.header['GSP_SLIT'],
                          self.reference_slit_trim)
-
-
 
 
 class SpectroscopicModeTest(TestCase):
@@ -2117,7 +2110,7 @@ class SpectroscopicModeTest(TestCase):
 
         self.assertEqual(mode_m2_keywords, 'm2')
 
-    def test_get_mode(self):
+    def test_get_modes(self):
         mode_m2 = self.sm.get_mode(grating='400',
                                    camera_targ='16.1',
                                    grating_targ='7.5',
@@ -2136,6 +2129,39 @@ class SpectroscopicModeTest(TestCase):
                                             grating_targ='7.5',
                                             blocking_filter='GG455')
         self.assertEqual(mode_custom_2100, 'Custom_1334nm')
+
+    def test_get_mode_400_m1_from_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='400_SYZY')
+        header.set('CAM_TARG', value='11.6')
+        header.set('GRT_TARG', value='5.8')
+        header.set('FILTER2', value='NO_FILTER')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm1')
+
+    def test_get_mode_400_m1_from_old_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='SYZY_400')
+        header.set('CAM_TARG', value='11.6')
+        header.set('GRT_TARG', value='5.8')
+        header.set('FILTER2', value='<NO FILTER>')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm1')
+
+    def test_get_mode_1200_m3_from_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='1200')
+        header.set('CAM_TARG', value='39.4')
+        header.set('GRT_TARG', value='20.2')
+        header.set('FILTER2', value='NO_FILTER')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm3')
 
     def test_get_cam_grt_targ_angle(self):
 
@@ -2181,15 +2207,6 @@ class TargetsTest(TestCase):
             self.ccd.data[:, i] *= profile_sum(range(self.ccd.data.shape[0]))
             self.ccd2.data[:, i] *= self.profile_3(
                 range(self.ccd2.data.shape[0]))
-            # this add noise to test the removal of masked values
-            # self.ccd.data[
-            #     random.randrange(self.ccd.data.shape[0]),
-            #     random.randrange(self.ccd.data.shape[1])] *= 300
-            # self.ccd2.data[
-            #     random.randrange(self.ccd2.data.shape[0]),
-            #     random.randrange(self.ccd2.data.shape[1])] *= 300
-
-
 
     def tearDown(self):
         del self.ccd
@@ -2331,4 +2348,3 @@ class ValidateCcdRegionTest(TestCase):
 
     def test_validate_ccd_region_invalid(self):
         self.assertRaises(SyntaxError, validate_ccd_region, "10:10:10]")
-

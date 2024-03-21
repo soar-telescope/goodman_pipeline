@@ -4,6 +4,8 @@ __author__ = 'Bruno Quint'
 import os
 import unittest
 
+import requests
+
 from goodman_pipeline.core import check_version
 
 __version__ = __import__('goodman_pipeline').__version__
@@ -18,6 +20,8 @@ class TestVersionChecker(unittest.TestCase):
             # self.assertEqual(v, __version__)
         except ConnectionRefusedError:  # pragma: no cover
             pass
+        except requests.exceptions.ConnectionError:  # pragma: no cover
+            pass
 
     def test_get_last_no_token(self):
         try:
@@ -26,14 +30,19 @@ class TestVersionChecker(unittest.TestCase):
             # self.assertEqual(v, __version__)
         except ConnectionRefusedError:  # pragma: no cover
             pass
+        except requests.exceptions.ConnectionError:  # pragma: no cover
+            pass
         except KeyError:  # pragma: no cover
             pass
 
     def test_get_last_token(self):
         os.environ['FAKETOKEN'] = 'ThisIsNotARealToken'
-        self.assertRaises(ConnectionRefusedError,
-                          check_version.get_last,
-                          'FAKETOKEN')
+        try:
+            self.assertRaises(ConnectionRefusedError,
+                              check_version.get_last,
+                              'FAKETOKEN')
+        except requests.exceptions.ConnectionError:
+            pass
 
 
     def test_am_i_updated(self):
@@ -41,4 +50,6 @@ class TestVersionChecker(unittest.TestCase):
             self.assertTrue(check_version.am_i_updated(__version__))
             self.assertFalse(check_version.am_i_updated('v0.0.0'))
         except ConnectionRefusedError:  # pragma: no cover
+            pass
+        except requests.exceptions.ConnectionError:  # pragma: no cover
             pass
