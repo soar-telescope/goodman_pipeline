@@ -50,5 +50,5 @@ know it yet.
 
 .. note::
 
-The prefix 'c' is added to all the comparison lamps, despite they not being
-affected by cosmic rays.
+  The prefix ``c`` is added to all the comparison lamps, despite they not being
+  affected by cosmic rays.
