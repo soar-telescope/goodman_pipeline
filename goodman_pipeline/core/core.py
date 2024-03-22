@@ -317,11 +317,11 @@ def call_cosmic_rejection(ccd,
                     'the mask use --keep-cosmic-files')
 
         if not os.path.isfile(os.path.join(red_path, 'dcr.par')):
-            _create = GenerateDcrParFile()
+            generate_dcr_parameters_file = GenerateDcrParFile()
             _instrument = ccd.header['INSTCONF']
             _binning, _ = ccd.header['CCDSUM'].split()
 
-            _create(instrument=_instrument, binning=_binning, path=red_path)
+            generate_dcr_parameters_file(instrument=_instrument, binning=_binning, path=red_path)
 
         #out_prefix = prefix + out_prefix #Move line here
 
