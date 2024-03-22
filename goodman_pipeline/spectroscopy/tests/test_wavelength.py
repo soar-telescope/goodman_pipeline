@@ -158,7 +158,7 @@ class WavelengthCalibrationTests(TestCase):
                               reference_data='goodman_pipeline/data/ref_comp',
                               json_output=True)
 
-        self.assertEqual(json_output['error'], 'Unable to obtain wavelength solution')
+        self.assertEqual(json_output['error'], 'Unable to obtain wavelength solution.')
         self.assertEqual(json_output['warning'], '')
         self.assertEqual(json_output['wavelength_solution'], [])
 
