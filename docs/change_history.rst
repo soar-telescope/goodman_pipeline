@@ -9,6 +9,7 @@ V1.3.8 Not Released
 - Documentation update
 - Fix DCR bug that was present when called from CLI.
 - Fixed Bug when using relative path for selecting master flat
+- Fixed Bug when dcr didn't processed properly when comparison lamps have OBSTYPE = ARC
 
 
 .. _v1.3.7:
