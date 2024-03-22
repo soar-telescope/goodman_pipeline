@@ -302,7 +302,7 @@ def call_cosmic_rejection(ccd,
             log.info('Setting cosmic ray rejection method to:'
                      ' {:s}'.format(method))
 
-    if ccd.header['OBSTYPE'] == 'COMP' and method != 'none':
+    if ccd.header['OBSTYPE'] in ['COMP', 'ARC'] and method != 'none':
         log.info("Changing cosmic ray rejection method from '{:s}' to 'none'"
                  " for comparison lamp. Prefix 'c' will be added "
                  "anyway.".format(method))
