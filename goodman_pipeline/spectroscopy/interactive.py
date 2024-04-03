@@ -1534,14 +1534,15 @@ class InteractiveWavelengthCalibration(object):
             if self.wsolution is not None:
                 self.wsolution = None
 
-    def add_wavelength_solution(self,
-                                new_header,
+
+    def add_gsp_wcs(self):
+        pass
+
+    def add_linear_wavelength_solution(self,
+                                header,
                                 spectrum,
                                 original_filename,
-                                save_data_to="",
-                                output_prefix='w',
-                                evaluation_comment=None,
-                                index=None):
+                                evaluation_comment=None):
         """Add wavelength solution to the new FITS header
 
         Defines FITS header keyword values that will represent the wavelength
@@ -1553,7 +1554,7 @@ class InteractiveWavelengthCalibration(object):
             in separated methods to have more control on either process.
 
         Args:
-            new_header (object): An Astropy header object
+            header (object): An Astropy header object
             spectrum (Array): A numpy array that corresponds to the processed
               data
             original_filename (str): Original Image file name
@@ -1567,79 +1568,25 @@ class InteractiveWavelengthCalibration(object):
             necessary since there is no further processing
 
         """
-        rms_error, n_points, n_rejections = self.evaluate_solution()
-
-        # gsp_wser = rms_error
-        # gsp_wpoi = n_points
-        # gsp_wrej = n_rejections
-        # new_header['GSP_WRMS'] = (rms_error,
-        #                           'Wavelength solution RMS Error')
-        # new_header['GSP_WPOI'] = (n_points, 'Number of points used to '
-        #                                     'calculate wavelength solution')
-        # new_header['GSP_WREJ'] = (n_rejections, 'Number of points rejected')
-        new_header.set('GSP_WRMS', value=rms_error)
-        new_header.set('GSP_WPOI', value=n_points)
-        new_header.set('GSP_WREJ', value=n_rejections)
-
-        if evaluation_comment is None:
-            self.evaluation_comment = 'Lamp Solution RMSE = {:.3f} ' \
-                                      'Npoints = {:d}, ' \
-                                      'NRej = {:d}'.format(rms_error,
-                                                           n_points,
-                                                           n_rejections)
 
         new_crpix = 1
-        new_crval = spectrum[0][new_crpix - 1]
-        new_cdelt = spectrum[0][new_crpix] - spectrum[0][new_crpix - 1]
+        new_crval = spectrum[new_crpix - 1]
+        new_cdelt = spectrum[new_crpix] - spectrum[new_crpix - 1]
 
-        new_header['BANDID1'] = 'spectrum - background none, weights none, ' \
+        header['BANDID1'] = 'spectrum - background none, weights none, ' \
                                 'clean no'
-        # new_header['APNUM1'] = '1 1 1452.06 1454.87'
-        new_header['WCSDIM'] = 1
-        new_header['CTYPE1'] = 'LINEAR  '
-        new_header['CRVAL1'] = new_crval
-        new_header['CRPIX1'] = new_crpix
-        new_header['CDELT1'] = new_cdelt
-        new_header['CD1_1'] = new_cdelt
-        new_header['LTM1_1'] = 1.
-        new_header['WAT0_001'] = 'system=equispec'
-        new_header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
-        new_header['DC-FLAG'] = 0
-        print(self.calibration_lamp)
-        new_header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
-
-        # print(new_header['APNUM*'])
-        if index is None:
-            f_end = '.fits'
-        else:
-            f_end = '_{:d}.fits'.format(index)
-        # idea
-        #  remove .fits from original_filename
-        # define a base original name
-        # modify in to _1, _2 etc in case there are multitargets
-        # add .fits
-
-        new_filename = save_data_to + \
-            output_prefix + \
-            original_filename.replace('.fits', '') + \
-            f_end
-
-        new_header.set('GSP_FNAM', value=os.path.basename(new_filename))
-
-        #  print('spectrum[0]')
-        # print(spectrum[0])
-        # print('spectrum[1]')
-        # print(spectrum[1])
-        # print(len(spectrum))
-
-        ccd = CCDData(data=spectrum[1], header=new_header, unit=u.adu)
-        ccd.write(new_filename, clobber=True)
-        # print(ccd.header['GSP_FNAM'])
-
-        # fits.writeto(new_filename, spectrum[1], new_header, clobber=True)
-        log.info('Created new file: {:s}'.format(new_filename))
-        # print new_header
-        return new_header
+        header['WCSDIM'] = 1
+        header['CTYPE1'] = 'LINEAR  '
+        header['CRVAL1'] = new_crval
+        header['CRPIX1'] = new_crpix
+        header['CDELT1'] = new_cdelt
+        header['CD1_1'] = new_cdelt
+        header['LTM1_1'] = 1.
+        header['WAT0_001'] = 'system=equispec'
+        header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
+        header['DC-FLAG'] = 0
+        header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
+        return header
 
     def display_onscreen_message(self, message='', color='red'):
         """Uses the fourth subplot to display a message
