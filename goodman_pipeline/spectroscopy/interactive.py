@@ -1117,12 +1117,7 @@ class InteractiveWavelengthCalibration(object):
             except:
                 log.error('No points deleted')
         elif event.key == 'ctrl+t':
-            log.info("Saving as template")
-            self.reference_data.create_reference_lamp(
-                ccd=self.lamp,
-                wavelength_solution=self.wsolution,
-                lines_pixel=self.line_pixels,
-                lines_angstrom=self.line_angstroms)
+            self.create_reference_lamp()
 
         elif event.key == 'p':
             self.register_mark(event)
@@ -1699,19 +1694,25 @@ class InteractiveWavelengthCalibration(object):
         self.ax2.text(1, 7, 'Ctrl+d:',
                       fontsize=13)
 
-        self.ax2.text(1.5, 7, 'Delete all recorded marks.',
+        self.ax2.text(1.46, 7, 'Delete all recorded marks.',
+                      fontsize=13)
+
+        self.ax2.text(1, 6.5, 'Ctrl+t:',
+                      fontsize=13)
+
+        self.ax2.text(1.46, 6.5, 'Save as reference lamp template.',
                       fontsize=13)
 
         self.ax2.text(1, 6, 'Ctrl+z:',
                       fontsize=13)
 
-        self.ax2.text(1.5, 6, 'Remove all automatic added points.',
+        self.ax2.text(1.46, 6, 'Remove all automatic added points.',
                       fontsize=13)
 
-        self.ax2.text(1.5, 5.5, 'Undo what F3 does.',
+        self.ax2.text(1.46, 5.5, 'Undo what F3 does.',
                       fontsize=13)
 
-        self.ax2.text(1, 5, 'Middle Button Click:',
+        self.ax2.text(1, 5, 'Middle Button or p:',
                       fontsize=13)
 
         self.ax2.text(1.46, 4.5, 'Finds and records line position',
