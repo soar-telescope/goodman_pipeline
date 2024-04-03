@@ -8,7 +8,6 @@ import re
 import sys
 
 import astropy.units as u
-# import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
@@ -138,6 +137,7 @@ class InteractiveWavelengthCalibration(object):
         # self.sci_filename = self.science_object.file_name
         # self.history_of_lamps_solutions = {}
         self.reference_solution = None
+        self.linearize = False
 
     def __call__(self,
                  ccd,
@@ -147,6 +147,7 @@ class InteractiveWavelengthCalibration(object):
                  object_number=None,
                  output_prefix='w',
                  wsolution_obj=None,
+                 linearize=False,
                  plot_results=False,
                  save_plots=False,
                  plots=False):
@@ -178,6 +179,8 @@ class InteractiveWavelengthCalibration(object):
         """
         assert isinstance(ccd, CCDData)
         assert isinstance(comp_list, list)
+
+        self.linearize = linearize
 
         if os.path.isdir(reference_data):
             self.reference_data = ReferenceData(reference_dir=reference_data)
@@ -236,22 +239,7 @@ class InteractiveWavelengthCalibration(object):
                     # print(self.wsolution)
                     # self.lamp.write(os.path.join(self.args.destiny, 'non-linear-raw-1d.fits'))
                     # linear = self.lamp.copy()
-                    self.linear_lamp = linearize_spectrum(data=self.lamp.data,
-                                                          wavelength_solution=self.wsolution)
-
-                    self.lamp.header = self.add_wavelength_solution(
-                        new_header=self.lamp.header,
-                        spectrum=self.linear_lamp,
-                        original_filename=self.calibration_lamp,
-                        index=object_number)
-
-                    self.linearized_sci = linearize_spectrum(ccd.data, wavelength_solution=self.wsolution)
-
-                    self.header = self.add_wavelength_solution(
-                        new_header=ccd.header,
-                        spectrum=self.linearized_sci,
-                        original_filename=ccd.header['GSP_FNAM'],
-                        index=object_number)
+                    self.save()
 
                     print(self.wsolution)
 
@@ -322,6 +310,85 @@ class InteractiveWavelengthCalibration(object):
                     return None
         else:
             print('Data should be saved anyways')
+
+    def save(self, format='fits'):
+
+        # self.lamp.header = self._a
+        rms_error, n_points, n_rejections = self.evaluate_solution()
+
+        header.set('GSP_WRMS', value=rms_error)
+        header.set('GSP_WPOI', value=n_points)
+        header.set('GSP_WREJ', value=n_rejections)
+
+        if evaluation_comment is None:
+            self.evaluation_comment = 'Lamp Solution RMSE = {:.3f} ' \
+                                      'Npoints = {:d}, ' \
+                                      'NRej = {:d}'.format(rms_error,
+                                                           n_points,
+                                                           n_rejections)
+        if self.linearize:
+            self.linear_lamp = linearize_spectrum(data=self.lamp.data,
+                                                  wavelength_solution=self.wsolution)
+
+            self.lamp.header = self.add_linear_wavelength_solution(
+                new_header=self.lamp.header,
+                spectrum=self.linear_lamp[0],
+                original_filename=self.calibration_lamp,
+                index=object_number)
+
+            self.linearized_sci = linearize_spectrum(ccd.data, wavelength_solution=self.wsolution)
+
+            self.header = self.add_linear_wavelength_solution(
+                new_header=ccd.header,
+                spectrum=self.linearized_sci[0],
+                original_filename=ccd.header['GSP_FNAM'],
+                index=object_number)
+
+        else:
+            pass
+
+
+        # print(new_header['APNUM*'])
+        if index is None:
+            f_end = '.fits'
+        else:
+            f_end = '_{:d}.fits'.format(index)
+        # idea
+        #  remove .fits from original_filename
+        # define a base original name
+        # modify in to _1, _2 etc in case there are multitargets
+        # add .fits
+
+        new_filename = save_data_to + \
+                       output_prefix + \
+                       original_filename.replace('.fits', '') + \
+                       f_end
+
+        new_header.set('GSP_FNAM', value=os.path.basename(new_filename))
+
+        #  print('spectrum[0]')
+        # print(spectrum[0])
+        # print('spectrum[1]')
+        # print(spectrum[1])
+        # print(len(spectrum))
+
+        ccd = CCDData(data=spectrum[1], header=new_header, unit=u.adu)
+        ccd.write(new_filename, overwrite=True)
+        # print(ccd.header['GSP_FNAM'])
+
+        # fits.writeto(new_filename, spectrum[1], new_header, overwrite=True)
+        log.info('Created new file: {:s}'.format(new_filename))
+        # print new_header
+        return new_header
+
+
+    def create_reference_lamp(self):
+        log.info("Saving as template")
+        self.reference_data.create_reference_lamp(
+            ccd=self.lamp,
+            wavelength_solution=self.wsolution,
+            lines_pixel=self.line_pixels,
+            lines_angstrom=self.line_angstroms)
 
     def get_best_filling_value(self, data):
         """Find the best y-value to locate marks
@@ -723,7 +790,8 @@ class InteractiveWavelengthCalibration(object):
         self.raw_filling_value = self.get_best_filling_value(
             data=self.lamp.data)
 
-        self.ref_filling_value = self.get_best_filling_value(data=reference_lamp.data)
+        if reference_lamp is not None:
+            self.ref_filling_value = self.get_best_filling_value(data=reference_lamp.data)
 
         # ------- Plots -------
         self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = \
