@@ -338,11 +338,11 @@ class InteractiveWavelengthCalibration(object):
                 data=self.lamp.data,
                 wavelength_solution=self.wsolution)
 
-            self.lamp.header = self.add_linear_wavelength_solution(
-                new_header=self.lamp.header,
-                spectrum=self.linear_lamp[0],
-                original_filename=self.calibration_lamp,
-                index=object_number)
+            self.lamp = add_linear_wavelength_solution(
+                ccd=self.lamp,
+                x_axis=linearized_lamp_x_axis,
+                reference_lamp=self.reference_lamp.header['GSP_FNAM'],
+                crpix=1)
 
             ccd = record_wavelength_solution_evaluation(ccd=ccd,
                                                         rms_error=self.rms_error,
@@ -352,11 +352,11 @@ class InteractiveWavelengthCalibration(object):
                 data=ccd.data,
                 wavelength_solution=self.wsolution)
 
-            self.header = self.add_linear_wavelength_solution(
-                new_header=ccd.header,
-                spectrum=self.linearized_sci[0],
-                original_filename=ccd.header['GSP_FNAM'],
-                index=object_number)
+            ccd = add_linear_wavelength_solution(
+                ccd=ccd,
+                x_axis=linearized_ccd_x_axis,
+                reference_lamp=self.reference_lamp.header['GSP_FNAM'],
+                crpix=1)
 
         else:
             pass
@@ -1551,56 +1551,6 @@ class InteractiveWavelengthCalibration(object):
 
     def add_gsp_wcs(self):
         pass
-
-    def add_linear_wavelength_solution(self,
-                                header,
-                                spectrum,
-                                original_filename,
-                                evaluation_comment=None):
-        """Add wavelength solution to the new FITS header
-
-        Defines FITS header keyword values that will represent the wavelength
-        solution in the header so that the image can be read in any other
-        astronomical tool. (e.g. IRAF)
-
-        Notes:
-            This method also saves the data to a new FITS file, This should be
-            in separated methods to have more control on either process.
-
-        Args:
-            header (object): An Astropy header object
-            spectrum (Array): A numpy array that corresponds to the processed
-              data
-            original_filename (str): Original Image file name
-            evaluation_comment (str): A comment with information regarding the
-              quality of the wavelength solution
-            index (int): If in one 2D image there are more than one target the
-              index represents the target number.
-
-        Returns:
-            new_header (object): An Astropy header object. Although not
-            necessary since there is no further processing
-
-        """
-
-        new_crpix = 1
-        new_crval = spectrum[new_crpix - 1]
-        new_cdelt = spectrum[new_crpix] - spectrum[new_crpix - 1]
-
-        header['BANDID1'] = 'spectrum - background none, weights none, ' \
-                                'clean no'
-        header['WCSDIM'] = 1
-        header['CTYPE1'] = 'LINEAR  '
-        header['CRVAL1'] = new_crval
-        header['CRPIX1'] = new_crpix
-        header['CDELT1'] = new_cdelt
-        header['CD1_1'] = new_cdelt
-        header['LTM1_1'] = 1.
-        header['WAT0_001'] = 'system=equispec'
-        header['WAT1_001'] = 'wtype=linear label=Wavelength units=angstroms'
-        header['DC-FLAG'] = 0
-        header['DCLOG1'] = 'REFSPEC1 = {:s}'.format(self.calibration_lamp)
-        return header
 
     def display_onscreen_message(self, message='', color='red'):
         """Uses the fourth subplot to display a message
