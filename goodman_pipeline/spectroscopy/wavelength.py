@@ -30,6 +30,7 @@ from ..core import (add_linear_wavelength_solution,
                     evaluate_wavelength_solution,
                     get_lines_in_lamp,
                     linearize_spectrum,
+                    record_wavelength_solution_evaluation,
                     write_fits)
 
 from ..core import (ReferenceData, NoMatchFound)
@@ -201,14 +202,14 @@ class WavelengthCalibration(object):
                     continue
 
                 if self.wsolution is not None:
-                    ccd.header.set('GSP_WRMS', value=self.rms_error)
-                    ccd.header.set('GSP_WPOI', value=self.n_points)
-                    ccd.header.set('GSP_WREJ', value=self.n_rejections)
-
-                    self.lamp.header.set('GSP_WRMS', value=self.rms_error)
-                    self.lamp.header.set('GSP_WPOI', value=self.n_points)
-                    self.lamp.header.set('GSP_WREJ', value=self.n_rejections)
-
+                    ccd = record_wavelength_solution_evaluation(ccd=ccd,
+                                                                rms_error=self.rms_error,
+                                                                n_points=self.n_points,
+                                                                n_rejections=self.n_rejections)
+                    self.lamp = record_wavelength_solution_evaluation(ccd=self.lamp,
+                                                                      rms_error=self.rms_error,
+                                                                      n_points=self.n_points,
+                                                                      n_rejections=self.n_rejections)
 
                     linear_x_axis, self.lamp.data = linearize_spectrum(
                         self.lamp.data,
