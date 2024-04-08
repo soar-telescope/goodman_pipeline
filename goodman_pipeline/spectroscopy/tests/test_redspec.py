@@ -5,7 +5,7 @@ import os
 import shutil
 from unittest import TestCase
 
-from ...spectroscopy.redspec import (get_args, MainApp)
+from ...spectroscopy.redspec import (get_args, RedSpec)
 
 
 class TestArguments(TestCase):
@@ -118,20 +118,20 @@ def test_get_args():
     return args
 
 
-class TestMainApp(TestCase):
+class TestRedSpec(TestCase):
 
     def setUp(self):
-        self.main_app = MainApp()
+        self.red_spec = RedSpec()
 
     def test_instantiation_without_args(self):
-        self.assertIsInstance(self.main_app, MainApp)
-        self.assertIsNone(self.main_app.args)
-        self.assertIsNone(self.main_app.wavelength_solution_obj)
-        self.assertIsNone(self.main_app.wavelength_calibration)
-        self.assertIsNone(self.main_app.reference)
+        self.assertIsInstance(self.red_spec, RedSpec)
+        self.assertIsNone(self.red_spec.args)
+        self.assertIsNone(self.red_spec.wavelength_solution_obj)
+        self.assertIsNone(self.red_spec.wavelength_calibration)
+        self.assertIsNone(self.red_spec.reference)
 
     def test___call___no_args(self):
-        self.assertRaises(SystemExit, self.main_app)
+        self.assertRaises(SystemExit, self.red_spec)
 
     def test___call___with_valid_arguments(self):
         arguments = ['--data-path', './',
