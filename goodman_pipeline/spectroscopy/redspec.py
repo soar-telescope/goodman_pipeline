@@ -18,7 +18,6 @@ from .wavelength import WavelengthCalibration
 from .interactive_target_extraction import InteractiveExtraction
 from ..core import (classify_spectroscopic_data,
                     search_comp_group,
-                    add_wcs_keys,
                     identify_targets,
                     trace_targets,
                     extraction,
@@ -388,7 +387,6 @@ class RedSpec(object):
                     file_path = os.path.join(full_path, spec_file)
                     ccd = CCDData.read(file_path, unit=u.adu)
                     ccd.header.set('GSP_PNAM', value=spec_file)
-                    ccd = add_wcs_keys(ccd=ccd)
 
                     # ccd.header['GSP_FNAM'] = spec_file
 
@@ -398,7 +396,6 @@ class RedSpec(object):
                             self.log.debug(f"Preparing comparison lamp file {comp_file} for processing.")
                             comp_path = os.path.join(full_path, comp_file)
                             comp_ccd = CCDData.read(comp_path, unit=u.adu)
-                            comp_ccd = add_wcs_keys(ccd=comp_ccd)
                             comp_ccd.header.set('GSP_PNAM', value=comp_file)
                             comp_ccd_list.append(comp_ccd)
 

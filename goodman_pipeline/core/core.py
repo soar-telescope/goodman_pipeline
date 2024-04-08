@@ -163,6 +163,22 @@ def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
     new_crpix = crpix
     new_crval = x_axis[new_crpix - crpix]
     new_cdelt = x_axis[new_crpix] - x_axis[new_crpix - crpix]
+    incoming_header_keys = ccd.header.keys()
+    linear_wcs_keys = ['BANDID1',
+                       'WCSDIM',
+                       'CTYPE1',
+                       'CRVAL1',
+                       'CRPIX1',
+                       'CDELT1',
+                       'CD1_1',
+                       'LTM1_1',
+                       'WAT0_001',
+                       'WAT1_001',
+                       'DC-FLAG',
+                       'DCLOG1']
+
+    if not all([key in incoming_header_keys for key in linear_wcs_keys]):
+        ccd = add_linear_wcs_keys(ccd=ccd)
 
     ccd.header.set('BANDID1', 'spectrum - background none, weights none, '
                               'clean no')
