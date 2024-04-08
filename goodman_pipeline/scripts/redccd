@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from goodman_pipeline.core import setup_logging
-from goodman_pipeline.images import MainApp
+from goodman_pipeline.images import RedCCD
 
 import sys
 
@@ -13,5 +13,5 @@ if '-h' not in sys.argv and \
     setup_logging()
 
 if __name__ == '__main__':
-    GOODMAN_CCD = MainApp()
+    GOODMAN_CCD = RedCCD()
     GOODMAN_CCD()

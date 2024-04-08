@@ -2,5 +2,5 @@
 
 """
 
-from .goodman_ccd import MainApp, get_args
+from .goodman_ccd import RedCCD, get_args
 from .image_processor import ImageProcessor
