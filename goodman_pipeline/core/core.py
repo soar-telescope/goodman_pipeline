@@ -62,7 +62,7 @@ def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
     return ccd
 
 
-def add_wcs_keys(ccd):
+def add_linear_wcs_keys(ccd):
     """Adds generic keyword for linear wavelength solution to the header
 
     Linear wavelength solutions require a set of standard fits keywords. Later

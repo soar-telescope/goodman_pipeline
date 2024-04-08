@@ -13,7 +13,7 @@ from unittest import TestCase, skip
 from ..wavelength import (WavelengthCalibration)
 
 from ..redspec import get_args
-from ...core import add_wcs_keys, write_fits
+from ...core import add_linear_wcs_keys, write_fits
 from ...core import ReferenceData, NoMatchFound
 
 
@@ -35,7 +35,7 @@ class WavelengthCalibrationTests(TestCase):
         self.ccd = CCDData(data=np.random.random_sample(200),
                            meta=fits.Header(),
                            unit='adu')
-        self.ccd = add_wcs_keys(ccd=self.ccd)
+        self.ccd = add_linear_wcs_keys(ccd=self.ccd)
         self.ccd.header.set('SLIT',
                             value='1.0_LONG_SLIT',
                             comment="slit [arcsec]")
