@@ -29,6 +29,7 @@ from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
+from ccdproc import CCDData
 from matplotlib import pyplot as plt
 from scipy import signal, interpolate
 from threading import Timer
@@ -2853,6 +2854,26 @@ def record_trace_information(ccd, trace_info):
                            after=last_keyword)
             last_keyword = info_key
 
+    return ccd
+
+
+def record_wavelength_solution_evaluation(ccd: CCDData, rms_error: float, n_points: int, n_rejections: int):
+    """Add record of wavalength solution evaluation
+
+    Args:
+        ccd (CCDData): data to be updated.
+        rms_error (float): Root Nean Square Error of the wavelength solution.
+        n_points (int): Number of points used to evaluate the solution.
+        n_rejections (int): Number of points rejected while evaluating the solution.
+
+    Returns:
+        ccd modified
+
+    """
+
+    ccd.header.set('GSP_WRMS', value=rms_error)
+    ccd.header.set('GSP_WPOI', value=n_points)
+    ccd.header.set('GSP_WREJ', value=n_rejections)
     return ccd
 
 

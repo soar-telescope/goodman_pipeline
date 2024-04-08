@@ -27,6 +27,7 @@ from ..core import (add_linear_wavelength_solution,
                     get_lines_in_lamp,
                     get_spectral_characteristics,
                     linearize_spectrum,
+                    record_wavelength_solution_evaluation,
                     write_fits)
 
 from ..core import (ReferenceData, NoMatchFound)
@@ -79,6 +80,8 @@ class InteractiveWavelengthCalibration(object):
         self.wcs = WCS()
         self.wsolution = None
         self.rms_error = None
+        self.n_rejections = None
+        self.n_points = None
         # print(self.args.reference_dir)
         self.reference_data = None
         # self.science_object = science_object
@@ -327,8 +330,13 @@ class InteractiveWavelengthCalibration(object):
                                                            n_points,
                                                            n_rejections)
         if self.linearize:
-            self.linear_lamp = linearize_spectrum(data=self.lamp.data,
-                                                  wavelength_solution=self.wsolution)
+            self.lamp = record_wavelength_solution_evaluation(ccd=self.lamp,
+                                                              rms_error=self.rms_error,
+                                                              n_points=self.n_points,
+                                                              n_rejections=self.n_rejections)
+            linearized_lamp_x_axis, self.lamp.data = linearize_spectrum(
+                data=self.lamp.data,
+                wavelength_solution=self.wsolution)
 
             self.lamp.header = self.add_linear_wavelength_solution(
                 new_header=self.lamp.header,
@@ -336,7 +344,13 @@ class InteractiveWavelengthCalibration(object):
                 original_filename=self.calibration_lamp,
                 index=object_number)
 
-            self.linearized_sci = linearize_spectrum(ccd.data, wavelength_solution=self.wsolution)
+            ccd = record_wavelength_solution_evaluation(ccd=ccd,
+                                                        rms_error=self.rms_error,
+                                                        n_points=self.n_points,
+                                                        n_rejections=self.n_rejections)
+            linearized_ccd_x_axis, ccd.data = linearize_spectrum(
+                data=ccd.data,
+                wavelength_solution=self.wsolution)
 
             self.header = self.add_linear_wavelength_solution(
                 new_header=ccd.header,
@@ -384,6 +398,11 @@ class InteractiveWavelengthCalibration(object):
 
     def create_reference_lamp(self):
         log.info("Saving as template")
+        self.lamp = record_wavelength_solution_evaluation(ccd=self.lamp,
+                                                          rms_error=self.rms_error,
+                                                          n_points=self.n_points,
+                                                          n_rejections=self.n_rejections)
+
         self.reference_data.create_reference_lamp(
             ccd=self.lamp,
             wavelength_solution=self.wsolution,
