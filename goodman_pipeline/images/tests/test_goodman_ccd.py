@@ -15,4 +15,4 @@ class MainAppTest(TestCase):
     def test___call___show_version(self):
         arguments = ['--version']
         args = get_args(arguments=arguments)
-        self.assertRaises(SystemExit, self.main_app, args)
+        self.assertRaises(SystemExit, self.red_ccd, args)

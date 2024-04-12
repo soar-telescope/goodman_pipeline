@@ -127,7 +127,7 @@ class TestRedSpec(TestCase):
                      '--output-prefix', 'w',
                      '--extraction', 'fractional']
         args = get_args(arguments=arguments)
-        self.assertRaises(SystemExit, self.main_app, args)
+        self.assertRaises(SystemExit, self.red_spec, args)
 
 
 if __name__ == '__main__':
