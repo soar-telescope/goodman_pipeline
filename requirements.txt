@@ -10,6 +10,7 @@ matplotlib
 mock
 numpy
 pandas
+setuptools
 scipy
 sphinx
 sphinxcontrib.napoleon
