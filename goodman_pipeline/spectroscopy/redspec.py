@@ -15,7 +15,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from .wavelength import WavelengthCalibration
-from .interactive_target_extraction import InteractiveExtraction
 from ..core import (classify_spectroscopic_data,
                     search_comp_group,
                     identify_targets,
