@@ -341,7 +341,7 @@ def call_cosmic_rejection(ccd,
 
             _create(instrument=_instrument, binning=_binning, path=red_path)
 
-        #out_prefix = prefix + out_prefix #Move line here
+        # out_prefix = prefix + out_prefix #Move line here
 
         full_path = os.path.join(red_path, f"{out_prefix}_{image_name}")
 
@@ -1010,7 +1010,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # wait for dcr to terminate
     # dcr.wait()
 
-    #go back to the original directory. Could be the same.
+    # go back to the original directory. Could be the same.
     os.chdir(cwd)
 
     # If no error stderr is an empty string
@@ -1053,6 +1053,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
             os.unlink(full_path_out)
         return ccd
 
+
 def define_trim_section(sample_image, technique):
     """Get the initial trim section
 
@@ -1084,9 +1085,7 @@ def define_trim_section(sample_image, technique):
     # serial binning - dispersion binning
     # parallel binning - spatial binning
     spatial_length, dispersion_length = ccd.data.shape
-    serial_binning, \
-    parallel_binning = [int(x) for x
-                        in ccd.header['CCDSUM'].split()]
+    serial_binning, parallel_binning = [int(x) for x in ccd.header['CCDSUM'].split()]
 
     # Trim section is valid for Blue and Red Camera Binning 1x1 and
     # Spectroscopic ROI
@@ -1310,20 +1309,20 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
                 background = background_1
                 if background_info_1 is None:
                     background_info_1 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_1, high_1, i+1)
+                        low_1, high_1, i + 1)
             elif background_1 is None and background_2 is not None:
                 background = background_2
                 if background_info_2 is None:
                     background_info_2 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_2, high_2, i+1)
+                        low_2, high_2, i + 1)
             else:
                 background = np.mean([background_1, background_2])
                 if background_info_1 is None:
                     background_info_1 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_1, high_1, i+1)
+                        low_1, high_1, i + 1)
                 if background_info_2 is None:
                     background_info_2 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_2, high_2, i+1)
+                        low_2, high_2, i + 1)
 
             # actual background subtraction
             background_subtracted_column_sum = column_sum - background
@@ -4675,8 +4674,6 @@ class ReferenceData(object):
 
         ccd = self._record_lines(ccd=ccd)
         ccd = wcs.write_gsp_wcs(ccd=ccd, model=wavelength_solution)
-
-        print(ccd.header)
 
         lamp_elements = []
         for keyword in ccd.header['LAMP_*']:

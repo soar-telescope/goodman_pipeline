@@ -11,31 +11,22 @@ import astropy.units as u
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import numpy as np
-import scipy.interpolate
-from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
+from astropy.convolution import convolve, Gaussian1DKernel
 from astropy.modeling import models, fitting
 from astropy.stats import sigma_clip
 from ccdproc import CCDData
-from matplotlib.backends.backend_pdf import PdfPages
-from scipy import signal
 
 from ..wcs.wcs import WCS
-from ..core import (add_linear_wavelength_solution,
-                    bin_reference_data,
-                    cross_correlation,
-                    evaluate_wavelength_solution,
+from ..core import (evaluate_wavelength_solution,
                     get_lines_in_lamp,
                     get_spectral_characteristics,
-                    linearize_spectrum,
-                    record_wavelength_solution_evaluation,
-                    write_fits)
+                    record_wavelength_solution_evaluation)
 
-from ..core import (ReferenceData, NoMatchFound)
+from ..core import ReferenceData
 
 FORMAT = '%(levelname)s:%(filename)s:%(module)s: 	%(message)s'
 logging.basicConfig(level=logging.DEBUG, format=FORMAT)
 log = logging.getLogger(__name__)
-
 
 
 SHOW_PLOTS = False
@@ -1545,9 +1536,8 @@ class InteractiveWavelengthCalibration(object):
         else:
             log.error('Clicks record is empty')
             self.display_onscreen_message(message='Clicks record is empty')
-            if self.wsolution is not None:
-                self.wsolution = None
-
+            if self._wsolution is not None:
+                self._wsolution = None
 
     def add_gsp_wcs(self):
         pass

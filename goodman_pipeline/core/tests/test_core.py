@@ -145,8 +145,6 @@ class AddWCSKeywordsTest(TestCase):
                     'DC-FLAG',
                     'DCLOG1']
 
-
-
         self.test_ccd = add_linear_wcs_keys(ccd=self.test_ccd)
         for key in wcs_keys:
             self.assertIn(key, self.test_ccd.header)
@@ -206,8 +204,6 @@ class BinningTest(TestCase):
             self.assertEqual(len(wavelength), len(intensity))
             self.assertEqual(len(new_wavelength), len(new_intensity))
             self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
-
-
 
 
 class CentralWavelength(TestCase):

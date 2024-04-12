@@ -333,7 +333,7 @@ class RedSpec(object):
                 obj_groupby = object_group.groupby(['object']).size(
                     ).reset_index().rename(columns={0: 'count'})
 
-                self.log.debug(f"Here is where the process starts")
+                self.log.debug("Here is where the process starts")
 
                 self.log.info("Starting process for Science Target: "
                               "{:s} with {:d} files."
@@ -429,7 +429,7 @@ class RedSpec(object):
                         continue
 
                     # if len(trace_list) > 0:
-                    ## Experimental interactive extraction
+                    # Experimental interactive extraction
                     if False:
                         ie = InteractiveExtraction()
                         # ie = InteractiveExtractionGUI()

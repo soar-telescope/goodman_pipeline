@@ -746,8 +746,7 @@ class WavelengthCalibration(object):
                 plot_path = os.path.join(plots_dir, plot_name)
                 # print(plot_path)
                 plt.savefig(plot_path, dpi=300)
-                log.info('Saved plot as {:s} file '
-                              'DPI=300'.format(plot_name))
+                log.info('Saved plot as {:s} file DPI=300'.format(plot_name))
 
             if plots or plot_results:  # pragma: no cover
                 manager = plt.get_current_fig_manager()
@@ -778,8 +777,7 @@ class WavelengthCalibration(object):
             f_end = '_ws_{:d}.fits'.format(index)
 
         file_full_path = os.path.join(save_data_to,
-                                    output_prefix +
-                                    original_filename.replace('.fits', f_end))
+                                      output_prefix + original_filename.replace('.fits', f_end))
 
         if lamp:
             log.info('Wavelength-calibrated {:s} file saved to: '

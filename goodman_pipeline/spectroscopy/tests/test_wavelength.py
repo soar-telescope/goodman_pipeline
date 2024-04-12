@@ -5,16 +5,15 @@ import numpy as np
 import os
 import re
 
-from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.io import fits
-from astropy.modeling import models, Model
+from astropy.modeling import models
 from ccdproc import CCDData
-from unittest import TestCase, skip
+from unittest import TestCase
 from ..wavelength import (WavelengthCalibration)
 
 from ..redspec import get_args
 from ...core import add_linear_wcs_keys, write_fits
-from ...core import ReferenceData, NoMatchFound
+from ...core import NoMatchFound
 
 
 class WavelengthCalibrationTests(TestCase):
@@ -214,6 +213,3 @@ class WavelengthCalibrationTests(TestCase):
         for _solution in json_output['wavelength_solution']:
             self.file_list.append(_solution['file_name'])
             self.file_list.append(_solution['reference_lamp'])
-
-
-
