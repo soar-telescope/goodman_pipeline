@@ -177,6 +177,11 @@ def get_args(arguments=None):
                         dest='interactive_wavelength',
                         help="Interactive Wavelength Calibration.")
 
+    parser.add_argument('--linearize',
+                        action='store_true',
+                        dest='linearize',
+                        help="Save as a linear wavelength solution, requires resampling.")
+
     parser.add_argument('--save-plots',
                         action='store_true',
                         dest='save_plots',
@@ -552,6 +557,7 @@ class RedSpec(object):
                                     object_number=object_number,
                                     output_prefix=self.args.output_prefix,
                                     interactive_wavelength=self.args.interactive_wavelength,
+                                    linearize=self.args.linearize,
                                     plot_results=self.args.plot_results,
                                     save_plots=self.args.save_plots,
                                     plots=self.args.debug_with_plots)

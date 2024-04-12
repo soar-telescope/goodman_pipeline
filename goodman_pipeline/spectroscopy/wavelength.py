@@ -76,6 +76,7 @@ class WavelengthCalibration(object):
         self.poly_order = 3
         self.wcs = WCS()
         self.wsolution = None
+        self.linearize = False
         self.wcal_lamp_file = None
         self.sci_target_file = None
         self.n_points = None
@@ -92,18 +93,19 @@ class WavelengthCalibration(object):
         self.parallel_binning = None
 
     def __call__(self,
-                 ccd,
-                 comp_list,
-                 save_data_to,
+                 ccd: CCDData,
+                 comp_list: list,
+                 save_data_to: str | os.PathLike,
                  reference_data,
-                 object_number=None,
-                 corr_tolerance=15,
-                 output_prefix='w',
-                 interactive_wavelength=False,
-                 plot_results=False,
-                 save_plots=False,
-                 plots=False,
-                 json_output=False):
+                 object_number: int | None = None,
+                 corr_tolerance: int = 15,
+                 output_prefix: str = 'w',
+                 interactive_wavelength: bool = False,
+                 linearize: bool = False,
+                 plot_results: bool = False,
+                 save_plots: bool = False,
+                 plots: bool = False,
+                 json_output: bool = False):
         """Call method for the WavelengthSolution Class
 
         It takes extracted data and produces wavelength calibrated 1D FITS file.
@@ -143,6 +145,8 @@ class WavelengthCalibration(object):
         """
         assert isinstance(ccd, CCDData)
         assert isinstance(comp_list, list)
+
+        self.linearize = linearize
 
         json_payload = {'wavelength_solution': [],
                         'warning': '',

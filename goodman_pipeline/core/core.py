@@ -2522,6 +2522,7 @@ def read_fits(full_path, technique='Unknown'):
     GSP_EXTR: Extraction window at first column
     GSP_BKG1: First background extraction zone
     GSP_BKG2: Second background extraction zone
+    GSP_LINE: Data has been linearized.
     GSP_WRMS: Wavelength solution RMS Error.
     GSP_WPOI: Number of points used to calculate the wavelength solution
     Error.
@@ -2627,6 +2628,11 @@ def read_fits(full_path, technique='Unknown'):
         ccd.header.set('GSP_BKG2',
                        value='none',
                        comment='Second background extraction zone')
+
+    if 'GSP_LINE' not in all_keys:
+        ccd.header.set('GSP_LINE',
+                       value='FALSE',
+                       comment='Data has been linearized')
 
     if 'GSP_WRMS' not in all_keys:
         ccd.header.set('GSP_WRMS',
