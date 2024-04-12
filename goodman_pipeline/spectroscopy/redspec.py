@@ -434,10 +434,10 @@ class RedSpec(object):
 
                     # if len(trace_list) > 0:
                     # Experimental interactive extraction
-                    if False:
-                        ie = InteractiveExtraction()
-                        # ie = InteractiveExtractionGUI()
-                        ie(ccd=ccd, lamps=comp_ccd_list, traces=trace_list)
+                    # if False:
+                    #     ie = InteractiveExtraction()
+                    #     # ie = InteractiveExtractionGUI()
+                    #     ie(ccd=ccd, lamps=comp_ccd_list, traces=trace_list)
 
                     extracted_target_and_lamps = []
                     for single_trace, single_profile, trace_info in trace_list:
