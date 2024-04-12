@@ -95,7 +95,7 @@ class WavelengthCalibration(object):
     def __call__(self,
                  ccd: CCDData,
                  comp_list: list,
-                 save_data_to: str,
+                 save_data_to: str | os.PathLike,
                  reference_data: str,
                  object_number: int | None = None,
                  corr_tolerance: int = 15,
