@@ -1,7 +1,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import glob
 import logging
 import os
 import re
@@ -67,12 +66,13 @@ class InteractiveWavelengthCalibration(object):
         """
 
         # TODO - Documentation missing
+        self.lamp = None
         self.poly_order = 2
         self.wcs = WCS()
-        self.wsolution = None
-        self.rms_error = None
-        self.n_rejections = None
-        self.n_points = None
+        self._wsolution = None
+        self._rms_error = None
+        self._n_rejections = None
+        self._n_points = None
         # print(self.args.reference_dir)
         self.reference_data = None
         # self.science_object = science_object
@@ -130,12 +130,12 @@ class InteractiveWavelengthCalibration(object):
         # self.science_pack = sci_pack
         # self.sci_filename = self.science_object.file_name
         # self.history_of_lamps_solutions = {}
+        self._reference_lamp = None
         self.reference_solution = None
-        self.linearize = False
 
     def __call__(self,
-                 ccd,
-                 comp_list,
+                 ccd: CCDData,
+                 comparison_lamp: CCDData,
                  save_data_to,
                  reference_data,
                  object_number=None,
@@ -163,7 +163,7 @@ class InteractiveWavelengthCalibration(object):
                 image this number will be added as a suffix before `.fits` in
                 order to allow for multiple 1D files. Default value is None.
             wsolution_obj (object): Mathematical model of the wavelength
-                solution if exist. If it doesnt is a None
+                solution if exists. If it doesn't is a None
 
         Returns:
             wavelength_solution (object): The mathematical model of the
@@ -172,9 +172,9 @@ class InteractiveWavelengthCalibration(object):
 
         """
         assert isinstance(ccd, CCDData)
-        assert isinstance(comp_list, list)
+        assert isinstance(comparison_lamp, CCDData)
 
-        self.linearize = linearize
+        self._save_data_to = save_data_to
 
         if os.path.isdir(reference_data):
             self.reference_data = ReferenceData(reference_dir=reference_data)
@@ -185,218 +185,121 @@ class InteractiveWavelengthCalibration(object):
 
         log.info('Processing Science Target: '
                  '{:s}'.format(ccd.header['OBJECT']))
-        if comp_list is not None:
-            for self.lamp in comp_list:
 
-                self.line_list = self.reference_data.get_line_list_by_lamp(ccd=self.lamp)
-                print(self.line_list)
-                try:
-                    self.calibration_lamp = self.lamp.header['GSP_FNAM']
-                except KeyError:
-                    self.calibration_lamp = ''
+        self.lamp = comparison_lamp
 
-                self.raw_pixel_axis = range(self.lamp.shape[0])
-                # self.raw_pixel_axis = range(len(self.lamp.data))
-                # self.lamp.header = lamp_ccd.header.copy()
-                self.lamp_name = self.lamp.header['OBJECT']
+        self.line_list = self.reference_data.get_line_list_by_lamp(ccd=self.lamp)
+        try:
+            self.calibration_lamp = self.lamp.header['GSP_FNAM']
+        except KeyError:
+            self.calibration_lamp = ''
 
-                log.info('Processing Comparison Lamp: '
-                         '{:s}'.format(self.lamp_name))
+        self.raw_pixel_axis = range(self.lamp.shape[0])
+        self.lamp_name = self.lamp.header['OBJECT']
 
-                # self.data1 = self.interpolate(self.lamp.data)
-                # self.lines_limits = self.get_line_limits()
-                # self.lines_center = self.get_line_centers(self.lines_limits)
-                self.lines_center = get_lines_in_lamp(ccd=self.lamp)
-                self.spectral = get_spectral_characteristics(
-                    ccd=self.lamp,
-                    pixel_size=self.pixel_size,
-                    instrument_focal_length=self.goodman_focal_length)
-                object_name = ccd.header['OBJECT']
-                # try:
-                self.interactive_wavelength_solution(
-                    object_name=object_name)
-                # except TypeError as error:
-                #     log.error(error)
+        log.info('Processing Comparison Lamp: '
+                 '{:s}'.format(self.lamp_name))
+        self.lines_center = get_lines_in_lamp(ccd=self.lamp)
+        self.spectral = get_spectral_characteristics(
+            ccd=self.lamp,
+            pixel_size=self.pixel_size,
+            instrument_focal_length=self.goodman_focal_length)
+        object_name = ccd.header['OBJECT']
+        # try:
+        self._interactive_wavelength_solution(
+            object_name=object_name)
+        # except TypeError as error:
+        #     log.error(error)
 
-                if self.wsolution is not None:
-                    # TODO (simon): plug in a record system
-                    # record = '{:s} {:.3f} {:.3f}'.format(
-                    #     self.lamp.header['GRATING'],
-                    #     self.lamp.header['GRT_TARG'],
-                    #     self.lamp.header['CAM_TARG'])
-                    #
-                    # for par in self.wsolution.parameters:
-                    #     record += ' {:.5f}'.format(par)
-                    #
-                    # os.system("echo \'{:s}\' >> parametros.txt
-                    # ".format(record))
-                    # print(self.wsolution)
-                    # self.lamp.write(os.path.join(self.args.destiny, 'non-linear-raw-1d.fits'))
-                    # linear = self.lamp.copy()
-                    self.save()
+        if self._wsolution is not None:
+            if plots or plot_results or save_plots:
 
-                    print(self.wsolution)
-
-                    if plots or plot_results or save_plots:
-
-                        plt.close(1)
-                        if not plots:
-                            plt.ion()
-                            # plt.show()
-                        else:
-                            plt.ioff()
-
-                        wavelength_axis = self.wsolution(range(ccd.data.size))
-
-                        object_name = ccd.header['OBJECT']
-                        grating = ccd.header['GRATING']
-
-                        fig_title = 'Wavelength Calibrated Data : ' \
-                                    '{:s}\n{:s}'.format(object_name, grating)
-
-                        fig, ax1 = plt.subplots(1)
-                        fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
-                        # ax1 = fig.add_subplot(111)
-                        manager = plt.get_current_fig_manager()
-                        if plt.get_backend() == u'GTK3Agg':
-                            manager.window.maximize()
-                        elif plt.get_backend() == u'Qt5Agg':
-                            manager.window.showMaximized()
-
-                        ax1.set_title(fig_title)
-                        ax1.set_xlabel('Wavelength (Angstrom)')
-                        ax1.set_ylabel('Intensity (ADU)')
-                        ax1.set_xlim((wavelength_axis[0], wavelength_axis[-1]))
-                        # plt.close(1)
-
-                        ax1.plot(wavelength_axis,
-                                 ccd.data,
-                                 color='k',
-                                 label='Data')
-
-                        ax1.legend(loc='best')
-                        fig.tight_layout()
-                        if save_plots:
-                            log.info('Saving plots')
-                            plots_dir = os.path.join(save_data_to, 'plots')
-                            if not os.path.isdir(plots_dir):
-                                os.mkdir(plots_dir)
-                            plot_name = re.sub('.fits',
-                                               '.png',
-                                               ccd.header['GSP_FNAM'])
-                            plot_path = os.path.join(plots_dir, plot_name)
-                            # print(plot_path)
-                            plt.savefig(plot_path, dpi=300)
-                            log.info('Saved plot as {:s} file '
-                                     'DPI=300'.format(plot_name))
-
-                        if plot_results:
-                            plt.show()
-                        else:
-                            plt.draw()
-                            plt.pause(2)
-                            plt.ioff()
-
-                    return self.wsolution
+                plt.close(1)
+                if not plots:
+                    plt.ion()
+                    # plt.show()
                 else:
-                    log.error('It was not possible to get a wavelength '
-                              'solution from this lamp.')
-                    return None
+                    plt.ioff()
+
+                wavelength_axis = self._wsolution(range(ccd.data.size))
+
+                object_name = ccd.header['OBJECT']
+                grating = ccd.header['GRATING']
+
+                fig_title = 'Wavelength Calibrated Data : ' \
+                            '{:s}\n{:s}'.format(object_name, grating)
+
+                fig, ax1 = plt.subplots(1)
+                fig.canvas.set_window_title(ccd.header['GSP_FNAM'])
+                # ax1 = fig.add_subplot(111)
+                manager = plt.get_current_fig_manager()
+                if plt.get_backend() == u'GTK3Agg':
+                    manager.window.maximize()
+                elif plt.get_backend() == u'Qt5Agg':
+                    manager.window.showMaximized()
+
+                ax1.set_title(fig_title)
+                ax1.set_xlabel('Wavelength (Angstrom)')
+                ax1.set_ylabel('Intensity (ADU)')
+                ax1.set_xlim((wavelength_axis[0], wavelength_axis[-1]))
+                # plt.close(1)
+
+                ax1.plot(wavelength_axis,
+                         ccd.data,
+                         color='k',
+                         label='Data')
+
+                ax1.legend(loc='best')
+                fig.tight_layout()
+                if save_plots:
+                    log.info('Saving plots')
+                    plots_dir = os.path.join(save_data_to, 'plots')
+                    if not os.path.isdir(plots_dir):
+                        os.mkdir(plots_dir)
+                    plot_name = re.sub('.fits',
+                                       '.png',
+                                       ccd.header['GSP_FNAM'])
+                    plot_path = os.path.join(plots_dir, plot_name)
+                    # print(plot_path)
+                    plt.savefig(plot_path, dpi=300)
+                    log.info('Saved plot as {:s} file '
+                             'DPI=300'.format(plot_name))
+
+                if plot_results:
+                    plt.show()
+                else:
+                    plt.draw()
+                    plt.pause(2)
+                    plt.ioff()
+
+            return self._wsolution
         else:
-            print('Data should be saved anyways')
+            log.error('It was not possible to get a wavelength '
+                      'solution from this lamp.')
+            return None
 
-    def save(self, format='fits'):
+    @property
+    def reference_lamp(self):
+        return self._reference_lamp
 
-        # self.lamp.header = self._a
-        rms_error, n_points, n_rejections = self.evaluate_solution()
+    @property
+    def wavelength_solution(self):
+        return self._wsolution
 
-        header.set('GSP_WRMS', value=rms_error)
-        header.set('GSP_WPOI', value=n_points)
-        header.set('GSP_WREJ', value=n_rejections)
-
-        if evaluation_comment is None:
-            self.evaluation_comment = 'Lamp Solution RMSE = {:.3f} ' \
-                                      'Npoints = {:d}, ' \
-                                      'NRej = {:d}'.format(rms_error,
-                                                           n_points,
-                                                           n_rejections)
-        if self.linearize:
-            self.lamp = record_wavelength_solution_evaluation(ccd=self.lamp,
-                                                              rms_error=self.rms_error,
-                                                              n_points=self.n_points,
-                                                              n_rejections=self.n_rejections)
-            linearized_lamp_x_axis, self.lamp.data = linearize_spectrum(
-                data=self.lamp.data,
-                wavelength_solution=self.wsolution)
-
-            self.lamp = add_linear_wavelength_solution(
-                ccd=self.lamp,
-                x_axis=linearized_lamp_x_axis,
-                reference_lamp=self.reference_lamp.header['GSP_FNAM'],
-                crpix=1)
-
-            ccd = record_wavelength_solution_evaluation(ccd=ccd,
-                                                        rms_error=self.rms_error,
-                                                        n_points=self.n_points,
-                                                        n_rejections=self.n_rejections)
-            linearized_ccd_x_axis, ccd.data = linearize_spectrum(
-                data=ccd.data,
-                wavelength_solution=self.wsolution)
-
-            ccd = add_linear_wavelength_solution(
-                ccd=ccd,
-                x_axis=linearized_ccd_x_axis,
-                reference_lamp=self.reference_lamp.header['GSP_FNAM'],
-                crpix=1)
-
-        else:
-            pass
-
-
-        # print(new_header['APNUM*'])
-        if index is None:
-            f_end = '.fits'
-        else:
-            f_end = '_{:d}.fits'.format(index)
-        # idea
-        #  remove .fits from original_filename
-        # define a base original name
-        # modify in to _1, _2 etc in case there are multitargets
-        # add .fits
-
-        new_filename = save_data_to + \
-                       output_prefix + \
-                       original_filename.replace('.fits', '') + \
-                       f_end
-
-        new_header.set('GSP_FNAM', value=os.path.basename(new_filename))
-
-        #  print('spectrum[0]')
-        # print(spectrum[0])
-        # print('spectrum[1]')
-        # print(spectrum[1])
-        # print(len(spectrum))
-
-        ccd = CCDData(data=spectrum[1], header=new_header, unit=u.adu)
-        ccd.write(new_filename, overwrite=True)
-        # print(ccd.header['GSP_FNAM'])
-
-        # fits.writeto(new_filename, spectrum[1], new_header, overwrite=True)
-        log.info('Created new file: {:s}'.format(new_filename))
-        # print new_header
-        return new_header
-
+    @property
+    def wavelength_solution_evaluation(self):
+        return self._rms_error, self._n_points, self._n_rejections
 
     def create_reference_lamp(self):
         log.info("Saving as template")
         self.lamp = record_wavelength_solution_evaluation(ccd=self.lamp,
-                                                          rms_error=self.rms_error,
-                                                          n_points=self.n_points,
-                                                          n_rejections=self.n_rejections)
+                                                          rms_error=self._rms_error,
+                                                          n_points=self._n_points,
+                                                          n_rejections=self._n_rejections)
 
         self.reference_data.create_reference_lamp(
             ccd=self.lamp,
-            wavelength_solution=self.wsolution,
+            wavelength_solution=self._wsolution,
             lines_pixel=self.line_pixels,
             lines_angstrom=self.line_angstroms)
 
@@ -612,12 +515,17 @@ class InteractiveWavelengthCalibration(object):
 
         """
         if data_name == 'reference':
-            pseudo_center = np.argmin(abs(self.reference_solution[0] - x_data))
+            print(f"{self.reference_solution=}")
 
             reference_line_index = np.argmin(
                 abs(self.line_list - x_data))
 
             reference_line_value = self.line_list[reference_line_index]
+
+            if not self.reference_solution:
+                return reference_line_value
+
+            pseudo_center = np.argmin(abs(self.reference_solution[0] - x_data))
 
             sub_x = self.reference_solution[0][
                     pseudo_center - 10: pseudo_center + 10]
@@ -690,7 +598,6 @@ class InteractiveWavelengthCalibration(object):
                                             linestyle='-',
                                             color='r',
                                             label='Line Center')
-
             self.ax4_com = self.ax4.axvline(center_of_mass,
                                             linestyle='--',
                                             color='b',
@@ -704,7 +611,7 @@ class InteractiveWavelengthCalibration(object):
         else:
             log.error('Unrecognized data name')
 
-    def interactive_wavelength_solution(self, object_name=''):
+    def _interactive_wavelength_solution(self, object_name=''):
         """Find the wavelength solution interactively
 
         This method uses the graphical capabilities of matplotlib in particular
@@ -771,10 +678,10 @@ class InteractiveWavelengthCalibration(object):
         plt.rcParams['keymap.fullscreen'] = [u'ctrl+f']
 
         try:
-            reference_lamp = self.reference_data.get_reference_lamp(
+            self._reference_lamp = self.reference_data.get_reference_lamp(
                 header=self.lamp.header)
         except NotImplementedError:
-            reference_lamp = self.reference_data.get_reference_lamps_by_name(
+            self._reference_lamp = self.reference_data.get_reference_lamps_by_name(
                 lamp_name=self.lamp.header['OBJECT'])
             log.warning('Could not find a perfect match for reference '
                              'data')
@@ -785,11 +692,11 @@ class InteractiveWavelengthCalibration(object):
         # reference_file = self.reference_data.get_reference_lamps_by_name(
         #     self.lamp_name)
 
-        if reference_lamp is not None:
-            log.info('Using reference file: {:s}'.format(reference_lamp.header['GSP_FNAM']))
+        if self._reference_lamp is not None:
+            log.info('Using reference file: {:s}'.format(self._reference_lamp.header['GSP_FNAM']))
             reference_plots_enabled = True
 
-            self.reference_solution = self.wcs.read_gsp_wcs(ccd=reference_lamp)
+            self.reference_solution = self.wcs.read_gsp_wcs(ccd=self._reference_lamp)
             print(self.reference_solution)
         else:
             reference_plots_enabled = False
@@ -800,8 +707,8 @@ class InteractiveWavelengthCalibration(object):
         self.raw_filling_value = self.get_best_filling_value(
             data=self.lamp.data)
 
-        if reference_lamp is not None:
-            self.ref_filling_value = self.get_best_filling_value(data=reference_lamp.data)
+        if self._reference_lamp is not None:
+            self.ref_filling_value = self.get_best_filling_value(data=self._reference_lamp.data)
 
         # ------- Plots -------
         self.i_fig, ((self.ax1, self.ax2), (self.ax3, self.ax4)) = \
@@ -894,13 +801,13 @@ class InteractiveWavelengthCalibration(object):
         self.contextual_bb = self.ax4.get_position()
 
         # if self.click_input_enabled:
-        self.i_fig.canvas.mpl_connect('button_press_event', self.on_click)
-        self.i_fig.canvas.mpl_connect('key_press_event', self.key_pressed)
-        # print self.wsolution
+        self.i_fig.canvas.mpl_connect('button_press_event', self._on_click)
+        self.i_fig.canvas.mpl_connect('key_press_event', self._key_pressed)
+        # print self._wsolution
         plt.show()
         return True
 
-    def on_click(self, event):
+    def _on_click(self, event):
         """Handles Click events for Interactive Mode
 
         Calls the method register_mark
@@ -909,7 +816,7 @@ class InteractiveWavelengthCalibration(object):
             event (object): Click event
         """
         if event.button == 3:
-            self.register_mark(event)
+            self._register_mark(event)
         # TODO (simon): Make sure the text below is useless
         # else:
         #     print(event.button)
@@ -929,7 +836,7 @@ class InteractiveWavelengthCalibration(object):
         #                 len(self.reference_marks_x) -
         #                 len(self.raw_data_marks_x)))
 
-    def key_pressed(self, event):
+    def _key_pressed(self, event):
         """Key event handler
 
         There are several key events that need to be taken care of.
@@ -974,16 +881,16 @@ class InteractiveWavelengthCalibration(object):
         elif event.key == 'f2' or event.key == 'f':
             log.debug('Calling function to fit wavelength Solution')
             self.fit_pixel_to_wavelength()
-            self.plot_raw_over_reference()
+            self._plot_raw_over_reference()
         elif event.key == 'f3' or event.key == 'a':
-            if self.wsolution is not None:
-                self.find_more_lines()
-                self.update_marks_plot('reference')
-                self.update_marks_plot('raw_data')
+            if self._wsolution is not None:
+                self._find_more_lines()
+                self._update_marks_plot('reference')
+                self._update_marks_plot('raw_data')
             else:
                 log.debug('Wavelength solution is None')
         elif event.key == 'f4':
-            if self.wsolution is not None and len(self.raw_data_marks_x) > 0:
+            if self._wsolution is not None and len(self.raw_data_marks_x) > 0:
                 self.evaluate_solution(plots=True)
         elif event.key == 'f5' or event.key == 'd':
             # TODO (simon): simplify this code.
@@ -1005,20 +912,20 @@ class InteractiveWavelengthCalibration(object):
                     self.raw_data_marks_y.pop(closer_index)
                     self.reference_marks_x.pop(closer_index)
                     self.reference_marks_y.pop(closer_index)
-                    self.update_marks_plot('reference')
-                    self.update_marks_plot('raw_data')
+                    self._update_marks_plot('reference')
+                    self._update_marks_plot('raw_data')
                 else:
                     if closer_index == len(self.raw_data_marks_x) - 1:
                         self.raw_data_marks_x.pop(closer_index)
                         self.raw_data_marks_y.pop(closer_index)
-                        self.update_marks_plot('raw_data')
+                        self._update_marks_plot('raw_data')
                     else:
                         self.raw_data_marks_x.pop(closer_index)
                         self.raw_data_marks_y.pop(closer_index)
                         self.reference_marks_x.pop(closer_index)
                         self.reference_marks_y.pop(closer_index)
-                        self.update_marks_plot('reference')
-                        self.update_marks_plot('raw_data')
+                        self._update_marks_plot('reference')
+                        self._update_marks_plot('raw_data')
 
             elif self.reference_bb.contains(figure_x, figure_y):
                 log.debug('Deleting reference point')
@@ -1035,20 +942,20 @@ class InteractiveWavelengthCalibration(object):
                     self.raw_data_marks_y.pop(closer_index)
                     self.reference_marks_x.pop(closer_index)
                     self.reference_marks_y.pop(closer_index)
-                    self.update_marks_plot('reference')
-                    self.update_marks_plot('raw_data')
+                    self._update_marks_plot('reference')
+                    self._update_marks_plot('raw_data')
                 else:
                     if closer_index == len(self.reference_marks_x) - 1:
                         self.reference_marks_x.pop(closer_index)
                         self.reference_marks_y.pop(closer_index)
-                        self.update_marks_plot('reference')
+                        self._update_marks_plot('reference')
                     else:
                         self.raw_data_marks_x.pop(closer_index)
                         self.raw_data_marks_y.pop(closer_index)
                         self.reference_marks_x.pop(closer_index)
                         self.reference_marks_y.pop(closer_index)
-                        self.update_marks_plot('reference')
-                        self.update_marks_plot('raw_data')
+                        self._update_marks_plot('reference')
+                        self._update_marks_plot('raw_data')
 
             elif self.contextual_bb.contains(figure_x, figure_y):
                 log.warning("Can't delete points from here because points "
@@ -1085,7 +992,7 @@ class InteractiveWavelengthCalibration(object):
 
         elif event.key == 'f6' or event.key == 'l':
             log.info('Linearize and smoothing spectrum')
-            if self.wsolution is not None:
+            if self._wsolution is not None:
                 self.linearize_spectrum(self.lamp.data, plots=True)
 
         elif event.key == 'ctrl+z':
@@ -1107,8 +1014,8 @@ class InteractiveWavelengthCalibration(object):
                         self.raw_data_marks_y.pop(index)
                         self.reference_marks_x.pop(index)
                         self.reference_marks_y.pop(index)
-                    self.update_marks_plot('reference')
-                    self.update_marks_plot('raw_data')
+                    self._update_marks_plot('reference')
+                    self._update_marks_plot('raw_data')
                     # else:
                     # print self.raw_click_plot, self.ref_click_plot, 'mmm'
 
@@ -1121,8 +1028,8 @@ class InteractiveWavelengthCalibration(object):
                 self.reference_marks_y = []
                 self.raw_data_marks_x = []
                 self.raw_data_marks_y = []
-                self.update_marks_plot('delete')
-                self.plot_raw_over_reference(remove=True)
+                self._update_marks_plot('delete')
+                self._plot_raw_over_reference(remove=True)
                 log.info('All points deleted!')
             except:
                 log.error('No points deleted')
@@ -1130,10 +1037,10 @@ class InteractiveWavelengthCalibration(object):
             self.create_reference_lamp()
 
         elif event.key == 'p':
-            self.register_mark(event)
+            self._register_mark(event)
 
         elif event.key == 'enter':
-            if self.wsolution is not None:
+            if self._wsolution is not None:
                 log.info('Closing figure')
                 plt.close('all')
             else:
@@ -1142,9 +1049,9 @@ class InteractiveWavelengthCalibration(object):
                 self.display_onscreen_message(message)
 
         elif event.key == 'm':
-            self.register_mark(event)
+            self._register_mark(event)
 
-        elif event.key == 'ctrl+q':
+        elif event.key in ['ctrl+q', 'ctrl+c']:
             log.info('Pressed Ctrl+q. Closing the program')
             sys.exit(0)
 
@@ -1152,7 +1059,7 @@ class InteractiveWavelengthCalibration(object):
             log.debug("No action for key pressed: {:s}".format(event.key))
             pass
 
-    def register_mark(self, event):
+    def _register_mark(self, event):
         """Marks a line
 
         Detects where the click was done or m-key was pressed and calls the
@@ -1176,21 +1083,21 @@ class InteractiveWavelengthCalibration(object):
                     self.recenter_line_by_data('reference', event.xdata))
 
                 self.reference_marks_y.append(event.ydata)
-                self.update_marks_plot('reference')
+                self._update_marks_plot('reference')
             elif self.raw_data_bb.contains(figure_x, figure_y):
                 # self.raw_data_marks.append([event.xdata, event.ydata])
                 self.raw_data_marks_x.append(
                     self.recenter_line_by_data('raw-data', event.xdata))
 
                 self.raw_data_marks_y.append(event.ydata)
-                self.update_marks_plot('raw_data')
+                self._update_marks_plot('raw_data')
             else:
                 log.debug('{:f} {:f} Are not contained'.format(figure_x,
                                                                figure_y))
         else:
             log.error('Clicked Region is out of boundaries')
 
-    def find_more_lines(self):
+    def _find_more_lines(self):
         """Method to add more lines given that a wavelength solution already
         exists
 
@@ -1208,8 +1115,8 @@ class InteractiveWavelengthCalibration(object):
         new_physical = []
         new_wavelength = []
         square_differences = []
-        if self.wsolution is not None:
-            wlines = self.wsolution(self.lines_center)
+        if self._wsolution is not None:
+            wlines = self._wsolution(self.lines_center)
             for i in range(len(wlines)):
                 # [abs(list_val - wlines[i]) for list_val in \
                 # self.reference_data.get_line_list_by_name(self.lamp_name)]
@@ -1242,7 +1149,7 @@ class InteractiveWavelengthCalibration(object):
                         self.raw_data_marks_y.append(self.raw_filling_value)
         return True
 
-    def update_marks_plot(self, action=None):
+    def _update_marks_plot(self, action=None):
         """Update the points that represent marks on lamp plots
 
         When you mark a line a red dot marks the position of the line at the
@@ -1297,7 +1204,7 @@ class InteractiveWavelengthCalibration(object):
         else:
             log.error('Unknown Action {:s}'.format(action))
 
-    def plot_raw_over_reference(self, remove=False):
+    def _plot_raw_over_reference(self, remove=False):
         """Overplot raw data over reference lamp using current wavelength
         solution model
 
@@ -1310,7 +1217,7 @@ class InteractiveWavelengthCalibration(object):
             remove (bool): True or False depending whether you want to remove
             the overplotted lamp or not
         """
-        if self.wsolution is not None:
+        if self._wsolution is not None:
             if self.line_raw is not None:
                 try:
                     self.line_raw.remove()
@@ -1321,7 +1228,7 @@ class InteractiveWavelengthCalibration(object):
                 # TODO(simon): catch TypeError Exception and correct what is
                 # TODO (cont): causing it
                 self.line_raw, = self.ax3.plot(
-                    self.wsolution(self.raw_pixel_axis),
+                    self._wsolution(self.raw_pixel_axis),
                     self.lamp.data,
                     linestyle='-',
                     color='r',
@@ -1337,26 +1244,26 @@ class InteractiveWavelengthCalibration(object):
         Once the wavelength solution is obtained it has to be evaluated. The
         line centers found for the raw comparison lamp will be converted to,
         according to the new solution, angstrom. Then for each line the closest
-        reference line value is obtained. The difference is stored. Then this
+        reference line value is obtained. The difference is stored. Then these
         differences are cleaned by means of a sigma clipping method that will
-        rule out any outlier or any line that is not well matched. Then, using
+        rule out any outlier or any line that is not well-matched. Then, using
         the sigma clipped differences the Root Mean Square error is calculated.
 
         It also creates a plot in the bottom right subplot of the interactive
-        window, showing an scatter plot plus some information regarding the
+        window, showing a scatter plot plus some information regarding the
         quality of the fit.
 
         Args:
             plots (bool): Whether to create the plot or not
 
         Returns:
-            results (list): Contains three elements: rms_error (float),
-            npoints (int), n_rejections (int)
+            results (list): Contains three elements: _rms_error (float),
+            npoints (int), _n_rejections (int)
 
         """
-        if self.wsolution is not None:
+        if self._wsolution is not None:
             differences = np.array([])
-            wavelength_line_centers = self.wsolution(self.lines_center)
+            wavelength_line_centers = self._wsolution(self.lines_center)
 
             for wline in wavelength_line_centers:
                 closer_index = np.argmin(
@@ -1365,36 +1272,21 @@ class InteractiveWavelengthCalibration(object):
                 rline = self.line_list[closer_index]
 
                 rw_difference = wline - rline
-                # print 'Difference w - r ', rw_difference, rline
                 differences = np.append(differences, rw_difference)
 
             clipping_sigma = 2.
-            # print(differences)
-            # clipped_differences = sigma_clip(differences,
-            #                                  sigma=clipping_sigma,
-            #                                  iters=5,
-            #                                  cenfunc=np.ma.median)
-            #
-            # once_clipped_differences = sigma_clip(differences,
-            #                                       sigma=clipping_sigma,
-            #                                       iters=1,
-            #                                       cenfunc=np.ma.median)
+
             clipped_differences = differences
             once_clipped_differences = differences
 
-            npoints = len(clipped_differences)
-            n_rejections = np.ma.count_masked(clipped_differences)
-            square_differences = []
-            for i in range(len(clipped_differences)):
-                if clipped_differences[i] is not np.ma.masked:
-                    square_differences.append(clipped_differences[i] ** 2)
             old_rms_error = None
-            if self.rms_error is not None:
-                old_rms_error = float(self.rms_error)
-            self.rms_error = np.sqrt(
-                np.sum(square_differences) / len(square_differences))
+            if self._rms_error is not None:
+                old_rms_error = float(self._rms_error)
 
-            log.info('RMS Error : {:.3f}'.format(self.rms_error))
+            self._rms_error, self._n_points, self._n_rejections = evaluate_wavelength_solution(
+                clipped_differences=clipped_differences)
+
+            log.info('RMS Error : {:.3f}'.format(self._rms_error))
 
             if plots:
                 if self.ax4_plots is not None or \
@@ -1409,14 +1301,13 @@ class InteractiveWavelengthCalibration(object):
 
                 self.ax4.set_title('RMS Error {:.3f} \n'
                                    '{:d} points ({:d} '
-                                   'rejected)'.format(self.rms_error,
-                                                      npoints,
-                                                      n_rejections))
+                                   'rejected)'.format(self._rms_error,
+                                                      self._n_points,
+                                                      self._n_rejections))
 
                 self.ax4.set_ylim(once_clipped_differences.min(),
                                   once_clipped_differences.max())
 
-                # self.ax4.set_ylim(- rms_error, 2 * rms_error)
                 self.ax4.set_xlim(np.min(self.lines_center),
                                   np.max(self.lines_center))
 
@@ -1438,9 +1329,8 @@ class InteractiveWavelengthCalibration(object):
                                                   clipped_differences,
                                                   label='Differences')
 
-                if self.rms_error is not None and old_rms_error is not None:
-                    # increment_color = 'white'
-                    rms_error_difference = self.rms_error - old_rms_error
+                if self._rms_error is not None and old_rms_error is not None:
+                    rms_error_difference = self._rms_error - old_rms_error
 
                     if rms_error_difference > 0.001:
                         increment_color = 'red'
@@ -1451,9 +1341,6 @@ class InteractiveWavelengthCalibration(object):
 
                     message = r'$\Delta$ RMSE {:+.3f}'.format(
                         rms_error_difference)
-
-                    # self.display_onscreen_message(message=message,
-                    #                               color=increment_color)
 
                     self.ax4.text(0.05, 0.95,
                                   message,
@@ -1469,7 +1356,7 @@ class InteractiveWavelengthCalibration(object):
                 self.ax4.legend(loc=3, framealpha=0.5)
                 self.i_fig.canvas.draw()
 
-            results = [self.rms_error, npoints, n_rejections]
+            results = [self._rms_error, self._n_points, self._n_rejections]
             return results
         else:
             log.error('Solution is still non-existent!')
@@ -1526,10 +1413,10 @@ class InteractiveWavelengthCalibration(object):
                     self.line_pixels.append(self.raw_data_marks_x[i])
                     self.line_angstroms.append(self.reference_marks_x[i])
 
-                self.wsolution = self.wcs.fit(physical=self.line_pixels,
-                                              wavelength=self.line_angstroms,
-                                              model_name='chebyshev',
-                                              degree=self.poly_order)
+                self._wsolution = self.wcs.fit(physical=self.line_pixels,
+                                               wavelength=self.line_angstroms,
+                                               model_name='chebyshev',
+                                               degree=self.poly_order)
 
                 self.evaluate_solution(plots=True)
 

@@ -35,7 +35,7 @@ from ..core import (add_linear_wavelength_solution,
 
 from ..core import (ReferenceData, NoMatchFound)
 
-from .interactive import InteractiveWavelengthCalibration
+from ._interactive_wavelength import InteractiveWavelengthCalibration
 
 log = logging.getLogger(__name__)
 
@@ -194,9 +194,12 @@ class WavelengthCalibration(object):
                     if interactive_wavelength:
                         interactive_wavelength = InteractiveWavelengthCalibration()
                         interactive_wavelength(ccd=ccd,
-                                               comp_list=comp_list,
+                                               comparison_lamp=self.lamp,
                                                save_data_to=save_data_to,
                                                reference_data=reference_data)
+                        self.wsolution = interactive_wavelength.wavelength_solution
+                        self.rms_error, self.n_points, self.n_rejections = interactive_wavelength.wavelength_solution_evaluation
+
                     else:
                         self._automatic_wavelength_solution(
                             save_data_to=save_data_to,
@@ -215,25 +218,31 @@ class WavelengthCalibration(object):
                                                                       n_points=self.n_points,
                                                                       n_rejections=self.n_rejections)
 
-                    linear_x_axis, self.lamp.data = linearize_spectrum(
-                        self.lamp.data,
-                        wavelength_solution=self.wsolution)
+                    if self.linearize:
 
-                    self.lamp = self.wcs.write_gsp_wcs(ccd=self.lamp,
-                                                       model=self.wsolution)
+                        self.lamp.header.set('GSP_LINE', value='TRUE')
+                        ccd.header.set('GSP_LINE', value='TRUE')
+                        linear_x_axis, self.lamp.data = linearize_spectrum(
+                            self.lamp.data,
+                            wavelength_solution=self.wsolution)
 
-                    self.lamp = add_linear_wavelength_solution(
-                        ccd=self.lamp,
-                        x_axis=linear_x_axis,
-                        reference_lamp=self.calibration_lamp)
+                        self.lamp = self.wcs.write_gsp_wcs(ccd=self.lamp,
+                                                           model=self.wsolution)
 
-                    self.wcal_lamp_file = self._save_wavelength_calibrated(
-                        ccd=self.lamp,
-                        original_filename=self.calibration_lamp,
-                        save_data_to=save_data_to,
-                        output_prefix=output_prefix,
-                        index=object_number,
-                        lamp=True)
+                        self.lamp = add_linear_wavelength_solution(
+                            ccd=self.lamp,
+                            x_axis=linear_x_axis,
+                            reference_lamp=self.comparison_lamp_file_name)
+
+                        self.wcal_lamp_file = self._save_wavelength_calibrated(
+                            ccd=self.lamp,
+                            original_filename=self.comparison_lamp_file_name,
+                            save_data_to=save_data_to,
+                            output_prefix=output_prefix,
+                            index=object_number,
+                            lamp=True)
+                    else:
+                        pass
 
                     wavelength_solutions.append(self.wsolution)
                     reference_lamp_names.append(self.wcal_lamp_file)
