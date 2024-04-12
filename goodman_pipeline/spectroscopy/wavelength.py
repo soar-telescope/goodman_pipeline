@@ -85,7 +85,7 @@ class WavelengthCalibration(object):
         self.cross_corr_tolerance = 5
         self.reference_data_dir = None
         self.reference_data = None
-        self.calibration_lamp = ''
+        self.comparison_lamp_file_name = ''
         self.wcal_lamp_file = ''
 
         # Instrument configuration and spectral characteristics
@@ -171,7 +171,7 @@ class WavelengthCalibration(object):
                         "".format(self.sci_target_file))
             log.error("Ending processing of {}".format(self.sci_target_file))
             if json_output:
-                json_payload['error'] ='Unable to process without reference lamps'
+                json_payload['error'] = 'Unable to process without reference lamps'
                 return json_payload
             else:
                 return
@@ -180,13 +180,13 @@ class WavelengthCalibration(object):
             wavelength_solutions = []
             reference_lamp_names = []
             for self.lamp in comp_list:
-                self.calibration_lamp = self.lamp.header['GSP_FNAM']
+                self.comparison_lamp_file_name = self.lamp.header['GSP_FNAM']
 
                 self.raw_pixel_axis = range(self.lamp.shape[0])
 
                 self.lamp_name = self.lamp.header['OBJECT']
 
-                log.info(f"Using Comparison lamp {self.lamp_name} {self.calibration_lamp}")
+                log.info(f"Using Comparison lamp {self.lamp_name} {self.comparison_lamp_file_name}")
 
                 self.lines_center = get_lines_in_lamp(
                     ccd=self.lamp, plots=plots)
@@ -239,7 +239,7 @@ class WavelengthCalibration(object):
                     reference_lamp_names.append(self.wcal_lamp_file)
                 else:
                     log.error(f"It was not possible to get a wavelength solution from lamp {self.lamp_name} "
-                              f"{self.calibration_lamp}.")
+                              f"{self.comparison_lamp_file_name}.")
                     continue
 
             if len(wavelength_solutions) > 1:
@@ -511,7 +511,7 @@ class WavelengthCalibration(object):
 
         if self.wsolution is None:
             log.error('Failed to find wavelength solution using reference '
-                      'file: {:s}'.format(self.calibration_lamp))
+                      'file: {:s}'.format(self.comparison_lamp_file_name))
             return None
 
         # finding differences in order to improve the wavelength solution

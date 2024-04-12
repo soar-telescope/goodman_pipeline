@@ -4695,7 +4695,7 @@ class ReferenceData(object):
 
         new_name = f"goodman_comp_{ccd.header['WAVMODE']}_{ccd.header['FILTER2']}_{lamp_elements_name}.fits"
 
-        print(new_name)
+        self.log.info(f"Created new reference lamp with name {new_name}")
 
         write_fits(ccd=ccd, full_path=new_name, overwrite=True)
 
