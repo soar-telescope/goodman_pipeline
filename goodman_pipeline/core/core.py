@@ -303,7 +303,7 @@ def call_cosmic_rejection(ccd,
             log.info('Setting cosmic ray rejection method to:'
                      ' {:s}'.format(method))
 
-    if ccd.header['OBSTYPE'] == 'COMP' and method != 'none':
+    if ccd.header['OBSTYPE'] in ['COMP', 'ARC'] and method != 'none':
         log.info("Changing cosmic ray rejection method from '{:s}' to 'none'"
                  " for comparison lamp. Prefix 'c' will be added "
                  "anyway.".format(method))
@@ -318,11 +318,11 @@ def call_cosmic_rejection(ccd,
                     'the mask use --keep-cosmic-files')
 
         if not os.path.isfile(os.path.join(red_path, 'dcr.par')):
-            _create = GenerateDcrParFile()
+            generate_dcr_parameters_file = GenerateDcrParFile()
             _instrument = ccd.header['INSTCONF']
             _binning, _ = ccd.header['CCDSUM'].split()
 
-            _create(instrument=_instrument, binning=_binning, path=red_path)
+            generate_dcr_parameters_file(instrument=_instrument, binning=_binning, path=red_path)
 
         #out_prefix = prefix + out_prefix #Move line here
 

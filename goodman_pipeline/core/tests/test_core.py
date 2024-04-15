@@ -511,6 +511,22 @@ class CosmicRayRejectionTest(TestCase):
                          ccd.header['GSP_FNAM'])
         self.assertEqual('none', ccd.header['GSP_COSM'])
 
+    def test_call_cosmic_rejection_arc_lamp(self):
+        self.ccd.header.set('OBSTYPE', value='ARC')
+        prefix = 'new_'
+        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
+                                                image_name=self.file_name,
+                                                out_prefix=self.out_prefix,
+                                                red_path=self.red_path,
+                                                keep_files=True,
+                                                prefix=prefix,
+                                                method='dcr',
+                                                save=True)
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('none', ccd.header['GSP_COSM'])
+
     def test_call_cosmic_rejection_not_implemented_error(self):
         prefix = 'new_'
         self.assertRaises(NotImplementedError,
@@ -527,9 +543,9 @@ class CosmicRayRejectionTest(TestCase):
     def tearDown(self):
         files_to_delete = ['dcr.par',
                            'goodman_log.txt',
-                           'cosmic_test.fits',
-                           'new_prefixcr_test.fits',
-                           'prefixcr_test.fits',
+                           'cosmic_cr_test.fits',
+                           'new_prefix_cr_test.fits',
+                           'prefix_cr_test.fits',
                            'crmask_cr_test.fits']
 
         for _file in files_to_delete:

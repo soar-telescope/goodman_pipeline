@@ -47,3 +47,8 @@ Asymetric binnings have not been tested but the pipeline only takes in
 consideration the dispersion axis to decide. This does not mean that the spatial
 binning does not impact the performance of any of the methods, we just don't
 know it yet.
+
+.. note::
+
+  The prefix ``c`` is added to all the comparison lamps, despite they not being
+  affected by cosmic rays.
