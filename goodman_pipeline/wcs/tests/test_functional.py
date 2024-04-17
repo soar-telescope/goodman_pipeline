@@ -1,16 +1,17 @@
 from __future__ import absolute_import
 
-from unittest import TestCase, skip
-from ..wcs import WCS
+from unittest import TestCase
+
 import numpy as np
 import os
 import re
 import sys
-from astropy.io import fits
-from astropy.modeling import (models, fitting, Model)
-import matplotlib.pyplot as plt
 
+from astropy.io import fits
+from astropy.modeling import (models, Model)
 from ccdproc import CCDData
+
+from ..wcs import WCS
 
 
 class TestWCSBase(TestCase):
@@ -54,7 +55,7 @@ class TestWCS(TestWCSBase):
         self.assertEqual(model.degree, ccd.header['GSP_ORDR'])
         for i in range(model.degree + 1):
             self.assertAlmostEqual(model.__getattribute__('c{:d}'.format(i)).value,
-                             ccd.header['GSP_C{:03d}'.format(i)])
+                                   ccd.header['GSP_C{:03d}'.format(i)])
 
     def test_fit_linear(self):
         test_file = os.path.join(self.data_path,
@@ -127,7 +128,7 @@ class TestWCS(TestWCSBase):
 
         ccd = CCDData.read(test_file, unit='adu')
 
-        result = self.wcs.read(ccd=ccd)
+        self.wcs.read(ccd=ccd)
         self.assertIsInstance(self.wcs.model, Model)
         self.assertEqual(self.wcs.model.__class__.__name__, 'Chebyshev1D')
 
@@ -138,7 +139,7 @@ class TestWCS(TestWCSBase):
 
         ccd = CCDData.read(test_file, unit='adu')
 
-        result = self.wcs.read(ccd=ccd)
+        self.wcs.read(ccd=ccd)
         self.assertIsInstance(self.wcs.model, Model)
         self.assertEqual(self.wcs.model.__class__.__name__, 'Legendre1D')
 
@@ -193,8 +194,8 @@ class TestWCS(TestWCSBase):
         self.assertIsInstance(model, Model)
 
         blank_ccd = CCDData(data=np.ones(ccd.data.shape),
-                          meta=fits.Header(),
-                          unit='adu')
+                            meta=fits.Header(),
+                            unit='adu')
         blank_ccd.header.set('GSP_WREJ', value=None, comment='empty')
 
         new_ccd = self.wcs.write_gsp_wcs(ccd=blank_ccd, model=model)
@@ -204,7 +205,7 @@ class TestWCS(TestWCSBase):
         self.assertEqual(new_ccd.header['GSP_NPIX'], ccd.header['GSP_NPIX'])
         for i in range(model.degree + 1):
             self.assertAlmostEqual(new_ccd.header['GSP_C{:03d}'.format(i)],
-                             ccd.header['GSP_C{:03d}'.format(i)])
+                                   ccd.header['GSP_C{:03d}'.format(i)])
 
     def test_read_gsp_wcs(self):
         test_file = os.path.join(self.data_path,

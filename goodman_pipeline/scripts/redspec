@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from goodman_pipeline.core import setup_logging
-from goodman_pipeline.spectroscopy import MainApp
+from goodman_pipeline.spectroscopy import RedSpec
 
 import sys
 
@@ -14,5 +14,5 @@ if '-h' not in sys.argv and \
 
 
 if __name__ == '__main__':
-    GOODMAN_SPECTROSCOPY = MainApp()
+    GOODMAN_SPECTROSCOPY = RedSpec()
     GOODMAN_SPECTROSCOPY()

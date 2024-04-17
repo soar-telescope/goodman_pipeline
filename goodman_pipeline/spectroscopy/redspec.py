@@ -15,10 +15,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from .wavelength import WavelengthCalibration
-from .interactive_target_extraction import InteractiveExtraction
 from ..core import (classify_spectroscopic_data,
                     search_comp_group,
-                    add_wcs_keys,
                     identify_targets,
                     trace_targets,
                     extraction,
@@ -178,6 +176,11 @@ def get_args(arguments=None):
                         dest='interactive_wavelength',
                         help="Interactive Wavelength Calibration.")
 
+    parser.add_argument('--linearize',
+                        action='store_true',
+                        dest='linearize',
+                        help="Save as a linear wavelength solution, requires resampling.")
+
     parser.add_argument('--save-plots',
                         action='store_true',
                         dest='save_plots',
@@ -243,16 +246,16 @@ def get_args(arguments=None):
     return args
 
 
-class MainApp(object):
+class RedSpec(object):
     """Defines and initialize all important variables for processing the data
 
-    The MainApp class controls the way the night is organized for further
+    The RedSpec class controls the way the night is organized for further
     processing. It also sets the appropriate parameters that will allow for a
     smooth working in all the other modules.
 
     """
     def __init__(self):
-        """Init method for MainApp class
+        """Init method for RedSpec class
 
         This method initializes the arguments for the class, if they are not
         provided it will get them.
@@ -267,7 +270,7 @@ class MainApp(object):
         self._pipeline_version = __version__
 
     def __call__(self, args=None):
-        """Call method for the MainApp class
+        """Call method for the RedSpec class
 
         This method call the higher level functions in order to do the
         spectroscopic data reduction.
@@ -301,7 +304,7 @@ class MainApp(object):
         else:
             self.log.debug("Received non-empty data container.")
 
-        self.log.debug("Calling _run method for MainApp")
+        self.log.debug("Calling _run method for RedSpec")
         self._run(data_container=data_container,
                   extraction_type=self.args.extraction_type,
                   target_fit_model=self.args.target_fit_model,
@@ -334,7 +337,7 @@ class MainApp(object):
                 obj_groupby = object_group.groupby(['object']).size(
                     ).reset_index().rename(columns={0: 'count'})
 
-                self.log.debug(f"Here is where the process starts")
+                self.log.debug("Here is where the process starts")
 
                 self.log.info("Starting process for Science Target: "
                               "{:s} with {:d} files."
@@ -388,7 +391,6 @@ class MainApp(object):
                     file_path = os.path.join(full_path, spec_file)
                     ccd = CCDData.read(file_path, unit=u.adu)
                     ccd.header.set('GSP_PNAM', value=spec_file)
-                    ccd = add_wcs_keys(ccd=ccd)
 
                     # ccd.header['GSP_FNAM'] = spec_file
 
@@ -398,7 +400,6 @@ class MainApp(object):
                             self.log.debug(f"Preparing comparison lamp file {comp_file} for processing.")
                             comp_path = os.path.join(full_path, comp_file)
                             comp_ccd = CCDData.read(comp_path, unit=u.adu)
-                            comp_ccd = add_wcs_keys(ccd=comp_ccd)
                             comp_ccd.header.set('GSP_PNAM', value=comp_file)
                             comp_ccd_list.append(comp_ccd)
 
@@ -432,11 +433,11 @@ class MainApp(object):
                         continue
 
                     # if len(trace_list) > 0:
-                    ## Experimental interactive extraction
-                    if False:
-                        ie = InteractiveExtraction()
-                        # ie = InteractiveExtractionGUI()
-                        ie(ccd=ccd, lamps=comp_ccd_list, traces=trace_list)
+                    # Experimental interactive extraction
+                    # if False:
+                    #     ie = InteractiveExtraction()
+                    #     # ie = InteractiveExtractionGUI()
+                    #     ie(ccd=ccd, lamps=comp_ccd_list, traces=trace_list)
 
                     extracted_target_and_lamps = []
                     for single_trace, single_profile, trace_info in trace_list:
@@ -555,6 +556,7 @@ class MainApp(object):
                                     object_number=object_number,
                                     output_prefix=self.args.output_prefix,
                                     interactive_wavelength=self.args.interactive_wavelength,
+                                    linearize=self.args.linearize,
                                     plot_results=self.args.plot_results,
                                     save_plots=self.args.save_plots,
                                     plots=self.args.debug_with_plots)
@@ -567,8 +569,8 @@ class MainApp(object):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    MAIN_APP = MainApp()
+    RED_SPEC = RedSpec()
     try:
-        MAIN_APP()
+        RED_SPEC()
     except KeyboardInterrupt:
         sys.exit(0)

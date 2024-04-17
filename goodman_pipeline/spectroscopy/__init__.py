@@ -1,7 +1,6 @@
-"""Goodman Spectroscopic Tools
+# flake8: noqa
 
-"""
 from __future__ import absolute_import
-from .redspec import MainApp, get_args
+from .redspec import RedSpec, get_args
 from .wavelength import WavelengthCalibration
-from .interactive import InteractiveWavelengthCalibration
+from ._interactive_wavelength import InteractiveWavelengthCalibration

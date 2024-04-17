@@ -1,11 +1,9 @@
 from __future__ import absolute_import
 
-import argparse
 import os
-import shutil
 from unittest import TestCase
 
-from ...spectroscopy.redspec import (get_args, MainApp)
+from ...spectroscopy.redspec import (get_args, RedSpec)
 
 
 class TestArguments(TestCase):
@@ -57,17 +55,6 @@ class TestArguments(TestCase):
         self.assertTrue(os.path.exists(args.source))
         self.assertTrue(os.path.isdir(args.source))
 
-        # If yes, carry on
-
-            # If not, convert it to become absolute
-
-        # Check if the source folder exists
-
-        #  If it exists, carry on
-
-        # If source folder does not exists, print message and leave program
-        # error_message = 'Input folder "{} does not exists."'
-
     def test_get_args_output_path_does_not_exist(self):
         arguments = ['--data-path', 'does_not_exist']
         self.assertRaises(SystemExit, get_args, arguments)
@@ -118,20 +105,20 @@ def test_get_args():
     return args
 
 
-class TestMainApp(TestCase):
+class TestRedSpec(TestCase):
 
     def setUp(self):
-        self.main_app = MainApp()
+        self.red_spec = RedSpec()
 
     def test_instantiation_without_args(self):
-        self.assertIsInstance(self.main_app, MainApp)
-        self.assertIsNone(self.main_app.args)
-        self.assertIsNone(self.main_app.wavelength_solution_obj)
-        self.assertIsNone(self.main_app.wavelength_calibration)
-        self.assertIsNone(self.main_app.reference)
+        self.assertIsInstance(self.red_spec, RedSpec)
+        self.assertIsNone(self.red_spec.args)
+        self.assertIsNone(self.red_spec.wavelength_solution_obj)
+        self.assertIsNone(self.red_spec.wavelength_calibration)
+        self.assertIsNone(self.red_spec.reference)
 
     def test___call___no_args(self):
-        self.assertRaises(SystemExit, self.main_app)
+        self.assertRaises(SystemExit, self.red_spec)
 
     def test___call___with_valid_arguments(self):
         arguments = ['--data-path', './',
@@ -140,7 +127,7 @@ class TestMainApp(TestCase):
                      '--output-prefix', 'w',
                      '--extraction', 'fractional']
         args = get_args(arguments=arguments)
-        self.assertRaises(SystemExit, self.main_app, args)
+        self.assertRaises(SystemExit, self.red_spec, args)
 
 
 if __name__ == '__main__':

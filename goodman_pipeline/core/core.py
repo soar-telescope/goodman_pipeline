@@ -29,6 +29,7 @@ from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
+from ccdproc import CCDData
 from matplotlib import pyplot as plt
 from scipy import signal, interpolate
 from threading import Timer
@@ -62,7 +63,7 @@ def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
     return ccd
 
 
-def add_wcs_keys(ccd):
+def add_linear_wcs_keys(ccd):
     """Adds generic keyword for linear wavelength solution to the header
 
     Linear wavelength solutions require a set of standard fits keywords. Later
@@ -163,6 +164,22 @@ def add_linear_wavelength_solution(ccd, x_axis, reference_lamp, crpix=1):
     new_crpix = crpix
     new_crval = x_axis[new_crpix - crpix]
     new_cdelt = x_axis[new_crpix] - x_axis[new_crpix - crpix]
+    incoming_header_keys = ccd.header.keys()
+    linear_wcs_keys = ['BANDID1',
+                       'WCSDIM',
+                       'CTYPE1',
+                       'CRVAL1',
+                       'CRPIX1',
+                       'CDELT1',
+                       'CD1_1',
+                       'LTM1_1',
+                       'WAT0_001',
+                       'WAT1_001',
+                       'DC-FLAG',
+                       'DCLOG1']
+
+    if not all([key in incoming_header_keys for key in linear_wcs_keys]):
+        ccd = add_linear_wcs_keys(ccd=ccd)
 
     ccd.header.set('BANDID1', 'spectrum - background none, weights none, '
                               'clean no')
@@ -324,7 +341,7 @@ def call_cosmic_rejection(ccd,
 
             generate_dcr_parameters_file(instrument=_instrument, binning=_binning, path=red_path)
 
-        #out_prefix = prefix + out_prefix #Move line here
+        # out_prefix = prefix + out_prefix #Move line here
 
         full_path = os.path.join(red_path, f"{out_prefix}_{image_name}")
 
@@ -993,7 +1010,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # wait for dcr to terminate
     # dcr.wait()
 
-    #go back to the original directory. Could be the same.
+    # go back to the original directory. Could be the same.
     os.chdir(cwd)
 
     # If no error stderr is an empty string
@@ -1036,6 +1053,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
             os.unlink(full_path_out)
         return ccd
 
+
 def define_trim_section(sample_image, technique):
     """Get the initial trim section
 
@@ -1067,9 +1085,7 @@ def define_trim_section(sample_image, technique):
     # serial binning - dispersion binning
     # parallel binning - spatial binning
     spatial_length, dispersion_length = ccd.data.shape
-    serial_binning, \
-    parallel_binning = [int(x) for x
-                        in ccd.header['CCDSUM'].split()]
+    serial_binning, parallel_binning = [int(x) for x in ccd.header['CCDSUM'].split()]
 
     # Trim section is valid for Blue and Red Camera Binning 1x1 and
     # Spectroscopic ROI
@@ -1293,20 +1309,20 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
                 background = background_1
                 if background_info_1 is None:
                     background_info_1 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_1, high_1, i+1)
+                        low_1, high_1, i + 1)
             elif background_1 is None and background_2 is not None:
                 background = background_2
                 if background_info_2 is None:
                     background_info_2 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_2, high_2, i+1)
+                        low_2, high_2, i + 1)
             else:
                 background = np.mean([background_1, background_2])
                 if background_info_1 is None:
                     background_info_1 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_1, high_1, i+1)
+                        low_1, high_1, i + 1)
                 if background_info_2 is None:
                     background_info_2 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_2, high_2, i+1)
+                        low_2, high_2, i + 1)
 
             # actual background subtraction
             background_subtracted_column_sum = column_sum - background
@@ -2506,6 +2522,7 @@ def read_fits(full_path, technique='Unknown'):
     GSP_EXTR: Extraction window at first column
     GSP_BKG1: First background extraction zone
     GSP_BKG2: Second background extraction zone
+    GSP_LINE: Data has been linearized.
     GSP_WRMS: Wavelength solution RMS Error.
     GSP_WPOI: Number of points used to calculate the wavelength solution
     Error.
@@ -2611,6 +2628,11 @@ def read_fits(full_path, technique='Unknown'):
         ccd.header.set('GSP_BKG2',
                        value='none',
                        comment='Second background extraction zone')
+
+    if 'GSP_LINE' not in all_keys:
+        ccd.header.set('GSP_LINE',
+                       value='FALSE',
+                       comment='Data has been linearized')
 
     if 'GSP_WRMS' not in all_keys:
         ccd.header.set('GSP_WRMS',
@@ -2837,6 +2859,26 @@ def record_trace_information(ccd, trace_info):
                            after=last_keyword)
             last_keyword = info_key
 
+    return ccd
+
+
+def record_wavelength_solution_evaluation(ccd: CCDData, rms_error: float, n_points: int, n_rejections: int):
+    """Add record of wavalength solution evaluation
+
+    Args:
+        ccd (CCDData): data to be updated.
+        rms_error (float): Root Nean Square Error of the wavelength solution.
+        n_points (int): Number of points used to evaluate the solution.
+        n_rejections (int): Number of points rejected while evaluating the solution.
+
+    Returns:
+        ccd modified
+
+    """
+
+    ccd.header.set('GSP_WRMS', value=rms_error)
+    ccd.header.set('GSP_WPOI', value=n_points)
+    ccd.header.set('GSP_WREJ', value=n_rejections)
     return ccd
 
 
@@ -4639,8 +4681,6 @@ class ReferenceData(object):
         ccd = self._record_lines(ccd=ccd)
         ccd = wcs.write_gsp_wcs(ccd=ccd, model=wavelength_solution)
 
-        print(ccd.header)
-
         lamp_elements = []
         for keyword in ccd.header['LAMP_*']:
             if ccd.header[keyword] == 'TRUE':
@@ -4655,7 +4695,7 @@ class ReferenceData(object):
 
         new_name = f"goodman_comp_{ccd.header['WAVMODE']}_{ccd.header['FILTER2']}_{lamp_elements_name}.fits"
 
-        print(new_name)
+        self.log.info(f"Created new reference lamp with name {new_name}")
 
         write_fits(ccd=ccd, full_path=new_name, overwrite=True)
 

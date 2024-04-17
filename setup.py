@@ -155,6 +155,4 @@ setup(
     scripts=['goodman_pipeline/scripts/redccd',
              'goodman_pipeline/scripts/redspec', ],
 
-   )
-
-
+)

@@ -143,18 +143,18 @@ class DataClassifier(object):
 
         wavmodes = [str(w).upper() for w in self.objects_collection.wavmode.unique()]
         if len(wavmodes) == 1 and wavmodes[0] == 'IMAGING':
-                self.technique = 'Imaging'
+            self.technique = 'Imaging'
 
         elif 'IMAGING' in wavmodes and len(wavmodes) > 1:
-                self.log.error('There seems to be Imaging and Spectroscopic '
-                               'data. I will assume the Imaging data are '
-                               'acquisition images therefore they will be '
-                               'ignored.')
-                self.log.info("If you really have Imaging data, please process "
-                              "them in a separated folder.")
-                self.technique = 'Spectroscopy'
+            self.log.error('There seems to be Imaging and Spectroscopic '
+                           'data. I will assume the Imaging data are '
+                           'acquisition images therefore they will be '
+                           'ignored.')
+            self.log.info("If you really have Imaging data, please process "
+                          "them in a separated folder.")
+            self.technique = 'Spectroscopy'
         else:
-                self.technique = 'Spectroscopy'
+            self.technique = 'Spectroscopy'
         # inform the results, no need to return
         self.log.info('Detected {:s} Data from {:s} '
                       'Camera'.format(self.technique, self.instrument))
