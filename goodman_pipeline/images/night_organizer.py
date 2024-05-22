@@ -95,7 +95,7 @@ class NightOrganizer(object):
             _imaging_file = self.file_collection[
                 self.file_collection.wavmode == 'IMAGING']
             if not _imaging_file.empty:
-                self.log.warning("Ignoring all Imaging data. Assuming they are "
+                self.log.warning("Ignoring all files where `WAVMODE` is `IMAGING`. Assuming they are "
                                  "not science exposures.")
                 self.log.info("If any of the files listed below is a science "
                               "file, please process it/them in a separate "
@@ -108,8 +108,8 @@ class NightOrganizer(object):
                 self.file_collection.wavmode != 'IMAGING'].reset_index(drop=True)
 
         elif self.technique == 'Imaging':
-            self.log.warning("Ignoring all files where `wavmode` is not "
-                             "Imaging.")
+            self.log.warning("Ignoring all files where `WAVMODE` is not "
+                             "IMAGING.")
             self.file_collection = self.file_collection[
                 self.file_collection.wavmode == 'IMAGING'].reset_index(drop=True)
 

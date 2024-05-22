@@ -14,5 +14,6 @@ dependencies:
       - pydata-sphinx-theme
       - astroplan
       - mock
+      - setuptools
       - sphinx
       - sphinxcontrib.napoleon

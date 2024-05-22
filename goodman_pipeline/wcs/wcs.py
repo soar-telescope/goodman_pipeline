@@ -252,7 +252,7 @@ class WCS(object):
 
     # wavelength solution reader private methods.
     def _read_non_linear(self, dimension):
-        """Non linear solutions reader
+        """Non-linear solutions reader
 
         Notes:
             Not all kind of non-linear solutions are implemented. Apparently is

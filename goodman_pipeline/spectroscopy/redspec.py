@@ -17,7 +17,6 @@ from __future__ import (absolute_import, division, print_function,
 from .wavelength import WavelengthCalibration
 from ..core import (classify_spectroscopic_data,
                     search_comp_group,
-                    add_wcs_keys,
                     identify_targets,
                     trace_targets,
                     extraction,
@@ -172,6 +171,16 @@ def get_args(arguments=None):
                              "discriminate usable targets. Default 3 times "
                              "background level")
 
+    parser.add_argument('--interactive-wavelength',
+                        action='store_true',
+                        dest='interactive_wavelength',
+                        help="Interactive Wavelength Calibration.")
+
+    parser.add_argument('--linearize',
+                        action='store_true',
+                        dest='linearize',
+                        help="Save as a linear wavelength solution, requires resampling.")
+
     parser.add_argument('--save-plots',
                         action='store_true',
                         dest='save_plots',
@@ -237,16 +246,16 @@ def get_args(arguments=None):
     return args
 
 
-class MainApp(object):
+class RedSpec(object):
     """Defines and initialize all important variables for processing the data
 
-    The MainApp class controls the way the night is organized for further
+    The RedSpec class controls the way the night is organized for further
     processing. It also sets the appropriate parameters that will allow for a
     smooth working in all the other modules.
 
     """
     def __init__(self):
-        """Init method for MainApp class
+        """Init method for RedSpec class
 
         This method initializes the arguments for the class, if they are not
         provided it will get them.
@@ -261,7 +270,7 @@ class MainApp(object):
         self._pipeline_version = __version__
 
     def __call__(self, args=None):
-        """Call method for the MainApp class
+        """Call method for the RedSpec class
 
         This method call the higher level functions in order to do the
         spectroscopic data reduction.
@@ -295,7 +304,7 @@ class MainApp(object):
         else:
             self.log.debug("Received non-empty data container.")
 
-        self.log.debug("Calling _run method for MainApp")
+        self.log.debug("Calling _run method for RedSpec")
         self._run(data_container=data_container,
                   extraction_type=self.args.extraction_type,
                   target_fit_model=self.args.target_fit_model,
@@ -328,7 +337,9 @@ class MainApp(object):
                 obj_groupby = object_group.groupby(['object']).size(
                     ).reset_index().rename(columns={0: 'count'})
 
-                self.log.info("Processing Science Target: "
+                self.log.debug("Here is where the process starts")
+
+                self.log.info("Starting process for Science Target: "
                               "{:s} with {:d} files."
                               "".format(obj_groupby.iloc[0]['object'],
                                         obj_groupby.iloc[0]['count']))
@@ -342,7 +353,7 @@ class MainApp(object):
                     comp_group = self.reference.check_comp_group(comp_group)
 
                 if comp_group is None:
-                    self.log.debug('Group does not have comparison lamps')
+                    self.log.warning('Group does not have comparison lamps')
                     if data_container.comp_groups is not None:
                         self.log.debug('There are comparison lamp group '
                                        'candidates')
@@ -380,16 +391,15 @@ class MainApp(object):
                     file_path = os.path.join(full_path, spec_file)
                     ccd = CCDData.read(file_path, unit=u.adu)
                     ccd.header.set('GSP_PNAM', value=spec_file)
-                    ccd = add_wcs_keys(ccd=ccd)
 
                     # ccd.header['GSP_FNAM'] = spec_file
 
                     if comp_group is not None and comp_ccd_list == []:
 
                         for comp_file in comp_group.file.tolist():
+                            self.log.debug(f"Preparing comparison lamp file {comp_file} for processing.")
                             comp_path = os.path.join(full_path, comp_file)
                             comp_ccd = CCDData.read(comp_path, unit=u.adu)
-                            comp_ccd = add_wcs_keys(ccd=comp_ccd)
                             comp_ccd.header.set('GSP_PNAM', value=comp_file)
                             comp_ccd_list.append(comp_ccd)
 
@@ -399,8 +409,7 @@ class MainApp(object):
                             'Comp Group is None or comp list already exist')
 
                     # identify
-                    self.log.debug("Calling procedure for target "
-                                   "identification.")
+                    self.log.info(f"Starting target identification for file {spec_file}")
                     target_list = identify_targets(
                         ccd=ccd,
                         fit_model=target_fit_model,
@@ -424,12 +433,20 @@ class MainApp(object):
                         continue
 
                     # if len(trace_list) > 0:
+                    # Experimental interactive extraction
+                    # if False:
+                    #     ie = InteractiveExtraction()
+                    #     # ie = InteractiveExtractionGUI()
+                    #     ie(ccd=ccd, lamps=comp_ccd_list, traces=trace_list)
+
                     extracted_target_and_lamps = []
                     for single_trace, single_profile, trace_info in trace_list:
                         if single_profile.__class__.name == 'Gaussian1D':
                             single_profile_center = single_profile.mean.value
                         elif single_profile.__class__.name == 'Moffat1D':
                             single_profile_center = single_profile.x_0.value
+                        self.log.info(f"Processing traced profile fitted wit {single_profile.__class__.name} "
+                                      f"centered at {single_profile_center}")
 
                         if len(trace_list) > 1:
                             target_number = trace_list.index(
@@ -454,6 +471,7 @@ class MainApp(object):
                             # print(spec_file)
 
                             # lamp extraction
+                            self.log.debug(f"Starting lamps extraction for science file {spec_file}")
                             all_lamps = []
                             if comp_ccd_list:
                                 for comp_lamp in comp_ccd_list:
@@ -525,6 +543,7 @@ class MainApp(object):
                             self.log.error('No target was identified in file'
                                            ' {:s}'.format(spec_file))
                             continue
+                    self.log.debug(f"Starting Wavelength Calibration Process for File {spec_file}.")
                     object_number = None
                     for sci_target, comp_list in extracted_target_and_lamps:
                         try:
@@ -536,18 +555,22 @@ class MainApp(object):
                                     reference_data=self.args.reference_dir,
                                     object_number=object_number,
                                     output_prefix=self.args.output_prefix,
+                                    interactive_wavelength=self.args.interactive_wavelength,
+                                    linearize=self.args.linearize,
                                     plot_results=self.args.plot_results,
                                     save_plots=self.args.save_plots,
                                     plots=self.args.debug_with_plots)
                         except NoMatchFound as no_match_error:
                             self.log.error(no_match_error)
-                        except NotImplemented as error:
+                        except NotImplementedError as error:
                             self.log.error(error)
+
+                    self.log.debug(f"End of process for file {spec_file}.")
 
 
 if __name__ == '__main__':  # pragma: no cover
-    MAIN_APP = MainApp()
+    RED_SPEC = RedSpec()
     try:
-        MAIN_APP()
+        RED_SPEC()
     except KeyboardInterrupt:
         sys.exit(0)

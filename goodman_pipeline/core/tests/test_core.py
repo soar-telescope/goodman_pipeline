@@ -34,7 +34,7 @@ from ..core import (GenerateDcrParFile,
 # import of functions in core.py
 from ..core import (astroscrappy_lacosmic,
                     add_linear_wavelength_solution,
-                    add_wcs_keys,
+                    add_linear_wcs_keys,
                     bias_subtract,
                     bin_reference_data,
                     call_cosmic_rejection,
@@ -93,7 +93,7 @@ class AddLinearWavelengthSolutionTest(TestCase):
         self.ccd = CCDData(data=np.random.random_sample(200),
                            meta=fits.Header(),
                            unit='adu')
-        self.ccd = add_wcs_keys(ccd=self.ccd)
+        self.ccd = add_linear_wcs_keys(ccd=self.ccd)
         self.ccd.header.set('SLIT',
                             value='1.0_LONG_SLIT',
                             comment="slit [arcsec]")
@@ -145,9 +145,7 @@ class AddWCSKeywordsTest(TestCase):
                     'DC-FLAG',
                     'DCLOG1']
 
-
-
-        self.test_ccd = add_wcs_keys(ccd=self.test_ccd)
+        self.test_ccd = add_linear_wcs_keys(ccd=self.test_ccd)
         for key in wcs_keys:
             self.assertIn(key, self.test_ccd.header)
 
@@ -206,8 +204,6 @@ class BinningTest(TestCase):
             self.assertEqual(len(wavelength), len(intensity))
             self.assertEqual(len(new_wavelength), len(new_intensity))
             self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
-
-
 
 
 class CentralWavelength(TestCase):
@@ -1856,9 +1852,9 @@ class ReferenceDataTest(TestCase):
 
         self.ccd.header.set('WAVMODE', value='400_M2')
 
-        self.assertRaises(NoMatchFound,
-                          self.rd.get_reference_lamp,
-                          self.ccd.header)
+        reference_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
+
+        self.assertIsNone(reference_lamp)
 
     def test_get_reference_lamp_exist_with_object_key(self):
         self.ccd.header.set('OBJECT', value='HgArNe')
@@ -1884,9 +1880,9 @@ class ReferenceDataTest(TestCase):
         self.ccd.header.set('OBJECT', value='HgArCu')
         self.ccd.header.set('WAVMODE', value='400_M5')
 
-        self.assertRaises(NoMatchFound,
-                          self.rd.get_reference_lamp,
-                          self.ccd.header)
+        reference_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
+
+        self.assertIsNone(reference_lamp)
 
     def test_lamp_exist(self):
         self.ccd.header.set('LAMP_HGA', value='TRUE')

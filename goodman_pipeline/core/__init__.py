@@ -1,3 +1,5 @@
+# flake8: noqa
+
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
@@ -13,7 +15,7 @@ from .core import (GenerateDcrParFile,
 
 # import of functions in core.py
 from .core import (astroscrappy_lacosmic,
-                   add_wcs_keys,
+                   add_linear_wcs_keys,
                    add_linear_wavelength_solution,
                    bin_reference_data,
                    call_cosmic_rejection,
@@ -52,6 +54,7 @@ from .core import (astroscrappy_lacosmic,
                    recenter_broad_lines,
                    recenter_lines,
                    record_trace_information,
+                   record_wavelength_solution_evaluation,
                    save_extracted,
                    search_comp_group,
                    setup_logging,

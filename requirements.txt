@@ -2,6 +2,7 @@ astropy
 astroplan
 astroscrappy
 ccdproc
+coloredlogs
 coveralls
 cython
 recommonmark
@@ -9,6 +10,7 @@ matplotlib
 mock
 numpy
 pandas
+setuptools
 scipy
 sphinx
 sphinxcontrib.napoleon

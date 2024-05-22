@@ -152,10 +152,10 @@ def get_args(arguments=None):
     return args
 
 
-class MainApp(object):
+class RedCCD(object):
 
     def __init__(self):
-        """This method initializes the MainApp class
+        """This method initializes the RedCCD class
 
         The main task of this method is to call the get_args function that
         returns an argparse object.
@@ -174,7 +174,7 @@ class MainApp(object):
         self._pipeline_version = __version__
 
     def __call__(self, args=None):
-        """Call method for MainApp
+        """Call method for RedCCD
 
         From the arguments this method finds the raw_path attribute and checks
         its contents for the existence of files containing the '.fits' string.
@@ -392,5 +392,5 @@ class MainApp(object):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    main_app = MainApp()
-    main_app()
+    RED_CCD = RedCCD()
+    RED_CCD()

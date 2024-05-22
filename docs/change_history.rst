@@ -1,6 +1,7 @@
 Change History
 ##############
 
+
 .. _v1.3.8:
 
 V1.3.8 Not Released
@@ -112,7 +113,7 @@ V1.3.0 06-03-2020
 - Removed bias overscan and trimming correction on master bias creation.
 - Bugs Fixed:
 
-  + `--max-targets` was not being used, missed connection in `MainApp`.
+  + `--max-targets` was not being used, missed connection in `RedSpec`.
 
 - Updated keyword values of all reference lamps in the library according to [#292]
 - Refactored `wavelength.WavelengthCalibration` class moving several methods to
