@@ -129,7 +129,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='soar pipelines astronomy images spectroscopy',
+    keywords='soar pipelines astronomy images spectroscopy photometry',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
@@ -138,7 +138,8 @@ setup(
               'goodman_pipeline.core',
               'goodman_pipeline.images',
               'goodman_pipeline.spectroscopy',
-              'goodman_pipeline.wcs', ],
+              'goodman_pipeline.wcs',
+              'goodman_pipeline.photometry'],
 
     package_dir={'goodman_pipeline': 'goodman_pipeline'},
 
@@ -153,7 +154,8 @@ setup(
     install_requires=INSTALL_REQUIRES,
 
     scripts=['goodman_pipeline/scripts/redccd',
-             'goodman_pipeline/scripts/redspec', ],
+             'goodman_pipeline/scripts/redspec',
+             'goodman_pipeline/scripts/redphot'],
 
    )
 
