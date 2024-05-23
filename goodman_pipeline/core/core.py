@@ -16,7 +16,7 @@ import re
 import subprocess
 import sys
 import time
-import seaborn
+#import seaborn
 
 import requests
 from astropy.utils import iers
