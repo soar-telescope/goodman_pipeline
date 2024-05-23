@@ -10,12 +10,13 @@ import logging
 import math
 import numpy as np
 import os
-import pandas
+import pandas as pd
 import random
 import re
 import subprocess
 import sys
 import time
+import seaborn
 
 import requests
 from astropy.utils import iers
@@ -26,12 +27,19 @@ from astropy.io import fits
 from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
-from astropy.stats import sigma_clip
+from astropy.stats import sigma_clip, sigma_clipped_stats
 from astropy.time import Time
 from astroscrappy import detect_cosmics
 from matplotlib import pyplot as plt
 from scipy import signal, interpolate
 from threading import Timer
+
+from astropy              import wcs
+from astropy.coordinates  import SkyCoord
+#This has to be added to dependencies (Photutils)
+from photutils            import DAOStarFinder, CircularAperture, aperture_photometry, CircularAnnulus
+from photutils.background import Background2D, MedianBackground
+from photutils.utils      import calc_total_error
 
 from . import check_version
 
@@ -39,6 +47,7 @@ __version__ = __import__('goodman_pipeline').__version__
 
 log = logging.getLogger(__name__)
 
+from astropy.visualization import ZScaleInterval
 
 def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
 
@@ -2424,6 +2433,344 @@ def normalize_master_flat(master, name, method='simple', order=15):
 
     return master, norm_name
 
+def phot_display(data, cb_title=''):
+    norm = ZScaleInterval()
+    vmin, vmax = norm.get_limits(data)
+    plt.imshow(data, vmin=vmin, vmax=vmax, interpolation='none', origin='lower')
+    plt.colorbar(label=cb_title)
+
+def phot_get_background_statistics(img, sigma=3.0, maxiters=5):
+    """
+        Estimate background  statistics (median and standard deviation)
+        of a fits image after applying a sigma-clipping routine
+
+        Parameters:
+           img (numpy.ndarray): input image
+           sigma (float, optional):  number of standard deviations to use for both the lower and upper clipping limit (default=3.0)
+           maxiters (int, optional): maximum number of sigma-clipping iterations to perform (default=5)
+
+        Returns:
+           median, std (float): the median, and standard deviation of the sigma-clipped data
+    """
+    mean, median, std = sigma_clipped_stats(img, sigma=sigma, maxiters=maxiters)
+    return median, std
+
+
+def phot_get_pixelscale(img_wcs, pixscale=None):
+    """
+        Return the pixel scale of a fits image
+
+        Parameters:
+           img_wcs (astropy.wcs.wcs.WCS): input WCS from the fits file
+           pixscale (float, optional): if pixel scale not found, use the provided value instead (in arcseconds)
+
+        Returns:
+           pixscale (float): the pixel scale of the image (in arcseconds)
+    """
+    if pixscale is None:
+        pixelscale = np.mean(wcs.utils.proj_plane_pixel_scales(img_wcs) * u.degree).to('arcsec')
+    else:
+        pixelscale = pixscale * u.arcsec
+
+    return pixelscale.value
+
+
+def phot_find_stars(img, fwhm=15., sigma_thresh=5.0):
+    """
+        Uses DAOPhot implementations to detect sorces with a given FWHM and above a detection limit.
+
+        Parameters:
+           img (numpy.ndarray): input image
+           fwhm (float, optional): expected FWHM for the sources (in pixels, default=15)
+           sigma_thresh (float, optional): detection limit (in sigmas, default=5.0)
+
+        Returns:
+           table_detections (astropy.table.table.QTable): table of results containing the following columns:
+               ['id', 'xcentroid', 'ycentroid', 'sharpness', 'roundness1', 'roundness2', 'npix', 'sky', 'peak', 'flux', 'mag']
+
+    """
+
+    bkg, std_bkg = phot_get_background_statistics(img)
+    daofind = DAOStarFinder(fwhm=fwhm, threshold=sigma_thresh * std_bkg)
+    table_detections = daofind(img - bkg)
+    print("A total of {} sources were detected above a {:.1f}-sigma threshold".format(len(table_detections),
+                                                                                      sigma_thresh))
+    print("")
+
+    return table_detections
+
+
+def phot_display_table(table, format_cols='%.8g', max_rows=-1, max_cols=-1):
+    """
+        Set basic definitions to print an Astropy Table on screen
+
+        Parameters:
+           table (astropy.table.table.QTable): table to print
+           format_cols (str, optional): set formating for all tables for consistent output (default='%.8g')
+           max_rows (int, optional): maximum number of rows to print (default=-1, all)
+           max_cols (int, optional): maximum number of columns to print (default=-1, all)
+
+        Returns:
+           print the table on screen, no variables to return.
+
+    """
+    for cols in table.colnames: table[cols].info.format = format_cols  # for consistent table output
+    print(table.pprint(max_lines=max_rows, max_width=max_cols))
+
+
+def phot_get_fwhm(img, table_sources, source_id=0, pixscale=10, stamp_radius=50, psf_model='moffat', fwhm_best_guess=1.5,
+                  plot_results=False):
+    """
+        Fit the FWHM of a point like source using a Gaussian or Moffat profile
+
+        Parameters:
+           img (numpy.ndarray): input image
+           table_sources (astropy.table.table.QTable): table of sources from find_stars()
+           source_id (int, optional): id of the source to analyse (default=5)
+           pixscale (float): the pixel scale of the image (in arcseconds, default=10)
+           stamp_radius (int, optional): size of the grid to analyze the star (default=50)
+           psf_model (str, optional): 'moffat' or 'gaussian' model (default='moffat')
+           fwhm_best_guess (float, optional): if using a 'gaussian' profile. provide the best guess for the FWHM (in arcseconds)
+           plot_results (bool, optional): print out the results on screen
+
+        Returns:
+           fwhm (astropy.units.quantity.Quantity): the FWHM of the point source (in arcseconds)
+
+    """
+
+    # Convert source_id to integer
+    source_id = int(source_id)
+
+    # Check if source_id is within the range of table_sources
+    if source_id < 0 or source_id >= len(table_sources):
+        raise IndexError(f"source_id {source_id} is out of range for the given table_sources")
+
+    # select a bright (not saturated) source for PSF modelling:
+    isource = table_sources[source_id]
+
+    if plot_results:
+        print("x pos: " + str(isource['xcentroid']))
+        print("y pos: " + str(isource['ycentroid']))
+
+    # show the source in a 100x100 region
+    if plot_results:
+        phot_display(img[int(isource['ycentroid'] - stamp_radius):
+                         int(isource['ycentroid'] + stamp_radius),
+                         int(isource['xcentroid'] - stamp_radius):
+                         int(isource['xcentroid'] + stamp_radius)])
+        plt.show()
+
+    median, std_bkg = phot_get_background_statistics(img)
+
+    # Median bkg subtracted image
+    img_nobkg = img - median
+
+    # turn the 2D profile into a 1D distance array from the center of each pixel to the centroid of the source estimated by DAO Phot:
+    flux_counts = []
+    pixel_distance = []
+
+    x_cen = int(isource['xcentroid'])
+    y_cen = int(isource['ycentroid'])
+
+    # Pixels around detection loop
+    analysis_radius = int(np.round(0.33 * stamp_radius))
+    for x in range(x_cen - analysis_radius, x_cen + analysis_radius):
+        for y in range(y_cen - analysis_radius, y_cen + analysis_radius):
+            flux_counts.append(((img_nobkg[y][x]) / isource['peak']))
+            pixel_distance.append(np.linalg.norm((isource['xcentroid'] - x, isource['ycentroid'] - y)))
+
+    if psf_model == 'gaussian':
+        # Fit the data using a Gaussian
+        model_init = models.Gaussian1D(amplitude=1.0, mean=0, stddev=fwhm_best_guess)
+    elif psf_model == 'moffat':
+        # Fit the data using a Moffat
+        model_init = models.Moffat1D(amplitude=1.0, x_0=0, gamma=2., alpha=3.5)
+    else:
+        raise Exception("Unknown model type: %s. Must be gaussian or moffat." % psf_model)
+
+    fitter = fitting.LevMarLSQFitter()
+    fitted_psf = fitter(model_init, pixel_distance, flux_counts)
+
+    print("Fit value: {:.8g}".format(fitter.fit_info['fvec'].sum()))
+    print("      SNR: {:.8g}".format(np.sqrt(isource['flux'])))
+
+    # FHWM conversion
+    if psf_model == 'gaussian':
+        fwhm_fit = 2.355 * fitted_psf.stddev * pixscale
+    elif psf_model == 'moffat':
+        fwhm_fit = fitted_psf.gamma * 2 * np.sqrt(2 ** (1. / fitted_psf.alpha) - 1) * pixscale
+    else:
+        raise Exception("Unknown model type: %s. Must be gaussian or moffat." % psf_model)
+
+    print(" Fit FWHM: {:.8g}".format(fwhm_fit))
+
+    # Check fitting
+    color = 'green' if fitter.fit_info['fvec'].sum() < 5.0 else 'red'
+
+    # Plot the data with the best-fit model
+    plt.figure()
+    plt.plot(pixel_distance, flux_counts, 'ko')
+    rx = np.linspace(0, int(max(pixel_distance)), int(max(pixel_distance)) * 10)
+    plt.plot(rx,
+             fitted_psf(rx),
+             color=color,
+             lw=3.0,
+             label='SNR: %.2f, Fit: %.2f, FWHM: %.2f"' % (np.sqrt(isource['flux']),
+                                                          fitter.fit_info['fvec'].sum(),
+                                                          fwhm_fit))
+    plt.xlabel('Distance (pixels)')
+    plt.ylabel('Normalized flux (ADU)')
+    plt.title('%s profile fit' % psf_model)
+    plt.legend()
+    plt.show()
+
+    return fwhm_fit
+
+
+def phot_get_background2d(img, bkg_box=34, filter_size=3, plot_results=False):
+    """
+        Estimate a 2d background using an input fits image
+
+        Parameters:
+           img (numpy.ndarray): input image
+           bkg_box (int, optional): The box size along each axis (default=34)
+           filter_size (int, optional): The window size of the 2D median filter to apply to the low-resolution background map. (default=3)
+           plot_results (bool, optional): print out the results on screen
+
+        Returns:
+           fwhm (astropy.units.quantity.Quantity): the FWHM of the point source (in arcseconds)
+
+    """
+
+    sigma_clip = SigmaClip(sigma=3., maxiters=10)
+    bkg_estimator = MedianBackground()
+    bkg = Background2D(img, (bkg_box, bkg_box), filter_size=(filter_size, filter_size),
+                       sigma_clip=sigma_clip, bkg_estimator=bkg_estimator)
+    if plot_results:
+        phot_display(bkg.background)
+        plt.show()
+
+    return bkg.background
+
+
+def phot_do_aperture_phot(img, positions, bkg=None, gain=1., r_in=10, r_out=None):
+    """
+        Perform aperture photometry on an input fits image
+
+        Parameters:
+           img (numpy.ndarray): input image
+           positions (numpy.array): array of (x,y) values for extracting the photometry
+           bkg (numpy.ndarray, optional): input background estimate (default=None)
+           gain (float, optional): ratio of counts to the units of img to calculate the Poisson error of the sources.
+                                   If gain is zero, then the source Poisson noise component will not be included (default=1.)
+           r_in (float, optional): radius of the circle to measure the flux. (in pixels, default=10)
+           r_out (float, optional): the outer radius of the circular annulus (in pixels, default=None)
+
+        Returns:
+           table_phot (astropy.table.table.QTable): table of results containing the following columns:
+               ['id', 'xcenter', 'ycenter', 'aperture_sum', 'aperture_error', 'annulus_sum', 'annulus_error',
+                'aperture_sum_nobkg', 'aperture_sum_nobkg_error', 'SNR']
+    """
+
+    if bkg is not None:
+        img_nobkg = img - bkg
+        # remove nan values from background
+        bkg[np.isnan(bkg)] = 0.0
+        bkg_error = np.sqrt(abs(bkg))
+        phot_error = calc_total_error(img, bkg_error, gain)
+
+        img = img_nobkg
+        # phot_display(phot_error[0:800, 0:800])
+        # plt.show()
+
+    # if no r_out is provided, perform simple aperture photometry
+    aper_in = CircularAperture(positions, r=r_in)
+    if r_out is not None: annulus_apertures = CircularAnnulus(positions, r_in=r_in, r_out=r_out)
+
+    apertures = aper_in
+    if r_out is not None: apertures = [aper_in, annulus_apertures]
+
+    if bkg is None:
+        table_phot = aperture_photometry(img, apertures)
+    else:
+        table_phot = aperture_photometry(img, apertures, error=phot_error)
+
+    # remove background using the annulus
+    if r_out is not None:
+        table_phot.rename_column('aperture_sum_0', 'aperture_sum')
+        table_phot.rename_column('aperture_sum_1', 'annulus_sum')
+        table_phot.rename_column('aperture_sum_err_0', 'aperture_error')
+        table_phot.rename_column('aperture_sum_err_1', 'annulus_error')
+
+        # Use the aperture_sum_1 to estimate the level of background around the source. We need to know the area of the annulus for this estimation:
+        bkg_mean = table_phot['annulus_sum'] / annulus_apertures.area
+        # Now remove the background estimation to all pixels in the aperture:
+        bkg_aper = bkg_mean * aper_in.area
+        flux_nobkg = table_phot['aperture_sum'] - bkg_aper
+
+        err_ap = table_phot['aperture_error'] / aper_in.area
+        err_an = table_phot['annulus_error'] / annulus_apertures.area
+        err_nobkg = np.sqrt(err_ap ** 2 + err_an ** 2) * aper_in.area
+
+        table_phot['aperture_sum_nobkg'] = flux_nobkg
+        table_phot['aperture_sum_nobkg_error'] = err_nobkg
+        # table_phot['aperture_sum_nobkg_error'] = table_phot['aperture_error']
+        table_phot['SNR'] = table_phot['aperture_sum_nobkg'] / table_phot['aperture_sum_nobkg_error']
+    else:
+        table_phot.rename_column('aperture_sum_err', 'aperture_error')
+
+        table_phot['SNR'] = table_phot['aperture_sum'] / table_phot['aperture_error']
+
+    # now plot
+    phot_display(img[0:800, 0:800])
+    if r_out is not None: annulus_apertures.plot(color='purple', lw=2, alpha=1)
+    aper_in.plot(lw=2, ls=':', color='white')
+    plt.show()
+
+    return table_phot
+
+
+def phot_table_xy2sky(table, img_wcs, exptime=1., zp=25.):
+    """
+        Read photometric table from do_phot() and converts (x,y) position and flux values to sky (RA,Dec) and magnitudes
+
+        Parameters:
+           table (astropy.table.table.QTable): table from do_phot()
+           img_wcs (astropy.wcs.wcs.WCS): input WCS from the fits file
+           exptime (float, optional): exposure time of the observations in seconds (default=1.)
+           zp (float, optional): the photometric zero-point offset to be added to the instrumental magnitudes (default=25.)
+
+        Returns:
+           table_out (astropy.table.table.QTable): table of results containing the following columns:
+               ['id', 'ra', 'dec', 'm', 'e_m', 'SNR']
+
+    """
+
+    # prepare the output list
+    # convert (x,y) to (RA,Dec)
+    coords_xy = np.array([table['xcenter'], table['ycenter']]).T
+    coords_wcs = img_wcs.all_pix2world(coords_xy, 0)
+
+    table_out = table.copy()
+    table_out['ra'], table_out['dec'] = coords_wcs[:, 0], coords_wcs[:, 1]
+
+    # if errors are provided, run:
+    if 'aperture_sum_nobkg_error' in table_out.colnames:
+        table_out['m'] = zp - 2.5 * np.log10(table_phot['aperture_sum_nobkg'] / exptime)
+        table_out['e_m'] = np.sqrt(
+            ((2.5 / np.log(10)) * table_phot['aperture_sum_nobkg_error'] / table_phot['aperture_sum_nobkg']) ** 2)
+        table_out.remove_columns(
+            ['xcenter', 'ycenter', 'aperture_sum', 'aperture_error', 'annulus_sum', 'annulus_error',
+             'aperture_sum_nobkg', 'aperture_sum_nobkg_error'])
+
+    else:
+        table_out['m'] = zp - 2.5 * np.log10(table_phot['aperture_sum'] / exptime)
+        table_out['e_m'] = np.sqrt(
+            ((2.5 / np.log(10)) * table_phot['aperture_error'] / table_phot['aperture_sum']) ** 2)
+        table_out.remove_columns(['xcenter', 'ycenter', 'aperture_sum', 'aperture_error'])
+
+    table_out = table_out['id', 'ra', 'dec', 'm', 'e_m', 'SNR']
+    return table_out
 
 def ra_dec_to_deg(right_ascension, declination):
     """Converts right ascension and declination to degrees
