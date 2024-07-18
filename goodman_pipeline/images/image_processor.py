@@ -2,18 +2,12 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import ccdproc
-import datetime
-import glob
 import logging
-import numpy as np
-import matplotlib.pyplot as plt
 import random
-import re
 import os
 
 from astropy import units as u
 from astropy.io import fits
-from ccdproc import CCDData
 from ..core import (astroscrappy_lacosmic,
                     call_cosmic_rejection,
                     combine_data,
@@ -29,8 +23,6 @@ from ..core import (astroscrappy_lacosmic,
                     normalize_master_flat,
                     read_fits,
                     write_fits)
-
-from ..core import SaturationValues, SpectroscopicMode
 
 log = logging.getLogger(__name__)
 
@@ -163,7 +155,7 @@ class ImageProcessor(object):
                 list of science images that where observed at the same pointing
                 and time. It also contains a set of selected keywords from the
                 image's header.
-            save_all (bool): If True the pipeline will save all the intermadiate
+            save_all (bool): If True the pipeline will save all the intermediate
                 files such as after overscan correction or bias corrected and
                 etc.
 
@@ -244,7 +236,7 @@ class ImageProcessor(object):
                                                  random_image)
 
                 # read the random chosen file
-                ccd = CCDData.read(random_image_full, unit=u.adu)
+                ccd = ccdproc.CCDData.read(random_image_full, unit=u.adu)
 
                 if not self.args.ignore_flats:
                     # define the master flat name
@@ -311,15 +303,17 @@ class ImageProcessor(object):
                 ccd = read_fits(image_full_path, technique=self.technique)
 
                 # apply overscan
-                ccd = image_overscan(ccd, overscan_region=self.overscan_region)
-                self.out_prefix += 'o_'
+                if self.args.ignore_bias:
+                    ccd = image_overscan(ccd, overscan_region=self.overscan_region)
+                    self.out_prefix += 'o'
 
-                if save_all:
-                    full_path = os.path.join(self.args.red_path,
-                                             self.out_prefix + science_image)
+                    if save_all:
+                        full_path = os.path.join(
+                            self.args.red_path,
+                            f"{self.out_prefix}_{science_image}")
 
-                    # ccd.write(full_path, clobber=True)
-                    write_fits(ccd=ccd, full_path=full_path)
+                        # ccd.write(full_path, clobber=True)
+                        write_fits(ccd=ccd, full_path=full_path)
 
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match
@@ -338,7 +332,7 @@ class ImageProcessor(object):
                     if save_all:
                         full_path = os.path.join(
                             self.args.red_path,
-                            self.out_prefix + science_image)
+                            f"{self.out_prefix}_{science_image}")
 
                         # ccd.write(full_path, clobber=True)
                         write_fits(ccd=ccd, full_path=full_path)
@@ -353,16 +347,12 @@ class ImageProcessor(object):
                     if save_all:
                         full_path = os.path.join(
                             self.args.red_path,
-                            self.out_prefix + science_image)
+                            f"{self.out_prefix}_{science_image}")
 
-                        # ccd.write(full_path, clobber=True)
                         write_fits(ccd=ccd, full_path=full_path)
 
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
-                    print(ccd.data.shape)
-                    print(master_bias.data.shape)
-
                     ccd = ccdproc.subtract_bias(ccd=ccd,
                                                 master=master_bias,
                                                 add_keyword=False)
@@ -376,7 +366,7 @@ class ImageProcessor(object):
                     if save_all:
                         full_path = os.path.join(
                             self.args.red_path,
-                            self.out_prefix + science_image)
+                            f"{self.out_prefix}_{science_image}")
 
                         # ccd.write(full_path, clobber=True)
                         write_fits(ccd=ccd, full_path=full_path)
@@ -415,7 +405,7 @@ class ImageProcessor(object):
                     if save_all:
                         full_path = os.path.join(
                             self.args.red_path,
-                            self.out_prefix + science_image)
+                            f"{self.out_prefix}_{science_image}")
 
                         # ccd.write(full_path, clobber=True)
                         write_fits(ccd=ccd, full_path=full_path)
@@ -452,16 +442,10 @@ class ImageProcessor(object):
                     log.info("Combining {:d} OBJECT images"
                              "".format(len(all_object_image)))
 
-                    # object_group = object_comp_group[(
-                    #     (object_comp_group.obstype == "OBJECT") |
-                    #     (object_comp_group.obstype == "SPECTRUM"))]
-
-                    # print(object_group, len(all_object_image))
-
-                    combined_data = combine_data(all_object_image,
-                                                 dest_path=self.args.red_path,
-                                                 prefix=self.out_prefix,
-                                                 save=True)
+                    combine_data(all_object_image,
+                                 dest_path=self.args.red_path,
+                                 prefix=self.out_prefix,
+                                 save=True)
 
                 elif len(all_object_image) == 1:
                     # write_fits(all_object_image[0])
@@ -513,7 +497,8 @@ class ImageProcessor(object):
                             trim_section=self.trim_section,
                             master_bias_name=self.master_bias_name,
                             new_master_flat_name=master_flat_name,
-                            saturation_threshold=self.args.saturation_threshold)
+                            saturation_threshold=self.args.saturation_threshold,
+                            ignore_bias=self.args.ignore_bias)
         else:
             log.error('There is no valid datatype in this group')
 
@@ -530,7 +515,7 @@ class ImageProcessor(object):
         # pick a random image in order to get a header
         random_image = random.choice(imaging_group.file.tolist())
         path_random_image = os.path.join(self.args.raw_path, random_image)
-        sample_file = CCDData.read(path_random_image, unit=u.adu)
+        sample_file = ccdproc.CCDData.read(path_random_image, unit=u.adu)
 
         master_flat_name = name_master_flats(
             header=sample_file.header,
@@ -561,7 +546,7 @@ class ImageProcessor(object):
                 ccd = image_trim(ccd=ccd,
                                  trim_section=self.trim_section,
                                  trim_type='trimsec')
-                self.out_prefix = 't_'
+                self.out_prefix = 't'
                 if not self.args.ignore_bias:
 
                     ccd = ccdproc.subtract_bias(ccd,
@@ -596,7 +581,7 @@ class ImageProcessor(object):
                     print('Clean Cosmic ' + str(self.args.clean_cosmic))
 
                 final_name = os.path.join(self.args.red_path,
-                                          self.out_prefix + image_file)
+                                          f"{self.out_prefix}_{image_file}")
                 # ccd.write(final_name, clobber=True)
                 write_fits(ccd=ccd, full_path=final_name)
                 log.info('Created science file: {:s}'.format(final_name))

@@ -6,7 +6,6 @@ v1.0.0
 import logging
 import requests
 import os
-import re
 
 from distutils.version import LooseVersion
 
@@ -34,7 +33,7 @@ def get_last(github_api_token='GITHUB_ACCESS_TOKEN'):
     except KeyError:
         headers = {}
 
-    response = requests.get(API_URL, headers=headers)
+    response = requests.get(API_URL, headers=headers, timeout=3)
 
     if response.status_code != 200:  # pragma: no cover
         raise ConnectionRefusedError('Number of tests reached maximum for now.')

@@ -404,10 +404,10 @@ class CosmicRayRejectionTest(TestCase):
                                                 method='default',
                                                 save=False)
         self.assertAlmostEqual(initial_value, ccd.data[50, 50])
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'DCR')
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('DCR', ccd.header['GSP_COSM'])
 
         self.assertTrue(os.path.isfile('dcr.par'))
 
@@ -451,11 +451,11 @@ class CosmicRayRejectionTest(TestCase):
                                                 method='default',
                                                 save=True)
         self.assertAlmostEqual(initial_value, ccd.data[50, 50])
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'LACosmic')
-        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('LACosmic', ccd.header['GSP_COSM'])
+        self.assertTrue(os.path.isfile('new_prefix_cr_test.fits'))
 
     def test_call_cosmic_rejection_default_3x3(self):
         self.ccd.header.set('CCDSUM', value='3 3')
@@ -472,12 +472,12 @@ class CosmicRayRejectionTest(TestCase):
                                                 method='default',
                                                 save=True)
         self.assertAlmostEqual(initial_value, ccd.data[50, 50])
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'LACosmic')
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('LACosmic', ccd.header['GSP_COSM'])
 
-        self.assertTrue(os.path.isfile('new_prefixcr_test.fits'))
+        self.assertTrue(os.path.isfile('new_prefix_cr_test.fits'))
 
     def test_call_cosmic_rejection_none(self):
         prefix = 'new_'
@@ -489,11 +489,11 @@ class CosmicRayRejectionTest(TestCase):
                                                 prefix=prefix,
                                                 method='none',
                                                 save=True)
-        self.assertEqual(out_prefix, self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'none')
-        self.assertTrue(os.path.isfile('prefixcr_test.fits'))
+        self.assertEqual(self.out_prefix, out_prefix)
+        self.assertEqual(f"{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('none', ccd.header['GSP_COSM'])
+        self.assertTrue(os.path.isfile('prefix_cr_test.fits'))
 
     def test_call_cosmic_rejection_comp_lamp(self):
         self.ccd.header.set('OBSTYPE', value='COMP')
@@ -506,10 +506,26 @@ class CosmicRayRejectionTest(TestCase):
                                                 prefix=prefix,
                                                 method='lacosmic',
                                                 save=True)
-        self.assertEqual(out_prefix, prefix + self.out_prefix)
-        self.assertEqual(ccd.header['GSP_FNAM'],
-                         prefix + self.out_prefix + self.file_name)
-        self.assertEqual(ccd.header['GSP_COSM'], 'none')
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('none', ccd.header['GSP_COSM'])
+
+    def test_call_cosmic_rejection_arc_lamp(self):
+        self.ccd.header.set('OBSTYPE', value='ARC')
+        prefix = 'new_'
+        ccd, out_prefix = call_cosmic_rejection(ccd=self.ccd,
+                                                image_name=self.file_name,
+                                                out_prefix=self.out_prefix,
+                                                red_path=self.red_path,
+                                                keep_files=True,
+                                                prefix=prefix,
+                                                method='dcr',
+                                                save=True)
+        self.assertEqual(prefix + self.out_prefix, out_prefix)
+        self.assertEqual(f"{prefix}{self.out_prefix}_{self.file_name}",
+                         ccd.header['GSP_FNAM'])
+        self.assertEqual('none', ccd.header['GSP_COSM'])
 
     def test_call_cosmic_rejection_not_implemented_error(self):
         prefix = 'new_'
@@ -527,9 +543,9 @@ class CosmicRayRejectionTest(TestCase):
     def tearDown(self):
         files_to_delete = ['dcr.par',
                            'goodman_log.txt',
-                           'cosmic_test.fits',
-                           'new_prefixcr_test.fits',
-                           'prefixcr_test.fits',
+                           'cosmic_cr_test.fits',
+                           'new_prefix_cr_test.fits',
+                           'prefix_cr_test.fits',
                            'crmask_cr_test.fits']
 
         for _file in files_to_delete:
@@ -821,6 +837,7 @@ class ExtractionTest(TestCase):
         self.fake_image = CCDData(data=np.ones((100, 100)),
                                   meta=fits.Header(),
                                   unit='adu')
+        self.fake_image.mask = np.zeros((100, 100), dtype=bool)
         self.fake_image.header.set('NAXIS', value=2)
         self.fake_image.header.set('NAXIS1', value=100)
         self.fake_image.header.set('NAXIS2', value=100)
@@ -922,7 +939,7 @@ class ExtractionTest(TestCase):
         np.testing.assert_array_almost_equal(extracted, self.reference_result_moffat)
 
     def test_extraction_not_implemented_model(self):
-        spatial_profile = models.BlackBody1D()
+        spatial_profile = models.BlackBody()
         self.assertRaises(NotImplementedError, extraction, ccd=self.fake_image,
                           target_trace=self.target_trace,
                           spatial_profile=spatial_profile,
@@ -1259,12 +1276,12 @@ class GetSpectralCharacteristicsTest(TestCase):
 
 class InterpolationTest(TestCase):
 
-    def test_interpolate(self):
+    def test_interpolate_spectrum(self):
         initial_array = np.sin(np.arange(0, 3 * np.pi))
         initial_length = len(initial_array)
 
-        new_x_axis, new_array = interpolate(spectrum=initial_array,
-                                            interpolation_size=100)
+        new_x_axis, new_array = interpolate_spectrum(spectrum=initial_array,
+                                                     interpolation_size=100)
 
         self.assertEqual(len(new_x_axis), len(new_array))
         self.assertEqual(len(new_array), initial_length * 100)
@@ -1386,9 +1403,6 @@ class MasterFlatTest(TestCase):
         self.assertFalse(os.path.isfile(norm_flat))
 
     def test_get_best_flat(self):
-        print(self.flat_name_base)
-        print(os.path.dirname(__file__))
-
         master_flat, master_flat_name = get_best_flat(
             flat_name=self.flat_name_base,
             path=self.flat_path)
@@ -1405,6 +1419,14 @@ class MasterFlatTest(TestCase):
             path=self.flat_path)
         self.assertIsNone(master_flat)
         self.assertIsNone(master_flat_name)
+
+    def test_get_best_flat_relative_path(self):
+        master_flat, master_flat_name = get_best_flat(
+            flat_name=os.path.join(self.flat_path,self.flat_name_base),
+            path=self.flat_path)
+        self.assertIsInstance(master_flat, CCDData)
+        self.assertEqual(os.path.basename(master_flat_name),
+                         self.reference_flat_name)
 
     def test_normalize_master_flat(self):
         methods = ['mean', 'simple', 'full']
@@ -1426,8 +1448,6 @@ class NameMasterFlatsTest(TestCase):
 
     def setUp(self):
         self.reduced_data = os.getcwd()
-
-        #reference
         date = '2019-08-28'
         self.twilight_start_evening = '2019-08-27T23:45:00.022'
         self.twilight_end_morning = '2019-08-28T09:43:20.023'
@@ -1463,7 +1483,7 @@ class NameMasterFlatsTest(TestCase):
 
     def test_name_master_flats_spectroscopy_no_grating_no_filter2(self):
 
-        expected_name = 'master_flat_TestSubject_no_grating_1.0_sky.fits'
+        expected_name = 'master_flat_TestSubject_NO_GRATING_1.0_sky.fits'
 
         self.header.set('GRATING', value='<NO GRATING>')
         self.header.set('DATE-OBS', value='2019-08-27T23:40:00.022')
@@ -2060,24 +2080,15 @@ class SlitTrimTest(TestCase):
     def test_get_slit_trim_section__slit_within_data(self):
 
         slit_trim = get_slit_trim_section(master_flat=self.fake_image)
-        # print(fake_image.data[:,5])
-        # print(slit_trim)
         self.assertEqual(slit_trim, self.reference_slit_trim)
 
     def test_get_slit_trim_section__slit_full_data(self):
         self.fake_image.data[:, :] = 100
 
         slit_trim = get_slit_trim_section(master_flat=self.fake_image)
-        # print(fake_image.data[:,5])
         self.assertEqual(slit_trim, '[1:100,1:100]')
 
     def test_image_trim_slit(self):
-        # # define
-        # slit_low_limit = 5
-        # slit_high_limit = 95
-        #
-        # slit_trim = '[1:100,{:d}:{:d}]'.format(slit_low_limit + 10 + 1,
-        #                                        slit_high_limit - 10)
         self.fake_image = image_trim(ccd=self.fake_image,
                                      trim_section=self.reference_slit_trim,
                                      trim_type='slit')
@@ -2088,8 +2099,6 @@ class SlitTrimTest(TestCase):
 
         self.assertEqual(self.fake_image.header['GSP_SLIT'],
                          self.reference_slit_trim)
-
-
 
 
 class SpectroscopicModeTest(TestCase):
@@ -2118,7 +2127,7 @@ class SpectroscopicModeTest(TestCase):
 
         self.assertEqual(mode_m2_keywords, 'm2')
 
-    def test_get_mode(self):
+    def test_get_modes(self):
         mode_m2 = self.sm.get_mode(grating='400',
                                    camera_targ='16.1',
                                    grating_targ='7.5',
@@ -2137,6 +2146,39 @@ class SpectroscopicModeTest(TestCase):
                                             grating_targ='7.5',
                                             blocking_filter='GG455')
         self.assertEqual(mode_custom_2100, 'Custom_1334nm')
+
+    def test_get_mode_400_m1_from_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='400_SYZY')
+        header.set('CAM_TARG', value='11.6')
+        header.set('GRT_TARG', value='5.8')
+        header.set('FILTER2', value='NO_FILTER')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm1')
+
+    def test_get_mode_400_m1_from_old_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='SYZY_400')
+        header.set('CAM_TARG', value='11.6')
+        header.set('GRT_TARG', value='5.8')
+        header.set('FILTER2', value='<NO FILTER>')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm1')
+
+    def test_get_mode_1200_m3_from_header(self):
+        header = fits.Header()
+        header.set('GRATING', value='1200')
+        header.set('CAM_TARG', value='39.4')
+        header.set('GRT_TARG', value='20.2')
+        header.set('FILTER2', value='NO_FILTER')
+
+        spectroscopic_mode = self.sm(header=header)
+
+        self.assertEqual(spectroscopic_mode, 'm3')
 
     def test_get_cam_grt_targ_angle(self):
 
@@ -2182,15 +2224,6 @@ class TargetsTest(TestCase):
             self.ccd.data[:, i] *= profile_sum(range(self.ccd.data.shape[0]))
             self.ccd2.data[:, i] *= self.profile_3(
                 range(self.ccd2.data.shape[0]))
-            # this add noise to test the removal of masked values
-            # self.ccd.data[
-            #     random.randrange(self.ccd.data.shape[0]),
-            #     random.randrange(self.ccd.data.shape[1])] *= 300
-            # self.ccd2.data[
-            #     random.randrange(self.ccd2.data.shape[0]),
-            #     random.randrange(self.ccd2.data.shape[1])] *= 300
-
-
 
     def tearDown(self):
         del self.ccd
@@ -2283,7 +2316,7 @@ class TargetsTest(TestCase):
         self.assertRaises(NotImplementedError,
                           trace,
                           self.ccd2,
-                          models.BlackBody1D(),
+                          models.BlackBody(),
                           trace_model,
                           fitter,
                           5)
@@ -2332,4 +2365,3 @@ class ValidateCcdRegionTest(TestCase):
 
     def test_validate_ccd_region_invalid(self):
         self.assertRaises(SyntaxError, validate_ccd_region, "10:10:10]")
-

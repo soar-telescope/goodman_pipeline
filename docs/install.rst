@@ -39,8 +39,9 @@ This installation was tested on MacOS High Sierra.
 
 2. Download Anaconda or Miniconda
 
-  ``curl https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh --output miniconda.sh``
+  ``curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh --output miniconda.sh``
 
+If you have a different processor like intel, you can search miniconda installer url for your system.
 
 Common Steps
 ************

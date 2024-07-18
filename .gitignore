@@ -7,10 +7,12 @@ __pycache__/*
 .ipynb_checkpoints/*
 files.txt
 docs/_build/*
-goodman_pipeline/data/dcr-source/dcr
-goodman_pipeline/data/dcr-source/*.o
+goodman_pipeline/data/dcr_source/dcr
+goodman_pipeline/data/dcr_source/*.o
 /dev-tools/
-.tox/*
-.tmp/*
-.eggs/*
 .cache/*
+.eggs/*
+.tmp/*
+.tox/*
+goodman_pipeline.egg-info/*
+*.DS_Store

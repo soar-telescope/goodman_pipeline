@@ -12,7 +12,7 @@ https://github.com/pypa/sampleproject
 import os
 
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
+from setuptools import setup
 
 # To use a consistent encoding
 from codecs import open
@@ -94,8 +94,8 @@ setup(
            u'Cesar Briceño, '
            u'David Sanmartin, ',
 
-    author_email='storres@ctio.noao.edu, bquint@ctio.noao.edu, '
-                 'cbriceno@ctio.noao.edu',
+    author_email='simon.torres@noirlab.edu, bruno.quint@noirlab.edu, '
+                 'cesar.briceno@noirlab.edu',
 
     # Choose your license
     license=LICENSE,
@@ -146,8 +146,8 @@ setup(
     package_data={'goodman_pipeline': ['data/params/dcr.par',
                                        'data/params/*.json_output',
                                        'data/ref_comp/*fits',
-                                       'data/dcr-source/README.md',
-                                       'data/dcr-source/dcr/*',
+                                       'data/dcr_source/README.md',
+                                       'data/dcr_source/dcr/*',
                                        'data/test_data/master_flat/*',
                                        'data/test_data/wcs_data/*']},
 
@@ -157,5 +157,3 @@ setup(
              'goodman_pipeline/scripts/redspec', ],
 
    )
-
-

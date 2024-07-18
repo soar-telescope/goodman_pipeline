@@ -1,6 +1,67 @@
 Change History
 ##############
 
+.. _v1.3.8:
+
+V1.3.8 Not Released
+^^^^^^^^^^^^^^^^^^^
+
+- Documentation update
+- Fix DCR bug that was present when called from CLI.
+- Fixed Bug when using relative path for selecting master flat
+- Fixed Bug when dcr didn't processed properly when comparison lamps have OBSTYPE = ARC
+
+
+.. _v1.3.7:
+
+V1.3.7 17-08-2023
+^^^^^^^^^^^^^^^^^
+
+- Updated documentation theme to allow dark mode
+- Removed python 3.6 and 3.8 from testing and added 3.9 and 3.10
+- Unfixed numpy version
+- Removed testing with conda on github action because it only added complexity
+- Added 3 seconds timeout to request to github to validate version and check if running version is latest
+- Added correct exception handler in case the http request timed out.
+
+
+.. _v1.3.6:
+
+V1.3.6 25-03-2022
+^^^^^^^^^^^^^^^^^
+
+- Updated HgArNe reference lamps for 400M1 and 600MID GG395
+- Fixed deprecation warning  for numpy.float conversion
+
+.. _v1.3.5:
+
+V1.3.5 24-11-2021
+^^^^^^^^^^^^^^^^^
+
+- Created `--target-min-width` and `--target-max-width` flags to allow extraction of extended sources.
+- Replaced coveralls with codecov for code coverage.
+- Documentation improvements and updates.
+- Fixed issue with extracted spectrum that where masked in 2D.
+- Code style improvements.
+
+
+.. _v1.3.4:
+
+V1.3.4 11-05-2021
+^^^^^^^^^^^^^^^^^
+
+- Updated default search pattern for `redspec`
+- Fixed branch name in Github Actions
+
+
+.. _v1.3.3:
+
+V1.3.3 19-04-2021
+^^^^^^^^^^^^^^^^^
+
+- Fixed bug that caused overscan and bias correction happen in the same image
+  resulting in double bias level subtraction.
+
 .. _v1.3.2:
 
 V1.3.2 09-10-2020
@@ -18,8 +79,8 @@ V1.3.1 23-09-2020
 
 - Documentation improvements:
 
-  + More docstrings
-  + New `File Suffixes`_ section
+  + More docstrings.
+  + New :ref:`file-suffixes` section.
 
 - Added more test code.
 - Cleaned .travis.yml and created special dcr installation script for travis.

@@ -12,15 +12,19 @@
 Welcome to the Goodman HTS Pipeline Documentation
 =================================================
 
-.. image:: https://github.com/soar-telescope/goodman_pipeline/workflows/Goodman%20Pipeline/badge.svg?branch=master
+.. image:: https://github.com/soar-telescope/goodman_pipeline/actions/workflows/python-package.yml/badge.svg
     :alt: Goodman Pipeline
-.. image:: https://coveralls.io/repos/github/soar-telescope/goodman_pipeline/badge.svg?branch=master
-    :target: https://coveralls.io/github/soar-telescope/goodman_pipeline?branch=master
+.. image:: https://codecov.io/gh/soar-telescope/goodman_pipeline/branch/main/graph/badge.svg
+    :target: https://codecov.io/gh/soar-telescope/goodman_pipeline
 .. image:: https://readthedocs.org/projects/goodman/badge/?version=latest
     :target: http://goodman.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
+.. image:: https://img.shields.io/pypi/v/goodman_pipeline.svg?style=flat
+    :target: https://pypi.org/project/goodman-pipeline/
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
     :target: http://www.astropy.org/
+
+
 
 This is the User Manual for the *Goodman Spectroscopic Data Reduction
 Pipeline*. It provides an overview of the pipeline's main features,

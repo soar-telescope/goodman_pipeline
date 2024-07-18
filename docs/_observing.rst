@@ -49,7 +49,8 @@ Observing for Radial Velocity
 
 Radial velocity measurements are possible with the |goodman HTS| but you have
 to be careful. A very detailed description of the procedures and what you can
-expect was prepared and is available  `HERE <http://www.ctio.noao.edu/soar/sites/default/files/GOODMAN/goodman_rv.pdf>`_.
+expect was prepared and is available  `here <https://noirlab.edu/science/sites/default/files/media/archives/documents/scidoc0489.pdf>`_
+and `here <https://noirlab.edu/science/sites/default/files/media/archives/documents/scidoc0490.pdf>`_ .
 
 Please read it carefully so you don't find any surprises when trying to reduce
 your data.

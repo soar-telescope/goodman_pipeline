@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SOURCE_DIR=$(pwd)/goodman_pipeline/data/dcr-source/dcr
+SOURCE_DIR=$(pwd)/goodman_pipeline/data/dcr_source/dcr
 
 
 
@@ -10,8 +10,8 @@ then
 	echo 'You do not have any virtual environment activated'
 
 else
-	ENV_NAME=$(conda info | grep 'active environment' | sed 's/\<active environment\>//g' | sed "s/[: ]//g")
-	ENV_PATH=$(conda info | grep 'active env location' | sed 's/\<active env location\>//g' | sed "s/[: ]//g")
+	ENV_NAME=$(conda info | grep 'active environment' | sed 's/active environment//g' | sed "s/[: ]//g")
+	ENV_PATH=$(conda info | grep 'active env location' | sed 's/active env location//g' | sed "s/[: ]//g")
 	echo "Using Virtual Environment: " $ENV_NAME
 	echo "Environment path information: " $ENV_PATH
 	if [ -d $SOURCE_DIR ]

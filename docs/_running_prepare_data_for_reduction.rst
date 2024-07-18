@@ -25,6 +25,10 @@ need to change the following keywords.
   ``SYZY_400`` becomes ``400_SYZY``.
 - ``WAVMODE``: Replace whitespace with underscore and all letters are capitalized.
   For instance. ``400 m1`` becomes ``400_M1``.
+- ``INSTRUME``: Instead of using the classical keywords 'Goodman Spectro' and
+  'Goodman Imaging', the AEON standard keywords ``ghts_red`` and ``ghts_blue``
+  will be used for spectroscopy, and ``ghts_red_imager`` and ``ghts_blue_imager``
+  for imaging. This is an exception of the upper case rule.
 
 .. note::
 
