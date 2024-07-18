@@ -93,8 +93,8 @@ setup(
            u'Cesar Briceño, '
            u'David Sanmartin, ',
 
-    author_email='storres@ctio.noao.edu, bquint@ctio.noao.edu, '
-                 'cbriceno@ctio.noao.edu',
+    author_email='simon.torres@noirlab.edu, bruno.quint@noirlab.edu, '
+                 'cesar.briceno@noirlab.edu',
 
     # Choose your license
     license=LICENSE,
@@ -156,5 +156,3 @@ setup(
              'goodman_pipeline/scripts/redspec', ],
 
    )
-
-
