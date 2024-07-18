@@ -20,7 +20,7 @@ jobs:
     - name: Build a binary wheel and source tarball
       run: python3 -m build
     - name: Upload artifacts
-      uses: actions/upload-artifacts@v4
+      uses: actions/upload-artifact@v4
       with:
         name: release-dists
         path: dist/
