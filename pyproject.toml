@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=64", "setuptools_scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goodman_pipeline"
+dynamic = ["version"]
+description = "Pipeline for reducing Goodman HTS data."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+keywords = [
+  "soar",
+  "pipelines",
+  "astronomy",
+  "images",
+  "spectroscopy"
+]
+
+authors = [
+  {name = "Simón Torres", email = "simon.torres@noirlab.edu"},
+  {name = "Bruno Quint", email = "bruno.quint@noirlab.edu"},
+  {name = "César Briceño", email = "cesar.briceno@noirlab.edu"},
+  {name = "David Sanmartim", email = "dsanmartim@lsst.org"}
+]
+maintainers = [
+  {name = "Simón Torres", email = "simon.torres@noirlab.edu"}
+]
+
+classifiers = [
+  'Development Status :: 5 - Production/Stable',
+  'Environment :: Console',
+  'Intended Audience :: Developers',
+  'Intended Audience :: Education',
+  'Intended Audience :: Science/Research',
+  'License :: OSI Approved :: BSD License',
+  'Programming Language :: Python :: 3.8',
+  'Programming Language :: Python :: 3.9',
+  'Programming Language :: Python :: 3.10', 
+  'Programming Language :: Python :: 3.11', 
+  'Programming Language :: Python :: 3.12', 
+  'Natural Language :: English',  
+  'Operating System :: POSIX :: Linux',
+  'Operating System :: POSIX :: Other',
+  'Operating System :: MacOS :: MacOS X',  
+  'Topic :: Scientific/Engineering :: Astronomy',
+  'Topic :: Scientific/Engineering :: Information Analysis',
+  'Topic :: Software Development :: Libraries :: Python Modules',
+]
+
+dependencies = [
+  "numpy",
+  "pandas",
+  "matplotlib",
+  "scipy",
+  "cython",
+  "astropy",
+  "ccdproc",
+  "astroplan"
+]
+
+
+[project.urls]
+"Homepage" = "https://soardocs.readthedocs.io/projects/goodman-pipeline/en/latest/"
+"Bug Reports" = "https://github.com/soar-telescope/goodman_pipeline/issues"
+"Source" = "https://github.com/soar-telescope/goodman_pipeline"
+
+[project.scripts]
+redccd = "goodman_pipeline.scripts.redccd"
+redspec = "goodman_pipeline.scripts.redspec"
+
+
+[tool.setuptools]
+[tool.setuptools.packages.find]
+where = ["goodman_pipeline"]
+
+[tool.setuptools.package-data]
+goodman_pipeline = [
+  'data/params/dcr.par',
+  'data/params/*.json_output',
+  'data/ref_comp/*fits',
+  'data/dcr_source/README.md',
+  'data/dcr_source/dcr/*',
+  'data/test_data/master_flat/*',
+  'data/test_data/wcs_data/*'
+]
+
+
+[tool.setuptools_scm]
+version_file = "goodman_pipeline/version.py"
