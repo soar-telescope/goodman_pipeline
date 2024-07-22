@@ -29,13 +29,14 @@ from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
+from importlib.metadata import version
 from matplotlib import pyplot as plt
 from scipy import signal, interpolate
 from threading import Timer
 
 from . import check_version
 
-__version__ = __import__('goodman_pipeline').__version__
+__version__ = version('goodman_pipeline')
 
 log = logging.getLogger(__name__)
 

@@ -3,12 +3,13 @@ __author__ = 'Bruno Quint'
 
 import os
 import unittest
-
 import requests
+
+from importlib.metadata import version
 
 from goodman_pipeline.core import check_version
 
-__version__ = __import__('goodman_pipeline').__version__
+__version__ = version('goodman_pipeline')
 
 
 class TestVersionChecker(unittest.TestCase):

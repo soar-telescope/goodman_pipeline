@@ -14,6 +14,17 @@ Simon Torres 2016-06-28
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import sys
+import os
+import argparse
+import astropy.units as u
+import logging
+from ccdproc import CCDData
+
+import matplotlib.pyplot as plt
+import warnings
+from importlib.metadata import version
+
 from .wavelength import WavelengthCalibration
 from ..core import (classify_spectroscopic_data,
                     search_comp_group,
@@ -28,21 +39,11 @@ from ..core import (NoMatchFound,
                     NoTargetException,
                     ReferenceData)
 
-import sys
-import os
-import argparse
-import astropy.units as u
-import logging
-from ccdproc import CCDData
-
-import matplotlib.pyplot as plt
-import warnings
-
 SHOW_PLOTS = True
 
 warnings.filterwarnings('ignore')
 
-__version__ = __import__('goodman_pipeline').__version__
+__version__ = version('goodman_pipeline')
 
 
 def get_args(arguments=None):
