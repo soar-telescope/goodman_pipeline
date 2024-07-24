@@ -33,6 +33,11 @@ jobs:
             python: 3.9
             toxenv: py39-test
 
+          - name: Python 3.8
+            os: ubuntu-latest
+            python: 3.8
+            toxenv: py38-test
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
