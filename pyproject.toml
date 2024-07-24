@@ -49,16 +49,22 @@ classifiers = [
 ]
 
 dependencies = [
+  "astropy",
+  "astroplan",
+  "ccdproc",
+  "cython",
+  "matplotlib",
   "numpy",
   "pandas",
-  "matplotlib",
+  "requests",
   "scipy",
-  "cython",
-  "astropy",
-  "ccdproc",
-  "astroplan"
+
 ]
 
+[project.optional-dependencies]
+test = [
+  "mock"
+]
 
 [project.urls]
 "Homepage" = "https://soardocs.readthedocs.io/projects/goodman-pipeline/en/latest/"

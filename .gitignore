@@ -16,4 +16,5 @@ goodman_pipeline/data/dcr_source/*.o
 .tox/*
 */goodman_pipeline.egg-info/*
 goodman_pipeline/version.py
+coverage.xml
 *.DS_Store
