@@ -66,8 +66,8 @@ dependencies = [
 "Source" = "https://github.com/soar-telescope/goodman_pipeline"
 
 [project.scripts]
-redccd = "goodman_pipeline.scripts.redccd"
-redspec = "goodman_pipeline.scripts.redspec"
+redccd = "goodman_pipeline.scripts.redccd:__main__"
+redspec = "goodman_pipeline.scripts.redspec:__main__"
 
 
 [tool.setuptools]

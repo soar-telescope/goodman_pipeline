@@ -16,8 +16,8 @@ class DataClassifierTests(TestCase):
 
     def setUp(self):
         self.raw_path = os.path.join(
-            os.getcwd(),
-            'goodman_pipeline/data/test_data/classify-data')
+            os.path.dirname(__file__),
+            '../../data/test_data/classify-data')
 
         if not os.path.isdir(self.raw_path):
             os.mkdir(self.raw_path)
