@@ -7,7 +7,7 @@ import requests
 
 from importlib.metadata import version
 
-from goodman_pipeline.core import check_version
+from ..core import check_version
 
 __version__ = version('goodman_pipeline')
 
