@@ -18,16 +18,16 @@ jobs:
       matrix:
         include:
 
-          - name: Python 3.12
-            os: ubuntu-latest
-            python: '3.12'
-            toxenv: py312-test
-          
           - name: Python 3.12 with Coverage
             os: ubuntu-latest
             python: '3.12'
             toxenv: py312-test-cov
 
+          - name: Python 3.12
+            os: ubuntu-latest
+            python: '3.12'
+            toxenv: py312-test
+          
           - name: Python 3.10
             os: ubuntu-latest
             python: '3.10'
@@ -78,7 +78,7 @@ jobs:
         tox ${{ matrix.toxargs }} -e ${{ matrix.toxenv }} -- ${{ matrix.toxposargs }}
     - name: Upload coverage to artifacts
       if: ${{ contains(matrix.toxenv,'-cov') }}
-      uses: actions/upload-artifacts@v4
+      uses: actions/upload-artifact@v4
       with:
         name: coverage_${{ matrix.toxenv }}.xml
         path: coverage.xml
@@ -92,7 +92,7 @@ jobs:
     name: Upload Coverage
     steps:
     - name: Download coverage artifacts
-      uses: actions/download-artifacts@v4
+      uses: actions/download-artifact@v4
       with:
         path: coverage
         pattern: coverage_*
