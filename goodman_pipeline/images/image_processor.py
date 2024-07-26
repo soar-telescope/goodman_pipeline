@@ -587,7 +587,3 @@ class ImageProcessor(object):
                 log.info('Created science file: {:s}'.format(final_name))
         else:
             log.error('Can not process data without a master flat')
-
-
-if __name__ == '__main__':
-    pass

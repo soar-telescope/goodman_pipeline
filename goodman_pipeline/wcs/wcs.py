@@ -500,7 +500,3 @@ class WCS(object):
             return self.model
         else:
             self.log.error("The solution hasn't been found")
-
-
-if __name__ == '__main__':
-    pass

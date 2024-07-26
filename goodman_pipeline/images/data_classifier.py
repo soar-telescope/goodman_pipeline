@@ -158,7 +158,3 @@ class DataClassifier(object):
         # inform the results, no need to return
         self.log.info('Detected {:s} Data from {:s} '
                       'Camera'.format(self.technique, self.instrument))
-
-
-if __name__ == '__main__':
-    pass
