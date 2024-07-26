@@ -17,7 +17,7 @@ class TestVersionChecker(unittest.TestCase):
     def test_get_last(self):
         try:
             v = check_version.get_last()
-            self.assertRegex(v, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
+            self.assertRegex(v.base_version, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
             # self.assertEqual(v, __version__)
         except ConnectionRefusedError:  # pragma: no cover
             pass
@@ -27,7 +27,7 @@ class TestVersionChecker(unittest.TestCase):
     def test_get_last_no_token(self):
         try:
             v = check_version.get_last(github_api_token='NONEXISTANTVAR')
-            self.assertRegex(v, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
+            self.assertRegex(v.base_version, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
             # self.assertEqual(v, __version__)
         except ConnectionRefusedError:  # pragma: no cover
             pass
