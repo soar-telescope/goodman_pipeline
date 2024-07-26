@@ -76,10 +76,34 @@ jobs:
     - name: Run Tests
       run: |
         tox ${{ matrix.toxargs }} -e ${{ matrix.toxenv }} -- ${{ matrix.toxposargs }}
-
-    - uses: codecov/codecov-action@v4
+    - name: Upload coverage to artifacts
+      if: ${{ contains(matrix.toxenv,'-cov') }}
+      uses: actions/upload-artifacts@v4
       with:
-        token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+        name: coverage_${{ matrix.toxenv }}.xml
+        path: coverage.xml
+        if-no-files-found: error
+
+  upload-coverage-report:
+    needs: ['tests']
+    permissions:
+      contents: none
+    runs-on: ubuntu-latest
+    name: Upload Coverage
+    steps:
+    - name: Download coverage artifacts
+      uses: actions/download-artifacts@v4
+      with:
+        path: coverage
+        pattern: coverage_*
+        merge-multiple: true
+    - name: Upload to Codecov
+      if: ${{ hashFiles('coverage/') != ''}}
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        directory: coverage
         fail_ci_if_error: true # optional (default = false)
+        verbose: true
 
 
