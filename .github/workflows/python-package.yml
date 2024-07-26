@@ -22,6 +22,11 @@ jobs:
             os: ubuntu-latest
             python: '3.12'
             toxenv: py312-test
+          
+          - name: Python 3.12 with Coverage
+            os: ubuntu-latest
+            python: '3.12'
+            toxenv: py312-test-cov
 
           - name: Python 3.10
             os: ubuntu-latest
