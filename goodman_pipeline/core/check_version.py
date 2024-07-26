@@ -7,8 +7,7 @@ import logging
 import requests
 import os
 
-from pkg_resources import parse_version
-from pkg_resources.extern.packaging.version import Version
+from packaging.version import Version
 
 logger = logging.getLogger(__name__)
 
@@ -40,14 +39,14 @@ def get_last(github_api_token: str = 'GITHUB_ACCESS_TOKEN') -> Version:
         raise ConnectionRefusedError('Number of tests reached maximum for now.')
 
     tag_name = response.json()['tag_name'].replace('v', '')
-    _version = parse_version(tag_name)
+    _version = Version(tag_name)
 
     return _version
 
 
 def am_i_updated(version: str) -> bool:
 
-    version = parse_version(version)
+    version = Version(version)
     last_version = get_last()
 
     return last_version <= version
