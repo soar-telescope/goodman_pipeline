@@ -111,8 +111,8 @@ class NightOrganizerTest(TestCase):
 
     def setUp(self):
         self.full_path = os.path.join(
-            os.getcwd(),
-            'goodman_pipeline/data/test_data/night-organizer-test')
+            os.path.dirname(__file__),
+            '../../data/test_data/night-organizer-test')
 
         if not os.path.isdir(self.full_path):
             os.mkdir(self.full_path)

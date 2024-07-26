@@ -3,12 +3,13 @@ __author__ = 'Bruno Quint'
 
 import os
 import unittest
-
 import requests
 
-from goodman_pipeline.core import check_version
+from importlib.metadata import version
 
-__version__ = __import__('goodman_pipeline').__version__
+from ..core import check_version
+
+__version__ = version('goodman_pipeline')
 
 
 class TestVersionChecker(unittest.TestCase):
@@ -16,7 +17,7 @@ class TestVersionChecker(unittest.TestCase):
     def test_get_last(self):
         try:
             v = check_version.get_last()
-            self.assertRegex(v, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
+            self.assertRegex(v.base_version, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
             # self.assertEqual(v, __version__)
         except ConnectionRefusedError:  # pragma: no cover
             pass
@@ -26,7 +27,7 @@ class TestVersionChecker(unittest.TestCase):
     def test_get_last_no_token(self):
         try:
             v = check_version.get_last(github_api_token='NONEXISTANTVAR')
-            self.assertRegex(v, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
+            self.assertRegex(v.base_version, '^(\*|\d+(\.\d+){0,2}(\.\*)?)$')
             # self.assertEqual(v, __version__)
         except ConnectionRefusedError:  # pragma: no cover
             pass

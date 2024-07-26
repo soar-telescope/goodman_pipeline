@@ -7,25 +7,25 @@ import logging
 import requests
 import os
 
-from distutils.version import LooseVersion
+from packaging.version import Version
 
 logger = logging.getLogger(__name__)
 
 API_URL = 'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
 
 
-def get_last(github_api_token='GITHUB_ACCESS_TOKEN'):
+def get_last(github_api_token: str = 'GITHUB_ACCESS_TOKEN') -> Version:
     """
     Returns the version of the last release on GitHub.
 
     Parameters
     ----------
         github_api_token (str, optional) : Name of the environment variable
-        holding the github access token for the API
+          holding the github access token for the API
 
     Returns
     -------
-        version (LooseVersion) : the last version of the pipeline.
+        version (object) : A :class:`pkg_resources.extern.packaging.version.Version` the last version of the pipeline.
     """
     try:
         access_token = os.environ[github_api_token]
@@ -39,14 +39,14 @@ def get_last(github_api_token='GITHUB_ACCESS_TOKEN'):
         raise ConnectionRefusedError('Number of tests reached maximum for now.')
 
     tag_name = response.json()['tag_name'].replace('v', '')
-    _version = LooseVersion(tag_name)
+    _version = Version(tag_name)
 
-    return _version.vstring
+    return _version
 
 
-def am_i_updated(version):
+def am_i_updated(version: str) -> bool:
 
-    version = LooseVersion(version.replace('v', ''))
+    version = Version(version)
     last_version = get_last()
 
     return last_version <= version

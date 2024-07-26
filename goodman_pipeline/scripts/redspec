@@ -13,6 +13,6 @@ if '-h' not in sys.argv and \
     setup_logging()
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':   # pragma: no cover
     GOODMAN_SPECTROSCOPY = MainApp()
     GOODMAN_SPECTROSCOPY()

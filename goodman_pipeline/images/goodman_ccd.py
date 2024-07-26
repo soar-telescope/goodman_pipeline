@@ -1,9 +1,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from .data_classifier import DataClassifier
-from .night_organizer import NightOrganizer
-from .image_processor import ImageProcessor
 
 import os
 import sys
@@ -13,6 +10,12 @@ import glob
 import logging
 import matplotlib
 
+from importlib.metadata import version
+
+from .data_classifier import DataClassifier
+from .night_organizer import NightOrganizer
+from .image_processor import ImageProcessor
+
 log = logging.getLogger(__name__)
 
 try:
@@ -20,7 +23,7 @@ try:
 except ImportError as error:
     log.warning(error)
 
-__version__ = __import__('goodman_pipeline').__version__
+__version__ = version('goodman_pipeline')
 
 
 def get_args(arguments=None):

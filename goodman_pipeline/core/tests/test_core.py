@@ -232,8 +232,8 @@ class ClassifySpectroscopicData(TestCase):
 
     def setUp(self):
         self.path = os.path.join(
-            os.getcwd(),
-            'goodman_pipeline/data/test_data/test_classify_spectroscopic');
+            os.path.dirname(__file__),
+            '../../data/test_data/test_classify_spectroscopic');
         if not os.path.isdir(self.path):
             os.mkdir(self.path)
 
@@ -1366,7 +1366,7 @@ class MasterFlatTest(TestCase):
         # expected master flat to be retrieved by get_best_flat
         self.reference_flat_name = 'master_flat_1200m2_0.84_dome.fits'
         # location of sample flats
-        self.flat_path = 'goodman_pipeline/data/test_data/master_flat'
+        self.flat_path = os.path.join(os.path.dirname(__file__), '../../data/test_data/master_flat')
         slit = re.sub('[A-Za-z" ]',
                       '',
                       self.master_flat.header['SLIT'])
@@ -1761,8 +1761,8 @@ class ReferenceDataTest(TestCase):
 
     def setUp(self):
         self.rd = ReferenceData(
-            reference_dir=os.path.join(os.getcwd(),
-                                       'goodman_pipeline/data/ref_comp'))
+            reference_dir=os.path.join(os.path.dirname(__file__),
+                                       '../../data/ref_comp'))
         self.ccd = CCDData(data=np.ones((800, 2000)),
                            meta=fits.Header(),
                            unit='adu')
@@ -2037,8 +2037,8 @@ class SearchCompGroupTest(TestCase):
                        'FALSE']], columns=columns)]
 
         self.reference_data = ReferenceData(
-            reference_dir=os.path.join(os.getcwd(),
-                                       'goodman_pipeline/data/ref_comp'))
+            reference_dir=os.path.join(os.path.dirname(__file__),
+                                       '../../data/ref_comp'))
 
     def test_search_comp_group(self):
         result = search_comp_group(

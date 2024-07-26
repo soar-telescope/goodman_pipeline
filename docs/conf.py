@@ -19,6 +19,7 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
+from importlib.metadata import version
 
 
 # -- General configuration ------------------------------------------------
@@ -31,7 +32,7 @@
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-__version__ = __import__('goodman_pipeline').__version__
+__version__ = version('goodman_pipeline')
 
 extensions = ['sphinx.ext.todo',
               'sphinx.ext.coverage',

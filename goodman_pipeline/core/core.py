@@ -29,13 +29,14 @@ from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip
 from astropy.time import Time
 from astroscrappy import detect_cosmics
+from importlib.metadata import version
 from matplotlib import pyplot as plt
 from scipy import signal, interpolate
 from threading import Timer
 
 from . import check_version
 
-__version__ = __import__('goodman_pipeline').__version__
+__version__ = version('goodman_pipeline')
 
 log = logging.getLogger(__name__)
 
@@ -3266,7 +3267,7 @@ def trace_targets(ccd, target_list, sampling_step=5, pol_deg=2, nfwhm=5,
     return all_traces
 
 
-def validate_ccd_region(ccd_region, regexp='^\[\d*:\d*,\d*:\d*\]$'):
+def validate_ccd_region(ccd_region, regexp=r'^\[\d*:\d*,\d*:\d*\]$'):
     compiled_reg_exp = re.compile(regexp)
     if not compiled_reg_exp.match(ccd_region):
         raise SyntaxError("ccd regions must be defined in the format "

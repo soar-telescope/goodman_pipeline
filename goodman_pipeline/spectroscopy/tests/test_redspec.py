@@ -77,8 +77,8 @@ class TestArguments(TestCase):
 
         args = get_args(arguments=arguments)
         self.assertTrue(os.path.exists(
-            os.path.join(os.getcwd(),
-                         'goodman_pipeline/testing/reference_files')))
+            os.path.join(os.path.dirname(__file__),
+                         '../../testing/reference_files')))
         self.assertTrue(os.path.isabs(args.reference_dir))
 
     def test_reference_dir_os_error(self):
@@ -114,8 +114,11 @@ def test_get_args():
     args = get_args(arguments)
 
     assert isinstance(args, argparse.Namespace)
+    assert os.path.normpath(args.source) == os.getcwd()
+    assert os.path.normpath(args.destination) == os.getcwd()
     assert args.pattern == 'test-pattern'
-    return args
+    assert args.output_prefix == 'w'
+    assert args.extraction_type == 'fractional'
 
 
 class TestMainApp(TestCase):
@@ -141,7 +144,3 @@ class TestMainApp(TestCase):
                      '--extraction', 'fractional']
         args = get_args(arguments=arguments)
         self.assertRaises(SystemExit, self.main_app, args)
-
-
-if __name__ == '__main__':
-    test_get_args()
