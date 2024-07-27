@@ -13,3 +13,4 @@ scipy
 sphinx
 sphinxcontrib.napoleon
 sphinx_rtd_theme
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
