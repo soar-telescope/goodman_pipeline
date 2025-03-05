@@ -3325,9 +3325,10 @@ def write_fits(ccd,
 
     # write to file
     log.info("Saving FITS file to {:s}".format(os.path.basename(full_path)))
-    ccd.write(full_path, overwrite=overwrite)
+    cleaned_ccd = CCDData(data=ccd.data, meta=ccd.header, unit="adu")
+    cleaned_ccd.write(full_path, overwrite=overwrite)
     assert os.path.isfile(full_path)
-    return ccd
+    return cleaned_ccd
 
 
 # classes definition
