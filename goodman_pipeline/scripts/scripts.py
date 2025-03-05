@@ -3,7 +3,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from goodman_pipeline.core import setup_logging
-from goodman_pipeline.images import MainApp
+from goodman_pipeline.images import ReduceCCD
+from goodman_pipeline.spectroscopy import ReduceSpectroscopy
 
 import sys
 
@@ -12,6 +13,11 @@ if '-h' not in sys.argv and \
                 '--version' not in sys.argv:
     setup_logging()
 
-if __name__ == '__main__':  # pragma: no cover
-    GOODMAN_CCD = MainApp()
-    GOODMAN_CCD()
+def redccd():
+    reduce_ccd = ReduceCCD()
+    reduce_ccd()
+
+
+def redspec():
+    reduce_spectroscopy = ReduceSpectroscopy()
+    reduce_spectroscopy()
