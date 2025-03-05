@@ -2949,17 +2949,16 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
             latest_release = check_version.get_last()
 
             if "dev" in __version__:
-                log.warning("Running Development version: {:s}".format(__version__))
-                log.info("Latest Release: {:s}".format(latest_release))
+                log.warning(f"Running Development version: {__version__}")
+                log.info(f"Latest Release: {latest_release}")
             elif check_version.am_i_updated(__version__):
                 if __version__ == latest_release:
-                    log.info("Pipeline Version: {:s} (latest)".format(__version__))
+                    log.info(f"Pipeline Version: {__version__} (latest)")
                 else:
-                    log.warning("Current Version: {:s}".format(__version__))
-                    log.info("Latest Release: {:s}".format(latest_release))
+                    log.warning(f"Current Version: {__version__}")
+                    log.info(f"Latest Release: {latest_release}")
             else:
-                log.warning("Current Version '{:s}' is outdated.".format(
-                    __version__))
+                log.warning(f"Current Version '{__version__}' is outdated.")
                 log.info("Latest Release: {:s}".format(latest_release))
         except ConnectionRefusedError:
             log.error('Unauthorized GitHub API Access reached maximum')
