@@ -173,6 +173,16 @@ def get_args(arguments=None):
                              "discriminate usable targets. Default 3 times "
                              "background level")
 
+    parser.add_argument('--line-detection-threshold',
+                        action='store',
+                        dest='line_detection_threshold',
+                        type=int,
+                        default=3,
+                        choices=range(0, 101),
+                        metavar='[0-100]',
+                        help="Percent of peak value used to get line detection threshold. "
+                             "The final value is calculated as minimum + 'percent of maximum'. Default value is 3.")
+
     parser.add_argument('--save-plots',
                         action='store_true',
                         dest='save_plots',
