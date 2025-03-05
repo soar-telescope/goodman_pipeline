@@ -248,16 +248,16 @@ def get_args(arguments=None):
     return args
 
 
-class MainApp(object):
+class ReduceSpectroscopy(object):
     """Defines and initialize all important variables for processing the data
 
-    The MainApp class controls the way the night is organized for further
+    The ReduceSpectroscopy class controls the way the night is organized for further
     processing. It also sets the appropriate parameters that will allow for a
     smooth working in all the other modules.
 
     """
     def __init__(self):
-        """Init method for MainApp class
+        """Init method for ReduceSpectroscopy class
 
         This method initializes the arguments for the class, if they are not
         provided it will get them.
@@ -272,7 +272,7 @@ class MainApp(object):
         self._pipeline_version = __version__
 
     def __call__(self, args=None):
-        """Call method for the MainApp class
+        """Call method for the ReduceSpectroscopy class
 
         This method call the higher level functions in order to do the
         spectroscopic data reduction.
@@ -306,7 +306,7 @@ class MainApp(object):
         else:
             self.log.debug("Received non-empty data container.")
 
-        self.log.debug("Calling _run method for MainApp")
+        self.log.debug("Calling _run method for ReduceSpectroscopy")
         self._run(data_container=data_container,
                   extraction_type=self.args.extraction_type,
                   target_fit_model=self.args.target_fit_model,
@@ -557,7 +557,7 @@ class MainApp(object):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    MAIN_APP = MainApp()
+    MAIN_APP = ReduceSpectroscopy()
     try:
         MAIN_APP()
     except KeyboardInterrupt:
