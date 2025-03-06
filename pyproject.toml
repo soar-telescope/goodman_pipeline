@@ -58,8 +58,7 @@ dependencies = [
   "packaging",
   "pandas",
   "requests",
-  "scipy",
-
+  "scipy"
 ]
 
 [project.optional-dependencies]
@@ -73,13 +72,17 @@ test = [
 "Source" = "https://github.com/soar-telescope/goodman_pipeline"
 
 [project.scripts]
-redccd = "goodman_pipeline.scripts.redccd:__main__"
-redspec = "goodman_pipeline.scripts.redspec:__main__"
-
+redccd = "goodman_pipeline.scripts:redccd"
+redspec = "goodman_pipeline.scripts:redspec"
 
 [tool.setuptools]
-[tool.setuptools.packages.find]
-where = ["goodman_pipeline"]
+packages = [
+  "goodman_pipeline",
+  "goodman_pipeline.core",
+  "goodman_pipeline.images",
+  "goodman_pipeline.spectroscopy",
+  "goodman_pipeline.wcs",
+]
 
 [tool.setuptools.package-data]
 goodman_pipeline = [
@@ -91,7 +94,6 @@ goodman_pipeline = [
   'data/test_data/master_flat/*',
   'data/test_data/wcs_data/*'
 ]
-
 
 [tool.setuptools_scm]
 version_file = "goodman_pipeline/version.py"
