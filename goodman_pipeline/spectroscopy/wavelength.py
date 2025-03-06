@@ -79,6 +79,7 @@ class WavelengthCalibration(object):
         self.n_rejections = None
         self.rms_error = None
         self.cross_corr_tolerance = 5
+        self.line_detection_threshold = 3
         self.reference_data_dir = None
         self.reference_data = None
         self.calibration_lamp = ''
@@ -95,6 +96,7 @@ class WavelengthCalibration(object):
                  reference_data,
                  object_number=None,
                  corr_tolerance=15,
+                 detection_threshold=3,
                  output_prefix='w',
                  plot_results=False,
                  save_plots=False,
@@ -150,6 +152,7 @@ class WavelengthCalibration(object):
                 self.reference_data = ReferenceData(
                     reference_dir=self.reference_data_dir)
 
+        self.line_detection_threshold = detection_threshold
         self.cross_corr_tolerance = corr_tolerance
         self.sci_target_file = ccd.header['GSP_FNAM']
 
@@ -182,7 +185,9 @@ class WavelengthCalibration(object):
                          '{:s}'.format(self.lamp_name))
 
                 self.lines_center = get_lines_in_lamp(
-                    ccd=self.lamp, plots=plots)
+                    ccd=self.lamp,
+                    peak_percent_for_threshold=self.line_detection_threshold,
+                    plots=plots)
                 try:
                     self._automatic_wavelength_solution(
                         save_data_to=save_data_to,
@@ -357,6 +362,7 @@ class WavelengthCalibration(object):
 
         '''detect lines in comparison lamp (not reference)'''
         lamp_lines_pixel = get_lines_in_lamp(ccd=self.lamp,
+                                             peak_percent_for_threshold=self.line_detection_threshold,
                                              plots=plots)
         lamp_lines_angst = self.wcs.model(lamp_lines_pixel)
 

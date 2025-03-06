@@ -6,6 +6,8 @@ dependencies:
   - matplotlib
   - scipy
   - cython
+  - sphinx
+  - sphinxcontrib-napoleon
   - pip
   - pip:
       - astropy>=5.3
@@ -14,5 +16,3 @@ dependencies:
       - pydata-sphinx-theme
       - astroplan
       - mock
-      - sphinx
-      - sphinxcontrib.napoleon

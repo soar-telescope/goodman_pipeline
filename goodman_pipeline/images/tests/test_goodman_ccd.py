@@ -1,13 +1,13 @@
 from __future__ import absolute_import
 from unittest import TestCase, skip
 
-from ..goodman_ccd import get_args, MainApp
+from ..goodman_ccd import get_args, ReduceCCD
 
 
 class MainAppTest(TestCase):
 
     def setUp(self):
-        self.main_app = MainApp()
+        self.main_app = ReduceCCD()
 
     def test___call__(self):
         self.assertRaises(SystemExit, self.main_app)

@@ -1068,7 +1068,10 @@ class FitsFileIOAndOps(TestCase):
                                          destination=self.current_directory,
                                          prefix='e',
                                          target_number=0)
-        self.assertEqual(same_fake_image, self.fake_image)
+
+        assert np.array_equal(same_fake_image.data, self.fake_image.data)
+        self.assertEqual(same_fake_image.header, self.fake_image.header)
+        self.assertEqual(same_fake_image.shape, self.fake_image.shape)
         self.assertTrue(os.path.isfile('e' + self.file_name))
 
     def test_save_extracted_target_non_zero(self):
@@ -1077,7 +1080,9 @@ class FitsFileIOAndOps(TestCase):
                                          destination=self.current_directory,
                                          prefix='e',
                                          target_number=self.target_non_zero)
-        self.assertEqual(same_fake_image, self.fake_image)
+        assert np.array_equal(same_fake_image.data, self.fake_image.data)
+        self.assertEqual(same_fake_image.header, self.fake_image.header)
+        self.assertEqual(same_fake_image.shape, self.fake_image.shape)
         self.assertTrue(os.path.isfile('e' + re.sub('.fits',
                                        '_target_{:d}.fits'.format(
                                            self.target_non_zero),
@@ -1096,7 +1101,9 @@ class FitsFileIOAndOps(TestCase):
             '_' + re.sub(':', '-', same_fake_image.header['GSP_EXTR']) + '.fits',
             self.file_name)
 
-        self.assertEqual(same_fake_image, self.fake_image)
+        assert np.array_equal(same_fake_image.data, self.fake_image.data)
+        self.assertEqual(same_fake_image.header, self.fake_image.header)
+        self.assertEqual(same_fake_image.shape, self.fake_image.shape)
         self.assertEqual(same_fake_image.header['GSP_FNAM'], expected_new_name)
         self.assertTrue(os.path.isfile(self.fake_image.header['GSP_FNAM']))
 

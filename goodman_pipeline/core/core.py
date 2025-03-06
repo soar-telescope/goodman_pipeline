@@ -18,6 +18,7 @@ import sys
 import time
 
 import requests
+from astropy.nddata import CCDData
 from astropy.utils import iers
 iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
 from astroplan import Observer
@@ -1490,7 +1491,7 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
     return central_wavelength
 
 
-def get_lines_in_lamp(ccd, plots=False):
+def get_lines_in_lamp(ccd, peak_percent_for_threshold=3, plots=False):
     """Identify peaks in a lamp spectrum
 
     Uses `signal.argrelmax` to find peaks in a spectrum i.e emission
@@ -1498,8 +1499,12 @@ def get_lines_in_lamp(ccd, plots=False):
     using a "center of mass", because, not always the maximum value (peak)
     is the center of the line.
 
+    The detection threshold is calculated as follows:
+      threshold = minimum + (peak_percent_for_threshold / 100.) * maximum
+
     Args:
         ccd (CCDData): Lamp `ccdproc.CCDData` instance.
+        peak_percent_for_threshold (float): Percent of peak intensity above the minimum to use as detection threshold.
         plots (bool): Wether to plot or not.
 
     Returns:
@@ -1516,10 +1521,9 @@ def get_lines_in_lamp(ccd, plots=False):
         return None
 
     no_nan_lamp_data = np.asarray(np.nan_to_num(lamp_data))
-
+    detection_threshold = no_nan_lamp_data.min() + (peak_percent_for_threshold / 100.) * no_nan_lamp_data.max()
     filtered_data = np.where(
-        np.abs(no_nan_lamp_data > no_nan_lamp_data.min() +
-               0.03 * no_nan_lamp_data.max()),
+        np.abs(no_nan_lamp_data > detection_threshold),
         no_nan_lamp_data,
         None)
 
@@ -1527,7 +1531,6 @@ def get_lines_in_lamp(ccd, plots=False):
     none_to_zero = [0 if it is None else it for it in filtered_data]
     filtered_data = np.array(none_to_zero)
 
-    _upper_limit = no_nan_lamp_data.min() + 0.03 * no_nan_lamp_data.max()
     slit_size = np.float64(re.sub('[a-zA-Z"_*]', '', lamp_header['slit']))
 
     serial_binning, parallel_binning = [
@@ -1567,7 +1570,7 @@ def get_lines_in_lamp(ccd, plots=False):
         ax.plot([], color='k', linestyle=':',
                 label='Spectral Line Detected')
 
-        ax.axhline(_upper_limit, color='r')
+        ax.axhline(detection_threshold, color='r')
 
         for line in peaks:
             ax.axvline(line, color='k', linestyle=':')
@@ -2949,17 +2952,16 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
             latest_release = check_version.get_last()
 
             if "dev" in __version__:
-                log.warning("Running Development version: {:s}".format(__version__))
-                log.info("Latest Release: {:s}".format(latest_release))
+                log.warning(f"Running Development version: {__version__}")
+                log.info(f"Latest Release: {latest_release}")
             elif check_version.am_i_updated(__version__):
                 if __version__ == latest_release:
-                    log.info("Pipeline Version: {:s} (latest)".format(__version__))
+                    log.info(f"Pipeline Version: {__version__} (latest)")
                 else:
-                    log.warning("Current Version: {:s}".format(__version__))
-                    log.info("Latest Release: {:s}".format(latest_release))
+                    log.warning(f"Current Version: {__version__}")
+                    log.info(f"Latest Release: {latest_release}")
             else:
-                log.warning("Current Version '{:s}' is outdated.".format(
-                    __version__))
+                log.warning(f"Current Version '{__version__}' is outdated.")
                 log.info("Latest Release: {:s}".format(latest_release))
         except ConnectionRefusedError:
             log.error('Unauthorized GitHub API Access reached maximum')
@@ -3325,9 +3327,10 @@ def write_fits(ccd,
 
     # write to file
     log.info("Saving FITS file to {:s}".format(os.path.basename(full_path)))
-    ccd.write(full_path, overwrite=overwrite)
+    cleaned_ccd = CCDData(data=ccd.data, meta=ccd.header, unit="adu")
+    cleaned_ccd.write(full_path, overwrite=overwrite)
     assert os.path.isfile(full_path)
-    return ccd
+    return cleaned_ccd
 
 
 # classes definition

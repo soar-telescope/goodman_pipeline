@@ -5,7 +5,7 @@ import os
 import shutil
 from unittest import TestCase
 
-from ...spectroscopy.redspec import (get_args, MainApp)
+from ...spectroscopy.redspec import (get_args, ReduceSpectroscopy)
 
 
 class TestArguments(TestCase):
@@ -121,13 +121,13 @@ def test_get_args():
     assert args.extraction_type == 'fractional'
 
 
-class TestMainApp(TestCase):
+class TestReduceSpectroscopy(TestCase):
 
     def setUp(self):
-        self.main_app = MainApp()
+        self.main_app = ReduceSpectroscopy()
 
     def test_instantiation_without_args(self):
-        self.assertIsInstance(self.main_app, MainApp)
+        self.assertIsInstance(self.main_app, ReduceSpectroscopy)
         self.assertIsNone(self.main_app.args)
         self.assertIsNone(self.main_app.wavelength_solution_obj)
         self.assertIsNone(self.main_app.wavelength_calibration)
