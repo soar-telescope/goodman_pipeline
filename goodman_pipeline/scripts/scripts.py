@@ -10,14 +10,14 @@ import sys
 
 if '-h' not in sys.argv and \
                 '--help' not in sys.argv and \
-                '--version' not in sys.argv:
+                '--version' not in sys.argv:  # pragma: no cover
     setup_logging()
 
-def redccd():
+def redccd():  # pragma: no cover
     reduce_ccd = ReduceCCD()
     reduce_ccd()
 
 
-def redspec():
+def redspec():  # pragma: no cover
     reduce_spectroscopy = ReduceSpectroscopy()
     reduce_spectroscopy()
