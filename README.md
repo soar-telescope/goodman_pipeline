@@ -1,7 +1,7 @@
 # Goodman High Throughput Spectrograph Data Reduction Pipeline
 
 ![Goodman Pipeline](https://github.com/soar-telescope/goodman_pipeline/actions/workflows/python-package.yml/badge.svg)
-[![codecov](https://codecov.io/gh/soar-telescope/goodman_pipeline/branch/main/graph/badge.svg)](https://codecov.io/gh/soar-telescope/goodman_pipeline)
+[![codecov](https://codecov.io/gh/soar-telescope/goodman_pipeline/graph/badge.svg?token=1z2Zkl5I0n)](https://codecov.io/gh/soar-telescope/goodman_pipeline)
 [![Documentation Status](https://readthedocs.org/projects/goodman/badge/?version=latest)](http://goodman.readthedocs.io/en/latest/?badge=latest)
 [![pypi](https://img.shields.io/pypi/v/goodman_pipeline.svg?style=flat)](https://pypi.org/project/goodman-pipeline/)
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
