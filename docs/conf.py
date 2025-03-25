@@ -112,6 +112,17 @@ pdf_documents = [('user_manual',
 
 html_theme = 'pydata_sphinx_theme'
 
+html_theme_options = {
+    "navbar_end": ["navbar-icon-links"],
+    "icon_links": [
+        {
+            "name": "SOAR Docs Index",
+            "url": "https://soardocs.readthedocs.io/",
+            "icon": "fa fa-home",
+        }
+    ],
+}
+
 html_logo = '_static/soar_logo.png'
 
 html_context = {'license': 'BSD 3-Clause License'}
