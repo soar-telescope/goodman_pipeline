@@ -1167,7 +1167,7 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
           `target_fwhm`. For instance if `extraction_with` is set to 1 the
           function extract 0.5 to each side from the center of the traced
           target.
-        background_spacing (float): Number of `target_stddev` to separate the
+        background_spacing (float): Number of `target_fwhm` to separate the
           target extraction to the background. This is from the edge of the
           extraction zone to the edge of the background region.
     """
