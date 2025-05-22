@@ -14,6 +14,10 @@ so that users can follow the steps and end up with a running version of the pipe
   visiting `<https://www.anaconda.com/download/>`_ for downloading
   the Anaconda installer for either operating system.
 
+.. warning::
+
+  For most cases doing ``pip install goodman-pipeline`` is enough. You just might need to compile DCR.
+
 Ubuntu
 ******
 
@@ -119,13 +123,10 @@ Common Steps
       File 'dcr.par' must be present in the working directory.
           ~~~~~~
 
-8. Run tests.
 
-  ``python setup.py test``
+8. Install the pipeline
 
-9. Install the pipeline
-
-  ``python setup.py install``
+  ``python -m pip install .``
 
 Using pip
 *********
