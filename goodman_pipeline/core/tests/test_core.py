@@ -877,7 +877,7 @@ class ExtractionTest(TestCase):
             target_trace=self.target_trace,
             target_fwhm=self.target_profile_gaussian.fwhm,
             extraction_width=self.n_stddev,
-            background_spacing=self.distance)
+            background_spacing_factor=self.distance)
         # assert isinstance(fake_image, CCDData)
         self.assertIsInstance(extracted_array, CCDData)
 
@@ -892,7 +892,7 @@ class ExtractionTest(TestCase):
             target_trace=self.target_trace,
             target_fwhm=self.stddev,
             extraction_width=self.n_stddev,
-            background_spacing=self.distance)
+            background_spacing_factor=self.distance)
         # assert isinstance(fake_image, CCDData)
         self.assertIsInstance(extracted_array, CCDData)
 
@@ -923,7 +923,8 @@ class ExtractionTest(TestCase):
         extracted = extraction(ccd=self.fake_image,
                                target_trace=self.target_trace,
                                spatial_profile=self.target_profile_gaussian,
-                               extraction_name='fractional')
+                               extraction_name='fractional',
+                               background_spacing_factor=self.distance)
         self.assertIsInstance(extracted, CCDData)
         np.testing.assert_array_almost_equal(extracted, self.reference_result_gaussian)
 
