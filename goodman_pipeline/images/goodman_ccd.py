@@ -137,7 +137,7 @@ def get_args(arguments=None):
                         default='./RED',
                         help="Path to reduced data.")
 
-    parser.add_argument('--saturation_threshold',
+    parser.add_argument('--saturation-threshold',
                         action='store',
                         default=1.,
                         dest='saturation_threshold',
