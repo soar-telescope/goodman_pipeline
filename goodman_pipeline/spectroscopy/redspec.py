@@ -112,6 +112,15 @@ def get_args(arguments=None):
                              "'optimal'. Only fractional pixel extraction is "
                              "implemented. Default 'fractional'.")
 
+    parser.add_argument('--extraction-width',
+                        action='store',
+                        dest='extraction_width',
+                        type=int,
+                        default=2,
+                        help="Width of the extraction area as a function of target's spatial profile FWHM. For instance "
+                             "if `extraction_with` is set to 1 the extracted area is 0.5 to each side from the center of "
+                             "the traced target. Default 2.")
+
     parser.add_argument('--fit-targets-with',
                         action='store',
                         default='moffat',
@@ -164,6 +173,11 @@ def get_args(arguments=None):
                         help="Maximum number of targets to be found in a "
                              "single image. Default 3")
 
+    parser.add_argument('--disable-background-extraction',
+                        action='store_true',
+                        dest='disable_background_extraction',
+                        help="Disable background extraction")
+
     parser.add_argument('--background-threshold',
                         action='store',
                         dest='background_threshold',
@@ -172,6 +186,15 @@ def get_args(arguments=None):
                         help="Multiplier for background level used to "
                              "discriminate usable targets. Default 3 times "
                              "background level")
+
+    parser.add_argument('--background-spacing-factor',
+                        action='store',
+                        dest='background_spacing_factor',
+                        type=float,
+                        default=3,
+                        help="Number of target's  spatial profile standard deviations to separate the target extraction "
+                             "to the background. This is from the edge of the extraction zone to the edge of "
+                             "the background region. Default 3.")
 
     parser.add_argument('--line-detection-threshold',
                         action='store',
@@ -456,7 +479,10 @@ class ReduceSpectroscopy(object):
                                 ccd=ccd,
                                 target_trace=single_trace,
                                 spatial_profile=single_profile,
-                                extraction_name=extraction_type)
+                                extraction_name=extraction_type,
+                                extraction_width=self.args.extraction_width,
+                                background_spacing_factor=self.args.background_spacing_factor,
+                                disable_background_extraction=self.args.disable_background_extraction)
 
                             saved_ccd = save_extracted(
                                 ccd=extracted,
@@ -480,7 +506,10 @@ class ReduceSpectroscopy(object):
                                         ccd=comp_lamp,
                                         target_trace=single_trace,
                                         spatial_profile=single_profile,
-                                        extraction_name=extraction_type)
+                                        extraction_name=extraction_type,
+                                        extraction_width=self.args.extraction_width,
+                                        background_spacing_factor=self.args.background_spacing_factor,
+                                        disable_background_extraction=self.args.disable_background_extraction)
                                     save_extracted(
                                         ccd=extracted_lamp,
                                         destination=self.args.destination,

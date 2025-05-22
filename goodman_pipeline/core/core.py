@@ -1086,7 +1086,10 @@ def define_trim_section(sample_image, technique):
 def extraction(ccd,
                target_trace,
                spatial_profile,
-               extraction_name):
+               extraction_name,
+               extraction_width=2,
+               background_spacing_factor=3,
+               disable_background_extraction=False):
     """Calls appropriate spectrum extraction routine
 
     This function calls the appropriate extraction function based on
@@ -1105,6 +1108,8 @@ def extraction(ccd,
           spectrum contained in the ccd object.
         extraction_name (str): Extraction type, can be `fractional` or
           `optimal` though the optimal extraction is not implemented yet.
+        background_spacing_factor (float): Background spacing factor
+        disable_background_extraction (bool): Disable background extraction.
 
     Returns:
         ccd (CCDData): Instance of :class:`~astropy.nddata.CCDData` containing a
@@ -1130,21 +1135,26 @@ def extraction(ccd,
             ccd=ccd,
             target_trace=target_trace,
             target_fwhm=target_fwhm,
-            extraction_width=2)
+            extraction_width=extraction_width,
+            background_spacing_factor=background_spacing_factor,
+            disable_background_extraction=disable_background_extraction)
 
         background_1, background_2 = bkg_info
+        if not disable_background_extraction:
 
-        if background_1 is not None:
-            log.info('Background extraction zone 1: {:s}'.format(background_1))
-            extracted.header.set('GSP_BKG1', value=background_1)
-        else:
-            log.info("Background extraction zone 1: 'none'")
+            if background_1 is not None:
+                log.info('Background extraction zone 1: {:s}'.format(background_1))
+                extracted.header.set('GSP_BKG1', value=background_1)
+            else:
+                log.info("Background extraction zone 1: 'none'")
 
-        if background_2 is not None:
-            log.info('Background extraction zone 2: {:s}'.format(background_2))
-            extracted.header.set('GSP_BKG2', value=background_2)
+            if background_2 is not None:
+                log.info('Background extraction zone 2: {:s}'.format(background_2))
+                extracted.header.set('GSP_BKG2', value=background_2)
+            else:
+                log.info("Background extraction zone 2: 'none'")
         else:
-            log.info("Background extraction zone 2: 'none'")
+            log.info('Background extraction disabled!')
 
         return extracted
 
@@ -1152,8 +1162,12 @@ def extraction(ccd,
         raise NotImplementedError
 
 
-def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
-                             background_spacing=3):
+def extract_fractional_pixel(ccd,
+                             target_trace,
+                             target_fwhm,
+                             extraction_width,
+                             background_spacing_factor=3,
+                             disable_background_extraction=False):
     """Performs a spectrum extraction using fractional pixels.
 
     Args:
@@ -1167,9 +1181,10 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
           `target_fwhm`. For instance if `extraction_with` is set to 1 the
           function extract 0.5 to each side from the center of the traced
           target.
-        background_spacing (float): Number of `target_stddev` to separate the
+        background_spacing_factor (float): Number of `target_stddev` to separate the
           target extraction to the background. This is from the edge of the
           extraction zone to the edge of the background region.
+        disable_background_extraction (bool): Disable background extraction.
     """
     assert isinstance(ccd, ccdproc.CCDData)
     assert isinstance(target_trace, Model)
@@ -1226,10 +1241,10 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
 
         non_background_sub.append(column_sum)
 
-        if ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM']:
+        if ccd.header['OBSTYPE'] in ['OBJECT', 'SPECTRUM'] and not disable_background_extraction:
             # background limits
 
-            # background_spacing is the distance from the edge of the target's
+            # background_spacing_factor is the distance from the edge of the target's
             # limits defined by `int_low_limit` and
             # `int_high_limit` in stddev units
 
@@ -1237,11 +1252,11 @@ def extract_fractional_pixel(ccd, target_trace, target_fwhm, extraction_width,
 
             # define pixel values for background subtraction
             # low_background_zone
-            high_1 = low_limit - background_spacing * target_fwhm
+            high_1 = low_limit - background_spacing_factor * target_fwhm
             low_1 = high_1 - background_width
 
             # High background zone
-            low_2 = high_limit + background_spacing * target_fwhm
+            low_2 = high_limit + background_spacing_factor * target_fwhm
             high_2 = low_2 + background_width
 
             # validate background subtraction zones

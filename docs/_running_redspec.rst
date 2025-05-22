@@ -32,7 +32,10 @@ behavior for every user or science case, we have implemented a set of
 - ``--output-prefix <prefix>`` Prefix to be added to calibrated spectrum. Default is
   ``w-``. See :ref:`file-prefixes`.
 - ``--extraction <method>`` Select the :ref:`extraction-methods`. The only one
-  implemented at the moment is ``fractional`` .
+  implemented at the moment is ``fractional``.
+- ``--extraction-width <value>`` Width of the extraction area as a function of target's spatial
+  profile FWHM. For instance if `extraction_with` is set to 1 the extracted area is 0.5 to each
+  side from the center of the traced target. Default 2.
 - ``--fit-targets-with {moffat, gaussian}`` Model to fit peaks on spatial profile
   while searching for spectroscopic targets. Default ``moffat``.
 - ``--target-min-width <target min width>`` Minimum profile width for fitting the spatial axis of spectroscopic targets.
@@ -44,10 +47,15 @@ behavior for every user or science case, we have implemented a set of
 - ``--reference-files <path>`` Folder where to find the reference lamps.
 - ``--debug`` Shows extended and more messages.
 - ``--debug-plot`` Shows plots of intermediate steps.
-- ``--max-targets <value>`` Maximum number of targets to detect in a single
-  image. Default is 3.
+- ``--max-targets <value>`` Maximum number of targets to detect in a single image. Default is 3.
+- ``--disable-background-extraction`` Disable background extraction.
 - ``--background-threshold <background threshold>`` Multiplier for background level used to discriminate usable targets.
   Default 3 times background level.
+- ``--background-spacing-factor <value>`` Number of target's spatial profile standard deviations to
+  separate the target extraction to the background. This is from the edge of the extraction zone to
+  the edge of the background region. Default 3.
+- ``--line-detection-threshold [0-100]`` Percent of peak value used to get line detection threshold.
+  The final value is calculated as minimum + 'percent of maximum'. Default value is 3.
 - ``--save-plots`` Save plots.
 - ``--plot-results`` Show plots during execution.
 
