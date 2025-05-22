@@ -48,18 +48,15 @@ A summary of the most important *command line arguments* are presented below.
 - ``--ignore-flats`` Ignores the existence or lack of ``FLAT`` data.
 - ``--raw-path <path>`` Set the directory where the raw data is located, can be relative.
 - ``--red-path <path>`` Set the directory where the reduced data will be stored. Default ``RED``.
-- ``--saturation <saturation>`` Set the saturation threshold in percentage. There
+- ``--saturation-threshold <saturation>`` Set the saturation threshold in percentage. There
   is a table with all the readout modes and their values at which saturation is
   reached, then all the pixels exceeding that value are counted. If the percentage
   is larger that the threshold defined with this argument the flat is marked as
   saturated. The default value is 1 percent.
+- ``--dcr-par-dir`` Directory where to look for a `dcr.par` file.
+- ``--skip-slit-trim`` Do not apply slit trimming.
+- ``--keep-cosmic-files``   After cleaning cosmic rays with `dcr`, do not remove the input file and the cosmic rays file. For 'lacosmic' it saves the mask to a fits file.
 
 
 This is intended to work with *spectroscopic* and *imaging* data, that it is why
 the process is split in two.
-
-
-
-
-
-
