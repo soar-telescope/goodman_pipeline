@@ -111,7 +111,7 @@ class ImageProcessor(object):
                                 reduced_data=self.args.red_path,
                                 technique=self.technique)
 
-                    elif len(group_obstype) == 1 and group_obstype[0] == 'FLAT':
+                    elif len(group_obstype) == 1 and group_obstype[0] in ['FLAT', 'LAMPFLAT']:
                         log.debug('Create Master FLATS')
                         flat_files = sub_group.file.tolist()
                         sample_header = fits.getheader(os.path.join(

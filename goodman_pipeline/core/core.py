@@ -2977,7 +2977,7 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
                     log.info(f"Latest Release: {latest_release}")
             else:
                 log.warning(f"Current Version '{__version__}' is outdated.")
-                log.info("Latest Release: {:s}".format(latest_release))
+                log.info(f"Latest Release: {latest_release}")
         except ConnectionRefusedError:
             log.error('Unauthorized GitHub API Access reached maximum')
             log.info(f"Current Version: {__version__}")
