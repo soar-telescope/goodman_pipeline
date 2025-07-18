@@ -2930,7 +2930,10 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
         If --debug is activated then the format of the message is different.
     """
 
-    log_filename = 'goodman_log.txt'
+    timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+    entrypoint_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+
+    log_filename = f"log_{entrypoint_name}_{timestamp}.txt"
 
     if '--debug' in sys.argv or debug:
         log_format = '[%(asctime)s][%(levelname)8s]: %(message)s ' \
@@ -2949,7 +2952,7 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
                         format=log_format,
                         datefmt=date_format)
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger()
 
     file_handler = logging.FileHandler(filename=log_filename)
     file_handler.setFormatter(fmt=formatter)
@@ -2957,11 +2960,12 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
     log.addHandler(file_handler)
 
     if not generic:
-        log.info("Starting Goodman HTS Pipeline Log")
+        log.info(f"Starting Goodman HTS Pipeline Log - {entrypoint_name}")
         log.info("Local Time    : {:}".format(
             datetime.datetime.now()))
         log.info("Universal Time: {:}".format(
-            datetime.datetime.utcnow()))
+            datetime.datetime.now(datetime.UTC)))
+        log.info(f"Full Command: {' '.join(sys.argv)}")
 
         try:
             latest_release = check_version.get_last()
