@@ -1,0 +1,248 @@
+import glob
+import os
+import logging
+import numpy as np
+import re
+import sys
+import shutil
+import subprocess
+
+
+from astropy.io import fits
+from astropy import units as u
+from typing import Union
+
+from .utils import is_fits_file, get_astrometry_config_args
+
+log = logging.getLogger(__name__)
+
+
+class Astrometry(object):
+
+    def __init__(self,
+                 pixel_scale: float = 0.15,
+                 pixel_scale_tolerance: float = 0.02,
+                 scale_units: str = 'arcsecperpix',
+                 downsample_factor: int = 2,
+                 binning_keyword: str = 'CCDSUM',
+                 ra_keyword: str = 'OBSRA',
+                 dec_keyword: str = 'OBSDEC',
+                 index_directory: str= '',
+                 overwrite: bool = False,
+                 verbose: bool = False,
+                 debug: bool = False):
+        self.filename = None
+        self.image_data = None
+        self.image_header = None
+        self.pixel_scale = pixel_scale * u.arcsec / u.pix
+        self.serial_binning = 1
+        self.parallel_binning = 1
+        self.pixel_scale_tolerance = pixel_scale_tolerance * u.arcsec / u.pix
+        self.scale_units = scale_units
+        self.scale_low = pixel_scale
+        self.scale_high = pixel_scale
+        self.downsample_factor = downsample_factor
+        self.ra_keyword = ra_keyword
+        self.dec_keyword = dec_keyword
+        self._ra = ''
+        self._dec = ''
+        self._radius = 0.0
+        self.solve_field_executable = "solve-field"
+        self.solve_field_full_path = None
+        self.index_directory = index_directory
+        self.overwrite = overwrite
+        self.verbose = verbose
+        self.debug = debug
+
+        self.binning_keyword = binning_keyword
+
+        self._new_files = {}
+
+        log.setLevel(logging.DEBUG if self.debug else logging.INFO)
+
+
+    def __call__(self, filename: str, return_json: bool = True):
+        log.info(f"Processing file {filename}")
+        self.filename = filename
+
+        self._initial_checks()
+
+        self._set_parameters()
+
+        return_code, solve_field_full_logs = self.astrometry_net__solve_field(
+            filename=self.filename,
+            ra=self._ra,
+            dec=self._dec,
+            radius=self._radius.to(u.deg).value,
+            scale_low=self.scale_low.value,
+            scale_high=self.scale_high.value,
+            scale_units=self.scale_units,
+            downsample=self.downsample_factor,
+            solve_field_executable=self.solve_field_full_path,
+            index_directory=self.index_directory,
+            overwrite=self.overwrite,
+            verbose=self.verbose)
+
+        log.debug(f"Astrometry.net exited with code {return_code}")
+
+        self._detect_new_files()
+
+        json_results = {
+            'full_logs': solve_field_full_logs,
+            'new_files': self._new_files,
+        }
+        if return_json:
+            return json_results
+        return 0
+
+    def _initial_checks(self):
+        log.info("Running input checks")
+        if not os.path.isfile(self.filename) or not os.path.exists(self.filename):
+            log.error(f"File {self.filename} does not exist")
+            sys.exit(1)
+        else:
+            log.debug(f"{self.filename} is a file and exists")
+
+        if not is_fits_file(self.filename):
+            log.error(f"File {self.filename} is not a fits file")
+            sys.exit(1)
+        else:
+            log.debug(f"{self.filename} is a valid fits file")
+
+        with fits.open(self.filename) as hdulist:
+            for hdu in hdulist:
+                if hdu.data is not None:
+                    self.image_data = hdu.data
+                    self.image_header = hdu.header
+                    log.debug("Found valid data")
+                    break
+            else:
+                raise ValueError("No image data found in the FITS file")
+
+        log.debug(f"Validating that executable {self.solve_field_executable} exists")
+        self.solve_field_full_path = shutil.which(self.solve_field_executable)
+        if self.solve_field_full_path is None or not os.path.exists(self.solve_field_full_path):
+            log.error(f"Unable to locate executable {self.solve_field_executable}")
+            sys.exit(1)
+        else:
+            log.debug(f"Executable  {self.solve_field_executable} found at {self.solve_field_full_path}")
+        if self.index_directory:
+            log.debug(f"Validate --index-directory {self.index_directory}")
+            if not os.path.isdir(self.index_directory) or not os.path.exists(self.index_directory):
+                log.error(f"Index directory {self.index_directory} does not exist")
+                sys.exit(1)
+            else:
+                index_directory_length = len(os.listdir(self.index_directory))
+                if index_directory_length > 0:
+                    log.debug(f"Index directory {self.index_directory} exists and contains {index_directory_length} files.")
+                else:
+                    log.error(f"Index directory {self.index_directory} is empty")
+                    sys.exit(1)
+        else:
+            log.debug(f"No custom --index-directory specified")
+
+        log.info("All inputs are valid")
+
+    def _set_parameters(self):
+        log.info("Calculating parameters based on input.")
+        self.serial_binning, self.parallel_binning = [int(x) for x in self.image_header[self.binning_keyword].split()]
+        log.debug(f"Found serial and parallel binning {self.serial_binning} x {self.parallel_binning}")
+        if self.serial_binning != self.parallel_binning:
+            log.warning(f"Binning is asymmetric {self.serial_binning}x{self.parallel_binning}")
+        self.scale_low = self.pixel_scale * self.serial_binning - self.pixel_scale_tolerance
+        log.debug(f"Set scale low to {self.scale_low}")
+        self.scale_high = self.pixel_scale * self.serial_binning + self.pixel_scale_tolerance
+        log.debug(f"Set scale high to {self.scale_high}")
+
+        log.debug(f"Updating RA and DEC from image's header.")
+        self._ra = self.image_header[self.ra_keyword]
+        self._dec = self.image_header[self.dec_keyword]
+
+        log.debug(f"Finding image's radius.")
+        image_larger_side = np.max(self.image_data.shape) * u.pix
+        self._radius = self.pixel_scale * image_larger_side * self.serial_binning
+        log.info(f"Setting RA {self._ra}, DEC {self._dec} and radius {self._radius.to(u.arcmin)} or {self._radius.to(u.deg)}")
+
+    def _detect_new_files(self):
+        all_matching_files = [_file  for _file in glob.glob(re.sub('.fits', '*', self.filename)) if _file != self.filename]
+
+        extension_to_key = {
+            ".axy": "augmented_xylist",
+            ".corr": "matched_stars",
+            ".match": "quad_match_info",
+            ".rdls": "reference_catalog",
+            ".solved": "solved_flag",
+            ".wcs": "wcs_header",
+            ".xyls": "extracted_sources",
+            "_wcs.fits": "wcs_fits_image",
+            "-indx.png": "index_overlay_image",
+            "-ngc.png": "ngc_overlay_image",
+            "-objs.png": "object_overlay_image"
+        }
+        self.new_files = {}
+
+        for _file in all_matching_files:
+            for suffix, key in extension_to_key.items():
+                if _file.endswith(suffix):
+                    self.new_files[key] = _file
+                    break
+
+    def _identify_best_index_file(self):
+        pass
+
+    @staticmethod
+    def astrometry_net__solve_field(
+            filename: str,
+            ra: Union[str, float],
+            dec: Union[str, float],
+            radius: float,
+            scale_low: float,
+            scale_high: float,
+            scale_units: str='arsecperpix',
+            downsample: int=2,
+            solve_field_executable: str="solve-field",
+            index_directory: str='',
+            overwrite: bool=False,
+            verbose: bool=False):
+        options = {
+            "overwrite": overwrite,
+            "scale-low": scale_low,
+            "scale-high": scale_high,
+            "scale-units": scale_units,
+            "ra": ra,
+            "dec": dec,
+            "radius": radius,
+            "index-dir": index_directory,
+            "downsample": downsample,
+            "verbose": verbose
+        }
+        options_str = " ".join(
+            f"--{key}" if isinstance(value, bool) and value
+            else f"--{key} {value}"
+            for key, value in options.items()
+            if value is not None and value != "" and (not isinstance(value, bool) or value)
+        )
+        command = f"{solve_field_executable} {options_str} {filename}"
+
+        log.debug(f"command: {command}")
+
+        process = subprocess.Popen(command.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+
+        process_logs = []
+        for line in process.stdout:
+            log.info(f"{os.path.basename(solve_field_executable)}: {line.rstrip()}")
+            process_logs.append(line)
+
+        process.wait()
+
+        return_code = process.returncode
+        log.debug(f"Process exit code: {return_code}")
+        new_file_name = re.sub('.fits', '.new', filename)
+        new_wcs_file_name = re.sub('.new', '_wcs.fits', new_file_name)
+        if os.path.exists(new_file_name) and os.path.isfile(new_file_name):
+            log.info(f"A '*.new' file exists. Changing filename ending to '_wcs.fits'")
+            os.rename(new_file_name, new_wcs_file_name)
+        else:
+            log.warning(f"The process seems to have failed, unable to find the matching .new file.")
+        full_logs = "".join(process_logs)
+        return return_code, full_logs
