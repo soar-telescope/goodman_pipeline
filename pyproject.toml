@@ -74,12 +74,16 @@ test = [
 [project.scripts]
 redccd = "goodman_pipeline.scripts:redccd"
 redspec = "goodman_pipeline.scripts:redspec"
+redastrometry = "goodman_pipeline.scripts:redastrometry"
+redphotometry =  "goodman_pipeline.scripts:redphotometry"
 
 [tool.setuptools]
 packages = [
   "goodman_pipeline",
+  "goodman_pipeline.astrometry",
   "goodman_pipeline.core",
   "goodman_pipeline.images",
+  "goodman_pipeline.photometry",
   "goodman_pipeline.spectroscopy",
   "goodman_pipeline.wcs",
 ]
