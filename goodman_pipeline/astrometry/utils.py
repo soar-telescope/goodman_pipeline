@@ -65,6 +65,18 @@ def get_astrometry_config_args(arguments=None):
         help="FITS header keyword for CCD binning (default: 'CCDSUM').")
 
     parser.add_argument(
+        '--ra-keyword',
+        default='OBSRA',
+        type=str,
+        help="FITS header keyword for observed RA (default: 'OBSRA').")
+
+    parser.add_argument(
+        '--dec-keyword',
+        default='OBSDEC',
+        type=str,
+        help="FITS header keyword for observed DEC (default: 'OBSDEC').")
+
+    parser.add_argument(
         '--overwrite',
         action='store_true',
         help="Allow overwriting of existing astrometry results.")

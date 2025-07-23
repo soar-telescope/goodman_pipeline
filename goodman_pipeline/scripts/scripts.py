@@ -35,6 +35,8 @@ def redastrometry():
                             scale_units=args.scale_units,
                             downsample_factor=args.downsample_factor,
                             binning_keyword=args.binning_keyword,
+                            ra_keyword=args.ra_keyword,
+                            dec_keyword=args.dec_keyword,
                             index_directory=args.index_directory,
                             overwrite=args.overwrite,
                             debug=args.debug,
@@ -44,7 +46,17 @@ def redastrometry():
 
 
 def redphotometry():
-    # args = get_photometry_config_args()
-    # photometry = Photometry()
-    # photometry(filename=args.filename)
-    pass
+    args = get_photometry_config_args()
+
+    photometry = Photometry(aperture_radius=args.aperture_radius,
+                            # aperture_type=args.aperture_type,
+                            detection_threshold=args.detection_threshold,
+                            initial_fwhm=args.initial_fwhm,
+                            gaia_sources_limit=args.gaia_sources_limit,
+                            gaia_photometry_column=args.gaia_photometry_column,
+                            imaging_filter_keyword=args.imaging_filter_keyword,
+                            aperture_curve_of_growth=args.aperture_curve_of_growth,
+                            overwrite=args.overwrite,
+                            debug=args.debug)
+
+    results = photometry(filename=args.filename)
