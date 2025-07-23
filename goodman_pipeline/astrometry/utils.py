@@ -1,23 +1,9 @@
 import argparse
-import os
-import sys
 
-
-from astropy.io import fits
 from importlib.metadata import version
 
 
 __version__ = version("goodman_pipeline")
-
-
-def is_fits_file(filename):
-    try:
-        with fits.open(filename, ignore_missing_end=True):
-            return True
-    except Exception:
-        return False
-
-
 
 
 def get_astrometry_config_args(arguments=None):

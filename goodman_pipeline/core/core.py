@@ -2154,6 +2154,12 @@ def is_file_saturated(ccd, threshold):
     else:
         return False
 
+def is_fits_file(filename):
+    try:
+        with fits.open(filename, ignore_missing_end=True):
+            return True
+    except Exception:
+        return False
 
 def linearize_spectrum(data, wavelength_solution, plots=False):
     """Produces a linearized version of the spectrum

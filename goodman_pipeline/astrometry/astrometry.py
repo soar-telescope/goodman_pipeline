@@ -7,12 +7,10 @@ import sys
 import shutil
 import subprocess
 
-
-from astropy.io import fits
 from astropy import units as u
 from typing import Union
 
-from .utils import is_fits_file, get_astrometry_config_args
+from ..core import validate_fits_file_or_read
 
 log = logging.getLogger(__name__)
 
@@ -97,27 +95,7 @@ class Astrometry(object):
 
     def _initial_checks(self):
         log.info("Running input checks")
-        if not os.path.isfile(self.filename) or not os.path.exists(self.filename):
-            log.error(f"File {self.filename} does not exist")
-            sys.exit(1)
-        else:
-            log.debug(f"{self.filename} is a file and exists")
-
-        if not is_fits_file(self.filename):
-            log.error(f"File {self.filename} is not a fits file")
-            sys.exit(1)
-        else:
-            log.debug(f"{self.filename} is a valid fits file")
-
-        with fits.open(self.filename) as hdulist:
-            for hdu in hdulist:
-                if hdu.data is not None:
-                    self.image_data = hdu.data
-                    self.image_header = hdu.header
-                    log.debug("Found valid data")
-                    break
-            else:
-                raise ValueError("No image data found in the FITS file")
+        self.image_data, self.image_header = validate_fits_file_or_read(filename=self.filename)
 
         log.debug(f"Validating that executable {self.solve_field_executable} exists")
         self.solve_field_full_path = shutil.which(self.solve_field_executable)
