@@ -3303,6 +3303,31 @@ def validate_ccd_region(ccd_region, regexp=r'^\[\d*:\d*,\d*:\d*\]$'):
         return True
 
 
+def validate_fits_file_or_read(filename: str):
+    log.info(f"Validating that the file {filename} exits.")
+    if not os.path.isfile(filename) or not os.path.exists(filename):
+        log.error(f"File {filename} does not exist")
+        sys.exit(1)
+    else:
+        log.debug(f"{filename} is a file and exists")
+
+    log.info(f"Validate if the file {filename} is a valid FITS file.")
+    if not is_fits_file(filename):
+        log.error(f"File {filename} is not a fits file")
+        sys.exit(1)
+    else:
+        log.debug(f"{filename} is a valid fits file")
+
+    with fits.open(filename) as hdulist:
+        for hdu in hdulist:
+            if hdu.data is not None:
+                image_data = hdu.data
+                image_header = hdu.header
+                log.debug("Found valid data")
+                return image_data, image_header
+        else:
+            raise ValueError("No image data found in the FITS file")
+
 def write_fits(ccd,
                full_path,
                combined=False,
