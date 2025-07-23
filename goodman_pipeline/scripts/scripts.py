@@ -8,6 +8,7 @@ from goodman_pipeline.spectroscopy import ReduceSpectroscopy
 
 from goodman_pipeline.astrometry import Astrometry
 from goodman_pipeline.astrometry.utils import get_astrometry_config_args
+from goodman_pipeline.photometry.utils import get_photometry_config_args
 
 from goodman_pipeline.photometry import Photometry
 
