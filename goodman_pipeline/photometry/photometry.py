@@ -14,7 +14,7 @@ from astropy import units as u
 
 from astroquery.gaia import Gaia
 
-from photutils.aperture import aperture_photometry, CircularAperture, ApertureStats
+from photutils.aperture import aperture_photometry, CircularAperture
 from photutils.background import Background2D, MedianBackground
 from photutils.detection import DAOStarFinder
 
@@ -36,6 +36,7 @@ class Photometry(object):
                  gaia_photometry_column: str = '',
                  imaging_filter_keyword: str = 'FILTER',
                  aperture_curve_of_growth: bool = False,
+                 plots: bool = False,
                  overwrite: bool = False,
                  debug: bool = False):
         self.filename = None
@@ -134,16 +135,16 @@ class Photometry(object):
 
             radius = max(corners.separation(center)).to(u.deg) * 0.8
 
-            log.info(f"Found radius for querying GAIA: {radius.arcmin} arcmin /{radius.to(u.deg).value} deg")
+            log.info(f"Found radius for querying GAIA: {radius.arcmin} arcmin / {radius.to(u.deg).value} deg")
 
-            log.info(f"Querying Gaia DR2 around RA={center.ra.deg:.5f}, Dec={center.dec.deg:.5f}, radius={radius:.2f}")
+            log.info(f"Querying Gaia DR3 around RA={center.ra.deg:.5f}, Dec={center.dec.deg:.5f}, radius={radius:.2f}")
 
             try:
-                Gaia.MAIN_GAIA_TABLE = "gaiadr2.gaia_source"
+                Gaia.MAIN_GAIA_TABLE = "gaiadr3.gaia_source"
                 query = f"""
                             SELECT TOP {self.gaia_sources_limit}
                                 source_id, ra, dec, phot_g_mean_mag, phot_rp_mean_mag, phot_bp_mean_mag
-                            FROM gaiadr2.gaia_source
+                            FROM gaiadr3.gaia_source
                             WHERE
                                 1 = CONTAINS(
                                     POINT('ICRS', ra, dec),
