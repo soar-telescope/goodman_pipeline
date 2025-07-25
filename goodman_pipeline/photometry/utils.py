@@ -72,6 +72,11 @@ def get_photometry_config_args(arguments=None):
         help="Run aperture curve of growth diagnostics and exit.")
 
     parser.add_argument(
+        '--plots',
+        action='store_true',
+        help="Show plots.")
+
+    parser.add_argument(
         '--debug',
         action='store_true',
         help="Enable debug mode.")

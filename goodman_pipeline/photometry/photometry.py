@@ -55,7 +55,9 @@ class Photometry(object):
         self.gaia_coords = None
         self.photometry_table = None
         self.photometry_table_name = ''
+        self.filter_name: str = ''
         self.aperture_curve_of_growth = aperture_curve_of_growth
+        self.plots = plots
         self.overwrite = overwrite
         self.debug = debug
 
