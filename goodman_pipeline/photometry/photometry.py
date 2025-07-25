@@ -316,52 +316,9 @@ class Photometry(object):
         sys.exit(1)
 
     def _aperture_photometry(self):
-
-
         positions = np.transpose((self.sources['xcentroid'], self.sources['ycentroid']))
-
-        if self.aperture_type == 'variable':
-            raise NotImplementedError("Variable Photometry not yet implemented.")
-            # initial_apertures = CircularAperture(positions=positions, r=self.aperture_radius)
-            #
-            # aperture_stats = ApertureStats(data=background_subtracted_data, aperture=initial_apertures, sigma_clip=None)
-            # columns = ('id', 'mean', 'fwhm', 'max', 'xcentroid', 'ycentroid')
-            #
-            # stats_as_table = aperture_stats.to_table(columns=columns)
-            #
-            # xcentroid = stats_as_table['xcentroid']
-            # ycentroid = stats_as_table['ycentroid']
-            #
-            # fwhm = stats_as_table['fwhm']
-            # valid_mask = ~np.isnan(fwhm)
-            #
-            # filtered_xcentroid = xcentroid[valid_mask]
-            # filtered_ycentroid = ycentroid[valid_mask]
-            # filtered_fwhm = fwhm[valid_mask]
-            #
-            # variable_aperture_factor = 1.5
-            #
-            # radii = variable_aperture_factor * filtered_fwhm
-            # print(type(radii))
-            # radii_values = np.array(radii.value)
-            #
-            # print(radii_values)
-            #
-            # positions = np.array(np.transpose((filtered_xcentroid, filtered_ycentroid)))
-            #
-            # print(radii_values.shape)
-            # print(positions.shape)
-            # print("Any NaN radii:", np.isnan(radii_values).any())
-            # print("All positive:", np.all(radii_values > 0))
-            #
-            # apertures = CircularAperture(positions=positions, r=radii_values)
-            #
-            # log.info(f"Running aperture photometry with variable aperture using {variable_aperture_factor}*FWHM.")
-        else:
-            apertures = CircularAperture(positions=positions, r=self.aperture_radius)
-            log.info(f"Running aperture photometry with fixed aperture {self.aperture_radius}")
-
-
+        apertures = CircularAperture(positions=positions, r=self.aperture_radius)
+        log.info(f"Running aperture photometry with fixed aperture of radius: {self.aperture_radius}")
         self.photometry_table = aperture_photometry(data=self.background_subtracted_data, apertures=apertures)
 
     def _psf_photometry(self):
