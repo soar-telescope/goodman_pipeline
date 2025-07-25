@@ -158,34 +158,38 @@ class Photometry(object):
                 log.info(f"Retrieved {len(self.gaia_table)} Gaia sources")
 
                 if len(self.gaia_table) > 0:
-                    interval = ZScaleInterval()
-                    vmin, vmax = interval.get_limits(self.background_subtracted_data)
+                    self.gaia_coords = SkyCoord(ra=self.gaia_table['ra'], dec=self.gaia_table['dec'], unit='deg',
+                                                frame='icrs')
+                    if self.plots:
+                        interval = ZScaleInterval()
+                        vmin, vmax = interval.get_limits(self.background_subtracted_data)
 
-                    fig, ax = plt.subplots(
-                        subplot_kw={'projection': self.wcs} if self.wcs else {}, figsize=(16, 12)
-                    )
-                    im = ax.imshow(self.background_subtracted_data, origin='lower', cmap='gray', vmin=vmin, vmax=vmax)
+                        fig, ax = plt.subplots(
+                            subplot_kw={'projection': self.wcs} if self.wcs else {}, figsize=(16, 12)
+                        )
+                        im = ax.imshow(self.background_subtracted_data, origin='lower', cmap='gray', vmin=vmin, vmax=vmax)
 
-                    if self.wcs:
-                        ax.set_xlabel('Right Ascension (J2000)')
-                        ax.set_ylabel('Declination (J2000)')
-                    else:
-                        ax.set_xlabel('X Pixel')
-                        ax.set_ylabel('Y Pixel')
+                        if self.wcs:
+                            ax.set_xlabel('Right Ascension (J2000)')
+                            ax.set_ylabel('Declination (J2000)')
+                        else:
+                            ax.set_xlabel('X Pixel')
+                            ax.set_ylabel('Y Pixel')
 
-                    ax.set_title(os.path.basename(self.filename))
-                    plt.colorbar(im, ax=ax, label='Pixel value')
-                    self.gaia_coords = SkyCoord(ra=self.gaia_table['ra'], dec=self.gaia_table['dec'], unit='deg', frame='icrs')
-                    x_pix, y_pix = self.wcs.world_to_pixel(self.gaia_coords, )
-                    #             print(x_pix, y_pix)
-                    ax.plot(x_pix, y_pix, 'o', markersize=5, markerfacecolor='none', markeredgecolor='cyan',
-                            label='Gaia DR2')
-                    ax.legend(loc='upper right')
-                    ax.set_xlim(0, nx)
-                    ax.set_ylim(0, ny)
+                        ax.set_title(os.path.basename(self.filename))
+                        plt.colorbar(im, ax=ax, label='Pixel value')
+                        x_pix, y_pix = self.wcs.world_to_pixel(self.gaia_coords, )
+                        #             print(x_pix, y_pix)
+                        ax.plot(x_pix, y_pix, 'o', markersize=5, markerfacecolor='none', markeredgecolor='cyan',
+                                label='Gaia DR2')
+                        ax.legend(loc='upper right')
+                        ax.set_xlim(0, nx)
+                        ax.set_ylim(0, ny)
 
-                    plt.tight_layout()
-                    plt.show()
+                        plt.tight_layout()
+                        plt.show()
+                else:
+                    log.error("Unable to continue due to GAIA table is empty.")
 
             except Exception as e:
                 log.error(f"Gaia query failed: {e}")
