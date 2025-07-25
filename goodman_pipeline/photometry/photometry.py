@@ -101,6 +101,12 @@ class Photometry(object):
     def _initial_checks(self):
         self.image_data, self.image_header = validate_fits_file_or_read(self.filename)
 
+        if self.imaging_filter_keyword in self.image_header:
+            self.filter_name = self.image_header[self.imaging_filter_keyword]
+        else:
+            log.error(f"Keyword {self.imaging_filter_keyword} not found in {self.filename}'s header.")
+            sys.exit(1)
+
         log.info("Checking for celestial WCS in the file's header.")
         try:
             self.wcs = WCS(self.image_header)
