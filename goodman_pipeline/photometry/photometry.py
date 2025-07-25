@@ -401,36 +401,36 @@ class Photometry(object):
 
         filter_to_gaia_band = {
             # SDSS system
-            'u-sdss': None,
-            'g-sdss': 'phot_bp_mean_mag',
-            'r-sdss': 'phot_g_mean_mag',
-            'i-sdss': 'phot_rp_mean_mag',
-            'z-sdss': None,
+            'u-SDSS': None,
+            'g-SDSS': 'phot_bp_mean_mag',
+            'r-SDSS': 'phot_g_mean_mag',
+            'i-SDSS': 'phot_rp_mean_mag',
+            'z-SDSS': None,
 
             # Johnson/Cousins
-            'u': None,
-            'b': 'phot_bp_mean_mag',
-            'v': 'phot_g_mean_mag',
-            'rc': 'phot_rp_mean_mag',
-            'vr': 'phot_g_mean_mag',  # Approximate
+            'U': None,
+            'B': 'phot_bp_mean_mag',
+            'V': 'phot_g_mean_mag',
+            'Rc': 'phot_rp_mean_mag',
+            'VR': 'phot_g_mean_mag',  # Approximate
 
             # Bessell
-            'u-bessel': None,
-            'b-bessel': 'phot_bp_mean_mag',
-            'v-bessel': 'phot_g_mean_mag',
-            'r-bessel': 'phot_rp_mean_mag',
-            'i-bessel': 'phot_rp_mean_mag',
+            'U-Bessel': None,
+            'B-Bessel': 'phot_bp_mean_mag',
+            'V-Bessel': 'phot_g_mean_mag',
+            'R-Bessel': 'phot_rp_mean_mag',
+            'I-Bessel': 'phot_rp_mean_mag',
 
             # Stromgren (no Gaia equivalents)
-            'u-stromgren': None,
-            'v-stromgren': None,
-            'b-stromgren': None,
-            'y-stromgren': None,
+            'u-Stromgren': None,
+            'v-Stromgren': None,
+            'b-Stromgren': None,
+            'y-Stromgren': None,
         }
 
-        gaia_band = filter_to_gaia_band.get(filter_name, None)
+        gaia_band = filter_to_gaia_band.get(self.filter_name, None)
         if gaia_band is None:
-            log.warning(f"The filter {filter_name} does not have an equivalent band in gaia, will use 'phot_g_mean_mag' as default.")
+            log.warning(f"The filter {self.filter_name} does not have an equivalent band in gaia, will use 'phot_g_mean_mag' as default.")
         return gaia_band if gaia_band is not None else 'phot_g_mean_mag'
 
     def _apply_color_transformation_correction(self, standard_magnitudes):
