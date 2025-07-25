@@ -381,7 +381,9 @@ class Photometry(object):
         log.info(f"Retrieving matched gaia source's magnitudes from column {self.gaia_photometry_column}")
         gaia_magnitudes = matched_gaia_sources[self.gaia_photometry_column]
 
-        zero_points = gaia_magnitudes - instrumental_magnitudes
+        corrected_gaia_magnitudes = self._apply_color_transformation_correction(standard_magnitudes=gaia_magnitudes)
+
+        zero_points = corrected_gaia_magnitudes - instrumental_magnitudes
 
         valid_zero_points = zero_points[np.isfinite(zero_points)]
         self.zero_point_median = np.median(valid_zero_points)
@@ -431,3 +433,18 @@ class Photometry(object):
         if gaia_band is None:
             log.warning(f"The filter {filter_name} does not have an equivalent band in gaia, will use 'phot_g_mean_mag' as default.")
         return gaia_band if gaia_band is not None else 'phot_g_mean_mag'
+
+    def _apply_color_transformation_correction(self, standard_magnitudes):
+
+        filter_corrections = {
+            "g-SDSS": {"gaia_band": "phot_g_mean_mag", "a": 0.60, "b": -0.15},
+            "r-SDSS": {"gaia_band": "phot_g_mean_mag", "a": 0.60, "b": -0.15},
+            "i-SDSS": {"gaia_band": "phot_g_mean_mag", "a": 0.60, "b": -0.15},
+            "z-SDSS": {"gaia_band": "phot_g_mean_mag", "a": -0.45, "b": 0.12},
+            "V": {"gaia_band": "phot_g_mean_mag", "a": 0.017, "b": -0.02},
+            "default": {"gaia_band": "phot_g_mean_mag", "a": 0.0, "b": 0.0},
+        }
+
+        # self.filter_name
+        # self.gaia_table
+        return standard_magnitudes
