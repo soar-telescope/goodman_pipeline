@@ -398,7 +398,6 @@ class Photometry(object):
         Returns:
             str: Gaia band column name ('phot_g_mean_mag', 'phot_bp_mean_mag', or 'phot_rp_mean_mag')
         """
-        filter_name = self.image_header[self.imaging_filter_keyword].strip().lower()
 
         filter_to_gaia_band = {
             # SDSS system
