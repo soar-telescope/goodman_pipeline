@@ -20,7 +20,7 @@ from photutils.detection import DAOStarFinder
 
 from scipy.spatial import cKDTree
 
-from ..core import validate_fits_file_or_read
+from ..core import detect_point_sources, get_goodman_vigneting_mask, validate_fits_file_or_read
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +72,15 @@ class Photometry(object):
 
         self._initial_checks()
 
-        self._detect_sources()
+        self._subtract_background()
+
+        self._create_mask()
+
+        self.sources = detect_point_sources(data=self.background_subtracted_data,
+                                            mask=self.mask,
+                                            initial_fwhm=self.initial_fwhm,
+                                            detection_threshold=self.detection_threshold,
+                                            plots=self.plots)
 
         if self.aperture_curve_of_growth:
             log.info("Running aperture curve of growth diagnostics.")

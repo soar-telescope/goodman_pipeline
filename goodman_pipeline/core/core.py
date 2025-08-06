@@ -27,11 +27,15 @@ from astropy.io import fits
 from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
-from astropy.stats import sigma_clip
+from astropy.stats import sigma_clip, mad_std
+from astropy.table import Table, QTable
 from astropy.time import Time
+from astropy.visualization import ZScaleInterval
 from astroscrappy import detect_cosmics
 from importlib.metadata import version
 from matplotlib import pyplot as plt
+from pathlib import Path
+from photutils.detection import DAOStarFinder
 from scipy import signal, interpolate
 from threading import Timer
 
@@ -1081,6 +1085,68 @@ def define_trim_section(sample_image, technique):
 
     log.info('Trim Section: %s', trim_section)
     return trim_section
+
+
+def detect_point_sources(data: np.ndarray,
+                         mask: np.ndarray,
+                         initial_fwhm: float,
+                         detection_threshold: float,
+                         plots: bool = False):
+    """Detects point sources in an astronomical image using DAOStarFinder.
+
+    Performs fixed-aperture photometry by detecting point-like sources above a
+    specified noise threshold. Optionally displays a plot of detected sources.
+
+    Args:
+        data (np.ndarray): 2D array containing the image data.
+        mask (np.ndarray): Boolean mask where `True` indicates valid data.
+        initial_fwhm (float): Estimated full width at half maximum (FWHM) of the sources.
+        detection_threshold (float): Detection threshold in units of image noise.
+        plots (bool, optional): If True, displays a diagnostic plot of the detected sources. Defaults to False.
+
+    Returns:
+        astropy.table.Table: A table of detected sources, including centroid positions and fluxes.
+
+    Raises:
+        ValueError: If DAOStarFinder fails to detect sources or inputs are invalid.
+    """
+    log.info("Performing Fixed Aperture Photometry")
+
+    log.debug("Estimating image's noise")
+    noise = mad_std(data)
+
+    log.info(f"Running DAOStarFinder with fwhm={initial_fwhm} and threshold={detection_threshold} * noise")
+    daofind = DAOStarFinder(fwhm=initial_fwhm, threshold=detection_threshold * noise)
+
+    sources = daofind(data, mask=~mask)
+
+    log.info(f"Detected {len(sources)} sources.")
+    if plots:
+        interval = ZScaleInterval()
+        vmin, vmax = interval.get_limits(data)
+
+        fig, ax = plt.subplots(figsize=(16, 12))
+        im = ax.imshow(data, origin='lower', cmap='gray', vmin=vmin, vmax=vmax)
+
+        ax.set_xlabel('X Pixel')
+        ax.set_ylabel('Y Pixel')
+
+        ax.set_title(f"Detected Sources in file")
+        plt.colorbar(im, ax=ax, label='Pixel value')
+
+        ax.plot(x=sources['xcentroid'],
+                y=sources['ycentroid'],
+                marker='o',
+                markersize=5,
+                markerfacecolor='none' ,
+                markeredgecolor='cyan',
+                label='Detected Sources')
+
+        ax.legend(loc='upper right')
+
+        plt.tight_layout()
+        plt.show()
+    return sources
 
 
 def extraction(ccd,
