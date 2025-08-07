@@ -62,6 +62,11 @@ def get_photometry_config_args(arguments=None):
         help="GAIA's filter corresponding column name.")
 
     parser.add_argument(
+        '--disable-mask-creation',
+        action='store_true',
+        help="Disable mask creation (default=False).")
+
+    parser.add_argument(
         '--overwrite',
         action='store_true',
         help="Allow overwriting of existing photometry results.")

@@ -57,6 +57,7 @@ def redphotometry():
                             gaia_photometry_column=args.gaia_photometry_column,
                             imaging_filter_keyword=args.imaging_filter_keyword,
                             aperture_curve_of_growth=args.aperture_curve_of_growth,
+                            disable_mask_creation=args.disable_mask_creation,
                             plots=args.plots,
                             overwrite=args.overwrite,
                             debug=args.debug)

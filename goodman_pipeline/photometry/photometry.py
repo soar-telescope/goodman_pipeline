@@ -36,6 +36,7 @@ class Photometry(object):
                  gaia_photometry_column: str = '',
                  imaging_filter_keyword: str = 'FILTER',
                  aperture_curve_of_growth: bool = False,
+                 disable_mask_creation: bool = False,
                  plots: bool = False,
                  overwrite: bool = False,
                  debug: bool = False):
@@ -58,6 +59,7 @@ class Photometry(object):
         self.photometry_table_name = ''
         self.filter_name: str = ''
         self.aperture_curve_of_growth = aperture_curve_of_growth
+        self.disable_mask_creation = disable_mask_creation
         self.plots = plots
         self.overwrite = overwrite
         self.debug = debug
@@ -215,16 +217,31 @@ class Photometry(object):
         log.info("Subtracting background to image data.")
         self.background_subtracted_data = self.image_data - background.background
 
-        log.debug("Estimating image's noise")
-        noise = mad_std(self.background_subtracted_data)
+    def _create_mask(self):
+        if not self.disable_mask_creation:
+            self.mask = get_vigneting_mask(self.background_subtracted_data, flat_data=self.flat_image_data)
+        else:
+            log.info("Mask creation disabled, remove --disable-mask-creation if this is not what you want.")
+            self.mask = np.zeros_like(self.background_subtracted_data, dtype=np.bool)
 
-        log.info(
-            f"Running DAOStarFinder with fwhm={self.initial_fwhm} and threshold={self.detection_threshold} * noise")
-        daofind = DAOStarFinder(fwhm=self.initial_fwhm, threshold=self.detection_threshold * noise)
+        if self.plots:
 
-        self.sources = daofind(self.background_subtracted_data)
+            scale = ZScaleInterval()
 
-        log.info(f"Detected {len(self.sources)} sources.")
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+            z1, z2 = scale.get_limits(self.background_subtracted_data)
+
+            ax1.set_title("Original Image")
+            ax1.imshow(self.background_subtracted_data, clim=(z1, z2), cmap='gray')
+
+            masked_data = self.background_subtracted_data.copy()
+            masked_data[self.mask] = np.nan
+
+            # z1, z2 = scale.get_limits(masked_data)
+            ax2.set_title(f"Masked Image {'(mask creation disabled)' if self.disable_mask_creation else ''}")
+            ax2.imshow(masked_data, clim=(z1, z2), cmap='gray')
+            plt.show()
+
 
     def _estimate_best_aperture_size(self):
         nx, ny = self.background_subtracted_data.shape
