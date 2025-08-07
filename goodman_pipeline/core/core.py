@@ -1113,15 +1113,20 @@ def detect_point_sources(data: np.ndarray,
     Raises:
         ValueError: If DAOStarFinder fails to detect sources or inputs are invalid.
     """
-    log.info("Performing Fixed Aperture Photometry")
+    if data.shape != mask.shape:
+        raise ValueError("data and mask must have the same shape")
 
-    log.debug("Estimating image's noise")
+    log.info("Detecting point sources using DAOStarFinder")
     noise = mad_std(data)
 
     log.info(f"Running DAOStarFinder with fwhm={initial_fwhm} and threshold={detection_threshold} * noise")
     daofind = DAOStarFinder(fwhm=initial_fwhm, threshold=detection_threshold * noise)
 
-    sources = daofind(data, mask=~mask)
+    sources = daofind(data, mask=mask)
+
+    if sources is None or len(sources) == 0:
+        log.warning("No sources detected.")
+        return None
 
     log.info(f"Detected {len(sources)} sources.")
     if plots:
@@ -1137,8 +1142,9 @@ def detect_point_sources(data: np.ndarray,
         ax.set_title(f"Detected Sources in file")
         plt.colorbar(im, ax=ax, label='Pixel value')
 
-        ax.plot(x=sources['xcentroid'],
-                y=sources['ycentroid'],
+        ax.plot(sources['xcentroid'],
+                sources['ycentroid'],
+                linestyle='None',
                 marker='o',
                 markersize=5,
                 markerfacecolor='none' ,
