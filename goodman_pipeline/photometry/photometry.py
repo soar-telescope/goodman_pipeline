@@ -184,6 +184,11 @@ class Photometry(object):
                 job = Gaia.launch_job_async(query)
                 self.gaia_table = job.get_results()
                 log.info(f"Retrieved {len(self.gaia_table)} Gaia sources")
+                log.debug(f"Removing rows with no photometry values in BP and RP.")
+                mask = (~np.isnan(self.gaia_table['phot_bp_mean_mag']) & ~np.isnan(self.gaia_table['phot_rp_mean_mag']))
+                self.gaia_table = self.gaia_table[mask]
+                log.debug(f"Calculating Gaia's BP - RP color")
+                self.gaia_table['bp_rp_color'] = self.gaia_table['phot_bp_mean_mag'] - self.gaia_table['phot_rp_mean_mag']
 
                 if len(self.gaia_table) > 0:
                     self.gaia_coords = SkyCoord(ra=self.gaia_table['ra'], dec=self.gaia_table['dec'], unit='deg',
