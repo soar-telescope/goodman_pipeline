@@ -26,6 +26,8 @@ class Astrometry(object):
                  ra_keyword: str = 'OBSRA',
                  dec_keyword: str = 'OBSDEC',
                  index_directory: str= '',
+                 ignore_goodman_vignetting: bool = False,
+                 plots: bool = False,
                  overwrite: bool = False,
                  verbose: bool = False,
                  debug: bool = False):
@@ -48,6 +50,9 @@ class Astrometry(object):
         self.solve_field_executable = "solve-field"
         self.solve_field_full_path = None
         self.index_directory = index_directory
+        self.xy_sources_position = ''
+        self.ignore_goodman_vignetting = ignore_goodman_vignetting
+        self.plots = plots
         self.overwrite = overwrite
         self.verbose = verbose
         self.debug = debug
@@ -67,6 +72,9 @@ class Astrometry(object):
 
         self._set_parameters()
 
+        if not self.ignore_goodman_vignetting:
+            self.xy_sources_position = 'something-other-than-empty'
+
         return_code, solve_field_full_logs = self.astrometry_net__solve_field(
             filename=self.filename,
             ra=self._ra,
@@ -78,6 +86,7 @@ class Astrometry(object):
             downsample=self.downsample_factor,
             solve_field_executable=self.solve_field_full_path,
             index_directory=self.index_directory,
+            xy_sources_position=self.xy_sources_position,
             overwrite=self.overwrite,
             verbose=self.verbose)
 
@@ -180,6 +189,7 @@ class Astrometry(object):
             downsample: int=2,
             solve_field_executable: str="solve-field",
             index_directory: str='',
+            xy_sources_position: str='',
             overwrite: bool=False,
             verbose: bool=False):
         options = {
@@ -190,6 +200,7 @@ class Astrometry(object):
             "ra": ra,
             "dec": dec,
             "radius": radius,
+            "xyls": xy_sources_position,
             "index-dir": index_directory,
             "downsample": downsample,
             "verbose": verbose

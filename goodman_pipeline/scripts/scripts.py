@@ -62,4 +62,4 @@ def redphotometry():
                             overwrite=args.overwrite,
                             debug=args.debug)
 
-    results = photometry(filename=args.filename)
+    results = photometry(filename=args.filename, flat_image_filename=args.flat)

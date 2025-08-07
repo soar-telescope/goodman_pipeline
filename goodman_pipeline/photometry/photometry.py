@@ -46,9 +46,13 @@ class Photometry(object):
                  overwrite: bool = False,
                  debug: bool = False):
         self.filename = None
+        self.flat_image_filename = None
         self.image_data = None
         self.image_header = None
+        self.flat_image_data = None
+        self.flat_image_header = None
         self.background_subtracted_data = None
+        self.mask = None
         self.wcs = None
         self.aperture_radius = aperture_radius
         self.aperture_type = aperture_type
@@ -75,8 +79,9 @@ class Photometry(object):
 
         log.setLevel(logging.DEBUG if self.debug else logging.INFO)
 
-    def __call__(self, filename):
+    def __call__(self, filename, flat_image_filename: Union[str, None] = None,):
         self.filename = filename
+        self.flat_image_filename = flat_image_filename
 
         self._initial_checks()
 
@@ -121,6 +126,15 @@ class Photometry(object):
         else:
             log.error(f"Keyword {self.imaging_filter_keyword} not found in {self.filename}'s header.")
             sys.exit(1)
+
+        if self.flat_image_filename is not None:
+            self.flat_image_data, self.flat_image_header = validate_fits_file_or_read(self.flat_image_filename)
+            log.debug(f"Image's filter {self.image_header[self.imaging_filter_keyword]} vs flat filter {self.flat_image_header[self.imaging_filter_keyword]}")
+
+            if (self.image_header[self.imaging_filter_keyword] != self.flat_image_header[self.imaging_filter_keyword] or
+                    self.image_data.shape != self.flat_image_data.shape):
+                log.error(f"Flat image provided is not compatible with science data.")
+                sys.exit(1)
 
         log.info("Checking for celestial WCS in the file's header.")
         try:

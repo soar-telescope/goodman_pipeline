@@ -13,6 +13,13 @@ def get_photometry_config_args(arguments=None):
     parser.add_argument('filename', nargs='?', help="Path to file to process.")
 
     parser.add_argument(
+        '--flat',
+        '--flat-image',
+        default=None,
+        type=str,
+        help="Path to flat image used to build mask. Must match filter and size of file to process. (default=None")
+
+    parser.add_argument(
         '--aperture-radius',
         default=4.0,
         type=float,
