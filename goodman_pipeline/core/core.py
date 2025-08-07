@@ -36,6 +36,7 @@ from importlib.metadata import version
 from matplotlib import pyplot as plt
 from numpy.typing import NDArray
 from pathlib import Path
+from photutils.background import Background2D, MedianBackground
 from photutils.detection import DAOStarFinder
 from scipy import signal, interpolate
 from skimage.filters import threshold_otsu
@@ -3116,6 +3117,34 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
             log.warning("Unable to validate latest version. "
                         "The connection timed out or was not possible to establish")
             log.info(f"Current Version: {__version__}")
+
+
+def subtract_background_from_image_data(data: NDArray):
+    """Subtracts estimated background from an astronomical image.
+
+    Uses `photutils.Background2D` with a median estimator to model and subtract
+    the background from the input image data.
+
+    Args:
+        data (NDArray): 2D array of image data from which the background will be subtracted.
+
+    Returns:
+        NDArray: The background-subtracted image data.
+
+    Raises:
+        ValueError: If background estimation fails or input data is not 2D.
+    """
+    if data.ndim != 2:
+        raise ValueError("Input data must be a 2D array.")
+
+    log.debug("Estimating background for image data")
+    background = Background2D(
+        data=data,
+        box_size=(64, 64),
+        filter_size=(3, 3),
+        bkg_estimator=MedianBackground())
+    log.info("Subtracting background to image data.")
+    return data - background.background
 
 
 def trace(ccd,

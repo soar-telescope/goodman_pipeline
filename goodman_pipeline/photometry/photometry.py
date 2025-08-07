@@ -16,14 +16,17 @@ from astropy import units as u
 
 from astroquery.gaia import Gaia
 
+
 from photutils.aperture import aperture_photometry, CircularAperture
-from photutils.background import Background2D, MedianBackground
 
 from scipy.spatial import cKDTree
 
 from typing import Union
 
-from ..core import detect_point_sources, get_vigneting_mask, validate_fits_file_or_read
+from ..core import (detect_point_sources,
+                    get_vigneting_mask,
+                    subtract_background_from_image_data,
+                    validate_fits_file_or_read)
 
 matplotlib._log.setLevel(logging.WARNING)
 log = logging.getLogger(__name__)
@@ -85,7 +88,7 @@ class Photometry(object):
 
         self._initial_checks()
 
-        self._subtract_background()
+        self.background_subtracted_data = subtract_background_from_image_data(data=self.image_data)
 
         self._create_mask()
 
@@ -229,15 +232,7 @@ class Photometry(object):
         else:
             log.error("Can't query GAIA without having a WCS solution")
 
-    def _subtract_background(self):
-        log.debug("Estimating background for image data")
-        background = Background2D(
-            data=self.image_data,
-            box_size=(64, 64),
-            filter_size=(3, 3),
-            bkg_estimator=MedianBackground())
-        log.info("Subtracting background to image data.")
-        self.background_subtracted_data = self.image_data - background.background
+
 
     def _create_mask(self):
         if not self.disable_mask_creation:
