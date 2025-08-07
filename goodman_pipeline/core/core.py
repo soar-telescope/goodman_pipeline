@@ -579,6 +579,29 @@ def create_master_flats(flat_files,
         return None, None
 
 
+def create_xyls_table(sources: QTable,
+                      filename: str,
+                      image_width: int,
+                      image_height: int,
+                      overwrite: bool = False):
+
+    sources.sort('flux', reverse=True)
+
+    xyls_table = Table()
+
+    xyls_table['X'] = sources['xcentroid'].astype(np.float64)
+    xyls_table['Y'] = sources['ycentroid'].astype(np.float64)
+    xyls_table['FLUX'] = sources['flux'].astype(np.float64)
+
+    xyls_table.meta['IMAGEW'] = image_width
+    xyls_table.meta['IMAGEH'] = image_height
+
+    table_filename = str(Path(filename).with_suffix('.xyls'))
+    log.debug(f".xyls table full path:  {table_filename}")
+    log.info(f"Writing .xyls table to {str(Path(table_filename).name)}")
+    xyls_table.write(table_filename, format='fits', overwrite=overwrite)
+
+
 def cross_correlation(reference,
                       compared,
                       slit_size,
