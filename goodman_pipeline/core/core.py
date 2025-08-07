@@ -34,10 +34,13 @@ from astropy.visualization import ZScaleInterval
 from astroscrappy import detect_cosmics
 from importlib.metadata import version
 from matplotlib import pyplot as plt
+from numpy.typing import NDArray
 from pathlib import Path
 from photutils.detection import DAOStarFinder
 from scipy import signal, interpolate
+from skimage.filters import threshold_otsu
 from threading import Timer
+from typing import Union
 
 from . import check_version
 
@@ -1571,6 +1574,29 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 
     return central_wavelength
 
+def get_vigneting_mask(data: NDArray, flat_data: Union[NDArray, None] = None):
+    log.info("Creating vignetting mask")
+
+    if flat_data is not None and data.shape == flat_data.shape:
+        log.debug("Creating vignetting mask based on provided flat image.")
+        threshold = threshold_otsu(flat_data)
+        log.debug(f"Found Otsu threshold: {threshold}")
+        mask = flat_data < threshold
+        return mask
+    else:
+        log.warning("Flat image not provided, I will create a default mask for Goodman's vignetting")
+
+        nx, ny = data.shape
+
+        x, y = np.ogrid[:ny, :nx]
+        center_x, center_y = nx / 2, ny / 2
+
+        radius = 0.45 * min(nx, ny)
+
+        log.debug(f"Vignetting mask radius: {radius}")
+
+        mask = (x - center_x) ** 2 + (y - center_y) ** 2 > radius ** 2
+        return mask
 
 def get_lines_in_lamp(ccd, peak_percent_for_threshold=3, plots=False):
     """Identify peaks in a lamp spectrum
