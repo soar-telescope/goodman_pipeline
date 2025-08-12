@@ -8,9 +8,16 @@ import shutil
 import subprocess
 
 from astropy import units as u
+from astropy.io import fits
+from ccdproc import CCDData
+from pathlib import Path
 from typing import Union
 
-from ..core import validate_fits_file_or_read
+from ..core import (create_xyls_table,
+                    detect_point_sources,
+                    get_vigneting_mask,
+                    subtract_background_from_image_data,
+                    validate_fits_file_or_read)
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +32,7 @@ class Astrometry(object):
                  binning_keyword: str = 'CCDSUM',
                  ra_keyword: str = 'OBSRA',
                  dec_keyword: str = 'OBSDEC',
+                 imaging_filter_keyword: str = 'FILTER',
                  index_directory: str= '',
                  ignore_goodman_vignetting: bool = False,
                  plots: bool = False,
@@ -32,8 +40,12 @@ class Astrometry(object):
                  verbose: bool = False,
                  debug: bool = False):
         self.filename = None
+        self.target_file = None
+        self.flat_image_filename = None
         self.image_data = None
         self.image_header = None
+        self.flat_image_data = None
+        self.flat_image_header = None
         self.pixel_scale = pixel_scale * u.arcsec / u.pix
         self.serial_binning = 1
         self.parallel_binning = 1
@@ -58,15 +70,17 @@ class Astrometry(object):
         self.debug = debug
 
         self.binning_keyword = binning_keyword
+        self.imaging_filter_keyword = imaging_filter_keyword
 
         self._new_files = {}
 
         log.setLevel(logging.DEBUG if self.debug else logging.INFO)
 
 
-    def __call__(self, filename: str, return_json: bool = True):
+    def __call__(self, filename: str, flat_image_filename: Union[str, None] = None):
         log.info(f"Processing file {filename}")
         self.filename = filename
+        self.flat_image_filename = flat_image_filename
 
         self._initial_checks()
 
@@ -105,6 +119,16 @@ class Astrometry(object):
     def _initial_checks(self):
         log.info("Running input checks")
         self.image_data, self.image_header = validate_fits_file_or_read(filename=self.filename)
+
+        if self.flat_image_filename is not None:
+            self.flat_image_data, self.flat_image_header = validate_fits_file_or_read(filename=self.flat_image_filename)
+            log.debug(
+                f"Image's filter {self.image_header[self.imaging_filter_keyword]} vs flat filter {self.flat_image_header[self.imaging_filter_keyword]}")
+
+            if (self.image_header[self.imaging_filter_keyword] != self.flat_image_header[self.imaging_filter_keyword] or
+                    self.image_data.shape != self.flat_image_data.shape):
+                log.error(f"Flat image provided is not compatible with science data.")
+                sys.exit(1)
 
         log.debug(f"Validating that executable {self.solve_field_executable} exists")
         self.solve_field_full_path = shutil.which(self.solve_field_executable)
