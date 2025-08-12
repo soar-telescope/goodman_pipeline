@@ -35,6 +35,18 @@ def get_astrometry_config_args(arguments=None):
     parser.add_argument('filename', nargs='?', help="Path to file to process.")
 
     parser.add_argument(
+        '--initial-fwhm',
+        default=3.0,
+        type=float,
+        help="Initial FWHM in pixels for source detection. (default=3.0)")
+
+    parser.add_argument(
+        '--detection-threshold',
+        default=5.0,
+        type=float,
+        help="Detection threshold above noise factor (default=5.0)")
+
+    parser.add_argument(
         '--flat',
         '--flat-image',
         default=None,

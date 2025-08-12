@@ -34,6 +34,8 @@ def redastrometry():
     astrometry = Astrometry(pixel_scale=args.pixel_scale,
                             pixel_scale_tolerance=args.pixel_scale_tolerance,
                             scale_units=args.scale_units,
+                            detection_threshold=args.detection_threshold,
+                            initial_fwhm=args.initial_fwhm,
                             downsample_factor=args.downsample_factor,
                             binning_keyword=args.binning_keyword,
                             ra_keyword=args.ra_keyword,
