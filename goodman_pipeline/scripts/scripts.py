@@ -40,10 +40,11 @@ def redastrometry():
                             dec_keyword=args.dec_keyword,
                             index_directory=args.index_directory,
                             overwrite=args.overwrite,
+                            plots=args.plots,
                             debug=args.debug,
                             verbose=args.verbose)
 
-    astrometry(filename=args.filename, return_json=False)
+    astrometry(filename=args.filename, flat_image_filename=args.flat)
 
 
 def redphotometry():

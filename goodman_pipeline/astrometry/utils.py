@@ -35,6 +35,13 @@ def get_astrometry_config_args(arguments=None):
     parser.add_argument('filename', nargs='?', help="Path to file to process.")
 
     parser.add_argument(
+        '--flat',
+        '--flat-image',
+        default=None,
+        type=str,
+        help="Path to flat image used to build mask. Must match filter and size of file to process. (default=None")
+
+    parser.add_argument(
         '--pixel-scale',
         default=0.15,
         type=float,
@@ -87,6 +94,11 @@ def get_astrometry_config_args(arguments=None):
         type=str,
         help="Index directory for astrometry.net (default: None)."
     )
+
+    parser.add_argument(
+        '--plots',
+        action='store_true',
+        help="Show plots.")
 
     parser.add_argument(
         '--debug',
