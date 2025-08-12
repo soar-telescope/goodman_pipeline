@@ -28,6 +28,8 @@ class Astrometry(object):
                  pixel_scale: float = 0.15,
                  pixel_scale_tolerance: float = 0.02,
                  scale_units: str = 'arcsecperpix',
+                 detection_threshold: float = 5.0,
+                 initial_fwhm: float = 3.0,
                  downsample_factor: int = 2,
                  binning_keyword: str = 'CCDSUM',
                  ra_keyword: str = 'OBSRA',
@@ -53,6 +55,8 @@ class Astrometry(object):
         self.scale_units = scale_units
         self.scale_low = pixel_scale
         self.scale_high = pixel_scale
+        self.detection_threshold = detection_threshold
+        self.initial_fwhm = initial_fwhm
         self.downsample_factor = downsample_factor
         self.ra_keyword = ra_keyword
         self.dec_keyword = dec_keyword
@@ -87,15 +91,13 @@ class Astrometry(object):
         self._set_parameters()
 
         if not self.ignore_goodman_vignetting:
-            initial_fwhm = 3.0
-            detection_threshold = 5.0
             background_subtracted_data = subtract_background_from_image_data(data=self.image_data)
             mask = get_vigneting_mask(data=background_subtracted_data, flat_data=self.flat_image_data)
 
             sources = detect_point_sources(data=background_subtracted_data,
                                            mask=mask,
-                                           initial_fwhm=initial_fwhm,
-                                           detection_threshold=detection_threshold,
+                                           initial_fwhm=self.initial_fwhm,
+                                           detection_threshold=self.detection_threshold,
                                            plots=self.plots)
 
 
