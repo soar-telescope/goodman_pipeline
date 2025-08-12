@@ -39,6 +39,7 @@ def redastrometry():
                             ra_keyword=args.ra_keyword,
                             dec_keyword=args.dec_keyword,
                             index_directory=args.index_directory,
+                            ignore_goodman_vignetting=args.ignore_goodman_vignetting,
                             overwrite=args.overwrite,
                             plots=args.plots,
                             debug=args.debug,

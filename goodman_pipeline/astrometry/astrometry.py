@@ -87,10 +87,28 @@ class Astrometry(object):
         self._set_parameters()
 
         if not self.ignore_goodman_vignetting:
-            self.xy_sources_position = 'something-other-than-empty'
+            initial_fwhm = 3.0
+            detection_threshold = 5.0
+            background_subtracted_data = subtract_background_from_image_data(data=self.image_data)
+            mask = get_vigneting_mask(data=background_subtracted_data, flat_data=self.flat_image_data)
+
+            sources = detect_point_sources(data=background_subtracted_data,
+                                           mask=mask,
+                                           initial_fwhm=initial_fwhm,
+                                           detection_threshold=detection_threshold,
+                                           plots=self.plots)
+
+
+            self.target_file = create_xyls_table(sources=sources,
+                                            filename=self.filename,
+                                            image_width=self.image_data.shape[0],
+                                            image_height=self.image_data.shape[1],
+                                            overwrite=self.overwrite)
+        else:
+            self.target_file = self.filename
 
         return_code, solve_field_full_logs = self.astrometry_net__solve_field(
-            filename=self.filename,
+            filename=self.target_file,
             ra=self._ra,
             dec=self._dec,
             radius=self._radius.to(u.deg).value,
@@ -100,7 +118,6 @@ class Astrometry(object):
             downsample=self.downsample_factor,
             solve_field_executable=self.solve_field_full_path,
             index_directory=self.index_directory,
-            xy_sources_position=self.xy_sources_position,
             overwrite=self.overwrite,
             verbose=self.verbose)
 

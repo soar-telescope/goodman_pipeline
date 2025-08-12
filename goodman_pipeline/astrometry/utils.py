@@ -96,6 +96,11 @@ def get_astrometry_config_args(arguments=None):
     )
 
     parser.add_argument(
+        '--ignore-goodman-vignetting',
+        action='store_true',
+        help="Don't do pre source detection and masking, useful for processing images without vignetting. (default=False).")
+
+    parser.add_argument(
         '--plots',
         action='store_true',
         help="Show plots.")
