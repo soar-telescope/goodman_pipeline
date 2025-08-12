@@ -105,16 +105,18 @@ class Astrometry(object):
             verbose=self.verbose)
 
         log.debug(f"Astrometry.net exited with code {return_code}")
+        if return_code in [255]:
+            sys.exit(return_code)
+
+        self._create_file_with_wcs()
 
         self._detect_new_files()
 
-        json_results = {
+        return {
             'full_logs': solve_field_full_logs,
             'new_files': self._new_files,
         }
-        if return_json:
-            return json_results
-        return 0
+
 
     def _initial_checks(self):
         log.info("Running input checks")
@@ -198,8 +200,58 @@ class Astrometry(object):
                     self.new_files[key] = _file
                     break
 
-    def _identify_best_index_file(self):
-        pass
+    def _create_file_with_wcs(self):
+        """Creates a new FITS file containing WCS information.
+
+        Depending on the file type:
+            - For `.fits` inputs: renames a corresponding `.new` file to `_wcs.fits`.
+            - For `.xyls` inputs: merges the original image header with a `.wcs`
+              header file and saves as `_wcs.fits`.
+
+        Raises:
+            FileNotFoundError: If the required `.new` or `.wcs` file does not exist.
+            OSError: If file renaming or writing fails.
+        """
+        path = Path(self.target_file)
+
+        if path.suffix == ".fits":
+            self._rename_new_fits_file(path)
+        elif path.suffix == ".xyls":
+            self._merge_headers_and_save(path)
+        else:
+            log.warning(f"Unsupported file type: {path.suffix}")
+
+    def _rename_new_fits_file(self, path: Path):
+        """Renames an existing `.new` file to `_wcs.fits`."""
+        new_file = path.with_suffix(".new")
+        new_wcs_file = path.with_name(path.stem + "_wcs.fits")
+
+        log.debug(f"Looking for new file {new_file}")
+
+        if new_file.exists() and new_file.is_file():
+            log.info("A '*.new' file exists. Renaming to '_wcs.fits'.")
+            new_file.rename(new_wcs_file)
+        else:
+            raise FileNotFoundError(f"Unable to find expected file: {new_file}")
+
+    def _merge_headers_and_save(self, path: Path):
+        """Merges the image header with WCS header and saves as `_wcs.fits`."""
+        wcs_header_file = path.with_suffix(".wcs")
+        new_file_name = path.with_name(path.stem + "_wcs.fits")
+
+        if not wcs_header_file.exists():
+            raise FileNotFoundError(f"WCS header file not found: {wcs_header_file}")
+
+        log.debug(f"Reading WCS header from {wcs_header_file}")
+        with fits.open(wcs_header_file) as hdul:
+            wcs_header = hdul[0].header
+
+        new_header = fits.Header(self.image_header)
+        new_header.extend(wcs_header)
+
+        log.info(f"Saving new file with WCS solution to {new_file_name}")
+        new_hdu = CCDData(data=self.image_data, meta=new_header, unit="adu")
+        new_hdu.write(new_file_name, overwrite=self.overwrite)
 
     @staticmethod
     def astrometry_net__solve_field(
@@ -249,13 +301,10 @@ class Astrometry(object):
         process.wait()
 
         return_code = process.returncode
-        log.debug(f"Process exit code: {return_code}")
-        new_file_name = re.sub('.fits', '.new', filename)
-        new_wcs_file_name = re.sub('.new', '_wcs.fits', new_file_name)
-        if os.path.exists(new_file_name) and os.path.isfile(new_file_name):
-            log.info(f"A '*.new' file exists. Changing filename ending to '_wcs.fits'")
-            os.rename(new_file_name, new_wcs_file_name)
-        else:
-            log.warning(f"The process seems to have failed, unable to find the matching .new file.")
+        log.debug(f"Process 'solve-field' exit code: {return_code}")
+        if return_code in [255]:
+            log.error(f"Astrometry.net's solve-field failed to solve for {filename}")
+            sys.exit(return_code)
+
         full_logs = "".join(process_logs)
         return return_code, full_logs
