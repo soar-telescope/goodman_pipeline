@@ -57,6 +57,7 @@ dependencies = [
   "numpy",
   "packaging",
   "pandas",
+  "photutils",
   "requests",
   "scipy"
 ]
