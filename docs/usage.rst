@@ -1,7 +1,7 @@
 .. _`usage`:
 
-Usage
-#####
+General Guidelines
+##################
 
 The |pipeline full name| is designed to be simple to use, however simple does
 not always is the best case for everyone, thus |pipeline name| is also
@@ -22,9 +22,19 @@ Getting Help.
 
 .. include:: _running_prepare_data_for_reduction.rst
 
+
+.. _`processing_data`:
+
+Processing Data
+###############
+
 .. include:: _running_redccd.rst
 
 .. include:: _running_redspec.rst
+
+.. include:: _running_redastrometry.rst
+
+.. include:: _running_redphotometry.rst
 
 .. include:: _running_new_keywords.rst
 
