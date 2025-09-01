@@ -18,3 +18,4 @@ goodman_pipeline/data/dcr_source/*.o
 goodman_pipeline/version.py
 coverage.xml
 *.DS_Store
+goodman_pipeline.egg-info

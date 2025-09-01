@@ -1,1 +1,1 @@
-from .scripts import redccd, redspec  # pragma: no cover
+from .scripts import redccd, redspec, redastrometry, redphotometry  # pragma: no cover

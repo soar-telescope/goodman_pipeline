@@ -9,7 +9,7 @@ import os
 
 from packaging.version import Version
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 API_URL = 'https://api.github.com/repos/soar-telescope/goodman/releases/latest'
 
@@ -45,8 +45,10 @@ def get_last(github_api_token: str = 'GITHUB_ACCESS_TOKEN') -> Version:
 
 
 def am_i_updated(version: str) -> bool:
-
-    version = Version(version)
-    last_version = get_last()
-
-    return last_version <= version
+    if 'dev' in version:
+        log.warning(f"This is a development version: {version}")
+        return True
+    else:
+        version = Version(version)
+        last_version = get_last()
+        return last_version <= version

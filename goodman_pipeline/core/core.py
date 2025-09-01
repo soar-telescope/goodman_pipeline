@@ -27,13 +27,21 @@ from astropy.io import fits
 from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
-from astropy.stats import sigma_clip
+from astropy.stats import sigma_clip, mad_std
+from astropy.table import Table, QTable
 from astropy.time import Time
+from astropy.visualization import ZScaleInterval
 from astroscrappy import detect_cosmics
 from importlib.metadata import version
 from matplotlib import pyplot as plt
+from numpy.typing import NDArray
+from pathlib import Path
+from photutils.background import Background2D, MedianBackground
+from photutils.detection import DAOStarFinder
 from scipy import signal, interpolate
+from skimage.filters import threshold_otsu
 from threading import Timer
+from typing import Union
 
 from . import check_version
 
@@ -572,6 +580,35 @@ def create_master_flats(flat_files,
         return None, None
 
 
+def create_xyls_table(sources: Table,
+                      filename: str,
+                      image_width: int,
+                      image_height: int,
+                      overwrite: bool = False):
+
+    sources.sort('flux', reverse=True)
+
+    xyls_table = Table()
+
+    xyls_table['X'] = sources['xcentroid'].astype(np.float64)
+    xyls_table['Y'] = sources['ycentroid'].astype(np.float64)
+    xyls_table['FLUX'] = sources['flux'].astype(np.float64)
+
+    xyls_table.meta['IMAGEW'] = image_width
+    xyls_table.meta['IMAGEH'] = image_height
+
+    table_filename = str(Path(filename).with_suffix('.xyls'))
+    log.debug(f".xyls table full path:  {table_filename}")
+    log.info(f"Writing .xyls table to {str(Path(table_filename).name)}")
+    try:
+        xyls_table.write(table_filename, format='fits', overwrite=overwrite)
+    except OSError as e:
+        log.debug(f"Writing file rose an OSError exception: {str(e)}")
+        log.error(f"Unable to write .xyls table to {table_filename}. File already exists. Use --overwrite to overwrite it.")
+        sys.exit(1)
+    return table_filename
+
+
 def cross_correlation(reference,
                       compared,
                       slit_size,
@@ -1083,6 +1120,74 @@ def define_trim_section(sample_image, technique):
     return trim_section
 
 
+def detect_point_sources(data: np.ndarray,
+                         mask: np.ndarray,
+                         initial_fwhm: float,
+                         detection_threshold: float,
+                         plots: bool = False):
+    """Detects point sources in an astronomical image using DAOStarFinder.
+
+    Performs fixed-aperture photometry by detecting point-like sources above a
+    specified noise threshold. Optionally displays a plot of detected sources.
+
+    Args:
+        data (np.ndarray): 2D array containing the image data.
+        mask (np.ndarray): Boolean mask where `True` indicates valid data.
+        initial_fwhm (float): Estimated full width at half maximum (FWHM) of the sources.
+        detection_threshold (float): Detection threshold in units of image noise.
+        plots (bool, optional): If True, displays a diagnostic plot of the detected sources. Defaults to False.
+
+    Returns:
+        astropy.table.Table: A table of detected sources, including centroid positions and fluxes.
+
+    Raises:
+        ValueError: If DAOStarFinder fails to detect sources or inputs are invalid.
+    """
+    if data.shape != mask.shape:
+        raise ValueError("data and mask must have the same shape")
+
+    log.info("Detecting point sources using DAOStarFinder")
+    noise = mad_std(data)
+
+    log.info(f"Running DAOStarFinder with fwhm={initial_fwhm} and threshold={detection_threshold} * noise")
+    daofind = DAOStarFinder(fwhm=initial_fwhm, threshold=detection_threshold * noise)
+
+    sources = daofind(data, mask=mask)
+
+    if sources is None or len(sources) == 0:
+        log.warning("No sources detected.")
+        return None
+
+    log.info(f"Detected {len(sources)} sources.")
+    if plots:
+        interval = ZScaleInterval()
+        vmin, vmax = interval.get_limits(data)
+
+        fig, ax = plt.subplots(figsize=(16, 12))
+        im = ax.imshow(data, origin='lower', cmap='gray', vmin=vmin, vmax=vmax)
+
+        ax.set_xlabel('X Pixel')
+        ax.set_ylabel('Y Pixel')
+
+        ax.set_title(f"Detected Sources in file")
+        plt.colorbar(im, ax=ax, label='Pixel value')
+
+        ax.plot(sources['xcentroid'],
+                sources['ycentroid'],
+                linestyle='None',
+                marker='o',
+                markersize=5,
+                markerfacecolor='none' ,
+                markeredgecolor='cyan',
+                label='Detected Sources')
+
+        ax.legend(loc='upper right')
+
+        plt.tight_layout()
+        plt.show()
+    return sources
+
+
 def extraction(ccd,
                target_trace,
                spatial_profile,
@@ -1505,6 +1610,29 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 
     return central_wavelength
 
+def get_vigneting_mask(data: NDArray, flat_data: Union[NDArray, None] = None):
+    log.info("Creating vignetting mask")
+
+    if flat_data is not None and data.shape == flat_data.shape:
+        log.debug("Creating vignetting mask based on provided flat image.")
+        threshold = threshold_otsu(flat_data)
+        log.debug(f"Found Otsu threshold: {threshold}")
+        mask = flat_data < threshold
+        return mask
+    else:
+        log.warning("Flat image not provided, I will create a default mask for Goodman's vignetting")
+
+        nx, ny = data.shape
+
+        x, y = np.ogrid[:ny, :nx]
+        center_x, center_y = nx / 2, ny / 2
+
+        radius = 0.45 * min(nx, ny)
+
+        log.debug(f"Vignetting mask radius: {radius}")
+
+        mask = (x - center_x) ** 2 + (y - center_y) ** 2 > radius ** 2
+        return mask
 
 def get_lines_in_lamp(ccd, peak_percent_for_threshold=3, plots=False):
     """Identify peaks in a lamp spectrum
@@ -2154,6 +2282,12 @@ def is_file_saturated(ccd, threshold):
     else:
         return False
 
+def is_fits_file(filename):
+    try:
+        with fits.open(filename, ignore_missing_end=True):
+            return True
+    except Exception:
+        return False
 
 def linearize_spectrum(data, wavelength_solution, plots=False):
     """Produces a linearized version of the spectrum
@@ -2930,7 +3064,10 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
         If --debug is activated then the format of the message is different.
     """
 
-    log_filename = 'goodman_log.txt'
+    timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+    entrypoint_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+
+    log_filename = f"log_{entrypoint_name}_{timestamp}.txt"
 
     if '--debug' in sys.argv or debug:
         log_format = '[%(asctime)s][%(levelname)8s]: %(message)s ' \
@@ -2949,7 +3086,7 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
                         format=log_format,
                         datefmt=date_format)
 
-    log = logging.getLogger(__name__)
+    log = logging.getLogger()
 
     file_handler = logging.FileHandler(filename=log_filename)
     file_handler.setFormatter(fmt=formatter)
@@ -2957,11 +3094,12 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
     log.addHandler(file_handler)
 
     if not generic:
-        log.info("Starting Goodman HTS Pipeline Log")
+        log.info(f"Starting Goodman HTS Pipeline Log - {entrypoint_name}")
         log.info("Local Time    : {:}".format(
             datetime.datetime.now()))
         log.info("Universal Time: {:}".format(
-            datetime.datetime.utcnow()))
+            datetime.datetime.now(datetime.UTC)))
+        log.info(f"Full Command: {' '.join(sys.argv)}")
 
         try:
             latest_release = check_version.get_last()
@@ -2985,6 +3123,34 @@ def setup_logging(debug=False, generic=False):  # pragma: no cover
             log.warning("Unable to validate latest version. "
                         "The connection timed out or was not possible to establish")
             log.info(f"Current Version: {__version__}")
+
+
+def subtract_background_from_image_data(data: NDArray):
+    """Subtracts estimated background from an astronomical image.
+
+    Uses `photutils.Background2D` with a median estimator to model and subtract
+    the background from the input image data.
+
+    Args:
+        data (NDArray): 2D array of image data from which the background will be subtracted.
+
+    Returns:
+        NDArray: The background-subtracted image data.
+
+    Raises:
+        ValueError: If background estimation fails or input data is not 2D.
+    """
+    if data.ndim != 2:
+        raise ValueError("Input data must be a 2D array.")
+
+    log.debug("Estimating background for image data")
+    background = Background2D(
+        data=data,
+        box_size=(64, 64),
+        filter_size=(3, 3),
+        bkg_estimator=MedianBackground())
+    log.info("Subtracting background to image data.")
+    return data - background.background
 
 
 def trace(ccd,
@@ -3292,6 +3458,31 @@ def validate_ccd_region(ccd_region, regexp=r'^\[\d*:\d*,\d*:\d*\]$'):
     else:
         return True
 
+
+def validate_fits_file_or_read(filename: str):
+    log.info(f"Validating that the file {filename} exits.")
+    if not os.path.isfile(filename) or not os.path.exists(filename):
+        log.error(f"File {filename} does not exist")
+        sys.exit(1)
+    else:
+        log.debug(f"{filename} is a file and exists")
+
+    log.info(f"Validate if the file {filename} is a valid FITS file.")
+    if not is_fits_file(filename):
+        log.error(f"File {filename} is not a fits file")
+        sys.exit(1)
+    else:
+        log.debug(f"{filename} is a valid fits file")
+
+    with fits.open(filename) as hdulist:
+        for hdu in hdulist:
+            if hdu.data is not None:
+                image_data = hdu.data
+                image_header = hdu.header
+                log.debug("Found valid data")
+                return image_data, image_header
+        else:
+            raise ValueError("No image data found in the FITS file")
 
 def write_fits(ccd,
                full_path,
