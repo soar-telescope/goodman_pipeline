@@ -1,16 +1,71 @@
 Change History
 ##############
 
+.. _v2.0.0rc1:
+
+V2.0.0rc1 Not Released
+^^^^^^^^^^^^^^^^^^^^^^
+
+- Introduces astrometry and photometry capabilities
+- Added astrometry.net dependency using solve-field for astrometric solutions
+- Added photutils as new dependency for photometry measurements
+- New command-line tools: `redastrometry` and `redphotometry`
+
+.. _v1.3.13:
+
+V1.3.13 Not Released
+^^^^^^^^^^^^^^^^^^^^
+
+- Various maintenance updates and improvements
+
+.. _v1.3.12:
+
+V1.3.12 10-07-2025
+^^^^^^^^^^^^^^^^^^
+
+- Version maintenance and updates
+
+.. _v1.3.11:
+
+V1.3.11 22-05-2024
+^^^^^^^^^^^^^^^^^^
+
+- Added background extraction controls
+
+.. _v1.3.10:
+
+V1.3.10 06-03-2024
+^^^^^^^^^^^^^^^^^^
+
+- Packaging updates
+- Added parameters for line detection
+
+.. _v1.3.9:
+
+V1.3.9 18-07-2024
+^^^^^^^^^^^^^^^^^
+
+- Added comparison lamps 2100@3900A and 2100_650nm
+- Updated PyPI release configurations
+- Updated GitHub Actions
+
 .. _v1.3.8:
 
-V1.3.8 Not Released
-^^^^^^^^^^^^^^^^^^^
+V1.3.8 13-05-2024
+^^^^^^^^^^^^^^^^^
 
 - Documentation update
 - Fix DCR bug that was present when called from CLI.
 - Fixed Bug when using relative path for selecting master flat
 - Fixed Bug when dcr didn't processed properly when comparison lamps have OBSTYPE = ARC
-
+- Removed 'o' prefix from file naming
+- Changed plotting with Qt5Agg backend
+- Fixed wavemode detection
+- Updated DCR implementation
+- Added help messages
+- Added test for relative path in flats and fix reduced path basename
+- Fixed teardown in test
+- Added comparison lamps 1200_CaNIR and 2100_6507A
 
 .. _v1.3.7:
 
@@ -23,7 +78,8 @@ V1.3.7 17-08-2023
 - Removed testing with conda on github action because it only added complexity
 - Added 3 seconds timeout to request to github to validate version and check if running version is latest
 - Added correct exception handler in case the http request timed out.
-
+- Fixed big size of files
+- Fixed bias handling in master flats creation
 
 .. _v1.3.6:
 

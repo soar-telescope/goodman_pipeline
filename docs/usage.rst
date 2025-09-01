@@ -7,16 +7,28 @@ The |pipeline full name| is designed to be simple to use, however simple does
 not always is the best case for everyone, thus |pipeline name| is also
 flexible.
 
-Getting Help.
-  This manual is intended to be the prefered method to get help. However the quickest option is using ``-h`` or ``--help``
+Getting Help
+************
 
-  ``redccd --help``
+This manual is intended to be the preferred method to get help. However the quickest option is using ``-h`` or ``--help``
 
-  Will print the list of arguments along with a quick explanation and default values.
+``redccd --help``
 
-  It is the same for ``redspec``
+Will print the list of arguments along with a quick explanation and default values.
 
-  ``redspec --help``
+It is the same for ``redspec``
+
+``redspec --help``
+
+For astrometric processing:
+
+``redastrometry --help``
+
+And for photometric processing:
+
+``redphotometry --help``
+
+All commands will display their respective parameters, options, and usage examples with detailed explanations and default values.
 
 .. include:: _observing.rst
 
