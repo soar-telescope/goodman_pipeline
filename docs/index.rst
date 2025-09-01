@@ -40,7 +40,6 @@ computers.
 
   overview
   usage
-  Remote Access <remote_access>
   install
 
 
