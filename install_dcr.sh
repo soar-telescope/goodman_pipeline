@@ -11,7 +11,7 @@ then
 
 else
 	ENV_NAME=$(conda info | grep 'active environment' | sed 's/active environment//g' | sed "s/[: ]//g")
-	ENV_PATH=$(conda info | grep 'active env location' | sed 's/active env location//g' | sed "s/[: ]//g")
+	ENV_PATH=$(conda info | grep 'active env location' | sed 's/active env location[[:space:]]*://')
 	echo "Using Virtual Environment: " $ENV_NAME
 	echo "Environment path information: " $ENV_PATH
 	if [ -d $SOURCE_DIR ]
