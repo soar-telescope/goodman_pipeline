@@ -62,6 +62,19 @@ You should see output similar to::
 
 File 'dcr.par' must be present in the working directory.
 
+Installing Astrometry.net Binary
+********************************
+
+.. note::
+
+  This is critical if you want to do astrometry or photometry. If not you can ignore it.
+
+Full instructions are on `Astrometry's page <https://astrometry.net/doc/build.html>`_. For mac, the recommended way is using ``brew``.
+
+
+  ``brew install astrometry-net``
+
+
 Installing Astrometry.net Index Files
 *************************************
 
