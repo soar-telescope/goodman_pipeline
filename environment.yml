@@ -15,4 +15,5 @@ dependencies:
       - coveralls
       - pydata-sphinx-theme
       - astroplan
+      - astroquery
       - mock
