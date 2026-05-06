@@ -1,6 +1,7 @@
 astropy
 astroplan
 astroscrappy
+astroquery
 ccdproc
 coveralls
 cython
@@ -12,4 +13,4 @@ pandas
 scipy
 sphinx
 sphinxcontrib.napoleon
-sphinx_rtd_theme
+pydata_sphinx_theme

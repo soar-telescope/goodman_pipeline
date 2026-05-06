@@ -51,6 +51,7 @@ classifiers = [
 dependencies = [
   "astropy",
   "astroplan",
+  "astroquery",
   "ccdproc",
   "cython",
   "matplotlib",
