@@ -791,6 +791,7 @@ class WavelengthCalibration(object):
 
         write_fits(ccd=ccd,
                    full_path=file_full_path,
+                   data_type=4,
                    parent_file=original_filename)
 
         return file_full_path

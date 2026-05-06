@@ -313,7 +313,7 @@ class ImageProcessor(object):
                             f"{self.out_prefix}_{science_image}")
 
                         # ccd.write(full_path, clobber=True)
-                        write_fits(ccd=ccd, full_path=full_path)
+                        write_fits(ccd=ccd, full_path=full_path, data_type=2)
 
                 if slit_trim is not None:
                     # There is a double trimming of the image, this is to match
@@ -335,7 +335,7 @@ class ImageProcessor(object):
                             f"{self.out_prefix}_{science_image}")
 
                         # ccd.write(full_path, clobber=True)
-                        write_fits(ccd=ccd, full_path=full_path)
+                        write_fits(ccd=ccd, full_path=full_path, data_type=2)
 
                 else:
                     ccd = image_trim(ccd=ccd,
@@ -349,7 +349,7 @@ class ImageProcessor(object):
                             self.args.red_path,
                             f"{self.out_prefix}_{science_image}")
 
-                        write_fits(ccd=ccd, full_path=full_path)
+                        write_fits(ccd=ccd, full_path=full_path, data_type=2)
 
                 if not self.args.ignore_bias:
                     # TODO (simon): Add check that bias is compatible
@@ -408,7 +408,7 @@ class ImageProcessor(object):
                             f"{self.out_prefix}_{science_image}")
 
                         # ccd.write(full_path, clobber=True)
-                        write_fits(ccd=ccd, full_path=full_path)
+                        write_fits(ccd=ccd, full_path=full_path, data_type=2)
 
                 ccd, prefix = call_cosmic_rejection(
                     ccd=ccd,
@@ -583,7 +583,7 @@ class ImageProcessor(object):
                 final_name = os.path.join(self.args.red_path,
                                           f"{self.out_prefix}_{image_file}")
                 # ccd.write(final_name, clobber=True)
-                write_fits(ccd=ccd, full_path=final_name)
+                write_fits(ccd=ccd, full_path=final_name, data_type=2)
                 log.info('Created science file: {:s}'.format(final_name))
         else:
             log.error('Can not process data without a master flat')

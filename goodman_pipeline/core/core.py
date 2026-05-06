@@ -66,7 +66,8 @@ def astroscrappy_lacosmic(ccd, red_path=None, save_mask=False):
         log.info("Saving binary mask of cosmic rays to "
                  "{:s}".format(new_file_name))
         write_fits(ccd=mask_ccd,
-                   full_path=os.path.join(red_path, new_file_name))
+                   full_path=os.path.join(red_path, new_file_name),
+                   data_type=2)
 
     return ccd
 
@@ -341,7 +342,7 @@ def call_cosmic_rejection(ccd,
                        value="DCR",
                        comment="Cosmic ray rejection method")
 
-        write_fits(ccd=ccd, full_path=full_path)
+        write_fits(ccd=ccd, full_path=full_path, data_type=2)
         log.info('Saving image: {:s}'.format(full_path))
 
         in_file = f"{out_prefix}_{image_name}"
@@ -367,14 +368,14 @@ def call_cosmic_rejection(ccd,
 
         if save:
             log.info('Saving image: {:s}'.format(full_path))
-            write_fits(ccd=ccd, full_path=full_path)
+            write_fits(ccd=ccd, full_path=full_path, data_type=2)
         return ccd, out_prefix
 
     elif method == 'none':
         full_path = os.path.join(red_path, f"{out_prefix}_{image_name}")
         if save:
             log.info('Saving image: {:s}'.format(full_path))
-            write_fits(ccd=ccd, full_path=full_path)
+            write_fits(ccd=ccd, full_path=full_path, data_type=2)
 
         return ccd, out_prefix
 
@@ -442,6 +443,7 @@ def create_master_bias(bias_files,
 
     write_fits(ccd=master_bias,
                full_path=os.path.join(reduced_data, master_bias_name),
+               data_type=1,
                combined=True,
                overwrite=True)
 
@@ -570,6 +572,7 @@ def create_master_flats(flat_files,
 
         write_fits(ccd=master_flat,
                    full_path=master_flat_name,
+                   data_type=1,
                    combined=True)
 
         log.info('Created Master Flat: ' + master_flat_name)
@@ -886,7 +889,8 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
         if os.path.isfile(os.path.join(dest_path, image_name)):
             write_fits(image_list[i],
                        full_path=os.path.join(dest_path,
-                                              new_image_name))
+                                              new_image_name),
+                       data_type=2)
             log.info("Deleting file {}".format(image_name))
             os.unlink(os.path.join(dest_path, image_name))
         else:
@@ -900,6 +904,7 @@ def combine_data(image_list, dest_path, prefix=None, output_name=None,
     if save:
         write_fits(combined_image,
                    full_path=combined_full_path,
+                   data_type=2,
                    combined=True)
         log.info("Saved combined file to {}".format(combined_full_path))
 
@@ -2573,6 +2578,7 @@ def normalize_master_flat(master, name, method='simple', order=15):
     # write normalized flat to a file
     write_fits(ccd=master,
                full_path=norm_name,
+               data_type=1,
                parent_file=name)
 
     return master, norm_name
@@ -3004,7 +3010,7 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
     log.info("Saving uncalibrated(w) extracted spectrum to file: "
              "{:s}".format(new_file_name))
     full_path = os.path.join(destination, new_file_name)
-    ccd = write_fits(ccd=ccd, full_path=full_path, parent_file=file_name)
+    ccd = write_fits(ccd=ccd, full_path=full_path, parent_file=file_name, data_type=3)
     return ccd
 
 
@@ -3486,6 +3492,7 @@ def validate_fits_file_or_read(filename: str):
 
 def write_fits(ccd,
                full_path,
+               data_type: int=0,
                combined=False,
                parent_file=None,
                overwrite=True):
@@ -3494,10 +3501,20 @@ def write_fits(ccd,
     This is a wrapper for allowing to save files while being able to add
     information into the header. Mostly for historical reasons.
 
+    Note:
+        Data type or reduction level
+        0: Raw data.
+        1: Calibration master file.
+        2: Reduced 2D file.
+        3: Extracted 1D spectrum.
+        4: Wavelength calibrated.
+        5: Flux calibrated
+
     Args:
         ccd (CCDData) A :class:`~astropy.nddata.CCDData` instance to be saved
           to fits.
         full_path (str): Full path of file.
+        data_type (int): Data type of reduction level.
         combined (bool): True if `ccd` is the result of combining images.
         parent_file (str): Name of the file from which ccd originated. If
           combined is True this will be set to `combined`.
@@ -3530,6 +3547,12 @@ def write_fits(ccd,
     # Current File Name
     ccd.header.set('GSP_FNAM', value=os.path.basename(full_path))
     ccd.header.set('GSP_PATH', value=os.path.dirname(full_path))
+
+    # Data type
+    if data_type != 0 and 'RLEVEL' in ccd.header.keys():
+        # 60 is the offset for Las Cumbres, so they use 60, 61 and so on.
+        reduction_level = 60 + data_type
+        ccd.header.set('RLEVEL', data=reduction_level)
 
     # write to file
     log.info("Saving FITS file to {:s}".format(os.path.basename(full_path)))
