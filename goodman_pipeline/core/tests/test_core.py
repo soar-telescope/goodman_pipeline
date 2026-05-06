@@ -1108,6 +1108,26 @@ class FitsFileIOAndOps(TestCase):
         self.assertEqual(same_fake_image.header['GSP_FNAM'], expected_new_name)
         self.assertTrue(os.path.isfile(self.fake_image.header['GSP_FNAM']))
 
+    def test_save_with_reduction_level_wavelength_calibrated(self):
+        self.fake_image.header.set('RLEVEL', value=0)
+        data_type = 4
+        saved_fake_image = write_fits(ccd=self.fake_image, full_path=self.full_path, data_type=data_type)
+        expected_new_value = 60 + data_type
+        self.assertEqual(saved_fake_image.header['RLEVEL'], expected_new_value)
+
+    def test_save_with_reduction_level_rlevel_keyword_not_present(self):
+        data_type = 4
+        saved_fake_image = write_fits(ccd=self.fake_image, full_path=self.full_path, data_type=data_type)
+        self.assertTrue('RLEVEL' not in saved_fake_image.header.keys())
+
+    def test_save_with_reduction_level_new_value_zero(self):
+        initial_rlevel = 61
+        self.fake_image.header.set('RLEVEL', value=initial_rlevel)
+        data_type = 0
+        saved_fake_image = write_fits(ccd=self.fake_image, full_path=self.full_path, data_type=data_type)
+        # The value should remain the same
+        self.assertEqual(saved_fake_image.header['RLEVEL'], initial_rlevel)
+
     def tearDown(self):
         files_to_remove = [self.full_path, self.fake_image.header['GSP_FNAM']]
 
