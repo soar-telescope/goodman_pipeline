@@ -3552,7 +3552,7 @@ def write_fits(ccd,
     if data_type != 0 and 'RLEVEL' in ccd.header.keys():
         # 60 is the offset for Las Cumbres, so they use 60, 61 and so on.
         reduction_level = 60 + data_type
-        ccd.header.set('RLEVEL', data=reduction_level)
+        ccd.header.set('RLEVEL', value=reduction_level)
 
     # write to file
     log.info("Saving FITS file to {:s}".format(os.path.basename(full_path)))
