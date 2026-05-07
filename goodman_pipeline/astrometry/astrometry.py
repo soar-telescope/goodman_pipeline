@@ -269,6 +269,9 @@ class Astrometry(object):
         new_header.extend(wcs_header)
 
         log.info(f"Saving new file with WCS solution to {new_file_name}")
+        if 'RLEVEL' in new_header.keys():
+            # data type for astrometry solved is 6 but this is for Las Cumbres
+            new_header.set('RLEVEL', value=66)
         new_hdu = CCDData(data=self.image_data, meta=new_header, unit="adu")
         new_hdu.write(new_file_name, overwrite=self.overwrite)
 
