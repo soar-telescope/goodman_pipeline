@@ -128,7 +128,7 @@ class Photometry(object):
             self.filter_name = self.image_header[self.imaging_filter_keyword]
         else:
             log.error(f"Keyword {self.imaging_filter_keyword} not found in {self.filename}'s header.")
-            sys.exit(1)
+            sys.exit(f"Keyword {self.imaging_filter_keyword} not found in {self.filename}'s header.")
 
         if self.flat_image_filename is not None:
             self.flat_image_data, self.flat_image_header = validate_fits_file_or_read(self.flat_image_filename)
@@ -136,27 +136,26 @@ class Photometry(object):
 
             if (self.image_header[self.imaging_filter_keyword] != self.flat_image_header[self.imaging_filter_keyword] or
                     self.image_data.shape != self.flat_image_data.shape):
-                log.error(f"Flat image provided is not compatible with science data.")
-                sys.exit(1)
+                sys.exit("Flat image provided is not compatible with science data.")
 
         log.info("Checking for celestial WCS in the file's header.")
         try:
             self.wcs = WCS(self.image_header)
             if not self.wcs.has_celestial:
                 log.error("No Celestial WCS found")
-                sys.exit(1)
+                sys.exit("No Celestial WCS found")
             else:
                 log.info("Celestial WCS found")
         except Exception as e:
             log.error(f"WCS parsing failed: {e}")
-            sys.exit(1)
+            sys.exit(f"WCS parsing failed: {e}")
         else:
             log.debug("WCS parsing successful")
 
         log.debug("Validating aperture type")
         if self.aperture_type not in ['fixed', 'variable']:
             log.error(f"Invalid aperture type: {self.aperture_type}")
-            sys.exit(1)
+            sys.exit(f"Invalid aperture type: {self.aperture_type}")
 
     def _get_gaia_sources(self):
         if self.wcs:
@@ -364,7 +363,7 @@ class Photometry(object):
         self.photometry_table = aperture_photometry(data=self.background_subtracted_data, apertures=apertures)
         if not self.photometry_table:
             log.error("It appears that aperture photometry was unsuccessful")
-            sys.exit(1)
+            sys.exit("It appears that aperture photometry was unsuccessful")
 
         self.photometry_table = self.photometry_table[self.photometry_table['aperture_sum'] > 0]
 
@@ -405,7 +404,7 @@ class Photometry(object):
             log.debug(f"{e}")
             log.error(f"Photometry Table  {self.photometry_table_name} already exists.")
             log.info(f"In order to overwrite files use the --overwrite flag. Or use -h or --help for more info.")
-            sys.exit(0)
+            sys.exit(f"Photometry Table  {self.photometry_table_name} already exists.")
 
     def _get_photometric_zeropoint(self):
         sky_coords = self.wcs.pixel_to_world(

@@ -149,27 +149,27 @@ class Astrometry(object):
             if (self.image_header[self.imaging_filter_keyword] != self.flat_image_header[self.imaging_filter_keyword] or
                     self.image_data.shape != self.flat_image_data.shape):
                 log.error(f"Flat image provided is not compatible with science data.")
-                sys.exit(1)
+                sys.exit(f"Flat image provided is not compatible with science data.")
 
         log.debug(f"Validating that executable {self.solve_field_executable} exists")
         self.solve_field_full_path = shutil.which(self.solve_field_executable)
         if self.solve_field_full_path is None or not os.path.exists(self.solve_field_full_path):
             log.error(f"Unable to locate executable {self.solve_field_executable}")
-            sys.exit(1)
+            sys.exit(f"Unable to locate executable {self.solve_field_executable}")
         else:
             log.debug(f"Executable  {self.solve_field_executable} found at {self.solve_field_full_path}")
         if self.index_directory:
             log.debug(f"Validate --index-directory {self.index_directory}")
             if not os.path.isdir(self.index_directory) or not os.path.exists(self.index_directory):
                 log.error(f"Index directory {self.index_directory} does not exist")
-                sys.exit(1)
+                sys.exit(f"Index directory {self.index_directory} does not exist")
             else:
                 index_directory_length = len(os.listdir(self.index_directory))
                 if index_directory_length > 0:
                     log.debug(f"Index directory {self.index_directory} exists and contains {index_directory_length} files.")
                 else:
                     log.error(f"Index directory {self.index_directory} is empty")
-                    sys.exit(1)
+                    sys.exit(f"Index directory {self.index_directory} is empty")
         else:
             log.debug(f"No custom --index-directory specified")
 
@@ -197,7 +197,7 @@ class Astrometry(object):
 
     def _detect_new_files(self):
         all_matching_files = [_file  for _file in glob.glob(re.sub('.fits', '*', self.filename)) if _file != self.filename]
-
+        log.debug(f"Found {len(all_matching_files)} matching files.")
         extension_to_key = {
             ".axy": "augmented_xylist",
             ".corr": "matched_stars",
@@ -211,12 +211,14 @@ class Astrometry(object):
             "-ngc.png": "ngc_overlay_image",
             "-objs.png": "object_overlay_image"
         }
-        self.new_files = {}
+        self._new_files = {}
 
         for _file in all_matching_files:
+            log.debug(f"Processing {_file}")
             for suffix, key in extension_to_key.items():
                 if _file.endswith(suffix):
-                    self.new_files[key] = _file
+                    self._new_files[key] = _file
+                    log.debug(f"Adding file {_file} as {key}")
                     break
 
     def _create_file_with_wcs(self):
@@ -326,7 +328,7 @@ class Astrometry(object):
         log.debug(f"Process 'solve-field' exit code: {return_code}")
         if return_code in [255]:
             log.error(f"Astrometry.net's solve-field failed to solve for {filename}")
-            sys.exit(return_code)
+            sys.exit(f"Astrometry.net's solve-field failed to solve for {filename}")
 
         full_logs = "".join(process_logs)
         return return_code, full_logs
