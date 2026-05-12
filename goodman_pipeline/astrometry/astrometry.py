@@ -197,7 +197,7 @@ class Astrometry(object):
 
     def _detect_new_files(self):
         all_matching_files = [_file  for _file in glob.glob(re.sub('.fits', '*', self.filename)) if _file != self.filename]
-
+        log.debug(f"Found {len(all_matching_files)} matching files.")
         extension_to_key = {
             ".axy": "augmented_xylist",
             ".corr": "matched_stars",
@@ -211,12 +211,14 @@ class Astrometry(object):
             "-ngc.png": "ngc_overlay_image",
             "-objs.png": "object_overlay_image"
         }
-        self.new_files = {}
+        self._new_files = {}
 
         for _file in all_matching_files:
+            log.debug(f"Processing {_file}")
             for suffix, key in extension_to_key.items():
                 if _file.endswith(suffix):
-                    self.new_files[key] = _file
+                    self._new_files[key] = _file
+                    log.debug(f"Adding file {_file} as {key}")
                     break
 
     def _create_file_with_wcs(self):
