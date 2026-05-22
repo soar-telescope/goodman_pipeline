@@ -1653,7 +1653,7 @@ def get_lines_in_lamp(ccd, peak_percent_for_threshold=3, plots=False):
     Args:
         ccd (CCDData): Lamp `ccdproc.CCDData` instance.
         peak_percent_for_threshold (float): Percent of peak intensity above the minimum to use as detection threshold.
-        plots (bool): Wether to plot or not.
+        plots (bool): Whether to plot or not.
 
     Returns:
         lines_candidates (list): A common list containing pixel values at
