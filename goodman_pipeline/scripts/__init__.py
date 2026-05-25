@@ -1,1 +1,5 @@
-from .scripts import redccd, redspec, redastrometry, redphotometry  # pragma: no cover
+from .scripts import (redccd,
+                      redspec,
+                      create_reference_lamp,
+                      redastrometry,
+                      redphotometry)  # pragma: no cover

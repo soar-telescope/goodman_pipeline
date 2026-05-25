@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 
 from goodman_pipeline.core import setup_logging
 from goodman_pipeline.images import ReduceCCD
-from goodman_pipeline.spectroscopy import ReduceSpectroscopy
+from goodman_pipeline.spectroscopy import ReduceSpectroscopy, CreateReferenceLamp
 
 from goodman_pipeline.astrometry import Astrometry
 from goodman_pipeline.astrometry.utils import get_astrometry_config_args
@@ -27,6 +27,10 @@ def redccd():  # pragma: no cover
 def redspec():  # pragma: no cover
     reduce_spectroscopy = ReduceSpectroscopy()
     reduce_spectroscopy()
+
+def create_reference_lamp():
+    create_ref_lamp = CreateReferenceLamp()
+    create_ref_lamp()
 
 
 def redastrometry():
