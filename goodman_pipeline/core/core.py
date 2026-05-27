@@ -3978,7 +3978,7 @@ class ReferenceData(object):
             reference_dir (str): full path to the reference data directory
         """
         self.log = logging.getLogger(__name__)
-        self.reference_dir = reference_dir
+        self.reference_dir = os.path.normpath(reference_dir)
         reference_collection = ccdproc.ImageFileCollection(self.reference_dir)
         self.ref_lamp_collection = reference_collection.summary.to_pandas()
         self.lines_pixel = None
