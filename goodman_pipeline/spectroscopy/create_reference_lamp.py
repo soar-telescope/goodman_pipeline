@@ -6,14 +6,16 @@ import astropy.units as u
 import logging
 
 from importlib.metadata import version
-
+import matplotlib as mpl
+import numpy as np
 from astropy.nddata import CCDData
 from matplotlib import pyplot as plt
 
 from goodman_pipeline.core import (get_lines_in_lamp, get_spectral_characteristics)
 from goodman_pipeline.wcs import WCS
 
-
+mpl.use('QtAgg')
+# mpl.rcParams['savefig.dpi'] = 300
 __version__ = version('goodman_pipeline')
 
 def get_args(arguments=None):
