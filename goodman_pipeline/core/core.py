@@ -4074,18 +4074,13 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) &
                 (self.ref_lamp_collection['wavmode'] == header['WAVMODE']))]
             if filtered_collection.empty:
-                error_message = "Unable to find a match for: "\
-                                "LAMP_HGA = {}, "\
-                                "LAMP_NE = {}, "\
-                                "LAMP_AR = {}, "\
-                                "LAMP_FE = {}, "\
-                                "LAMP_CU = {}, "\
-                                "WAVMODE = {} ".format(header['LAMP_HGA'],
-                                                       header['LAMP_NE'],
-                                                       header['LAMP_AR'],
-                                                       header['LAMP_FE'],
-                                                       header['LAMP_CU'],
-                                                       header['WAVMODE'])
+                error_message = (f"Unable to find a match for: "
+                                f"LAMP_HGA = {header['LAMP_HGA']}, "
+                                f"LAMP_NE = {header['LAMP_NE']}, "
+                                f"LAMP_AR = {header['LAMP_AR']}, "
+                                f"LAMP_FE = {header['LAMP_FE']}, "
+                                f"LAMP_CU = {header['LAMP_CU']}, "
+                                f"WAVMODE = { header['WAVMODE']} ")
                 self.log.error(error_message)
                 raise NoMatchFound(error_message)
         else:
