@@ -3997,6 +3997,61 @@ class ReferenceData(object):
             'LAMP_DOM',
             'LAMP_DPE']
 
+    def __repr__(self):
+        reference_lamp_list = self.ref_lamp_collection['file'].to_list()
+        return (f"{self.__class__.__name__}"
+                f"\nReference Data Path: {os.path.normpath(self.reference_dir)}"
+                f"\nDetected {len(self.ref_lamp_collection)} lamps"
+                f"\n\n\t{'\n\t'.join(reference_lamp_list)}")
+
+    def get_reference_lamps_by_lamp_status_keyword(self, header):
+        if all([keyword in [hkey for hkey in header.keys()] for keyword in self.lamp_status_keywords]):
+            self.log.info("Searching matching reference lamp")
+            filtered_collection = self.ref_lamp_collection[(
+                (self.ref_lamp_collection['lamp_hga'] == header['LAMP_HGA']) &
+                (self.ref_lamp_collection['lamp_ne'] == header['LAMP_NE']) &
+                (self.ref_lamp_collection['lamp_ar'] == header['LAMP_AR']) &
+                (self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) &
+                (self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']))]
+            if filtered_collection.empty:
+                error_message = (f"Unable to find a match for: "
+                                 f"LAMP_HGA = {header['LAMP_HGA']}, "
+                                 f"LAMP_NE = {header['LAMP_NE']}, "
+                                 f"LAMP_AR = {header['LAMP_AR']}, "
+                                 f"LAMP_FE = {header['LAMP_FE']}, "
+                                 f"LAMP_CU = {header['LAMP_CU']}, ")
+                self.log.error(error_message)
+                raise NoMatchFound(error_message)
+            else:
+                return filtered_collection
+        else:
+            self.log.error("Header must contain lamp status keywords.")
+            return None
+
+    def get_reference_lamps_with_some_lamps_matching(self, header):
+        if all([keyword in [hkey for hkey in header.keys()] for keyword in self.lamp_status_keywords]):
+            self.log.info("Searching matching reference lamp")
+            filtered_collection = self.ref_lamp_collection[(
+                ((self.ref_lamp_collection['lamp_hga'] == header['LAMP_HGA']) & (header['LAMP_HGA'] == 'TRUE')) |
+                ((self.ref_lamp_collection['lamp_ne'] == header['LAMP_NE']) & (header['LAMP_NE'] == 'TRUE')) |
+                ((self.ref_lamp_collection['lamp_ar'] == header['LAMP_AR']) & (header['LAMP_AR'] == 'TRUE')) |
+                ((self.ref_lamp_collection['lamp_fe'] == header['LAMP_FE']) & (header['LAMP_FE'] == 'TRUE')) |
+                ((self.ref_lamp_collection['lamp_cu'] == header['LAMP_CU']) & (header['LAMP_CU'] == 'TRUE')))]
+            if filtered_collection.empty:
+                error_message = (f"Unable to find a match for: "
+                                 f"LAMP_HGA = {header['LAMP_HGA']}, "
+                                 f"LAMP_NE = {header['LAMP_NE']}, "
+                                 f"LAMP_AR = {header['LAMP_AR']}, "
+                                 f"LAMP_FE = {header['LAMP_FE']}, "
+                                 f"LAMP_CU = {header['LAMP_CU']}, ")
+                self.log.error(error_message)
+                raise NoMatchFound(error_message)
+            else:
+                return filtered_collection
+        else:
+            self.log.error("Header must contain lamp status keywords.")
+            return None
+
     def get_reference_lamp(self, header):
         """Finds a suitable template lamp from the catalog
 
