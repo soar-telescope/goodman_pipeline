@@ -271,19 +271,25 @@ class CreateReferenceLamp:
             if event.inaxes == self.ax_comp:
                 if event.button in [1, 2, 3] and event.key == 'control':
                     self._refine_line_center(center=event.xdata, xaxis=range(self.comparison_lamp.shape[0]), data=self.comparison_lamp.data)
-                    self.pixel.append(self.line_center)
-                    print(f"Register data point at {self.line_center:.3f} pixels.")
-                    if len(self.pixel) > len(self.angstrom):
-                        print(f"Now find the corresponding line in the reference lamp.")
+                    if self.line_center is not None:
+                        self.pixel.append(self.line_center)
+                        print(f"Register data point at {self.line_center:.3f} pixels.")
+                        if len(self.pixel) > len(self.angstrom):
+                            print(f"Now find the corresponding line in the reference lamp.")
+                    else:
+                        self.log.info("Ignoring data point.")
                 elif event.button == 1:
                     self.__report_click_position(click_position=event.xdata, units="Pixels")
             if event.inaxes == self.ax_ref:
                 if event.button in [1, 2, 3] and event.key == 'control':
                     self.line_center = self._refine_line_center(center=event.xdata, xaxis=self.ref_wavelength, data=self.ref_intensity)
-                    self.angstrom.append(self.line_center)
-                    print(f"Register data point at {self.line_center:.3f} Angstrom.")
-                    if len(self.angstrom) > len(self.pixel):
-                        print(f"Now find the corresponding line in the comparison lamp.")
+                    if self.line_center is not None:
+                        self.angstrom.append(self.line_center)
+                        print(f"Register data point at {self.line_center:.3f} Angstrom.")
+                        if len(self.angstrom) > len(self.pixel):
+                            print(f"Now find the corresponding line in the comparison lamp.")
+                    else:
+                        self.log.info("Ignoring data point.")
                 elif event.button == 1:
                     self.__report_click_position(click_position=event.xdata, units="Angstroms")
 
@@ -320,6 +326,14 @@ class CreateReferenceLamp:
             self.recenter_fig.canvas.stop_event_loop()
             plt.close(self.recenter_fig)
             return
+        if event.key == 'escape':
+            self.line_center = None
+            self.recenter_fig.canvas.mpl_disconnect(self.recenter_callback)
+            self.recenter_fig.canvas.stop_event_loop()
+            plt.close(self.recenter_fig)
+            return
+        else:
+            print(event.key)
         if replot:
             if self.recenter_center is not None:
                 self.recenter_center.remove()
@@ -345,19 +359,25 @@ class CreateReferenceLamp:
             self.comp_over_ref, = self.ax_ref.plot(self.wavelength_solution(range(self.comparison_lamp.data.shape[0])), data_normalized_to_reference_lamp, c='C3')
             self.fig.canvas.draw()
 
-    def _draw_markers(self):
+    def _draw_markers(self, delete=False):
         if len(self.angstrom) > 0:
             if self.ref_markers is not None:
                 self.ref_markers.remove()
                 self.ax_ref.relim()
             ref_markers_yaxis = [self.reference_lamp.data.min()] * len(self.angstrom)
             self.ref_markers, = self.ax_ref.plot(self.angstrom, ref_markers_yaxis, marker='^', markersize=5, color='C6', linestyle='None')
+        elif delete and self.ref_markers is not None:
+            self.ref_markers.remove()
+            self.ax_ref.relim()
         if len(self.pixel) > 0:
             if self.comp_markers is not None:
                 self.comp_markers.remove()
                 self.ax_comp.relim()
             comp_markers_yaxis = [self.comparison_lamp.data.min()] * len(self.pixel)
             self.comp_markers, = self.ax_comp.plot(self.pixel, comp_markers_yaxis, marker='^', markersize=5, color='C6', linestyle='None')
+        elif delete and self.comp_markers is not None:
+            self.comp_markers.remove()
+            self.ax_comp.relim()
         self.fig.canvas.draw()
 
     def __estimate_spectral_features_of_reference_lamps(self, reference_lamps: DataFrame):
