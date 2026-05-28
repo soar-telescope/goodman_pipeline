@@ -216,6 +216,7 @@ class CreateReferenceLamp:
     def __print_main_help():
         print("Commands available:\n")
         print("\tl : Print list of recorded values.")
+        print("\td : Remove nearby data point.")
         print("\th : Print this help message.")
 
     @staticmethod
@@ -225,6 +226,28 @@ class CreateReferenceLamp:
     @staticmethod
     def __report_click_position(click_position, units):
         print(f"\nThe clicked position is at: {click_position:.3f} {units}.\nPress 'Control' + click to mark a selection.\n")
+
+    def __delete_data_point(self, event):
+
+        def get_index_of_element_to_remove_from_array(point: float, input_array: list, tolerance:float, units: str):
+            closes_point_index = np.argmin(input_array - point)
+            closes_point = input_array[closes_point_index]
+            if closes_point - event.xdata <= tolerance:
+                return closes_point_index
+            else:
+                self.log.error(f"Unable to find a data point within {tolerance} {units}")
+                return None
+
+        if event.inaxes == self.ax_comp and len(self.pixel) > 0:
+            idx = get_index_of_element_to_remove_from_array(point=event.xdata, input_array=self.pixel, tolerance=1, units='Pixels')
+            if idx is not None:
+                removed = self.pixel.pop(idx)
+                self.log.info(f"Removed point {removed:.3f} ")
+        elif event.inaxes == self.ax_ref and len(self.angstrom) > 0:
+            idx = get_index_of_element_to_remove_from_array(point=event.xdata, input_array=self.angstrom, tolerance=1, units='Angstrom')
+            if idx is not None:
+                removed = self.angstrom.pop(idx)
+                self.log.info(f"Removed point {removed:.3f} ")
 
     def _refine_line_center(self, center, xaxis, data):
         self.line_center = center
@@ -280,6 +303,9 @@ class CreateReferenceLamp:
             self.__print_selected_points()
         elif event.key == 'h':
             self.__print_main_help()
+        elif event.key == 'd':
+            self.__delete_data_point(event=event)
+            self._draw_markers(delete=True)
 
     def _on_key_pressed_for_recenter(self, event):
         replot = False
