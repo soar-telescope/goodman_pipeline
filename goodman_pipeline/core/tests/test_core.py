@@ -1966,7 +1966,7 @@ class ReferenceDataTest(TestCase):
         self.assertIsInstance(self.rd.nist, dict)
         self.assertEqual(0, len(self.rd.nist))
 
-        self.rd._load_nist_list()
+        self.rd.load_nist_list()
         self.assertIsInstance(self.rd.nist, dict)
         self.assertGreater(len(self.rd.nist), 0)
 

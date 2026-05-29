@@ -8,11 +8,15 @@ import logging
 from importlib.metadata import version
 import matplotlib as mpl
 import numpy as np
+import pandas as pd
+
 from astropy.nddata import CCDData
+from astropy.stats import sigma_clip
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
-from goodman_pipeline.core import (get_lines_in_lamp, get_spectral_characteristics, NoMatchFound)
+from goodman_pipeline.core import (get_lines_in_lamp, get_spectral_characteristics, NoMatchFound,
+                                   evaluate_wavelength_solution, write_fits, read_fits)
 from goodman_pipeline.core import ReferenceData
 from goodman_pipeline.wcs import WCS
 
@@ -25,6 +29,16 @@ FIGURE_SIZES_FOR_SCREEN = {
     "medium" : (16, 8),
     "large" : (20, 10),
 }
+
+ELEMENTS_BY_LAMP = {
+    'LAMP_HGA': ('Hg', 'Ar'),
+    'LAMP_NE': ('Ne',),
+    'LAMP_AR': ('Ar',),
+    'LAMP_FE': ('Fe', 'He', 'Ar'),
+    'LAMP_CU': ('Cu', 'He', 'Ar'),
+}
+
+ELEMENTS_ORDER = ['Cu', 'Fe', 'Hg', 'He', 'Ar', 'Ne']
 
 def get_args(arguments=None):
     log = logging.getLogger()
@@ -58,6 +72,11 @@ class CreateReferenceLamp:
         self.angstrom = []
         self.reference_data = ReferenceData(reference_dir=os.path.join(os.path.dirname(__file__), '../data/ref_comp'))
         self.wavelength_solution = None
+        self.wavelength_solution_quality = {
+            "solution_rms": 0,
+            "number_of_points": 0,
+            "rejected_points": 0
+        }
         self.comparison_lamp = None
         self.comparison_lines = []
         self.comp_xmin = None
@@ -65,6 +84,7 @@ class CreateReferenceLamp:
         self.comp_ymin = None
         self.comp_ymax = None
         self.comp_spectral_characteristics = None
+        self.reference_lamp_full_path = None
         self.reference_lamp = None
         self.reference_lines = []
         self.ref_xmin = None
@@ -84,6 +104,7 @@ class CreateReferenceLamp:
         self.recenter_fig = None
         self.recenter_ax = None
         self.line_center = None
+        self.lines_in_subrange = None
         self.recenter_plot = None
         self.recenter_center = None
         self.recenter_callback = None
@@ -114,10 +135,19 @@ class CreateReferenceLamp:
         self.ref_xmax = self.comp_spectral_characteristics['red'].value
 
         if self.args.reference_lamp and os.path.exists(self.args.reference_lamp):
-            self.reference_lamp = CCDData.read(self.args.reference_lamp, unit=u.adu)
+            self.reference_lamp_full_path = os.path.abspath(os.path.normpath(self.args.reference_lamp))
         else:
-            reference_lamp_full_path = self._identify_best_reference_lamp()
-            self.reference_lamp = CCDData.read(reference_lamp_full_path, unit=u.adu)
+            self.reference_lamp_full_path = self._identify_best_reference_lamp()
+
+        # seed = self.args.comparison_lamp + self.reference_lamp_full_path
+        # cache_id = hashlib.blake2b(seed.encode(), digest_size=8).hexdigest()
+        # print(cache_id)
+
+        if self.reference_lamp_full_path is not None:
+            self.reference_lamp = CCDData.read(self.reference_lamp_full_path, unit=u.adu)
+        else:
+            self.log.error("Reference lamp file not found.")
+            sys.exit("Please specify a reference lamp file name. Use --reference-lamp <filename>")
 
         self.ref_wavelength, self.ref_intensity = self.wcs.read_gsp_wcs(ccd=self.reference_lamp)
 
@@ -132,13 +162,13 @@ class CreateReferenceLamp:
 
         self.__make_main_plot()
 
-
-
     def __make_main_plot(self):
         fig, (ax1, ax2) = plt.subplots(
             nrows=2,
             ncols=1,
             figsize=FIGURE_SIZES_FOR_SCREEN[self.args.screen_size])
+
+        fig.canvas.manager.set_window_title('Create Reference Interactively')
 
         self.fig = fig
         self.ax_ref = ax1
@@ -182,24 +212,53 @@ class CreateReferenceLamp:
         self.ax_ref.set_ylim(self.ref_ymin, self.ref_ymax)
         self.ax_ref.set_xlim(self.ref_xmin, self.ref_xmax)
         self.ax_ref.set(xlabel='Wavelength (Angstrom)', ylabel='Intensity (ADU)', title=f"Reference lamp - {self.reference_lamp.header['OBJECT']}")
-        for angstrom_key in self.reference_lamp.header['GSP_A*']:
-            if int(float(self.reference_lamp.header[angstrom_key])) != 0:
-                self.reference_lines.append(float(self.reference_lamp.header[angstrom_key]))
-        if len(self.reference_lines) > 0:
-            for line in self.reference_lines:
-                text = f"{line:.3f}"
+        # for angstrom_key in self.reference_lamp.header['GSP_A*']:
+        #     if int(float(self.reference_lamp.header[angstrom_key])) != 0:
+        #         self.reference_lines.append(float(self.reference_lamp.header[angstrom_key]))
+        self.nist_df = self.__get_nist_reference_lines()
+        if len(self.nist_df) > 0:
+            for index, row in self.nist_df.iterrows():
+                text = f"{row['air_wavelength']:.3f} {row['spectrum']}"
                 text_y_position = self.ref_ymin + 0.98 * (self.ref_ymax - self.ref_ymin)
-                line_index = np.abs(self.ref_wavelength - line).argmin()
+                line_index = np.abs(self.ref_wavelength - row['air_wavelength']).argmin()
                 line_intensity = np.max(self.reference_lamp.data[int(line_index) - 1: int(line_index) + 1])
                 line_ymin = (line_intensity - self.ref_ymin) / (self.ref_ymax - self.ref_ymin)
-                self.ax_ref.axvline(x=line, ymin=line_ymin, ymax=np.max([line_ymin, 0.8]), alpha=0.5, linestyle=':')
-                self.ax_ref.text(line, text_y_position, text, rotation=90, verticalalignment='top', horizontalalignment='center', clip_on=True)
+                self.ax_ref.axvline(x=row['air_wavelength'], ymin=line_ymin, ymax=np.max([line_ymin, 0.7]), alpha=0.5, linestyle=':')
+                self.ax_ref.text(row['air_wavelength'], text_y_position, text, rotation=90, verticalalignment='top', horizontalalignment='center', clip_on=True)
 
         self.fig.tight_layout()
         self.fig.canvas.mpl_connect('button_press_event', self._on_click)
         self.fig.canvas.mpl_connect('key_press_event', self._on_key_pressed)
         print(f"\nPress 'Control' and click the line you want to select. Press 'h' for help.\n")
         plt.show()
+
+
+    def __get_elements_in_lamp(self, ccd):
+        lamps_on__on_reference = [lamp for lamp in ccd.header['LAMP*'] if
+                                  ccd.header[lamp] == 'TRUE']
+
+        self.log.info(f"Refence lamp has {' and '.join(lamps_on__on_reference)} lamps on.")
+
+        elements_in_lamp = ()
+        for lamp_on in lamps_on__on_reference:
+            elements_in_lamp += ELEMENTS_BY_LAMP[lamp_on]
+
+        elements_in_lamp = set(elements_in_lamp)
+        self.log.info(f"Reference lamp has {' and '.join(elements_in_lamp)} elements.")
+        return elements_in_lamp
+
+
+    def __get_nist_reference_lines(self):
+        self.reference_data.load_nist_list()
+
+        elements_in_reference_lamp = self.__get_elements_in_lamp(ccd=self.reference_lamp)
+        nist_dfs = []
+        for element in elements_in_reference_lamp:
+            nist_dfs.append(self.reference_data.nist[element])
+        df = pd.concat(nist_dfs, ignore_index=True)
+
+        filtered = df[(df['air_wavelength'] >= self.ref_xmin) & (df['air_wavelength'] <= self.ref_xmax)]
+        return filtered
 
 
 
@@ -215,6 +274,7 @@ class CreateReferenceLamp:
     @staticmethod
     def __print_main_help():
         print("Commands available:\n")
+        print("\tf : Fit wavelength solution model.")
         print("\tl : Print list of recorded values.")
         print("\td : Remove nearby data point.")
         print("\th : Print this help message.")
@@ -249,17 +309,27 @@ class CreateReferenceLamp:
                 removed = self.angstrom.pop(idx)
                 self.log.info(f"Removed point {removed:.3f} ")
 
-    def _refine_line_center(self, center, xaxis, data):
+    def _refine_line_center(self, center, xaxis, data, units, offset = 10):
         self.line_center = center
         center_index = np.abs(xaxis - center).argmin()
-        self.recenter_fig, self.recenter_ax = plt.subplots()
-        offset = 10
+
+        fig, ax = plt.subplots()
+        fig.canvas.manager.set_window_title(f"Refine Line Center")
+
+        self.recenter_fig = fig
+        self.recenter_ax = ax
+
         xaxis_sample = xaxis[int(center_index - offset):int(center_index + offset)]
         intensity_sample = data[int(center_index - offset):int(center_index + offset)]
         self.recenter_step = 0.01 * (xaxis_sample[-1] - xaxis_sample[0])
         self.recenter_ax.set(title=f"Line center at {self.line_center}")
         self.recenter_plot, = self.recenter_ax.plot(xaxis_sample, intensity_sample, color='C0')
         self.recenter_center = self.recenter_ax.axvline(self.line_center, color='C3', linestyle='--')
+        self.lines_in_subrange = None
+        if units == 'Angstroms':
+            self.lines_in_subrange = self.nist_df[(self.nist_df['air_wavelength'] >= xaxis_sample[0]) & (self.nist_df['air_wavelength'] <= xaxis_sample[-1])]
+            for index, row in self.lines_in_subrange.iterrows():
+                self.recenter_ax.axvline(row['air_wavelength'], color='C1', linestyle='--')
         self.recenter_callback = self.recenter_fig.canvas.mpl_connect('key_press_event', self._on_key_pressed_for_recenter)
         plt.show(block=False)
         self.__print_recenter_help()
@@ -270,7 +340,7 @@ class CreateReferenceLamp:
         if event.inaxes in [self.ax_comp, self.ax_ref]:
             if event.inaxes == self.ax_comp:
                 if event.button in [1, 2, 3] and event.key == 'control':
-                    self._refine_line_center(center=event.xdata, xaxis=range(self.comparison_lamp.shape[0]), data=self.comparison_lamp.data)
+                    self._refine_line_center(center=event.xdata, xaxis=range(self.comparison_lamp.shape[0]), data=self.comparison_lamp.data, units='Pixels')
                     if self.line_center is not None:
                         self.pixel.append(self.line_center)
                         print(f"Register data point at {self.line_center:.3f} pixels.")
@@ -282,7 +352,7 @@ class CreateReferenceLamp:
                     self.__report_click_position(click_position=event.xdata, units="Pixels")
             if event.inaxes == self.ax_ref:
                 if event.button in [1, 2, 3] and event.key == 'control':
-                    self.line_center = self._refine_line_center(center=event.xdata, xaxis=self.ref_wavelength, data=self.ref_intensity)
+                    self.line_center = self._refine_line_center(center=event.xdata, xaxis=self.ref_wavelength, data=self.ref_intensity, units='Angstroms')
                     if self.line_center is not None:
                         self.angstrom.append(self.line_center)
                         print(f"Register data point at {self.line_center:.3f} Angstrom.")
@@ -312,26 +382,32 @@ class CreateReferenceLamp:
         elif event.key == 'd':
             self.__delete_data_point(event=event)
             self._draw_markers(delete=True)
+        elif event.key == 'w':
+            self._save_as_reference_lamp()
 
     def _on_key_pressed_for_recenter(self, event):
         replot = False
         if event.key == 'left':
             self.line_center -= self.recenter_step
             replot = True
-        if event.key == 'right':
+        elif event.key == 'right':
             self.line_center += self.recenter_step
             replot = True
-        if event.key == 'enter':
+        elif event.key == 'enter' or event.key == 'escape':
+            if event.key == 'escape':
+                self.line_center = None
             self.recenter_fig.canvas.mpl_disconnect(self.recenter_callback)
             self.recenter_fig.canvas.stop_event_loop()
             plt.close(self.recenter_fig)
             return
-        if event.key == 'escape':
-            self.line_center = None
-            self.recenter_fig.canvas.mpl_disconnect(self.recenter_callback)
-            self.recenter_fig.canvas.stop_event_loop()
-            plt.close(self.recenter_fig)
-            return
+        elif event.key == 'm':
+            if self.lines_in_subrange is not None and not self.lines_in_subrange.empty:
+                closest_line_idx = np.abs(self.lines_in_subrange['air_wavelength'] - self.line_center).idxmin()
+                self.line_center = self.lines_in_subrange.loc[closest_line_idx, 'air_wavelength']
+                self.log.info(f"Matching selection to NIST's reference line {self.line_center:.3f} {self.lines_in_subrange.loc[closest_line_idx, 'spectrum']}")
+                replot = True
+            else:
+                self.log.error("Matching a to a catalog line is available.")
         else:
             print(event.key)
         if replot:
@@ -348,7 +424,14 @@ class CreateReferenceLamp:
                                                     wavelength=self.angstrom,
                                                     model_name='chebyshev',
                                                     degree=3)
-            # print(self.wavelength_solution)
+            comp_wavelength = self.wavelength_solution(self.pixel)
+            diff_wavelength = comp_wavelength - np.asarray(self.angstrom)
+            clipped_diff = sigma_clip(diff_wavelength, sigma=3, maxiters=3, cenfunc=np.ma.median)
+            solution_rms, number_of_points, rejected_points = evaluate_wavelength_solution(clipped_diff)
+
+            self.wavelength_solution_quality['solution_rms'] = solution_rms
+            self.wavelength_solution_quality['number_of_points'] = number_of_points
+            self.wavelength_solution_quality['rejected_points'] = rejected_points
 
     def _overplot_comparison_lamp_with_solution(self):
         if self.wavelength_solution is not None:
@@ -365,7 +448,7 @@ class CreateReferenceLamp:
                 self.ref_markers.remove()
                 self.ax_ref.relim()
             ref_markers_yaxis = [self.reference_lamp.data.min()] * len(self.angstrom)
-            self.ref_markers, = self.ax_ref.plot(self.angstrom, ref_markers_yaxis, marker='^', markersize=5, color='C6', linestyle='None')
+            self.ref_markers, = self.ax_ref.plot(self.angstrom, ref_markers_yaxis, marker='^', markersize=7, color='C6', linestyle='None')
         elif delete and self.ref_markers is not None:
             self.ref_markers.remove()
             self.ax_ref.relim()
@@ -374,7 +457,7 @@ class CreateReferenceLamp:
                 self.comp_markers.remove()
                 self.ax_comp.relim()
             comp_markers_yaxis = [self.comparison_lamp.data.min()] * len(self.pixel)
-            self.comp_markers, = self.ax_comp.plot(self.pixel, comp_markers_yaxis, marker='^', markersize=5, color='C6', linestyle='None')
+            self.comp_markers, = self.ax_comp.plot(self.pixel, comp_markers_yaxis, marker='^', markersize=7, color='C6', linestyle='None')
         elif delete and self.comp_markers is not None:
             self.comp_markers.remove()
             self.ax_comp.relim()
@@ -437,3 +520,44 @@ class CreateReferenceLamp:
             reference_data_with_some_compatibility = self.reference_data.get_reference_lamps_with_some_lamps_matching(header=self.comparison_lamp.header)
             print(reference_data_with_some_compatibility[['file', 'lamp_hga', 'lamp_ne', 'lamp_ar', 'lamp_fe' , 'lamp_cu']].to_string())
             sys.exit(f"Please specify a valid reference lamp with --reference-lamp {self.reference_data.reference_dir}/<file name>")
+
+    def __get_new_reference_lamp_name(self):
+        wavmode = self.comparison_lamp.header['WAVMODE']
+        filter2 = self.comparison_lamp.header['FILTER2']
+        elements_in_comparison_lamp = self.__get_elements_in_lamp(ccd=self.comparison_lamp)
+        elements_ranking = {name: i for i, name in enumerate(ELEMENTS_ORDER)}
+        ordered_elements = sorted(elements_in_comparison_lamp, key=lambda x: elements_ranking[x])
+        elements = ''.join(ordered_elements)
+        new_name = f"goodman_lamp_{wavmode}_{filter2}_{elements}.fits"
+        return new_name
+
+    def __add_lines_used_for_fitting(self, ccd):
+        for p, line in enumerate(self.pixel):
+            ccd.header.set(f"GSP_P{p:03}", value=line, comment='Line location in pixel value')
+        for a, line in enumerate(self.angstrom):
+            ccd.header.set(f"GSP_A{a:03}", value=line, comment='Line location in angstrom value')
+
+        return ccd
+
+    def __record_wavelength_solution_quality(self, ccd):
+        ccd.header.set('GSP_WRMS', value=self.wavelength_solution_quality['solution_rms'])
+        ccd.header.set('GSP_WPOI', value=self.wavelength_solution_quality['number_of_points'])
+        ccd.header.set('GSP_WREJ', value=self.wavelength_solution_quality['rejected_points'])
+        return ccd
+
+
+    def _save_as_reference_lamp(self):
+        new_name = self.__get_new_reference_lamp_name()
+        new_reference_lamp_full_path = os.path.join(os.path.dirname(self.args.comparison_lamp), new_name)
+
+        ccd = self.comparison_lamp
+        ccd = self.__record_wavelength_solution_quality(ccd=ccd)
+        ccd = self.__add_lines_used_for_fitting(ccd=ccd)
+        ccd = self.wcs.write_gsp_wcs(ccd=ccd, model=self.wavelength_solution)
+
+        write_fits(ccd=ccd,
+                   full_path=new_reference_lamp_full_path,
+                   data_type=0,
+                   combined=False,
+                   parent_file=self.args.comparison_lamp,
+                   overwrite=True)
