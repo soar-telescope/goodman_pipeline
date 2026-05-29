@@ -4244,7 +4244,7 @@ class ReferenceData(object):
                 previous = line_value
         return True
 
-    def _load_nist_list(self, **kwargs):
+    def load_nist_list(self, **kwargs):
         """Load all csv files from strong lines in NIST."""
         nist_path = kwargs.get(
             'path',
