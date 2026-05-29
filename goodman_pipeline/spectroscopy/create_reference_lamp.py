@@ -103,7 +103,7 @@ class CreateReferenceLamp:
             self.log.error("Comparison lamp file not found.")
             sys.exit("Please specify a comparison lamp file name.")
 
-        self.comparison_lamp = CCDData.read(self.args.comparison_lamp, unit=u.adu)
+        self.comparison_lamp = read_fits(full_path=self.args.comparison_lamp, technique="Spectroscopy")
         self.comparison_lines = get_lines_in_lamp(ccd=self.comparison_lamp, peak_percent_for_threshold=3)
         self.comp_spectral_characteristics = get_spectral_characteristics(
             ccd=self.comparison_lamp,
