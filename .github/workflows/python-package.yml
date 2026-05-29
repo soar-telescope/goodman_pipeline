@@ -18,10 +18,20 @@ jobs:
       matrix:
         include:
 
-          - name: Python 3.12 with Coverage
+          - name: Python 3.14 with Coverage
+          - os: ubuntu-latest
+          - python: '3.14'
+          - toxenv: py314-test-cov
+
+          - name: Python 3.13
+          - os: ubuntu-latest
+          - python: '3.13'
+          - toxenv: py313-test
+
+          - name: Python 3.12
             os: ubuntu-latest
             python: '3.12'
-            toxenv: py312-test-cov
+            toxenv: py312-test
 
           - name: Python 3.12
             os: ubuntu-latest
@@ -33,15 +43,6 @@ jobs:
             python: '3.10'
             toxenv: py310-test
 
-          - name: Python 3.9
-            os: ubuntu-latest
-            python: 3.9
-            toxenv: py39-test
-
-          - name: Python 3.8
-            os: ubuntu-latest
-            python: 3.8
-            toxenv: py38-test
 
     steps:
     - name: Checkout code
