@@ -108,6 +108,7 @@ class CreateReferenceLamp:
         self.recenter_plot = None
         self.recenter_center = None
         self.recenter_callback = None
+        self.recenter_help_shown_once = False
 
     def __call__(self, args=None):
         if self.args is None:
@@ -229,7 +230,7 @@ class CreateReferenceLamp:
         self.fig.tight_layout()
         self.fig.canvas.mpl_connect('button_press_event', self._on_click)
         self.fig.canvas.mpl_connect('key_press_event', self._on_key_pressed)
-        print(f"\nPress 'Control' and click the line you want to select. Press 'h' for help.\n")
+        self.log.info(f"Press 'Control' and click the line you want to select. Press 'h' for help.")
         plt.show()
 
 
@@ -260,16 +261,14 @@ class CreateReferenceLamp:
         filtered = df[(df['air_wavelength'] >= self.ref_xmin) & (df['air_wavelength'] <= self.ref_xmax)]
         return filtered
 
-
-
     def __print_selected_points(self):
         if len(self.pixel) > 0 or len(self.angstrom) > 0:
-            print(f"\nSelected points:")
-            print(f"{'Pixel':8}\tAngstrom")
+            self.log.info(f"Selected points:")
+            self.log.info(f"{'Pixel':8}\tAngstrom")
             for i in range(max([len(self.pixel), len(self.angstrom)])):
                 pixel = f"{self.pixel[i]:.3f}" if len(self.pixel) > i else '-' * 8
                 angstrom = f"{self.angstrom[i]:.3f}" if len(self.angstrom) > i else '-' * 8
-                print(f"{pixel:8}\t{angstrom}")
+                self.log.info(f"{pixel:8}\t{angstrom}")
 
     @staticmethod
     def __print_main_help():
@@ -277,15 +276,26 @@ class CreateReferenceLamp:
         print("\tf : Fit wavelength solution model.")
         print("\tl : Print list of recorded values.")
         print("\td : Remove nearby data point.")
+        print("\tw : Write to fits file as reference lamp.")
         print("\th : Print this help message.")
+        print("\tControl + click : Records a data point.\n")
 
     @staticmethod
     def __print_recenter_help():
         print("""\nPress 'left' or 'right' arrow to adjust the line center. Then press 'Enter' to confirm.\n""")
+        print("Here is more complete list of keystrokes available:\n")
+        print("\tleft : Decreases the line value in steps of 1% of the subsample's range.")
+        print("\tright : Increases the line value in steps of 1% of the subsample's range.")
+        print("\tenter : Closes the window and selects the current position as a line center.")
+        print("\tescape : Closes the window and discards the current position as a line center.")
+        print("\tm : Matches the value of the line to the closest NIST line if present.")
+        print("\th : Prints this help message.\n")
 
-    @staticmethod
-    def __report_click_position(click_position, units):
-        print(f"\nThe clicked position is at: {click_position:.3f} {units}.\nPress 'Control' + click to mark a selection.\n")
+
+
+    def __report_click_position(self, click_position, units):
+        self.log.info(f"The clicked position is at: {click_position:.3f} {units}.")
+        self.log.info(f"Press 'Control' + click to mark a selection.")
 
     def __delete_data_point(self, event):
 
@@ -332,7 +342,9 @@ class CreateReferenceLamp:
                 self.recenter_ax.axvline(row['air_wavelength'], color='C1', linestyle='--')
         self.recenter_callback = self.recenter_fig.canvas.mpl_connect('key_press_event', self._on_key_pressed_for_recenter)
         plt.show(block=False)
-        self.__print_recenter_help()
+        if not self.recenter_help_shown_once:
+            self.__print_recenter_help()
+            self.recenter_help_shown_once = True
         self.recenter_fig.canvas.start_event_loop()
         return self.line_center
 
@@ -343,9 +355,9 @@ class CreateReferenceLamp:
                     self._refine_line_center(center=event.xdata, xaxis=range(self.comparison_lamp.shape[0]), data=self.comparison_lamp.data, units='Pixels')
                     if self.line_center is not None:
                         self.pixel.append(self.line_center)
-                        print(f"Register data point at {self.line_center:.3f} pixels.")
+                        self.log.info(f"Register data point at {self.line_center:.3f} pixels.")
                         if len(self.pixel) > len(self.angstrom):
-                            print(f"Now find the corresponding line in the reference lamp.")
+                            self.log.info(f"Now find the corresponding line in the reference lamp.")
                     else:
                         self.log.info("Ignoring data point.")
                 elif event.button == 1:
@@ -355,9 +367,9 @@ class CreateReferenceLamp:
                     self.line_center = self._refine_line_center(center=event.xdata, xaxis=self.ref_wavelength, data=self.ref_intensity, units='Angstroms')
                     if self.line_center is not None:
                         self.angstrom.append(self.line_center)
-                        print(f"Register data point at {self.line_center:.3f} Angstrom.")
+                        self.log.info(f"Register data point at {self.line_center:.3f} Angstrom.")
                         if len(self.angstrom) > len(self.pixel):
-                            print(f"Now find the corresponding line in the comparison lamp.")
+                            self.log.info(f"Now find the corresponding line in the comparison lamp.")
                     else:
                         self.log.info("Ignoring data point.")
                 elif event.button == 1:
@@ -408,8 +420,8 @@ class CreateReferenceLamp:
                 replot = True
             else:
                 self.log.error("Matching a to a catalog line is available.")
-        else:
-            print(event.key)
+        elif event.key == 'h':
+            self.__print_recenter_help()
         if replot:
             if self.recenter_center is not None:
                 self.recenter_center.remove()
