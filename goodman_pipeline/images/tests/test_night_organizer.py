@@ -7,7 +7,7 @@ import shutil
 
 from astropy.io import fits
 from ccdproc import CCDData
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from ..night_organizer import NightOrganizer
 

@@ -179,22 +179,24 @@ class ImageProcessor(object):
                 (science_group.obstype == 'ARC'))]
 
             if any([value in ['OBJECT', 'SPECTRUM'] for value in obstype]):
-                target_name = science_group.object[(
+                target_name = science_group.object[
+                    (
                         (science_group.obstype == 'OBJECT') |
-                        (science_group.obstype == 'SPECTRUM'))].unique()[0]
+                        (science_group.obstype == 'SPECTRUM')
+                    )].unique()[0]
 
-                log.info('Processing Science Target: '
-                              '{:s}'.format(target_name))
+                log.info(f"Processing Science Target: {target_name}")
             else:
                 # TODO (simon): This does not make any sense
-                log.info('Processing Comparison Lamp: '
-                              '{:s}'.format(target_name))
+                log.info(f"Processing Comparison Lamp: {target_name}")
 
             if any([value in ['FLAT', 'LAMPFLAT'] for value in obstype]) and \
                     not self.args.ignore_flats:
-                flat_sub_group = science_group[(
+                flat_sub_group = science_group[
+                    (
                         (science_group.obstype == 'FLAT') |
-                        (science_group.obstype == 'LAMPFLAT'))]
+                        (science_group.obstype == 'LAMPFLAT')
+                    )]
 
                 flat_files = flat_sub_group.file.tolist()
                 sample_header = fits.getheader(os.path.join(
@@ -210,16 +212,16 @@ class ImageProcessor(object):
 
                 master_flat, master_flat_name = \
                     create_master_flats(
-                            flat_files=flat_files,
-                            raw_data=self.args.raw_path,
-                            reduced_data=self.args.red_path,
-                            technique=self.technique,
-                            overscan_region=self.overscan_region,
-                            trim_section=self.trim_section,
-                            master_bias_name=self.master_bias_name,
-                            new_master_flat_name=master_flat_name,
-                            saturation_threshold=self.args.saturation_threshold,
-                            ignore_bias=self.args.ignore_bias)
+                        flat_files=flat_files,
+                        raw_data=self.args.raw_path,
+                        reduced_data=self.args.red_path,
+                        technique=self.technique,
+                        overscan_region=self.overscan_region,
+                        trim_section=self.trim_section,
+                        master_bias_name=self.master_bias_name,
+                        new_master_flat_name=master_flat_name,
+                        saturation_threshold=self.args.saturation_threshold,
+                        ignore_bias=self.args.ignore_bias)
             elif self.args.ignore_flats:
                 log.warning('Ignoring creation of Master Flat by request.')
                 master_flat = None
@@ -265,11 +267,9 @@ class ImageProcessor(object):
                 else:
                     log.warning('Skipping slit trim section trimming')
             elif self.args.ignore_flats:
-                log.warning('Slit Trimming will be skipped, '
-                                 '--ignore-flats is activated')
+                log.warning('Slit Trimming will be skipped, --ignore-flats is activated')
             else:
-                log.info("Master flat inexistent, can't find slit trim "
-                              "section")
+                log.info("Master flat inexistent, can't find slit trim section")
             if slit_trim is not None:
 
                 master_flat = image_trim(ccd=master_flat,
@@ -375,8 +375,7 @@ class ImageProcessor(object):
 
                 # Do flat correction
                 if master_flat is None or master_flat_name is None:
-                    log.warning('The file {:s} will not be '
-                                     'flatfielded'.format(science_image))
+                    log.warning(f"The file {science_image} will not be flatfielded")
                 elif self.args.ignore_flats:
                     log.warning('Ignoring flatfielding by request.')
                 else:
@@ -455,8 +454,7 @@ class ImageProcessor(object):
                     log.error("No OBJECT images to combine")
 
                 if len(all_comp_image) > 1:
-                    log.info("Combining {:d} COMP images"
-                                  "".format(len(all_comp_image)))
+                    log.info(f"Combining {len(all_comp_image)} COMP images")
                     # comp_group = object_comp_group[
                     #     object_comp_group.obstype == "COMP"]
                     combine_data(all_comp_image,
@@ -471,9 +469,11 @@ class ImageProcessor(object):
         elif any([value in ['FLAT', 'LAMPFLAT'] for value in obstype]):
             self.queue.append(science_group)
             log.warning('Only flats found in this group')
-            flat_sub_group = science_group[(
+            flat_sub_group = science_group[
+                (
                     (science_group.obstype == 'FLAT') |
-                    (science_group.obstype == 'LAMPFLAT'))]
+                    (science_group.obstype == 'LAMPFLAT')
+                )]
             # TODO (simon): Find out if these variables are useful or not
             flat_files = flat_sub_group.file.tolist()
 
@@ -489,16 +489,16 @@ class ImageProcessor(object):
                 morning_twilight=self.morning_twilight)
 
             create_master_flats(
-                            flat_files=flat_files,
-                            raw_data=self.args.raw_path,
-                            reduced_data=self.args.red_path,
-                            technique=self.technique,
-                            overscan_region=self.overscan_region,
-                            trim_section=self.trim_section,
-                            master_bias_name=self.master_bias_name,
-                            new_master_flat_name=master_flat_name,
-                            saturation_threshold=self.args.saturation_threshold,
-                            ignore_bias=self.args.ignore_bias)
+                flat_files=flat_files,
+                raw_data=self.args.raw_path,
+                reduced_data=self.args.red_path,
+                technique=self.technique,
+                overscan_region=self.overscan_region,
+                trim_section=self.trim_section,
+                master_bias_name=self.master_bias_name,
+                new_master_flat_name=master_flat_name,
+                saturation_threshold=self.args.saturation_threshold,
+                ignore_bias=self.args.ignore_bias)
         else:
             log.error('There is no valid datatype in this group')
 

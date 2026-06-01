@@ -20,7 +20,6 @@ import time
 import requests
 from astropy.nddata import CCDData
 from astropy.utils import iers
-iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
 from astroplan import Observer
 from astropy import units as u
 from astropy.io import fits
@@ -28,7 +27,7 @@ from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.coordinates import EarthLocation
 from astropy.modeling import (models, fitting, Model)
 from astropy.stats import sigma_clip, mad_std
-from astropy.table import Table, QTable
+from astropy.table import Table
 from astropy.time import Time
 from astropy.visualization import ZScaleInterval
 from astroscrappy import detect_cosmics
@@ -46,6 +45,8 @@ from typing import Union
 from . import check_version
 
 __version__ = version('goodman_pipeline')
+
+iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
 
 log = logging.getLogger(__name__)
 
@@ -334,7 +335,7 @@ def call_cosmic_rejection(ccd,
 
             generate_dcr_parameters_file(instrument=_instrument, binning=_binning, path=red_path)
 
-        #out_prefix = prefix + out_prefix #Move line here
+        # out_prefix = prefix + out_prefix #Move line here
 
         full_path = os.path.join(red_path, f"{out_prefix}_{image_name}")
 
@@ -1017,7 +1018,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
     # wait for dcr to terminate
     # dcr.wait()
 
-    #go back to the original directory. Could be the same.
+    # go back to the original directory. Could be the same.
     os.chdir(cwd)
 
     # If no error stderr is an empty string
@@ -1060,6 +1061,7 @@ def dcr_cosmicray_rejection(data_path, in_file, prefix,
             os.unlink(full_path_out)
         return ccd
 
+
 def define_trim_section(sample_image, technique):
     """Get the initial trim section
 
@@ -1091,9 +1093,7 @@ def define_trim_section(sample_image, technique):
     # serial binning - dispersion binning
     # parallel binning - spatial binning
     spatial_length, dispersion_length = ccd.data.shape
-    serial_binning, \
-    parallel_binning = [int(x) for x
-                        in ccd.header['CCDSUM'].split()]
+    serial_binning, parallel_binning = [int(x) for x in ccd.header['CCDSUM'].split()]
 
     # Trim section is valid for Blue and Red Camera Binning 1x1 and
     # Spectroscopic ROI
@@ -1174,7 +1174,7 @@ def detect_point_sources(data: np.ndarray,
         ax.set_xlabel('X Pixel')
         ax.set_ylabel('Y Pixel')
 
-        ax.set_title(f"Detected Sources in file")
+        ax.set_title("Detected Sources in file")
         plt.colorbar(im, ax=ax, label='Pixel value')
 
         ax.plot(sources['xcentroid'],
@@ -1182,7 +1182,7 @@ def detect_point_sources(data: np.ndarray,
                 linestyle='None',
                 marker='o',
                 markersize=5,
-                markerfacecolor='none' ,
+                markerfacecolor='none',
                 markeredgecolor='cyan',
                 label='Detected Sources')
 
@@ -1399,21 +1399,17 @@ def extract_fractional_pixel(ccd,
             if background_1 is not None and background_2 is None:
                 background = background_1
                 if background_info_1 is None:
-                    background_info_1 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_1, high_1, i+1)
+                    background_info_1 = f"{low_1:.2f}:{high_1:.2f} column {i + 1:d}"
             elif background_1 is None and background_2 is not None:
                 background = background_2
                 if background_info_2 is None:
-                    background_info_2 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_2, high_2, i+1)
+                    background_info_2 = f"{low_2:.2f}:{high_2:.2f} column {i + 1:d}"
             else:
                 background = np.mean([background_1, background_2])
                 if background_info_1 is None:
-                    background_info_1 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_1, high_1, i+1)
+                    background_info_1 = f"{low_1:.2f}:{high_1:.2f} column {i + 1:d}"
                 if background_info_2 is None:
-                    background_info_2 = "{:.2f}:{:.2f} column {:d}".format(
-                        low_2, high_2, i+1)
+                    background_info_2 = f"{low_2:.2f}:{high_2:.2f} column {i + 1:d}"
 
             # actual background subtraction
             background_subtracted_column_sum = column_sum - background
@@ -1615,6 +1611,7 @@ def get_central_wavelength(grating, grt_ang, cam_ang):
 
     return central_wavelength
 
+
 def get_vigneting_mask(data: NDArray, flat_data: Union[NDArray, None] = None):
     log.info("Creating vignetting mask")
 
@@ -1638,6 +1635,7 @@ def get_vigneting_mask(data: NDArray, flat_data: Union[NDArray, None] = None):
 
         mask = (x - center_x) ** 2 + (y - center_y) ** 2 > radius ** 2
         return mask
+
 
 def get_lines_in_lamp(ccd, peak_percent_for_threshold=3, plots=False):
     """Identify peaks in a lamp spectrum
@@ -1782,10 +1780,7 @@ def get_overscan_region(sample_image, technique):
 
         # define l r b and t to avoid local variable might be
         # defined before assignment warning
-        low_lim_spectral, \
-        high_lim_spectral, \
-        low_lim_spatial, \
-        high_lim_spatial = [None] * 4
+        low_lim_spectral, high_lim_spectral, low_lim_spatial, high_lim_spatial = [None] * 4
         if ccd.header['INSTCONF'] == 'Red':
             # for red camera it is necessary to eliminate the first
             # rows/columns (depends on the point of view) because
@@ -2287,12 +2282,14 @@ def is_file_saturated(ccd, threshold):
     else:
         return False
 
+
 def is_fits_file(filename):
     try:
         with fits.open(filename, ignore_missing_end=True):
             return True
     except Exception:
         return False
+
 
 def linearize_spectrum(data, wavelength_solution, plots=False):
     """Produces a linearized version of the spectrum
@@ -2471,14 +2468,7 @@ def name_master_flats(header,
         else:
             filter2 = '_' + filter2
 
-        master_flat_name += target_name \
-                            + flat_grating \
-                            + wavmode \
-                            + filter2 \
-                            + '_' \
-                            + flat_slit \
-                            + dome_sky \
-                            + '.fits'
+        master_flat_name += target_name + flat_grating + wavmode + filter2 + '_' + flat_slit + dome_sky + '.fits'
 
     elif technique == 'Imaging':
         if header['FILTER'] not in ['<NO FILTER>', 'NO_FILTER']:
@@ -2600,19 +2590,14 @@ def ra_dec_to_deg(right_ascension, declination):
     declination = declination.split(":")
 
     # RIGHT ASCENSION conversion
-    right_ascension_deg = (float(right_ascension[0])
-                           + (float(right_ascension[1])
-                              + (float(right_ascension[2]) / 60.)) / 60.) * \
-                          (360. / 24.)
+    right_ascension_deg = (float(right_ascension[0]) + (float(right_ascension[1]) + (float(right_ascension[2]) / 60.)) / 60.) * (360. / 24.)
 
     # DECLINATION conversion
     if float(declination[0]) == abs(float(declination[0])):
         sign = 1
     else:
         sign = -1
-    declination_deg = sign * (abs(float(declination[0]))
-                              + (float(declination[1])
-                                 + (float(declination[2]) / 60.)) / 60.)
+    declination_deg = sign * (abs(float(declination[0])) + (float(declination[1]) + (float(declination[2]) / 60.)) / 60.)
     return right_ascension_deg, declination_deg
 
 
@@ -2999,9 +2984,8 @@ def save_extracted(ccd, destination, prefix='e', target_number=1):
         file_name = re.sub('.fits', new_suffix, file_name)
 
     if ccd.header['OBSTYPE'] in ['COMP', 'ARC']:
-        extraction_region = re.sub(':','-', ccd.header['GSP_EXTR'])
-        file_name = re.sub('.fits', '_{:s}.fits'.format(extraction_region),
-                           file_name)
+        extraction_region = re.sub(':', '-', ccd.header['GSP_EXTR'])
+        file_name = re.sub('.fits', '_{:s}.fits'.format(extraction_region), file_name)
         new_file_name = prefix + file_name
 
     else:
@@ -3269,8 +3253,7 @@ def trace(ccd,
         (fitted_trace(sampling_axis[i]) - sample_values[i]) ** 2
         for i in range(len(sampling_axis))]
 
-    rms_error = np.sqrt(
-        np.sum(np.array(sampling_differences))/len(sampling_differences))
+    rms_error = np.sqrt(np.sum(np.array(sampling_differences)) / len(sampling_differences))
 
     log.debug("RMS Error of unclipped trace differences {:.3f}".format(
         rms_error))
@@ -3490,9 +3473,10 @@ def validate_fits_file_or_read(filename: str):
         else:
             raise ValueError("No image data found in the FITS file")
 
+
 def write_fits(ccd,
                full_path,
-               data_type: int=0,
+               data_type: int = 0,
                combined=False,
                parent_file=None,
                overwrite=True):
@@ -4075,12 +4059,12 @@ class ReferenceData(object):
                 (self.ref_lamp_collection['wavmode'] == header['WAVMODE']))]
             if filtered_collection.empty:
                 error_message = (f"Unable to find a match for: "
-                                f"LAMP_HGA = {header['LAMP_HGA']}, "
-                                f"LAMP_NE = {header['LAMP_NE']}, "
-                                f"LAMP_AR = {header['LAMP_AR']}, "
-                                f"LAMP_FE = {header['LAMP_FE']}, "
-                                f"LAMP_CU = {header['LAMP_CU']}, "
-                                f"WAVMODE = { header['WAVMODE']} ")
+                                 f"LAMP_HGA = {header['LAMP_HGA']}, "
+                                 f"LAMP_NE = {header['LAMP_NE']}, "
+                                 f"LAMP_AR = {header['LAMP_AR']}, "
+                                 f"LAMP_FE = {header['LAMP_FE']}, "
+                                 f"LAMP_CU = {header['LAMP_CU']}, "
+                                 f"WAVMODE = {header['WAVMODE']} ")
                 self.log.error(error_message)
                 raise NoMatchFound(error_message)
         else:
@@ -4686,8 +4670,7 @@ class IdentifySpectroscopicTargets(object):
 
         return self.background_model
 
-    def subtract_background(self, spatial_profile=None, background_model=None,
-                                     file_name=None, plots=False):
+    def subtract_background(self, spatial_profile=None, background_model=None, file_name=None, plots=False):
         """
 
         Args:
@@ -5070,10 +5053,10 @@ class IdentifySpectroscopicTargets(object):
         profile_model = []
         for peak in selected_peaks:
             peak_value = spatial_profile[peak]
-            moffat = models.Moffat1D(amplitude=peak_value,
-                                       x_0=peak,
-                                       gamma=order).rename(
-                'Moffat_{:}'.format(peak))
+            moffat = models.Moffat1D(
+                amplitude=peak_value,
+                x_0=peak,
+                gamma=order).rename('Moffat_{:}'.format(peak))
 
             fitted_moffat = fitter(moffat,
                                    range(len(spatial_profile)),

@@ -7,7 +7,7 @@ import shutil
 
 from astropy.io import fits
 from ccdproc import CCDData
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from ..data_classifier import DataClassifier
 
@@ -25,7 +25,6 @@ class DataClassifierTests(TestCase):
         self.create_fake_spectroscopic_data()
 
         self.data_classifier = DataClassifier()
-
 
     def create_fake_spectroscopic_data(self):
         if os.path.isdir(self.raw_path):
@@ -122,8 +121,6 @@ class DataClassifierTests(TestCase):
                 ccd.write(os.path.join(self.raw_path,
                                        'test_file_{:03d}.fits'.format(i)))
 
-
-
     def tearDown(self):
         if os.path.isdir(self.raw_path):
             shutil.rmtree(self.raw_path)
@@ -181,7 +178,5 @@ class DataClassifierTests(TestCase):
         # recovered_ccd.header['WAVMODE'] = 'Imaging'
         recovered_ccd.write(raw_path_full, overwrite=True)
 
-
         with self.assertRaises(SystemExit):
             self.data_classifier(raw_path=self.raw_path)
-

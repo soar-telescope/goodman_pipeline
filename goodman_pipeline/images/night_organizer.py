@@ -214,7 +214,7 @@ class NightOrganizer(object):
                 "check your data. A script is being developed to correct this "
                 "automatically but, for now, you will have to add this "
                 "keyword manually."
-                )
+            )
 
     def spectroscopy_night(self, file_collection, data_container):
         """Organizes data for spectroscopy
@@ -392,9 +392,11 @@ class NightOrganizer(object):
             sys.exit("Bias required for imaging.")
 
         # flats separation
-        flat_data = self.file_collection[(
+        flat_data = self.file_collection[
+            (
                 (self.file_collection.obstype == 'FLAT') |
-                (self.file_collection.obstype == 'LAMPFLAT'))]
+                (self.file_collection.obstype == 'LAMPFLAT')
+            )]
 
         # confs stands for configurations
         confs = flat_data.groupby(

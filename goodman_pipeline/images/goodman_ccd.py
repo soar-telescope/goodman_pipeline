@@ -377,8 +377,7 @@ class ReduceCCD(object):
                 self.args.dcr_par_dir)
         else:
             dcr_par_full_path = self.args.dcr_par_dir
-        if not os.path.isdir(dcr_par_full_path) and \
-                        self.args.dcr_par_dir != 'data/params':
+        if not os.path.isdir(dcr_par_full_path) and self.args.dcr_par_dir != 'data/params':
             self.log.info("dcr.par location {:s} doesn't exist."
                           "".format(dcr_par_full_path))
             try:

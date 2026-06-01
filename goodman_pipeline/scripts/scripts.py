@@ -14,10 +14,9 @@ from goodman_pipeline.photometry import Photometry
 
 import sys
 
-if '-h' not in sys.argv and \
-                '--help' not in sys.argv and \
-                '--version' not in sys.argv:  # pragma: no cover
+if '-h' not in sys.argv and '--help' not in sys.argv and '--version' not in sys.argv:  # pragma: no cover
     setup_logging()
+
 
 def redccd():  # pragma: no cover
     reduce_ccd = ReduceCCD()
@@ -27,6 +26,7 @@ def redccd():  # pragma: no cover
 def redspec():  # pragma: no cover
     reduce_spectroscopy = ReduceSpectroscopy()
     reduce_spectroscopy()
+
 
 def create_reference_lamp():
     create_ref_lamp = CreateReferenceLamp()
@@ -70,4 +70,4 @@ def redphotometry():
                             overwrite=args.overwrite,
                             debug=args.debug)
 
-    results = photometry(filename=args.filename, flat_image_filename=args.flat)
+    photometry(filename=args.filename, flat_image_filename=args.flat)

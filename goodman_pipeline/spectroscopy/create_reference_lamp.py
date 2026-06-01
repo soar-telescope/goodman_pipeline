@@ -25,9 +25,9 @@ mpl.use('QtAgg')
 __version__ = version('goodman_pipeline')
 
 FIGURE_SIZES_FOR_SCREEN = {
-    "small" : (10, 5),
-    "medium" : (16, 8),
-    "large" : (20, 10),
+    "small": (10, 5),
+    "medium": (16, 8),
+    "large": (20, 10),
 }
 
 ELEMENTS_BY_LAMP = {
@@ -39,6 +39,7 @@ ELEMENTS_BY_LAMP = {
 }
 
 ELEMENTS_ORDER = ['Cu', 'Fe', 'Hg', 'He', 'Ar', 'Ne']
+
 
 def get_args(arguments=None):
     log = logging.getLogger()
@@ -59,6 +60,7 @@ def get_args(arguments=None):
         sys.exit("Please specify a comparison lamp file name.")
 
     return args
+
 
 class CreateReferenceLamp:
 
@@ -230,9 +232,8 @@ class CreateReferenceLamp:
         self.fig.tight_layout()
         self.fig.canvas.mpl_connect('button_press_event', self._on_click)
         self.fig.canvas.mpl_connect('key_press_event', self._on_key_pressed)
-        self.log.info(f"Press 'Control' and click the line you want to select. Press 'h' for help.")
+        self.log.info("Press 'Control' and click the line you want to select. Press 'h' for help.")
         plt.show()
-
 
     def __get_elements_in_lamp(self, ccd):
         lamps_on__on_reference = [lamp for lamp in ccd.header['LAMP*'] if
@@ -248,7 +249,6 @@ class CreateReferenceLamp:
         self.log.info(f"Reference lamp has {' and '.join(elements_in_lamp)} elements.")
         return elements_in_lamp
 
-
     def __get_nist_reference_lines(self):
         self.reference_data.load_nist_list()
 
@@ -263,7 +263,7 @@ class CreateReferenceLamp:
 
     def __print_selected_points(self):
         if len(self.pixel) > 0 or len(self.angstrom) > 0:
-            self.log.info(f"Selected points:")
+            self.log.info("Selected points:")
             self.log.info(f"{'Pixel':8}\tAngstrom")
             for i in range(max([len(self.pixel), len(self.angstrom)])):
                 pixel = f"{self.pixel[i]:.3f}" if len(self.pixel) > i else '-' * 8
@@ -291,15 +291,13 @@ class CreateReferenceLamp:
         print("\tm : Matches the value of the line to the closest NIST line if present.")
         print("\th : Prints this help message.\n")
 
-
-
     def __report_click_position(self, click_position, units):
         self.log.info(f"The clicked position is at: {click_position:.3f} {units}.")
-        self.log.info(f"Press 'Control' + click to mark a selection.")
+        self.log.info("Press 'Control' + click to mark a selection.")
 
     def __delete_data_point(self, event):
 
-        def get_index_of_element_to_remove_from_array(point: float, input_array: list, tolerance:float, units: str):
+        def get_index_of_element_to_remove_from_array(point: float, input_array: list, tolerance: float, units: str):
             closes_point_index = np.argmin(input_array - point)
             closes_point = input_array[closes_point_index]
             if closes_point - event.xdata <= tolerance:
@@ -319,12 +317,12 @@ class CreateReferenceLamp:
                 removed = self.angstrom.pop(idx)
                 self.log.info(f"Removed point {removed:.3f} ")
 
-    def _refine_line_center(self, center, xaxis, data, units, offset = 10):
+    def _refine_line_center(self, center, xaxis, data, units, offset=10):
         self.line_center = center
         center_index = np.abs(xaxis - center).argmin()
 
         fig, ax = plt.subplots()
-        fig.canvas.manager.set_window_title(f"Refine Line Center")
+        fig.canvas.manager.set_window_title("Refine Line Center")
 
         self.recenter_fig = fig
         self.recenter_ax = ax
@@ -357,7 +355,7 @@ class CreateReferenceLamp:
                         self.pixel.append(self.line_center)
                         self.log.info(f"Register data point at {self.line_center:.3f} pixels.")
                         if len(self.pixel) > len(self.angstrom):
-                            self.log.info(f"Now find the corresponding line in the reference lamp.")
+                            self.log.info("Now find the corresponding line in the reference lamp.")
                     else:
                         self.log.info("Ignoring data point.")
                 elif event.button == 1:
@@ -369,7 +367,7 @@ class CreateReferenceLamp:
                         self.angstrom.append(self.line_center)
                         self.log.info(f"Register data point at {self.line_center:.3f} Angstrom.")
                         if len(self.angstrom) > len(self.pixel):
-                            self.log.info(f"Now find the corresponding line in the comparison lamp.")
+                            self.log.info("Now find the corresponding line in the comparison lamp.")
                     else:
                         self.log.info("Ignoring data point.")
                 elif event.button == 1:
@@ -487,25 +485,17 @@ class CreateReferenceLamp:
         spectral_df = DataFrame(data=spectral_data, columns=['file', 'wavelength_start', 'wavelength_end', 'blue', 'red', 'center'])
         return spectral_df
 
-
     def _identify_best_reference_lamp(self):
         try:
             reference_lamps_df = self.reference_data.get_reference_lamps_by_lamp_status_keyword(header=self.comparison_lamp.header)
             if self.args.debug:
-                print(reference_lamps_df[['file', 'lamp_hga', 'lamp_ne', 'lamp_ar', 'lamp_fe' , 'lamp_cu']].to_string(index=False))
+                print(reference_lamps_df[['file', 'lamp_hga', 'lamp_ne', 'lamp_ar', 'lamp_fe', 'lamp_cu']].to_string(index=False))
             ref_spectral = self.__estimate_spectral_features_of_reference_lamps(reference_lamps=reference_lamps_df)
             comp_blue = self.comp_spectral_characteristics['blue'].value
             comp_red = self.comp_spectral_characteristics['red'].value
             comp_center = self.comp_spectral_characteristics['center'].to(u.angstrom).value
 
-            compatible_reference_lamps = ref_spectral[
-                (
-                    (ref_spectral['wavelength_start'] <= comp_center) &
-                    (comp_center <= ref_spectral['wavelength_end'])
-                ) | (
-                    (ref_spectral['blue'] <= comp_center) &
-                    (comp_center <= ref_spectral['red'])
-                )]
+            compatible_reference_lamps = ref_spectral[((ref_spectral['wavelength_start'] <= comp_center) & (comp_center <= ref_spectral['wavelength_end'])) | ((ref_spectral['blue'] <= comp_center) & (comp_center <= ref_spectral['red']))]
             if compatible_reference_lamps.empty:
                 raise NoMatchFound("Unable to find a reference lamp so that the comparison lamp's spectral center fits within.")
             elif len(compatible_reference_lamps) == 1:
@@ -530,7 +520,7 @@ class CreateReferenceLamp:
         except NoMatchFound:
             self.log.info("Here is a detailed view of all available reference lamps that match at least one of the lamps:")
             reference_data_with_some_compatibility = self.reference_data.get_reference_lamps_with_some_lamps_matching(header=self.comparison_lamp.header)
-            print(reference_data_with_some_compatibility[['file', 'lamp_hga', 'lamp_ne', 'lamp_ar', 'lamp_fe' , 'lamp_cu']].to_string())
+            print(reference_data_with_some_compatibility[['file', 'lamp_hga', 'lamp_ne', 'lamp_ar', 'lamp_fe', 'lamp_cu']].to_string())
             sys.exit(f"Please specify a valid reference lamp with --reference-lamp {self.reference_data.reference_dir}/<file name>")
 
     def __get_new_reference_lamp_name(self):
@@ -556,7 +546,6 @@ class CreateReferenceLamp:
         ccd.header.set('GSP_WPOI', value=self.wavelength_solution_quality['number_of_points'])
         ccd.header.set('GSP_WREJ', value=self.wavelength_solution_quality['rejected_points'])
         return ccd
-
 
     def _save_as_reference_lamp(self):
         new_name = self.__get_new_reference_lamp_name()

@@ -1,7 +1,8 @@
 from __future__ import absolute_import
 
-from unittest import TestCase, skip
+from unittest import TestCase
 from ccdproc.core import slice_from_string
+
 
 class TestCcdprocMethods(TestCase):
 

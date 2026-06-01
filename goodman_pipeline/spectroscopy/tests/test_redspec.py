@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import argparse
 import os
-import shutil
+
 from unittest import TestCase
 
 from ...spectroscopy.redspec import (get_args, ReduceSpectroscopy)
@@ -57,17 +57,6 @@ class TestArguments(TestCase):
         self.assertTrue(os.path.exists(args.source))
         self.assertTrue(os.path.isdir(args.source))
 
-        # If yes, carry on
-
-            # If not, convert it to become absolute
-
-        # Check if the source folder exists
-
-        #  If it exists, carry on
-
-        # If source folder does not exists, print message and leave program
-        # error_message = 'Input folder "{} does not exists."'
-
     def test_get_args_output_path_does_not_exist(self):
         arguments = ['--data-path', 'does_not_exist']
         self.assertRaises(SystemExit, get_args, arguments)
@@ -103,8 +92,6 @@ class TestArguments(TestCase):
 
 
 def test_get_args():
-    from ...spectroscopy.redspec import get_args
-    import argparse
     arguments = ['--data-path', './',
                  '--proc-path', './',
                  '--search-pattern', 'test-pattern',

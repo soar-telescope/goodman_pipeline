@@ -134,8 +134,7 @@ class Photometry(object):
             self.flat_image_data, self.flat_image_header = validate_fits_file_or_read(self.flat_image_filename)
             log.debug(f"Image's filter {self.image_header[self.imaging_filter_keyword]} vs flat filter {self.flat_image_header[self.imaging_filter_keyword]}")
 
-            if (self.image_header[self.imaging_filter_keyword] != self.flat_image_header[self.imaging_filter_keyword] or
-                    self.image_data.shape != self.flat_image_data.shape):
+            if (self.image_header[self.imaging_filter_keyword] != self.flat_image_header[self.imaging_filter_keyword] or self.image_data.shape != self.flat_image_data.shape):
                 sys.exit("Flat image provided is not compatible with science data.")
 
         log.info("Checking for celestial WCS in the file's header.")
@@ -186,10 +185,10 @@ class Photometry(object):
                 job = Gaia.launch_job_async(query)
                 self.gaia_table = job.get_results()
                 log.info(f"Retrieved {len(self.gaia_table)} Gaia sources")
-                log.debug(f"Removing rows with no photometry values in BP and RP.")
+                log.debug("Removing rows with no photometry values in BP and RP.")
                 mask = (~np.isnan(self.gaia_table['phot_bp_mean_mag']) & ~np.isnan(self.gaia_table['phot_rp_mean_mag']))
                 self.gaia_table = self.gaia_table[mask]
-                log.debug(f"Calculating Gaia's BP - RP color")
+                log.debug("Calculating Gaia's BP - RP color")
                 self.gaia_table['bp_rp_color'] = self.gaia_table['phot_bp_mean_mag'] - self.gaia_table['phot_rp_mean_mag']
 
                 if len(self.gaia_table) > 0:
@@ -211,7 +210,7 @@ class Photometry(object):
                             ax.set_xlabel('X Pixel')
                             ax.set_ylabel('Y Pixel')
 
-                        ax.set_title(f"Sources Downloaded from GAIA DR3")
+                        ax.set_title("Sources Downloaded from GAIA DR3")
                         plt.colorbar(im, ax=ax, label='Pixel value')
                         x_pix, y_pix = self.wcs.world_to_pixel(self.gaia_coords, )
                         #             print(x_pix, y_pix)
@@ -230,8 +229,6 @@ class Photometry(object):
                 log.error(f"Gaia query failed: {e}")
         else:
             log.error("Can't query GAIA without having a WCS solution")
-
-
 
     def _create_mask(self):
         if not self.disable_mask_creation:
@@ -257,7 +254,6 @@ class Photometry(object):
             ax2.set_title(f"Masked Image {'(mask creation disabled)' if self.disable_mask_creation else ''}")
             ax2.imshow(masked_data, clim=(z1, z2), cmap='gray')
             plt.show()
-
 
     def _estimate_best_aperture_size(self):
         nx, ny = self.background_subtracted_data.shape
@@ -329,11 +325,9 @@ class Photometry(object):
             cbar = plt.colorbar(image, ax=ax1)
             cbar.set_label('Counts')
 
-
             # Highlight the 5 brightest near the center
             ax1.plot(bright_center_sources['xcentroid'], bright_center_sources['ycentroid'], 'o', markerfacecolor='none', markeredgecolor='r', markersize=5,
                      label='Bright center sources')
-
 
             ax1.set_title('Source Selection: Center & Bright & Isolated')
             ax1.set_xlabel('X Pixel')
@@ -352,7 +346,6 @@ class Photometry(object):
             ax2.grid(True)
             plt.tight_layout()
             plt.show()
-
 
         sys.exit(1)
 
@@ -403,7 +396,7 @@ class Photometry(object):
         except OSError as e:
             log.debug(f"{e}")
             log.error(f"Photometry Table  {self.photometry_table_name} already exists.")
-            log.info(f"In order to overwrite files use the --overwrite flag. Or use -h or --help for more info.")
+            log.info("In order to overwrite files use the --overwrite flag. Or use -h or --help for more info.")
             sys.exit(f"Photometry Table  {self.photometry_table_name} already exists.")
 
     def _get_photometric_zeropoint(self):
@@ -425,11 +418,8 @@ class Photometry(object):
         matched_table = hstack([matched_photometry_sources, matched_gaia_sources])
 
         filtered_sources = matched_table[
-            (matched_table['bp_rp_color'].value > 0.3) &
-            (matched_table['bp_rp_color'].value < 2.5) &
-            (matched_table['phot_g_mean_mag'].value < 18)
+            (matched_table['bp_rp_color'].value > 0.3) & (matched_table['bp_rp_color'].value < 2.5) & (matched_table['phot_g_mean_mag'].value < 18)
         ]
-
 
         if self.plots:
             interval = ZScaleInterval()
@@ -449,8 +439,10 @@ class Photometry(object):
 
             ax.set_title(f"Matched and Selected Sources in {os.path.basename(self.filename)}")
             plt.colorbar(im, ax=ax, label='Pixel value')
-            matched_coords = SkyCoord(ra=filtered_sources['ra'].to_value('deg').filled(np.nan), dec=filtered_sources['dec'].to_value('deg').filled(np.nan), unit='deg',
-                                   frame='icrs')
+            matched_coords = SkyCoord(ra=filtered_sources['ra'].to_value('deg').filled(np.nan),
+                                      dec=filtered_sources['dec'].to_value('deg').filled(np.nan),
+                                      unit='deg',
+                                      frame='icrs')
             x_pix, y_pix = self.wcs.world_to_pixel(matched_coords, )
             #             print(x_pix, y_pix)
             ax.plot(x_pix, y_pix, 'o', markersize=5, markerfacecolor='none', markeredgecolor='cyan',
@@ -516,11 +508,9 @@ class Photometry(object):
         else:
             log.error(f"Filter {self.filter_name} does not have system convertion for absolute magnitude.")
 
-
     @staticmethod
     def gaia_to_filter_conversion(gaia_g, gaia_bp_rp, param_0, param_1, param_2, param_3):
         return gaia_g + param_0 + param_1 * gaia_bp_rp + param_2 * gaia_bp_rp ** 2 + param_3 * gaia_bp_rp ** 3
-
 
     def _get_gaia_band_for_filter(self):
         """
