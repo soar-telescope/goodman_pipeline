@@ -14,3 +14,4 @@ scipy
 sphinx
 sphinxcontrib.napoleon
 pydata_sphinx_theme
+pyqt6
