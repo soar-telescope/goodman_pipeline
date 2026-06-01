@@ -3983,10 +3983,11 @@ class ReferenceData(object):
 
     def __repr__(self):
         reference_lamp_list = self.ref_lamp_collection['file'].to_list()
+        reference_lamp_list_as_string = "\n\t".join(reference_lamp_list)
         return (f"{self.__class__.__name__}"
                 f"\nReference Data Path: {os.path.normpath(self.reference_dir)}"
                 f"\nDetected {len(self.ref_lamp_collection)} lamps"
-                f"\n\n\t{'\n\t'.join(reference_lamp_list)}")
+                f"\n\n\t{reference_lamp_list_as_string}")
 
     def get_reference_lamps_by_lamp_status_keyword(self, header):
         if all([keyword in [hkey for hkey in header.keys()] for keyword in self.lamp_status_keywords]):
