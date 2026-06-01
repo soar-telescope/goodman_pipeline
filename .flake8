@@ -1,0 +1,10 @@
+[flake8]
+ignore =
+    E501,
+    W504
+per-file-ignores =
+    */__init__.py:F401
+exclude =
+    build,
+    .tox,
+    .git
