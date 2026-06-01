@@ -20,7 +20,11 @@ from goodman_pipeline.core import (get_lines_in_lamp, get_spectral_characteristi
 from goodman_pipeline.core import ReferenceData
 from goodman_pipeline.wcs import WCS
 
-mpl.use('QtAgg')
+try:
+    mpl.use('QtAgg')
+except (ImportError, OSError):
+    pass
+
 # mpl.rcParams['savefig.dpi'] = 300
 __version__ = version('goodman_pipeline')
 
