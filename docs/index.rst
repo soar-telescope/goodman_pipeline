@@ -41,6 +41,7 @@ computers.
   overview
   usage
   install
+  create_reference_lamps
 
 
 .. toctree::
