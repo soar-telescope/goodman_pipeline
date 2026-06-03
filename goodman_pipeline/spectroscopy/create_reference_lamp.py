@@ -55,8 +55,8 @@ def get_args(arguments=None):
     parser.add_argument("--reference-lamp", action="store", default=None, help="Already calibrated comparison lamp file name.")
     parser.add_argument("--plots-theme", action="store", default="dark", choices=["light", "dark"], help="Choose a theme for plotting, default is dark.")
     parser.add_argument("--screen-size", action="store", default='large', choices=['small', 'medium', 'large'], help="Choose a screen size for sizing the plots, default is large.")
-    parser.add_argument("--comp-y-start", action="store", default=None, help="Override y-axis start value for comparison lamp.")
-    parser.add_argument("--comp-y-end", action="store", default=None, help="Override y-axis end value for comparison lamp.")
+    parser.add_argument("--comp-intensity-start", action="store", default=None, help="Override y-axis start value for comparison lamp.")
+    parser.add_argument("--comp-intensity-end", action="store", default=None, help="Override y-axis end value for comparison lamp.")
     parser.add_argument("--ref-wavelength-start", action="store", default=None, help="Override wavelength start value for reference lamp.")
     parser.add_argument("--ref-wavelength-end", action="store", default=None, help="Override wavelength end value for reference lamp.")
     parser.add_argument("--debug", action="store_true", default=False, help="Enable debug mode.")
@@ -187,12 +187,12 @@ class CreateReferenceLamp:
         comp_min = self.comparison_lamp.data.min()
         comp_max = self.comparison_lamp.data.max()
         comp_range = comp_max - comp_min
-        if self.args.comp_y_start is not None:
-            self.comp_ymin = self.args.comp_y_start
+        if self.args.comp_intensity_start is not None:
+            self.comp_ymin = float(self.args.comp_intensity_start)
         else:
             self.comp_ymin = comp_min - 0.05 * comp_range
-        if self.args.comp_y_end is not None:
-            self.comp_ymax = self.args.comp_y_end
+        if self.args.comp_intensity_end is not None:
+            self.comp_ymax = float(self.args.comp_intensity_end)
         else:
             self.comp_ymax = comp_max + 0.3 * comp_range
         comp_x_edge = 10
@@ -245,10 +245,11 @@ class CreateReferenceLamp:
                 text = f"{row['air_wavelength']:.3f} {row['spectrum']}"
                 text_y_position = self.ref_ymin + 0.98 * (self.ref_ymax - self.ref_ymin)
                 line_index = np.abs(self.ref_wavelength - row['air_wavelength']).argmin()
-                line_intensity = np.max(self.reference_lamp.data[int(line_index) - 1: int(line_index) + 1])
-                line_ymin = (line_intensity - self.ref_ymin) / (self.ref_ymax - self.ref_ymin)
-                self.ax_ref.axvline(x=row['air_wavelength'], ymin=line_ymin, ymax=np.max([line_ymin, 0.7]), alpha=0.5, linestyle=':')
-                self.ax_ref.text(row['air_wavelength'], text_y_position, text, rotation=90, verticalalignment='top', horizontalalignment='center', clip_on=True)
+                if 1 <= int(line_index) <= len(self.reference_lamp.data) - 1:
+                    line_intensity = np.max(self.reference_lamp.data[int(line_index) - 1: int(line_index) + 1])
+                    line_ymin = (line_intensity - self.ref_ymin) / (self.ref_ymax - self.ref_ymin)
+                    self.ax_ref.axvline(x=row['air_wavelength'], ymin=line_ymin, ymax=np.max([line_ymin, 0.7]), alpha=0.5, linestyle=':')
+                    self.ax_ref.text(row['air_wavelength'], text_y_position, text, rotation=90, verticalalignment='top', horizontalalignment='center', clip_on=True)
 
         self.fig.tight_layout()
         self.fig.canvas.mpl_connect('button_press_event', self._on_click)
