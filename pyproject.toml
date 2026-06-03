@@ -75,11 +75,11 @@ test = [
 "Source" = "https://github.com/soar-telescope/goodman_pipeline"
 
 [project.scripts]
-redccd = "goodman_pipeline.scripts:redccd"
-redspec = "goodman_pipeline.scripts:redspec"
-redspec-create-reference-lamp = "goodman_pipeline.scripts:create_reference_lamp"
-redastrometry = "goodman_pipeline.scripts:redastrometry"
-redphotometry =  "goodman_pipeline.scripts:redphotometry"
+redccd = "goodman_pipeline.scripts.redccd:redccd"
+redspec = "goodman_pipeline.scripts.redspec:redspec"
+redspec-create-reference-lamp = "goodman_pipeline.scripts.redspec:create_reference_lamp"
+redastrometry = "goodman_pipeline.scripts.astrometry:redastrometry"
+redphotometry =  "goodman_pipeline.scripts.photometry:redphotometry"
 
 [tool.setuptools]
 packages = [
