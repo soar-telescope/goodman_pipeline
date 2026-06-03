@@ -25,8 +25,9 @@ try:
 except (ImportError, OSError):
     pass
 
-# mpl.rcParams['savefig.dpi'] = 300
+
 __version__ = version('goodman_pipeline')
+
 
 FIGURE_SIZES_FOR_SCREEN = {
     "small": (10, 5),
@@ -50,10 +51,14 @@ def get_args(arguments=None):
 
     parser = argparse.ArgumentParser(
         description="Creates reference lamp.\nPipeline Version: {:s}".format(__version__))
-    parser.add_argument("--comparison-lamp", action="store", help="Comparison lamp file name")
+    parser.add_argument("--comparison-lamp", action="store", help="Comparison lamp file name. This is your NEW lamp.")
     parser.add_argument("--reference-lamp", action="store", default=None, help="Already calibrated comparison lamp file name.")
     parser.add_argument("--plots-theme", action="store", default="dark", choices=["light", "dark"], help="Choose a theme for plotting, default is dark.")
     parser.add_argument("--screen-size", action="store", default='large', choices=['small', 'medium', 'large'], help="Choose a screen size for sizing the plots, default is large.")
+    parser.add_argument("--comp-y-start", action="store", default=None, help="Override y-axis start value for comparison lamp.")
+    parser.add_argument("--comp-y-end", action="store", default=None, help="Override y-axis end value for comparison lamp.")
+    parser.add_argument("--ref-wavelength-start", action="store", default=None, help="Override wavelength start value for reference lamp.")
+    parser.add_argument("--ref-wavelength-end", action="store", default=None, help="Override wavelength end value for reference lamp.")
     parser.add_argument("--debug", action="store_true", default=False, help="Enable debug mode.")
     parser.add_argument("-v", "--version", action="version", version=__version__)
     args = parser.parse_args(args=arguments)
@@ -93,8 +98,8 @@ class CreateReferenceLamp:
         self.reference_lamp_full_path = None
         self.reference_lamp = None
         self.reference_lines = []
-        self.ref_xmin = None
-        self.ref_xmax = None
+        self.ref_wavelength_min = None
+        self.ref_wavelength_max = None
         self.ref_ymin = None
         self.ref_ymax = None
         self.ref_wavelength = None
@@ -137,9 +142,6 @@ class CreateReferenceLamp:
             ccd=self.comparison_lamp,
             pixel_size=self.pixel_size,
             instrument_focal_length=self.instrument_focal_length)
-
-        self.ref_xmin = self.comp_spectral_characteristics['blue'].value
-        self.ref_xmax = self.comp_spectral_characteristics['red'].value
 
         if self.args.reference_lamp and os.path.exists(self.args.reference_lamp):
             self.reference_lamp_full_path = os.path.abspath(os.path.normpath(self.args.reference_lamp))
@@ -185,8 +187,14 @@ class CreateReferenceLamp:
         comp_min = self.comparison_lamp.data.min()
         comp_max = self.comparison_lamp.data.max()
         comp_range = comp_max - comp_min
-        self.comp_ymin = comp_min - 0.05 * comp_range
-        self.comp_ymax = comp_max + 0.3 * comp_range
+        if self.args.comp_y_start is not None:
+            self.comp_ymin = self.args.comp_y_start
+        else:
+            self.comp_ymin = comp_min - 0.05 * comp_range
+        if self.args.comp_y_end is not None:
+            self.comp_ymax = self.args.comp_y_end
+        else:
+            self.comp_ymax = comp_max + 0.3 * comp_range
         comp_x_edge = 10
         self.comp_xmin = -comp_x_edge
         comp_xmax = self.comparison_lamp.data.shape[0] + comp_x_edge
@@ -205,8 +213,17 @@ class CreateReferenceLamp:
                                   horizontalalignment='center', clip_on=True)
 
         # Reference lamp plot
-        ref_min_index = np.abs(self.ref_wavelength - self.ref_xmin).argmin()
-        ref_max_index = np.abs(self.ref_wavelength - self.ref_xmax).argmin()
+        if self.args.ref_wavelength_start is not None:
+            self.ref_wavelength_min = float(self.args.ref_wavelength_start)
+            print(self.ref_wavelength_min, type(self.ref_wavelength_min))
+        else:
+            self.ref_wavelength_min = self.comp_spectral_characteristics['blue'].value
+        if self.args.ref_wavelength_end is not None:
+            self.ref_wavelength_max = float(self.args.ref_wavelength_end)
+        else:
+            self.ref_wavelength_max = self.comp_spectral_characteristics['red'].value
+        ref_min_index = np.abs(self.ref_wavelength - self.ref_wavelength_min).argmin()
+        ref_max_index = np.abs(self.ref_wavelength - self.ref_wavelength_max).argmin()
         ref_intensity_subsample = self.ref_intensity[ref_min_index:ref_max_index]
 
         ref_min = np.min(ref_intensity_subsample)
@@ -217,7 +234,7 @@ class CreateReferenceLamp:
 
         self.ax_ref.plot(self.ref_wavelength, self.ref_intensity, label=f"Reference lamp {self.reference_lamp.header['OBJECT']}", color='C0')
         self.ax_ref.set_ylim(self.ref_ymin, self.ref_ymax)
-        self.ax_ref.set_xlim(self.ref_xmin, self.ref_xmax)
+        self.ax_ref.set_xlim(self.ref_wavelength_min, self.ref_wavelength_max)
         self.ax_ref.set(xlabel='Wavelength (Angstrom)', ylabel='Intensity (ADU)', title=f"Reference lamp - {self.reference_lamp.header['OBJECT']}")
         # for angstrom_key in self.reference_lamp.header['GSP_A*']:
         #     if int(float(self.reference_lamp.header[angstrom_key])) != 0:
@@ -262,7 +279,7 @@ class CreateReferenceLamp:
             nist_dfs.append(self.reference_data.nist[element])
         df = pd.concat(nist_dfs, ignore_index=True)
 
-        filtered = df[(df['air_wavelength'] >= self.ref_xmin) & (df['air_wavelength'] <= self.ref_xmax)]
+        filtered = df[(df['air_wavelength'] >=self.ref_wavelength_min) & (df['air_wavelength'] <= self.ref_wavelength_max)]
         return filtered
 
     def __print_selected_points(self):
