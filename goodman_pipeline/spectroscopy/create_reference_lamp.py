@@ -215,7 +215,6 @@ class CreateReferenceLamp:
         # Reference lamp plot
         if self.args.ref_wavelength_start is not None:
             self.ref_wavelength_min = float(self.args.ref_wavelength_start)
-            print(self.ref_wavelength_min, type(self.ref_wavelength_min))
         else:
             self.ref_wavelength_min = self.comp_spectral_characteristics['blue'].value
         if self.args.ref_wavelength_end is not None:
