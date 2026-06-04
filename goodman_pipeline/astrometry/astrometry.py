@@ -35,7 +35,7 @@ class Astrometry(object):
                  ra_keyword: str = 'OBSRA',
                  dec_keyword: str = 'OBSDEC',
                  imaging_filter_keyword: str = 'FILTER',
-                 index_directory: str= '',
+                 index_directory: str = '',
                  ignore_goodman_vignetting: bool = False,
                  plots: bool = False,
                  overwrite: bool = False,
@@ -80,7 +80,6 @@ class Astrometry(object):
 
         log.setLevel(logging.DEBUG if self.debug else logging.INFO)
 
-
     def __call__(self, filename: str, flat_image_filename: Union[str, None] = None):
         log.info(f"Processing file {filename}")
         self.filename = filename
@@ -100,12 +99,11 @@ class Astrometry(object):
                                            detection_threshold=self.detection_threshold,
                                            plots=self.plots)
 
-
             self.target_file = create_xyls_table(sources=sources,
-                                            filename=self.filename,
-                                            image_width=self.image_data.shape[0],
-                                            image_height=self.image_data.shape[1],
-                                            overwrite=self.overwrite)
+                                                 filename=self.filename,
+                                                 image_width=self.image_data.shape[0],
+                                                 image_height=self.image_data.shape[1],
+                                                 overwrite=self.overwrite)
         else:
             self.target_file = self.filename
 
@@ -136,7 +134,6 @@ class Astrometry(object):
             'new_files': self._new_files,
         }
 
-
     def _initial_checks(self):
         log.info("Running input checks")
         self.image_data, self.image_header = validate_fits_file_or_read(filename=self.filename)
@@ -148,8 +145,8 @@ class Astrometry(object):
 
             if (self.image_header[self.imaging_filter_keyword] != self.flat_image_header[self.imaging_filter_keyword] or
                     self.image_data.shape != self.flat_image_data.shape):
-                log.error(f"Flat image provided is not compatible with science data.")
-                sys.exit(f"Flat image provided is not compatible with science data.")
+                log.error("Flat image provided is not compatible with science data.")
+                sys.exit("Flat image provided is not compatible with science data.")
 
         log.debug(f"Validating that executable {self.solve_field_executable} exists")
         self.solve_field_full_path = shutil.which(self.solve_field_executable)
@@ -171,7 +168,7 @@ class Astrometry(object):
                     log.error(f"Index directory {self.index_directory} is empty")
                     sys.exit(f"Index directory {self.index_directory} is empty")
         else:
-            log.debug(f"No custom --index-directory specified")
+            log.debug("No custom --index-directory specified")
 
         log.info("All inputs are valid")
 
@@ -186,17 +183,17 @@ class Astrometry(object):
         self.scale_high = self.pixel_scale * self.serial_binning + self.pixel_scale_tolerance
         log.debug(f"Set scale high to {self.scale_high}")
 
-        log.debug(f"Updating RA and DEC from image's header.")
+        log.debug("Updating RA and DEC from image's header.")
         self._ra = self.image_header[self.ra_keyword]
         self._dec = self.image_header[self.dec_keyword]
 
-        log.debug(f"Finding image's radius.")
+        log.debug("Finding image's radius.")
         image_larger_side = np.max(self.image_data.shape) * u.pix
         self._radius = self.pixel_scale * image_larger_side * self.serial_binning
         log.info(f"Setting RA {self._ra}, DEC {self._dec} and radius {self._radius.to(u.arcmin)} or {self._radius.to(u.deg)}")
 
     def _detect_new_files(self):
-        all_matching_files = [_file  for _file in glob.glob(re.sub('.fits', '*', self.filename)) if _file != self.filename]
+        all_matching_files = [_file for _file in glob.glob(re.sub('.fits', '*', self.filename)) if _file != self.filename]
         log.debug(f"Found {len(all_matching_files)} matching files.")
         extension_to_key = {
             ".axy": "augmented_xylist",
@@ -285,13 +282,13 @@ class Astrometry(object):
             radius: float,
             scale_low: float,
             scale_high: float,
-            scale_units: str='arsecperpix',
-            downsample: int=2,
-            solve_field_executable: str="solve-field",
-            index_directory: str='',
-            xy_sources_position: str='',
-            overwrite: bool=False,
-            verbose: bool=False):
+            scale_units: str = ' arsecperpix',
+            downsample: int = 2,
+            solve_field_executable: str = "solve-field",
+            index_directory: str = '',
+            xy_sources_position: str = '',
+            overwrite: bool = False,
+            verbose: bool = False):
         options = {
             "overwrite": overwrite,
             "scale-low": scale_low,

@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from ..goodman_ccd import get_args, ReduceCCD
 

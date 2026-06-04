@@ -1,19 +1,13 @@
 from __future__ import absolute_import
 
-from unittest import TestCase, skip
+from unittest import TestCase
 from ..wcs import WCS
-import numpy as np
-import os
-import re
-import sys
-from astropy.io import fits
-from astropy.modeling import (models, fitting, Model)
 
-from ccdproc import CCDData
+from astropy.modeling import Model
 
 
 class TestWCS(TestCase):
-    
+
     def setUp(self):
         self.wcs = WCS()
 
@@ -66,7 +60,7 @@ class TestWCS(TestCase):
         # self.wcs._fitter(physical=pixel, wavelength=angstrom)
 
     def test_pm_fitter_not_enough_points(self):
-        pixel = [1,2]
+        pixel = [1, 2]
         angstrom = [8000, 8001]
 
         self.wcs.model_name = 'chebyshev'
@@ -75,7 +69,6 @@ class TestWCS(TestCase):
 
         result = self.wcs._fitter(physical=pixel, wavelength=angstrom)
         self.assertIsNone(result)
-
 
     def test_pm_set_math_model__none(self):
         self.wcs.wcs_dict['dtype'] = -1
@@ -113,7 +106,7 @@ class TestWCS(TestCase):
         self.assertRaisesRegex(SyntaxError,
                                'ftype {:d} is not defined in the '
                                'standard'.format(self.wcs.wcs_dict['ftype']))
-        
+
     def test_pm_none(self):
         self.assertRaises(NotImplementedError, self.wcs._none)
 
@@ -155,4 +148,3 @@ class TestWCS(TestCase):
 
     def test_pm_non_linear_cspline(self):
         self.assertRaises(NotImplementedError, self.wcs._non_linear_cspline)
-

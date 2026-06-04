@@ -1,35 +1,24 @@
 from __future__ import absolute_import
 
-import json
 import numpy as np
 import os
 import re
 
-from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
 from astropy.io import fits
-from astropy.modeling import models, Model
+from astropy.modeling import models
 from ccdproc import CCDData
-from unittest import TestCase, skip
+from unittest import TestCase
 from ..wavelength import (WavelengthCalibration)
 
-from ..redspec import get_args
 from ...core import add_wcs_keys, write_fits
-from ...core import ReferenceData, NoMatchFound
+from ...core import NoMatchFound
 
 
 class WavelengthCalibrationTests(TestCase):
 
     def setUp(self):
         self.file_list = []
-        argument_list = ['--data-path', os.path.dirname(__file__),
-                         '--proc-path', os.path.dirname(__file__),
-                         '--search-pattern', 'cfzsto',
-                         '--output-prefix', 'w',
-                         '--extraction', 'fractional',
-                         '--reference-files', os.path.join(os.path.dirname(__file__), '../../data/ref_comp'),
-                         '--max-targets', '3',
-                         ]
-        arguments = get_args(argument_list)
+
         self.wc = WavelengthCalibration()
 
         self.ccd = CCDData(data=np.random.random_sample(200),
@@ -214,6 +203,3 @@ class WavelengthCalibrationTests(TestCase):
         for _solution in json_output['wavelength_solution']:
             self.file_list.append(_solution['file_name'])
             self.file_list.append(_solution['reference_lamp'])
-
-
-

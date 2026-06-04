@@ -135,7 +135,6 @@ def get_astrometry_config_args(arguments=None):
     if args.version:
         parser.exit(status=0, message=__version__)
 
-
     if not args.filename:
         parser.print_help()
         parser.exit(status=0, message="\nPlease specify a filename to process.\n")

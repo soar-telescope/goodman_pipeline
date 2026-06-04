@@ -349,18 +349,13 @@ class ReduceSpectroscopy(object):
 
         full_path = data_container.full_path
 
-        for sub_container in [groups for groups in [
-            data_container.spec_groups,
-            data_container.object_groups]
-                              if groups is not None]:
+        for sub_container in [groups for groups in [data_container.spec_groups, data_container.object_groups] if groups is not None]:
             for group in sub_container:
                 # instantiate WavelengthCalibration here for each group.
                 self.wavelength_calibration = WavelengthCalibration()
                 # this will contain only obstype == OBJECT
-                object_group = group[((group.obstype == 'OBJECT') |
-                                      (group.obstype == 'SPECTRUM'))]
-                obj_groupby = object_group.groupby(['object']).size(
-                    ).reset_index().rename(columns={0: 'count'})
+                object_group = group[((group.obstype == 'OBJECT') | (group.obstype == 'SPECTRUM'))]
+                obj_groupby = object_group.groupby(['object']).size().reset_index().rename(columns={0: 'count'})
 
                 self.log.info("Processing Science Target: "
                               "{:s} with {:d} files."
@@ -371,8 +366,7 @@ class ReduceSpectroscopy(object):
                 comp_ccd_list = []
                 if any([value in ['COMP', 'ARC'] for value in group.obstype.unique()]):
                     self.log.debug('Group has comparison lamps')
-                    comp_group = group[((group.obstype == 'COMP') |
-                                        (group.obstype == 'ARC'))]
+                    comp_group = group[((group.obstype == 'COMP') | (group.obstype == 'ARC'))]
                     comp_group = self.reference.check_comp_group(comp_group)
 
                 if comp_group is None:

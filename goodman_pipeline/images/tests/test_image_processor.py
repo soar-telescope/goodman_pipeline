@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from astropy.io import fits
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from ccdproc import CCDData
 from ...core import NightDataContainer

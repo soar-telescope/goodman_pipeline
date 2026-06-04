@@ -13,7 +13,6 @@ import glob
 import logging
 import os
 import re
-import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -166,7 +165,7 @@ class WavelengthCalibration(object):
                         "".format(self.sci_target_file))
             log.error("Ending processing of {}".format(self.sci_target_file))
             if json_output:
-                json_payload['error'] ='Unable to process without reference lamps'
+                json_payload['error'] = 'Unable to process without reference lamps'
                 return json_payload
             else:
                 return
@@ -223,11 +222,7 @@ class WavelengthCalibration(object):
                     wavelength_solutions.append(self.wsolution)
                     reference_lamp_names.append(self.wcal_lamp_file)
                 else:
-                    log.error('It was not possible to get a wavelength '
-                              'solution from lamp '
-                              '{:s} {:s}.'.format(
-                               self.lamp.header['GSP_FNAM'],
-                               self.lamp.header['OBJECT']))
+                    log.error(f"It was not possible to get a wavelength solution from lamp {self.lamp.header['GSP_FNAM']} {self.lamp.header['OBJECT']}")
                     continue
 
             if len(wavelength_solutions) > 1:
@@ -434,8 +429,7 @@ class WavelengthCalibration(object):
 
                 # print(correlation_value, angstrom_value_model)
                 correlation_values.append(correlation_value)
-                angstrom_differences.append(angstrom_value_model -
-                                            line_value_angst)
+                angstrom_differences.append(angstrom_value_model - line_value_angst)
                 angstrom_values.append(angstrom_value_model)
                 # print(angstrom_values)
                 pixel_values.append(line_value_pixel)
@@ -501,9 +495,7 @@ class WavelengthCalibration(object):
             return None
 
         # finding differences in order to improve the wavelength solution
-        wavelength_differences = [angstrom_values[i] -
-                                  self.wsolution(pixel_values[i]) for i in
-                                  range(len(pixel_values))]
+        wavelength_differences = [angstrom_values[i] - self.wsolution(pixel_values[i]) for i in range(len(pixel_values))]
 
         clipped_differences = sigma_clip(wavelength_differences,
                                          sigma=2,
@@ -584,10 +576,7 @@ class WavelengthCalibration(object):
             self.ax1.set_xlabel('Wavelength (Angstrom)')
             self.ax1.set_ylabel('Intensity (ADU)')
 
-            self.ax1.set_title('Automatic Wavelength Solution\n'
-                               + self.lamp.header['OBJECT']
-                               + ' ' + wavmode + '\n'
-                               + 'RMS Error: {:.3f}'.format(self.rms_error))
+            self.ax1.set_title(f"Automatic Wavelength Solution\n{self.lamp.header['OBJECT']} {wavmode} \n RMS Error: {self.rms_error:.3f}")
 
             self.ax1.legend(loc='best')
             self.i_fig.tight_layout()
@@ -732,8 +721,7 @@ class WavelengthCalibration(object):
                 plot_path = os.path.join(plots_dir, plot_name)
                 # print(plot_path)
                 plt.savefig(plot_path, dpi=300)
-                log.info('Saved plot as {:s} file '
-                              'DPI=300'.format(plot_name))
+                log.info(f"Saved plot as {plot_name} file DPI=300")
 
             if plots or plot_results:  # pragma: no cover
                 manager = plt.get_current_fig_manager()
@@ -764,8 +752,7 @@ class WavelengthCalibration(object):
             f_end = '_ws_{:d}.fits'.format(index)
 
         file_full_path = os.path.join(save_data_to,
-                                    output_prefix +
-                                    original_filename.replace('.fits', f_end))
+                                      output_prefix + original_filename.replace('.fits', f_end))
 
         if lamp:
             log.info('Wavelength-calibrated {:s} file saved to: '

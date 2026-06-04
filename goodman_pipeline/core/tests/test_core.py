@@ -2,38 +2,32 @@ from __future__ import absolute_import
 
 from unittest import TestCase, skip
 from ccdproc import CCDData
-from astropy.convolution import convolve, Gaussian1DKernel, Box1DKernel
+from astropy.convolution import convolve, Box1DKernel
 from astropy.io import fits
 from astropy.modeling import Model
-from astropy.modeling import (models,
-                              fitting)
+from astropy.modeling import (models, fitting)
 import astropy.units as u
 import collections
 import mock
 import numpy as np
 import os
 import pandas
-import random
 import re
 import shutil
 import logging
 
-logging.disable(logging.CRITICAL)
 
 # import all classes in core.py
 from ..core import (GenerateDcrParFile,
                     NightDataContainer,
                     NoMatchFound,
-                    NotEnoughLinesDetected,
-                    NoTargetException,
                     ReferenceData,
                     SaturationValues,
                     SpectroscopicMode)
 
 
 # import of functions in core.py
-from ..core import (astroscrappy_lacosmic,
-                    add_linear_wavelength_solution,
+from ..core import (add_linear_wavelength_solution,
                     add_wcs_keys,
                     bias_subtract,
                     bin_reference_data,
@@ -72,11 +66,13 @@ from ..core import (astroscrappy_lacosmic,
                     record_trace_information,
                     save_extracted,
                     search_comp_group,
-                    setup_logging,
                     trace,
                     trace_targets,
                     validate_ccd_region,
                     write_fits)
+
+
+logging.disable(logging.CRITICAL)
 
 
 def fake_subprocess_popen(*args, stdout, stderr):
@@ -145,47 +141,48 @@ class AddWCSKeywordsTest(TestCase):
                     'DC-FLAG',
                     'DCLOG1']
 
-
-
         self.test_ccd = add_wcs_keys(ccd=self.test_ccd)
         for key in wcs_keys:
             self.assertIn(key, self.test_ccd.header)
 
-    @skip
-    def test_add_wcs_keys_error(self):
-        wcs_keys = ['BANDID1',
-                    'APNUM1',
-                    'WCSDIM',
-                    'CTYPE1',
-                    'CRVAL1',
-                    'CRPIX1',
-                    'CDELT1',
-                    'CD1_1',
-                    'LTM1_1',
-                    'WAT0_001',
-                    'WAT1_001',
-                    'DC-FLAG',
-                    'DCLOG1']
+    # @skip
+    # def test_add_wcs_keys_error(self):
+    #     wcs_keys = ['BANDID1',
+    #                 'APNUM1',
+    #                 'WCSDIM',
+    #                 'CTYPE1',
+    #                 'CRVAL1',
+    #                 'CRPIX1',
+    #                 'CDELT1',
+    #                 'CD1_1',
+    #                 'LTM1_1',
+    #                 'WAT0_001',
+    #                 'WAT1_001',
+    #                 'DC-FLAG',
+    #                 'DCLOG1']
 
 
 class BiasSubtractTest(TestCase):
 
     def setUp(self):
-        self.ccd = CCDData(data=np.ones((100, 100)) * 100,
-                           meta=fits.Header(),
-                           unit='adu')
-        self.master_bias = CCDData(data=np.ones((100, 100)) * 50,
-                           meta=fits.Header(),
-                           unit='adu')
+        self.ccd = CCDData(
+            data=np.ones((100, 100)) * 100,
+            meta=fits.Header(),
+            unit='adu')
+        self.master_bias = CCDData(
+            data=np.ones((100, 100)) * 50,
+            meta=fits.Header(),
+            unit='adu')
 
         self.master_bias_name = os.path.join(os.getcwd(),
                                              'master_bias_file.fits')
 
     def test_bias_subtract(self):
 
-        ccd = bias_subtract(ccd=self.ccd,
-                            master_bias=self.master_bias,
-                            master_bias_name=self.master_bias_name)
+        ccd = bias_subtract(
+            ccd=self.ccd,
+            master_bias=self.master_bias,
+            master_bias_name=self.master_bias_name)
         np.testing.assert_array_equal(ccd.data, np.ones((100, 100)) * 50.)
         self.assertEqual(ccd.header['GSP_BIAS'],
                          os.path.basename(self.master_bias_name))
@@ -206,8 +203,6 @@ class BinningTest(TestCase):
             self.assertEqual(len(wavelength), len(intensity))
             self.assertEqual(len(new_wavelength), len(new_intensity))
             self.assertEqual(len(new_wavelength), np.floor(len(wavelength) / i))
-
-
 
 
 class CentralWavelength(TestCase):
@@ -233,7 +228,7 @@ class ClassifySpectroscopicData(TestCase):
     def setUp(self):
         self.path = os.path.join(
             os.path.dirname(__file__),
-            '../../data/test_data/test_classify_spectroscopic');
+            '../../data/test_data/test_classify_spectroscopic')
         if not os.path.isdir(self.path):
             os.mkdir(self.path)
 
@@ -259,21 +254,21 @@ class ClassifySpectroscopicData(TestCase):
                 {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
                 {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
                 {'obstype': 'OBJECT', 'object': 'NGC2070', 'obsra': '16:23:34.285', 'obsdec': ' 39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:22:34.285', 'obsdec': '-39:23:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:26:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:27:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:28:34.285', 'obsdec': '-39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
-                {'obstype': 'COMP',   'object': 'HgArNe',  'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'}]
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:22:34.285', 'obsdec': '-39:23:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:24:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:25:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:26:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:27:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:28:34.285', 'obsdec': '-39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'},
+                {'obstype': 'COMP', 'object': 'HgArNe', 'obsra': '16:23:34.285', 'obsdec': '39:13:53.954'}]
             for i in range(len(card_values)):
                 ccd = CCDData(data=np.ones((3, 3)),
                               meta=fits.Header(),
@@ -296,7 +291,6 @@ class ClassifySpectroscopicData(TestCase):
                 ccd.header.set('RDNOISE', value='3.89', comment='nc')
 
                 ccd.write(os.path.join(self.path, 'test_file_{:03d}.fits'.format(i)))
-
 
     def test_classify_spectroscopic_data__no_data(self):
         self.assertRaises(SystemExit, classify_spectroscopic_data, self.path, '*fits')
@@ -434,7 +428,6 @@ class CosmicRayRejectionTest(TestCase):
                           self.file_name,
                           'c',
                           os.getcwd())
-
 
     def test_call_cosmic_rejection_default_2x2(self):
         self.ccd.header.set('CCDSUM', value='2 2')
@@ -674,7 +667,6 @@ class CreateMasterFlatsTest(TestCase):
         self.assertTrue(os.path.isfile(name))
         self.assertEqual('master_bias.fits', master.header['GSP_BIAS'])
 
-
     def test_create_master_flats_saturated_flats(self):
 
         file_to_replace = os.path.join(self.reduced_data, self.flat_files[0])
@@ -805,6 +797,7 @@ class DefineTrimSectionTest(TestCase):
     def tearDown(self):
         if os.path.isfile(self.full_path):
             os.unlink(self.full_path)
+
 
 class EvaluateWavelengthSolutionTest(TestCase):
 
@@ -1006,7 +999,6 @@ class FitsFileIOAndOps(TestCase):
                    parent_file=self.parent_file,
                    overwrite=True)
         self.assertTrue(os.path.isdir(os.path.dirname(self.full_path)))
-
 
     def test_read_fits(self):
         self.fake_image.header.remove('GSP_PNAM')
@@ -1210,7 +1202,6 @@ class GetLinesInLampTest(TestCase):
 
         self.assertIsNone(expected_none)
 
-
     def test_get_lines_in_lamp_narrow_slit(self):
         recovered_lines = get_lines_in_lamp(ccd=self.ccd, plots=False)
         np.testing.assert_allclose(self.line_centers, recovered_lines)
@@ -1364,8 +1355,9 @@ class LinearizeSpectrumTest(TestCase):
         self.assertIsNone(linear_data)
 
     def test_linearize_spectrum(self):
-        linear_x_axis, linear_data = linearize_spectrum(data=self.data,
-                                         wavelength_solution=self.solution_model)
+        linear_x_axis, linear_data = linearize_spectrum(
+            data=self.data,
+            wavelength_solution=self.solution_model)
 
         new_gaussian = models.Gaussian1D(amplitude=100,
                                          mean=self.feature_center,
@@ -1449,7 +1441,7 @@ class MasterFlatTest(TestCase):
 
     def test_get_best_flat_relative_path(self):
         master_flat, master_flat_name = get_best_flat(
-            flat_name=os.path.join(self.flat_path,self.flat_name_base),
+            flat_name=os.path.join(self.flat_path, self.flat_name_base),
             path=self.flat_path)
         self.assertIsInstance(master_flat, CCDData)
         self.assertEqual(os.path.basename(master_flat_name),
@@ -1475,7 +1467,7 @@ class NameMasterFlatsTest(TestCase):
 
     def setUp(self):
         self.reduced_data = os.getcwd()
-        date = '2019-08-28'
+        # date = '2019-08-28'
         self.twilight_start_evening = '2019-08-27T23:45:00.022'
         self.twilight_end_morning = '2019-08-28T09:43:20.023'
         self.sun_set_time = '2019-08-27T22:21:00.437'
@@ -1640,7 +1632,6 @@ class NightDataContainerTests(TestCase):
         result = self.container.__repr__()
 
         self.assertNotIn('Group is Empty', result)
-
 
     @skip
     def test__get_group_repr(self):
@@ -1860,7 +1851,6 @@ class ReferenceDataTest(TestCase):
         self.ccd.header.set('LAMP_DOM', value='FALSE')
         self.ccd.header.set('LAMP_DPE', value=0)
 
-
         self.ccd.header.set('WAVMODE', value='400_M2')
 
         ref_lamp = self.rd.get_reference_lamp(header=self.ccd.header)
@@ -1966,7 +1956,7 @@ class ReferenceDataTest(TestCase):
         self.assertIsInstance(self.rd.nist, dict)
         self.assertEqual(0, len(self.rd.nist))
 
-        self.rd._load_nist_list()
+        self.rd.load_nist_list()
         self.assertIsInstance(self.rd.nist, dict)
         self.assertGreater(len(self.rd.nist), 0)
 
@@ -2036,7 +2026,7 @@ class SearchCompGroupTest(TestCase):
                    'FALSE',
                    'FALSE',
                    'FALSE',
-                    'FALSE']],
+                   'FALSE']],
             columns=columns)
         self.comp_groups = [
             pandas.DataFrame(

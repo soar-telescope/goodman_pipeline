@@ -7,7 +7,7 @@ name = "goodman_pipeline"
 dynamic = ["version"]
 description = "Pipeline for reducing Goodman HTS data."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 keywords = [
   "soar",
@@ -60,7 +60,8 @@ dependencies = [
   "pandas",
   "photutils",
   "requests",
-  "scipy"
+  "scipy",
+  "pyqt6"
 ]
 
 [project.optional-dependencies]
@@ -74,10 +75,11 @@ test = [
 "Source" = "https://github.com/soar-telescope/goodman_pipeline"
 
 [project.scripts]
-redccd = "goodman_pipeline.scripts:redccd"
-redspec = "goodman_pipeline.scripts:redspec"
-redastrometry = "goodman_pipeline.scripts:redastrometry"
-redphotometry =  "goodman_pipeline.scripts:redphotometry"
+redccd = "goodman_pipeline.scripts.redccd:redccd"
+redspec = "goodman_pipeline.scripts.redspec:redspec"
+redspec-create-reference-lamp = "goodman_pipeline.scripts.redspec:create_reference_lamp"
+redastrometry = "goodman_pipeline.scripts.astrometry:redastrometry"
+redphotometry =  "goodman_pipeline.scripts.photometry:redphotometry"
 
 [tool.setuptools]
 packages = [
