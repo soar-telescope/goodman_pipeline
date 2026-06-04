@@ -1,11 +1,9 @@
-import argparse
 import os
 import sys
 
 import astropy.units as u
 import logging
 
-from importlib.metadata import version
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
@@ -15,8 +13,13 @@ from astropy.stats import sigma_clip
 from matplotlib import pyplot as plt
 from pandas import DataFrame
 
-from goodman_pipeline.core import (get_lines_in_lamp, get_spectral_characteristics, NoMatchFound,
-                                   evaluate_wavelength_solution, write_fits, read_fits)
+from goodman_pipeline.core import (get_lines_in_lamp,
+                                   get_spectral_characteristics,
+                                   evaluate_wavelength_solution,
+                                   write_fits,
+                                   read_fits)
+
+from goodman_pipeline.core import NoMatchFound
 from goodman_pipeline.core import ReferenceData
 from goodman_pipeline.wcs import WCS
 
@@ -24,9 +27,6 @@ try:
     mpl.use('QtAgg')
 except (ImportError, OSError):
     pass
-
-
-__version__ = version('goodman_pipeline')
 
 
 FIGURE_SIZES_FOR_SCREEN = {
@@ -46,36 +46,28 @@ ELEMENTS_BY_LAMP = {
 ELEMENTS_ORDER = ['Cu', 'Fe', 'Hg', 'He', 'Ar', 'Ne']
 
 
-def get_args(arguments=None):
-    log = logging.getLogger()
-
-    parser = argparse.ArgumentParser(
-        description="Creates reference lamp.\nPipeline Version: {:s}".format(__version__))
-    parser.add_argument("--comparison-lamp", action="store", help="Comparison lamp file name. This is your NEW lamp.")
-    parser.add_argument("--reference-lamp", action="store", default=None, help="Already calibrated comparison lamp file name.")
-    parser.add_argument("--plots-theme", action="store", default="dark", choices=["light", "dark"], help="Choose a theme for plotting, default is dark.")
-    parser.add_argument("--screen-size", action="store", default='large', choices=['small', 'medium', 'large'], help="Choose a screen size for sizing the plots, default is large.")
-    parser.add_argument("--comp-intensity-start", action="store", default=None, help="Override y-axis start value for comparison lamp.")
-    parser.add_argument("--comp-intensity-end", action="store", default=None, help="Override y-axis end value for comparison lamp.")
-    parser.add_argument("--ref-wavelength-start", action="store", default=None, help="Override wavelength start value for reference lamp.")
-    parser.add_argument("--ref-wavelength-end", action="store", default=None, help="Override wavelength end value for reference lamp.")
-    parser.add_argument("--debug", action="store_true", default=False, help="Enable debug mode.")
-    parser.add_argument("-v", "--version", action="version", version=__version__)
-    args = parser.parse_args(args=arguments)
-
-    if not args.comparison_lamp:
-        log.error("Comparison lamp file name not specified.")
-        parser.print_help()
-        sys.exit("Please specify a comparison lamp file name.")
-
-    return args
-
-
 class CreateReferenceLamp:
 
-    def __init__(self):
+    def __init__(self,
+                 comparison_lamp_full_path,
+                 reference_lamp_full_path,
+                 comparison_lamp_intensity_start=None,
+                 comparison_lamp_intensity_end=None,
+                 reference_lamp_wavelength_start=None,
+                 reference_lamp_wavelength_end=None,
+                 plots_theme='dark',
+                 screen_size='large',
+                 debug=False):
+        self.comparison_lamp_full_path = comparison_lamp_full_path
+        self.reference_lamp_full_path = reference_lamp_full_path
+        self.comparison_lamp_intensity_start = comparison_lamp_intensity_start
+        self.comparison_lamp_intensity_end = comparison_lamp_intensity_end
+        self.reference_lamp_wavelength_start = reference_lamp_wavelength_start
+        self.reference_lamp_wavelength_end = reference_lamp_wavelength_end
+        self.plots_theme = plots_theme
+        self.screen_size = screen_size
+        self.debug = debug
         self.log = logging.getLogger(__name__)
-        self.args = None
         self.pixel_size = 15 * u.micrometer
         self.instrument_focal_length = 377.3 * u.mm
         self.wcs = WCS()
@@ -95,7 +87,6 @@ class CreateReferenceLamp:
         self.comp_ymin = None
         self.comp_ymax = None
         self.comp_spectral_characteristics = None
-        self.reference_lamp_full_path = None
         self.reference_lamp = None
         self.reference_lines = []
         self.ref_wavelength_min = None
@@ -121,38 +112,32 @@ class CreateReferenceLamp:
         self.recenter_callback = None
         self.recenter_help_shown_once = False
 
-    def __call__(self, args=None):
-        if self.args is None:
-            self.args = get_args(arguments=args)
-        else:
-            self.args = args
+    def __call__(self):
 
-        if self.args.debug:
+        if self.debug:
             reference_data_string = str(self.reference_data).split("\n")
             for line in reference_data_string:
                 self.log.debug(line)
 
-        if not os.path.exists(self.args.comparison_lamp):
+        if not os.path.exists(self.comparison_lamp_full_path):
             self.log.error("Comparison lamp file not found.")
             sys.exit("Please specify a comparison lamp file name.")
 
-        self.comparison_lamp = read_fits(full_path=self.args.comparison_lamp, technique="Spectroscopy")
+        self.comparison_lamp = read_fits(full_path=self.comparison_lamp_full_path, technique="Spectroscopy")
         self.comparison_lines = get_lines_in_lamp(ccd=self.comparison_lamp, peak_percent_for_threshold=3)
         self.comp_spectral_characteristics = get_spectral_characteristics(
             ccd=self.comparison_lamp,
             pixel_size=self.pixel_size,
             instrument_focal_length=self.instrument_focal_length)
 
-        if self.args.reference_lamp and os.path.exists(self.args.reference_lamp):
-            self.reference_lamp_full_path = os.path.abspath(os.path.normpath(self.args.reference_lamp))
-        else:
+        if self.reference_lamp_full_path is None:
             self.reference_lamp_full_path = self._identify_best_reference_lamp()
 
-        # seed = self.args.comparison_lamp + self.reference_lamp_full_path
+        # seed = self.comparison_lamp_full_path + self.reference_lamp_full_path
         # cache_id = hashlib.blake2b(seed.encode(), digest_size=8).hexdigest()
         # print(cache_id)
 
-        if self.reference_lamp_full_path is not None:
+        if self.reference_lamp_full_path is not None and os.path.exists(self.reference_lamp_full_path):
             self.reference_lamp = CCDData.read(self.reference_lamp_full_path, unit=u.adu)
         else:
             self.log.error("Reference lamp file not found.")
@@ -160,9 +145,9 @@ class CreateReferenceLamp:
 
         self.ref_wavelength, self.ref_intensity = self.wcs.read_gsp_wcs(ccd=self.reference_lamp)
 
-        if self.args.plots_theme == "dark":
+        if self.plots_theme == "dark":
             plt.style.use('dark_background')
-        elif self.args.plots_theme == "light":
+        elif self.plots_theme == "light":
             plt.style.use('default')
         self.log.debug("Disabling matplotlib shortcut for full screen.")
         mpl.rcParams['keymap.fullscreen'] = []
@@ -175,7 +160,7 @@ class CreateReferenceLamp:
         fig, (ax1, ax2) = plt.subplots(
             nrows=2,
             ncols=1,
-            figsize=FIGURE_SIZES_FOR_SCREEN[self.args.screen_size])
+            figsize=FIGURE_SIZES_FOR_SCREEN[self.screen_size])
 
         fig.canvas.manager.set_window_title('Create Reference Interactively')
 
@@ -187,12 +172,12 @@ class CreateReferenceLamp:
         comp_min = self.comparison_lamp.data.min()
         comp_max = self.comparison_lamp.data.max()
         comp_range = comp_max - comp_min
-        if self.args.comp_intensity_start is not None:
-            self.comp_ymin = float(self.args.comp_intensity_start)
+        if self.comparison_lamp_intensity_start is not None:
+            self.comp_ymin = float(self.comparison_lamp_intensity_start)
         else:
             self.comp_ymin = comp_min - 0.05 * comp_range
-        if self.args.comp_intensity_end is not None:
-            self.comp_ymax = float(self.args.comp_intensity_end)
+        if self.comparison_lamp_intensity_end is not None:
+            self.comp_ymax = float(self.comparison_lamp_intensity_end)
         else:
             self.comp_ymax = comp_max + 0.3 * comp_range
         comp_x_edge = 10
@@ -213,12 +198,12 @@ class CreateReferenceLamp:
                                   horizontalalignment='center', clip_on=True)
 
         # Reference lamp plot
-        if self.args.ref_wavelength_start is not None:
-            self.ref_wavelength_min = float(self.args.ref_wavelength_start)
+        if self.reference_lamp_wavelength_start is not None:
+            self.ref_wavelength_min = float(self.reference_lamp_wavelength_start)
         else:
             self.ref_wavelength_min = self.comp_spectral_characteristics['blue'].value
-        if self.args.ref_wavelength_end is not None:
-            self.ref_wavelength_max = float(self.args.ref_wavelength_end)
+        if self.reference_lamp_wavelength_end is not None:
+            self.ref_wavelength_max = float(self.reference_lamp_wavelength_end)
         else:
             self.ref_wavelength_max = self.comp_spectral_characteristics['red'].value
         ref_min_index = np.abs(self.ref_wavelength - self.ref_wavelength_min).argmin()
@@ -279,7 +264,7 @@ class CreateReferenceLamp:
             nist_dfs.append(self.reference_data.nist[element])
         df = pd.concat(nist_dfs, ignore_index=True)
 
-        filtered = df[(df['air_wavelength'] >=self.ref_wavelength_min) & (df['air_wavelength'] <= self.ref_wavelength_max)]
+        filtered = df[(df['air_wavelength'] >= self.ref_wavelength_min) & (df['air_wavelength'] <= self.ref_wavelength_max)]
         return filtered
 
     def __print_selected_points(self):
@@ -509,7 +494,7 @@ class CreateReferenceLamp:
     def _identify_best_reference_lamp(self):
         try:
             reference_lamps_df = self.reference_data.get_reference_lamps_by_lamp_status_keyword(header=self.comparison_lamp.header)
-            if self.args.debug:
+            if self.debug:
                 print(reference_lamps_df[['file', 'lamp_hga', 'lamp_ne', 'lamp_ar', 'lamp_fe', 'lamp_cu']].to_string(index=False))
             ref_spectral = self.__estimate_spectral_features_of_reference_lamps(reference_lamps=reference_lamps_df)
             comp_blue = self.comp_spectral_characteristics['blue'].value
@@ -570,7 +555,7 @@ class CreateReferenceLamp:
 
     def _save_as_reference_lamp(self):
         new_name = self.__get_new_reference_lamp_name()
-        new_reference_lamp_full_path = os.path.join(os.path.dirname(self.args.comparison_lamp), new_name)
+        new_reference_lamp_full_path = os.path.join(os.path.dirname(self.comparison_lamp_full_path), new_name)
 
         ccd = self.comparison_lamp
         ccd = self.__record_wavelength_solution_quality(ccd=ccd)
@@ -581,5 +566,5 @@ class CreateReferenceLamp:
                    full_path=new_reference_lamp_full_path,
                    data_type=0,
                    combined=False,
-                   parent_file=self.args.comparison_lamp,
+                   parent_file=self.comparison_lamp_full_path,
                    overwrite=True)
