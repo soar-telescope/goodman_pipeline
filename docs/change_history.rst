@@ -3,8 +3,8 @@ Change History
 
 .. _v3.0.0:
 
-V3.0.0 Not Released
-^^^^^^^^^^^^^^^^^^^
+V3.0.0 28-09-2026
+^^^^^^^^^^^^^^^^^
 
 - Replace linearization of wavelength calibrated spectra by storing them as FITS binary tables.
 - Rename default reduced data folder from ``RED`` to ``REDUCED``.
