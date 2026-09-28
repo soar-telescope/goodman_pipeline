@@ -60,6 +60,8 @@ Processing Data
 
 .. include:: _file_suffixes.rst
 
+.. include:: _reading_wavelength_calibrated_files.rst
+
 .. include:: _shortcuts.rst
 
 .. include:: _common_issues.rst

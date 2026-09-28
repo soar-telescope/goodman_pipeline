@@ -113,6 +113,11 @@ pdf_documents = [('user_manual',
 html_theme = 'pydata_sphinx_theme'
 
 html_theme_options = {
+    "announcement": """
+        <strong>Goodman Pipeline v3.0 Released!</strong>
+        This release contains breaking changes.
+        <a href="change_history.html#v3-0-0">Version 3.0.0</a>.
+        """,
     "navbar_end": ["navbar-icon-links"],
     "icon_links": [
         {

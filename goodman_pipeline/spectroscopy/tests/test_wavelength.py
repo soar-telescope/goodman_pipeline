@@ -53,6 +53,11 @@ class WavelengthCalibrationTests(TestCase):
                              comment='Comparison lamp obstype')
         self.lamp.header.set('OBJECT', value='HgArNe')
 
+        primary_hdu = fits.PrimaryHDU(data=self.lamp.data)
+        primary_hdu.header.extend(self.lamp.header, update=True)
+
+        self.hdu_list = fits.HDUList([primary_hdu])
+
     def tearDown(self):
         for _file in self.file_list:
             if os.path.isfile(_file):
@@ -70,14 +75,14 @@ class WavelengthCalibrationTests(TestCase):
 
     def test__save_wavelength_calibrated(self):
         self.wc.sci_target_file = 'target_sci_file.fits'
-        fname = self.wc._save_wavelength_calibrated(ccd=self.lamp,
+        fname = self.wc._save_wavelength_calibrated(hdu_list=self.hdu_list,
                                                     original_filename='file_name.fits',
                                                     save_data_to=os.getcwd(),
                                                     lamp=True)
         self.file_list.append(fname)
         self.assertEqual(fname, os.path.join(os.getcwd(), 'wfile_name.fits'))
 
-        fname = self.wc._save_wavelength_calibrated(ccd=self.lamp,
+        fname = self.wc._save_wavelength_calibrated(hdu_list=self.hdu_list,
                                                     index=1,
                                                     original_filename='file_name.fits',
                                                     save_data_to=os.getcwd())

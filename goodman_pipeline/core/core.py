@@ -46,7 +46,7 @@ from . import check_version
 
 __version__ = version('goodman_pipeline')
 
-iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
+# iers.Conf.iers_auto_url.set('ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all')
 
 log = logging.getLogger(__name__)
 
@@ -383,6 +383,35 @@ def call_cosmic_rejection(ccd,
     else:
         log.error('Unrecognized Cosmic Method {:s}'.format(method))
         raise NotImplementedError
+
+
+def create_binary_fits_table(ccd: CCDData, wavelength_solution: Model):
+    primary_hdu = fits.PrimaryHDU()
+    primary_hdu.header.extend(ccd.header, update=True)
+    spectral_axis_in_pixels = range(ccd.data.shape[0])
+    spectral_axis_in_angstrom = wavelength_solution(spectral_axis_in_pixels)
+
+    columns = [
+        fits.Column(
+            name="WAVELENGTH",
+            format="D",
+            unit="Angstrom",
+            array=spectral_axis_in_angstrom,
+        ),
+        fits.Column(
+            name="INTENSITY",
+            format="D",
+            unit="adu",
+            array=ccd.data,
+        )
+    ]
+
+    spectrum_hdu = fits.BinTableHDU.from_columns(columns)
+    spectrum_hdu.name = "SPECTRUM"
+
+    hdu_list = fits.HDUList([primary_hdu, spectrum_hdu])
+
+    return hdu_list
 
 
 def create_master_bias(bias_files,

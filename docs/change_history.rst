@@ -1,40 +1,126 @@
 Change History
 ##############
 
+.. _v3.0.0:
+
+V3.0.0 28-09-2026
+^^^^^^^^^^^^^^^^^
+
+- Replace linearization of wavelength calibrated spectra by storing them as FITS binary tables.
+- Rename default reduced data folder from ``RED`` to ``REDUCED``.
+
+.. _v2.1.0:
+
+V2.1.0 04-06-2026
+^^^^^^^^^^^^^^^^^
+
+- New tool `redspec-create-reference-lamp` (`spectroscopy.create_reference_lamp`)
+  to build reference lamp files interactively from a comparison lamp
+  observation and the NIST line lists:
+
+  + Supports selecting, removing and ignoring data points during line
+    identification.
+  + Can save the resulting reference lamp to a FITS file.
+  + New arguments to control the y axis range of the comparison lamp plot and
+    the wavelength range of the reference lamp.
+  + Added documentation and placeholder test files.
+
+- Scripts were split into separate modules (`goodman_pipeline.scripts.redccd`,
+  `redspec`, `astrometry` and `photometry`) and argument parsing was moved out
+  of the main processes to reduce unrelated imports when running the scripts.
+- Minimum supported Python version is now 3.10. Tested versions are 3.10, 3.11,
+  3.12, 3.13 and 3.14 (dropped 3.8 and 3.9).
+- Added `pyqt6` as a dependency and a fall back to the default matplotlib
+  backend when the preferred one is not available.
+- Added `.flake8` configuration and fixed several style offenses.
+- Replaced several `print` calls with `log.info`.
+- Documentation updates.
+
+.. _v2.0.2:
+
+V2.0.2 12-05-2026
+^^^^^^^^^^^^^^^^^
+
+- Added log messages when detecting files and fixed a bug caused by a wrong
+  variable name.
+- Improved the message shown on `sys.exit`.
+
+.. _v2.0.1:
+
+V2.0.1 06-05-2026
+^^^^^^^^^^^^^^^^^
+
+- `redastrometry` now updates the `RLEVEL` keyword (Las Cumbres Observatory
+  reduction level convention).
+
+.. _v2.0.0:
+
+V2.0.0 06-05-2026
+^^^^^^^^^^^^^^^^^
+
+- First stable release including the astrometry and photometry capabilities
+  introduced in V2.0.0rc1.
+- `write_fits` helper now accepts a data type argument, which is used to update
+  the `RLEVEL` keyword in all places where it is used. Added test for the
+  `RLEVEL` update.
+- Added missing dependencies.
+- Added installation instructions and link for the astrometry.net binaries.
+- Documentation overhaul: updated install and overview sections and removed
+  remote access information.
+
 .. _v2.0.0rc1:
 
-V2.0.0rc1 Not Released
-^^^^^^^^^^^^^^^^^^^^^^
+V2.0.0rc1 14-08-2025
+^^^^^^^^^^^^^^^^^^^^
 
-- Introduces astrometry and photometry capabilities
-- Added astrometry.net dependency using solve-field for astrometric solutions
-- Added photutils as new dependency for photometry measurements
-- New command-line tools: `redastrometry` and `redphotometry`
+- Introduces astrometry and photometry capabilities.
+- Added astrometry.net dependency using `solve-field` for astrometric
+  solutions.
+- Added `photutils` as new dependency for photometry measurements.
+- New command-line tools: `redastrometry` and `redphotometry`, with new
+  subpackages `astrometry` and `photometry`.
+- Photometry:
+
+  + Initial version of the `Photometry` class with aperture photometry and
+    zeropoint estimation using Gaia DR3 (instead of DR2).
+  + Filter name is extracted and validated at the initial checks. Filter names
+    are treated as case sensitive.
+  + Placeholder for color transformation correction.
+  + Variable aperture photometry is not implemented.
+  + New arguments: `--plots`, `--flat`.
+
+- Astrometry:
+
+  + New arguments: `--flat`/`--flat-image`, `--initial-fwhm`,
+    `--detection-threshold`, `--ignore-goodman-vignetting`,
+    `--disable-mask-creation` and `--plots`.
+  + Creates a mask from a master flat plus a default Goodman mask, used to
+    filter detected sources (can be disabled).
+  + Added `create_xyls_table` function.
+
+- Moved source detection, FITS validation and background subtraction functions
+  to `core` so they can be reused.
+- Improved logging setup: log file names now include a timestamp.
 
 .. _v1.3.13:
 
-V1.3.13 Not Released
-^^^^^^^^^^^^^^^^^^^^
-
-- Various maintenance updates and improvements
-
-.. _v1.3.12:
-
-V1.3.12 10-07-2025
+V1.3.13 10-07-2025
 ^^^^^^^^^^^^^^^^^^
 
-- Version maintenance and updates
+- Added `LAMPFLAT` as an `OBSTYPE` option for flats, along with `FLAT`.
+- Fixed a string formatting issue.
 
 .. _v1.3.11:
 
-V1.3.11 22-05-2024
+V1.3.11 22-05-2025
 ^^^^^^^^^^^^^^^^^^
 
-- Added background extraction controls
+- Added background extraction controls (new arguments for `redspec`).
+- Updated installation instructions and documentation.
 
 .. _v1.3.10:
 
-V1.3.10 06-03-2024
+V1.3.10 06-03-2025
 ^^^^^^^^^^^^^^^^^^
 
 - Packaging updates

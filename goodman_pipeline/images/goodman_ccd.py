@@ -134,7 +134,7 @@ def get_args(arguments=None):
                         action='store',
                         metavar='<red_path>',
                         type=str,
-                        default='./RED',
+                        default='./REDUCED',
                         help="Path to reduced data.")
 
     parser.add_argument('--saturation-threshold',
@@ -298,13 +298,13 @@ class ReduceCCD(object):
             return False
 
         # check start
-        if self.args.red_path == './RED':
+        if self.args.red_path == './REDUCED':
 
             self.log.info('No special reduced data path defined. '
                           'Proceeding with defaults.')
 
             if self.args.raw_path not in self.args.red_path:
-                self.args.red_path = os.path.join(self.args.raw_path, 'RED')
+                self.args.red_path = os.path.join(self.args.raw_path, 'REDUCED')
                 self.log.debug("Folder for reduced data defined to: {:s}"
                                "".format(self.args.red_path))
 

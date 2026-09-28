@@ -25,6 +25,7 @@ from ..wcs.wcs import WCS
 
 from ..core import (add_linear_wavelength_solution,
                     bin_reference_data,
+                    create_binary_fits_table,
                     cross_correlation,
                     evaluate_wavelength_solution,
                     get_lines_in_lamp,
@@ -199,20 +200,13 @@ class WavelengthCalibration(object):
                     ccd.header.set('GSP_WPOI', value=self.n_points)
                     ccd.header.set('GSP_WREJ', value=self.n_rejections)
 
-                    linear_x_axis, self.lamp.data = linearize_spectrum(
-                        self.lamp.data,
-                        wavelength_solution=self.wsolution)
-
                     self.lamp = self.wcs.write_gsp_wcs(ccd=self.lamp,
                                                        model=self.wsolution)
 
-                    self.lamp = add_linear_wavelength_solution(
-                        ccd=self.lamp,
-                        x_axis=linear_x_axis,
-                        reference_lamp=self.calibration_lamp)
+                    hdu_list_lamp = create_binary_fits_table(ccd=self.lamp, wavelength_solution=self.wsolution)
 
                     self.wcal_lamp_file = self._save_wavelength_calibrated(
-                        ccd=self.lamp,
+                        hdu_list=hdu_list_lamp,
                         original_filename=self.calibration_lamp,
                         save_data_to=save_data_to,
                         output_prefix=output_prefix,
@@ -644,7 +638,7 @@ class WavelengthCalibration(object):
         Args:
             ccd (CCDData): Instance of :class:`~astropy.nddata.CCDData` with a
             1D spectrum.
-            wavelength_solution (object): A :class:`~astropy.modeling.Model`
+            wavelength_solution (Model): A :class:`~astropy.modeling.Model`
             save_to (str): Path to save location
             index (int): If there are more than one target, they are identified
             by this index.
@@ -657,17 +651,11 @@ class WavelengthCalibration(object):
 
         """
         ccd = ccd.copy()
-        linear_x_axis, ccd.data = linearize_spectrum(
-            data=ccd.data,
-            wavelength_solution=wavelength_solution)
 
-        ccd = add_linear_wavelength_solution(
-            ccd=ccd,
-            x_axis=linear_x_axis,
-            reference_lamp=self.calibration_lamp)
+        hdu_list_science = create_binary_fits_table(ccd=ccd, wavelength_solution=wavelength_solution)
 
         save_file_name = self._save_wavelength_calibrated(
-            ccd=ccd,
+            hdu_list=hdu_list_science,
             original_filename=ccd.header['GSP_FNAM'],
             save_data_to=save_to,
             index=index)
@@ -740,7 +728,7 @@ class WavelengthCalibration(object):
         return save_file_name
 
     def _save_wavelength_calibrated(self,
-                                    ccd,
+                                    hdu_list,
                                     original_filename,
                                     save_data_to,
                                     output_prefix='w',
@@ -757,28 +745,43 @@ class WavelengthCalibration(object):
         if lamp:
             log.info('Wavelength-calibrated {:s} file saved to: '
                      '{:s} for science file {:s}'
-                     ''.format(ccd.header['OBSTYPE'],
+                     ''.format(hdu_list[0].header['OBSTYPE'],
                                os.path.basename(file_full_path),
                                self.sci_target_file))
 
-            ccd.header.set('GSP_SCTR',
+            hdu_list[0].header.set('GSP_SCTR',
                            value=self.sci_target_file,
                            after='GSP_FLAT')
         else:
             log.info('Wavelength-calibrated {:s} file saved to: '
                      '{:s} using reference lamp {:s}'
-                     ''.format(ccd.header['OBSTYPE'],
+                     ''.format(hdu_list[0].header['OBSTYPE'],
                                os.path.basename(file_full_path),
                                self.wcal_lamp_file))
-            ccd.header.set(
+            hdu_list[0].header.set(
                 'GSP_LAMP',
                 value=self.wcal_lamp_file,
                 comment='Reference lamp used to obtain wavelength solution',
                 after='GSP_FLAT')
 
-        write_fits(ccd=ccd,
-                   full_path=file_full_path,
-                   data_type=4,
-                   parent_file=original_filename)
+        # write_fits(ccd=hdu_list,
+        #            full_path=file_full_path,
+        #            data_type=4,
+        #            parent_file=original_filename)
+
+        if os.path.isabs(file_full_path) and not os.path.isdir(os.path.dirname(file_full_path)):
+            log.warning(f"Destination directory does not exist. Creating new directory: {os.path.dirname(file_full_path)}")
+            os.mkdir(os.path.dirname(file_full_path))
+
+        if original_filename is not None:
+            hdu_list[0].header.set('GSP_PNAM', value=os.path.basename(original_filename))
+
+        hdu_list[0].header.set('GSP_FNAM', value=os.path.basename(file_full_path))
+        hdu_list[0].header.set('GSP_PATH', value=os.path.dirname(file_full_path))
+        hdu_list[0].header.set('RLEVEL', value=64)
+
+        log.info(f"Saving wavelength calibrated file as BinaryTable to: {os.path.basename(file_full_path)}")
+        hdu_list.writeto(file_full_path, overwrite=True)
+        assert os.path.isfile(file_full_path)
 
         return file_full_path

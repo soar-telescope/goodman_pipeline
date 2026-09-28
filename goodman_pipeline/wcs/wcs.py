@@ -151,7 +151,7 @@ class WCS(object):
               attribute will be modified
             model (object): astropy.modeling.Model instance.
 
-        Returns:
+        Returns: CCDData instance with new keywords describing a wavelength solution.
 
         """
         assert isinstance(ccd, CCDData)
@@ -159,7 +159,7 @@ class WCS(object):
 
         ccd.header.set('GSP_FUNC',
                        value=model.__class__.name,
-                       comment="Mathematical model of non-linearized data",
+                       comment="Mathematical model used to build wavelength solution.",
                        after='GSP_WREJ')
         ccd.header.set('GSP_ORDR', value=model.degree,
                        comment="Mathematical model order",
@@ -252,7 +252,7 @@ class WCS(object):
 
     # wavelength solution reader private methods.
     def _read_non_linear(self, dimension):
-        """Non linear solutions reader
+        """Non-linear solutions reader
 
         Notes:
             Not all kind of non-linear solutions are implemented. Apparently is
