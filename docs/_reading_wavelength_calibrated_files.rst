@@ -5,16 +5,16 @@ Read Wavelength Calibrated Files
 
 .. important::
 
-  This change was introduced in :ref:`v3.0.0` as a consequence of several requirements received
-  requesting to eliminate resampling of the wavelength calibrated data. It introduces breaking changes
-  for instance the wavelength calibrated file is no longer stored as a linear wavelength solution,
-  instead it creates a FITS Binary Table.
+  This change was introduced in :ref:`v3.0.0` in response to several requests to eliminate the
+  resampling of wavelength calibrated data. It introduces breaking changes: for instance, the
+  wavelength calibrated file is no longer stored with a linear wavelength solution. Instead, it is
+  stored as a FITS binary table.
 
 Using astropy.io.fits
 ^^^^^^^^^^^^^^^^^^^^^
-There are several ways of reading the spectrum, it is no longer possible to read it using ``ccdproc.CCDData`` anymore.
 
-Now we read directly using Astropy's fits.
+Wavelength calibrated spectra can no longer be read with ``ccdproc.CCDData``. Instead, read them
+directly with Astropy's ``fits`` module:
 
 .. code-block:: python
 
@@ -22,30 +22,28 @@ Now we read directly using Astropy's fits.
 
     hdul = fits.open("/full/path/to/file.fits")
 
-And if we do ``hdul.info()`` we get the file's structure.
+Calling ``hdul.info()`` shows the file's structure:
 
-.. code-block:: shell
+.. code-block:: text
 
     Filename: /full/path/to/file.fits
     No.    Name      Ver    Type      Cards   Dimensions   Format
       0  PRIMARY       1 PrimaryHDU     324   ()
       1  SPECTRUM      1 BinTableHDU     15   2030R x 2C   [D, D]
 
-So in order to get the header we can do:
+To get the header, use the HDU name:
 
 .. code-block:: python
 
     hdul['PRIMARY'].header
 
-
-Or in this case its equivalent:
+or, equivalently, the HDU index:
 
 .. code-block:: python
 
     hdul[0].header
 
-
-And to get access the spectrum, for a plot for instance:
+To access the spectrum, for example to plot it:
 
 .. code-block:: python
 
@@ -54,12 +52,15 @@ And to get access the spectrum, for a plot for instance:
     fig, ax = plt.subplots()
 
     ax.plot(hdul['SPECTRUM'].data['WAVELENGTH'], hdul['SPECTRUM'].data['INTENSITY'])
+    ax.set_xlabel("Wavelength")
+    ax.set_ylabel("Intensity")
 
     plt.show()
 
-
 Using astropy.table.Table
 ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Alternatively, read the ``SPECTRUM`` extension as a table:
 
 .. code-block:: python
 
@@ -70,13 +71,11 @@ Using astropy.table.Table
     wavelength = tb["WAVELENGTH"]
     intensity = tb["INTENSITY"]
 
+Recreate the mathematical model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-Recreate Mathematical Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The mathematical model is described in the primary header. Here is an example of the the parameters for
-a *Chebyshev* of order 3:
+The mathematical model used to compute the wavelength axis is described in the primary header.
+For example, these are the parameters for a *Chebyshev* model of order 3:
 
 .. code-block:: text
 
@@ -88,10 +87,8 @@ a *Chebyshev* of order 3:
     GSP_C002= 2.10872155121733E-06 / Value of parameter c2
     GSP_C003= -1.2192825594282E-09 / Value of parameter c3
 
-With this information it is possible to recreate the exact mathematical model used to create the wavelength axis
-and it is based on ``astropy.modeling.Model``
-
-So, here is a full example:
+With this information you can recreate the exact model used to build the wavelength axis, using
+``astropy.modeling``. Here is a full example:
 
 .. code-block:: python
 
@@ -100,32 +97,31 @@ So, here is a full example:
 
     header = fits.getheader("/full/path/to/file.fits", extname="PRIMARY")
 
-    model_name = header['GSP_FUNC'] # This is where the model name is defined, in this example is not used
-    degree = header['GSP_ORDR]
+    # GSP_FUNC holds the model name. This example assumes Chebyshev1D and does not use it.
+    degree = header['GSP_ORDR']
 
     model = models.Chebyshev1D(degree=degree)
 
     for i in range(degree + 1):
-        model.__getattribute__(f"c{i:d}").value = header[f"GSP_C{i:03d}"]
+        getattr(model, f"c{i}").value = header[f"GSP_C{i:03d}"]
 
-Then you can use model as you wish, for instance you could plot and compare, for simplicity here we
-present the example of plotting:
+You can then evaluate the model as needed. For example, here is how to plot the spectrum using the
+recreated wavelength axis:
 
 .. code-block:: python
 
+    import matplotlib.pyplot as plt
     from astropy.table import Table
 
     tb = Table.read("/full/path/to/file.fits", hdu="SPECTRUM")
-
-    # wavelength = tb["WAVELENGTH"]
     intensity = tb["INTENSITY"]
 
-    # use GSP_NPIX to get the number of pixels in the spectrum
+    # GSP_NPIX is the number of pixels in the spectrum
     wavelength = model(range(header['GSP_NPIX']))
-
-    # reutilize the intensity obtained before
 
     fig, ax = plt.subplots()
     ax.plot(wavelength, intensity)
+    ax.set_xlabel("Wavelength")
+    ax.set_ylabel("Intensity")
 
     plt.show()
