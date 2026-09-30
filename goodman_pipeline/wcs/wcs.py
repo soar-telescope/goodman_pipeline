@@ -9,6 +9,7 @@ import logging
 import shlex
 import sys
 
+from astropy.io.fits import Header, HDUList
 from astropy.modeling import models, fitting, Model
 from ccdproc import CCDData
 
@@ -189,19 +190,35 @@ class WCS(object):
 
         """
         assert isinstance(ccd, CCDData)
-        self.model_name = ccd.header['GSP_FUNC']
-        self.degree = ccd.header['GSP_ORDR']
-        self._binning = int(ccd.header['CCDSUM'].split()[0])
+
+        self._get_gsp_wcs_model_from_header(ccd.header)
+
+        self.wavelength_and_intensity = [
+            self.model(range(ccd.header['GSP_NPIX'])), ccd.data]
+        return self.wavelength_and_intensity
+
+    def read_wcs_from_binary_table(self, hdulist):
+        assert isinstance(hdulist, HDUList)
+        primary_header = hdulist['PRIMARY'].header
+        self._get_gsp_wcs_model_from_header(header=primary_header)
+        spectrum = hdulist['SPECTRUM'].data
+        wavelength = spectrum['WAVELENGTH']
+        intensity = spectrum['INTENSITY']
+
+        return wavelength, intensity, self.model
+
+    def _get_gsp_wcs_model_from_header(self, header):
+        assert isinstance(header, Header)
+        self.model_name = header['GSP_FUNC']
+        self.degree = header['GSP_ORDR']
+        self._binning = int(header['CCDSUM'].split()[0])
 
         if self.model_name == 'Chebyshev1D':
             self.model = models.Chebyshev1D(degree=self.degree)
-            for i in range(ccd.header['GSP_ORDR'] + 1):
-                self.model.__getattribute__('c{:d}'.format(i)).value = ccd.header[
+            for i in range(self.degree + 1):
+                self.model.__getattribute__('c{:d}'.format(i)).value = header[
                     'GSP_C{:03d}'.format(i)]
-            self.wavelength_and_intensity = [
-                self.model(range(ccd.header['GSP_NPIX'])), ccd.data]
-
-            return self.wavelength_and_intensity
+        return self.model
 
     def _model_constructor(self):
         """Generates callable mathematical model

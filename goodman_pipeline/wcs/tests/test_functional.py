@@ -217,6 +217,19 @@ class TestWCS(TestWCSBase):
         self.assertEqual(len(result), 2)
         self.assertIsInstance(self.wcs.get_model(), Model)
 
+    def test_read_wcs_from_binary_table(self):
+        test_file = os.path.join(self.data_path, 'non-linear_binary_table_chebyshev.fits')
+
+        hdulist = fits.open(test_file)
+
+        wavelength, intensity, model = self.wcs.read_wcs_from_binary_table(hdulist=hdulist)
+
+        self.assertIsInstance(wavelength, np.ndarray)
+        self.assertIsInstance(intensity, np.ndarray)
+        self.assertIsInstance(model, Model)
+        self.assertEqual(len(wavelength), len(intensity))
+
+
     def test_get_model_is_None(self):
         self.wcs.model = None
         self.assertIsNone(self.wcs.get_model())
