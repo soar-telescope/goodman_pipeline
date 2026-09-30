@@ -1,6 +1,13 @@
 Change History
 ##############
 
+.. _v3.1.0:
+
+V3.1.0 30-09-2026
+^^^^^^^^^^^^^^^^^
+
+- Add method to read binary tables written with this package see :meth:`~goodman_pipeline.wcs.wcs.WCS.read_wcs_from_binary_table`.
+
 .. _v3.0.0:
 
 V3.0.0 28-09-2026
