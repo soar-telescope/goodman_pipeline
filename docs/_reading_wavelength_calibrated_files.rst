@@ -125,3 +125,53 @@ recreated wavelength axis:
     ax.set_ylabel("Intensity")
 
     plt.show()
+
+Using the integrated convenience method
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``goodman_pipeline`` package includes a convenience method that combines
+the steps described above into a single call. See
+:meth:`~goodman_pipeline.wcs.wcs.WCS.read_wcs_from_binary_table` for more
+details.
+
+.. code-block:: python
+
+    from astropy.io import fits
+    from goodman_pipeline.wcs import WCS
+
+    gsp_wcs = WCS()
+
+    full_file_path = "/full/path/to/file.fits"
+
+    hdulist = fits.open(full_file_path)
+
+    wavelength, intensity, model = gsp_wcs.read_wcs_from_binary_table(hdulist=hdulist)
+
+The method returns the wavelength axis (``wavelength``), the spectrum
+(``intensity``), and ``model``, the recovered mathematical model of the
+wavelength solution. Because the model is stored in the file, you can reuse it
+without re-fitting the wavelength axis.
+
+As an example, here is how to plot the spectrum:
+
+.. code-block:: python
+
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    ax.plot(wavelength, intensity, label="Spectrum")
+    ax.set_xlabel("Wavelength (Angstrom)")
+    ax.set_ylabel("Intensity (ADU)")
+    ax.legend()
+
+Alternatively, you can recreate the wavelength axis by evaluating the model:
+
+.. code-block:: python
+
+    reconstructed_wavelength = model(range(hdulist['PRIMARY'].header['GSP_NPIX']))
+
+    fig, ax = plt.subplots()
+    ax.plot(reconstructed_wavelength, intensity, label="Spectrum with reconstructed wavelength axis")
+    ax.set_xlabel("Reconstructed Wavelength (Angstrom)")
+    ax.set_ylabel("Intensity (ADU)")
+    ax.legend()
