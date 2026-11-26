@@ -18,6 +18,7 @@ import sys
 import time
 
 import requests
+from astropy.io.fits import Header
 from astropy.nddata import CCDData
 from astropy.utils import iers
 from astroplan import Observer
@@ -2297,7 +2298,7 @@ def is_file_saturated(ccd, threshold):
     pixels_above_saturation = np.count_nonzero(
         ccd.data[np.where(
             ccd.data > saturation_values.get_saturation_value(
-                ccd=ccd))])
+                header=ccd.header))])
 
     total_pixels = np.count_nonzero(ccd.data)
 
@@ -4281,7 +4282,7 @@ class SaturationValues(object):
 
     """
 
-    def __init__(self, ccd=None):
+    def __init__(self, header=None):
         """Defines a :class:`~pandas.DataFrame` with saturation_threshold information
 
         Both, Red and Blue cameras have tabulated saturation_threshold values depending
@@ -4293,7 +4294,7 @@ class SaturationValues(object):
             as ``saturation_threshold level`` though they are not the same thing.
 
         Args:
-            ccd (CCDData): Image to be tested for saturation_threshold
+            header (astropy.io.fits.Header): Header of the image to test for the saturation values.
 
         """
         self.log = logging.getLogger(__name__)
@@ -4326,8 +4327,8 @@ class SaturationValues(object):
         self._sdf = pandas.DataFrame(saturation_table,
                                      columns=columns)
 
-        if ccd is not None:
-            self.get_saturation_value(ccd=ccd)
+        if header is not None:
+            self.get_saturation_value(header=header)
 
     @property
     def saturation_value(self):
@@ -4348,20 +4349,20 @@ class SaturationValues(object):
         else:
             return self.__saturation
 
-    def get_saturation_value(self, ccd):
+    def get_saturation_value(self, header: Header):
         """Defines the saturation_threshold level
 
         Args:
-            ccd (CCDData): Image to be tested for saturation_threshold
+            header (astropy.io.fits.Header): Header that contains information useful to find saturation values.
 
         Returns:
             The saturation_threshold value or None
 
         """
         hfw = self._sdf.half_full_well[
-            (self._sdf.camera == ccd.header['INSTCONF']) &
-            (self._sdf.gain == ccd.header['GAIN']) &
-            (self._sdf.read_noise == ccd.header['RDNOISE'])]
+            (self._sdf.camera == header['INSTCONF']) &
+            (self._sdf.gain == header['GAIN']) &
+            (self._sdf.read_noise == header['RDNOISE'])]
 
         if hfw.empty:
             self.log.critical('Unable to obtain saturation_threshold level')

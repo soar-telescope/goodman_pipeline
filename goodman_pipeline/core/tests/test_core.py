@@ -1973,7 +1973,7 @@ class SaturationValuesTest(TestCase):
 
         self.half_full_well = 69257
 
-        self.saturation_values = SaturationValues(ccd=self.ccd)
+        self.saturation_values = SaturationValues(header=self.ccd.header)
 
     def test_half_full_well_value(self):
         self.assertEqual(self.saturation_values.saturation_value,
@@ -1981,7 +1981,7 @@ class SaturationValuesTest(TestCase):
 
     def test_empty_result(self):
         self.ccd.header['GAIN'] = 2.3
-        result = self.saturation_values.get_saturation_value(ccd=self.ccd)
+        result = self.saturation_values.get_saturation_value(header=self.ccd.header)
         self.assertIsNone(result)
         self.assertIsNone(self.saturation_values.saturation_value)
 
