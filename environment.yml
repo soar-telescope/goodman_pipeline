@@ -1,6 +1,7 @@
 name: goodman_pipeline
 dependencies:
   - python
+  - nomkl
   - numpy
   - pandas
   - matplotlib
